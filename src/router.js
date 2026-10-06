@@ -246,9 +246,12 @@ export async function serveSite(request, env) {
   ]);
 
   if (pagePaths.has(url.pathname) && !["/","/login","/login.html","/admin","/admin.html","/member-accounts","/member-accounts.html"].includes(url.pathname)) {
-    const member = await memberFromRequest({cookies:cookies(request.headers.get("cookie")||"")});
-    const reqLike = { cookies:cookies(request.headers.get("cookie")||""), headers:{} };
-    const adminOk = await adminAllowed(reqLike);
+    let member=null, adminOk=false;
+    try{
+      member = await memberFromRequest({cookies:cookies(request.headers.get("cookie")||"")});
+      const reqLike = { cookies:cookies(request.headers.get("cookie")||""), headers:{} };
+      adminOk = await adminAllowed(reqLike);
+    }catch(_){ /* treat an unavailable identity store as unauthenticated */ }
     if(!member && !adminOk){
       return Response.redirect(new URL("/login.html?next="+encodeURIComponent(url.pathname+url.search+url.hash),request.url),302);
     }
