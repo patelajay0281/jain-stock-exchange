@@ -16,8 +16,7 @@ jobs:
           BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
         run: |
           node <<'NODE'
-          const {performance} = require('node:perf_hooks');
-          const base=process.env.BASE_URL;
+                    const base=process.env.BASE_URL;
           const total=1000;
           const concurrency=100;
           const results=new Array(total);
@@ -27,20 +26,20 @@ jobs:
             while(true){
               const i=cursor++;
               if(i>=total)return;
-              const started=performance.now();
+              const started=Date.now();
               try{
                 const r=await fetch(base+'/api/realtime?probe='+i,{cache:'no-store'});
                 await r.text();
-                results[i]={status:r.status,ms:performance.now()-started};
+                results[i]={status:r.status,ms:Date.now()-started};
               }catch(e){
-                results[i]={status:0,ms:performance.now()-started,error:String(e)};
+                results[i]={status:0,ms:Date.now()-started,error:String(e)};
               }
             }
           }
 
-          const started=performance.now();
+          const started=Date.now();
           await Promise.all(Array.from({length:concurrency},()=>worker()));
-          const elapsed=performance.now()-started;
+          const elapsed=Date.now()-started;
           const ok=results.filter(x=>x.status===200);
           const failed=results.length-ok.length;
           const sorted=ok.map(x=>x.ms).sort((a,b)=>a-b);
