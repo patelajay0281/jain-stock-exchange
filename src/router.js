@@ -28,6 +28,7 @@ import undoRedo from "../api/undo-redo.js";
 import realtime from "../api/realtime.js";
 import adminLogin from "../api/admin-login.js";
 import adminLogout from "../api/admin-logout.js";
+import memberAccounts from "../api/member-accounts.js";
 import memberLogin from "../api/member-login.js";
 import memberLogout from "../api/member-logout.js";
 import memberMe from "../api/member-me.js";
@@ -67,6 +68,7 @@ const routes = {
   "/api/realtime": realtime,
   "/api/admin-login": adminLogin,
   "/api/admin-logout": adminLogout,
+  "/api/member-accounts": memberAccounts,
   "/api/member-login": memberLogin,
   "/api/member-logout": memberLogout,
   "/api/member-me": memberMe,
