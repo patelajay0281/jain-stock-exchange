@@ -206,6 +206,12 @@ export async function handleApi(request, env) {
   if (access === "member" && request.method === "POST" && !req.member) {
     return Response.json({error:"Participant access required. Open Create Order and sign in."},{status:401});
   }
+  if (req.member?.role === "participant" && request.method === "POST" &&
+      url.pathname === "/api/orders" &&
+      req.member.team_code &&
+      String(req.body?.team || "").toUpperCase() !== String(req.member.team_code).toUpperCase()) {
+    return Response.json({error:"This participant account is assigned to "+req.member.team_code+"."},{status:403});
+  }
 
   const res = new ResponseAdapter();
   try {
