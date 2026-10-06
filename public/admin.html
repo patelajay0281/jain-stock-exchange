@@ -139,6 +139,30 @@ body.admin-page .safety-note{border-radius:9px}
 <a class="admin-nav-link" href="/insights.html">MARKET INTELLIGENCE</a>
 </div>
 </section>
+
+<section class="admin-panel" id="backupPanel">
+<div class="panel-head"><div><h2>Backup & failure recovery</h2><p>Every core transaction is captured inside Neon first. Google Sheets is the external mirror and never blocks trading.</p></div></div>
+<div class="event-overview" style="margin:0 0 12px">
+<div class="overview-card"><label>Backup records</label><strong id="backupTotal">—</strong><small>Captured in Neon</small></div>
+<div class="overview-card"><label>Pending mirror</label><strong id="backupPending">—</strong><small>Waiting for Google Sheets sync</small></div>
+<div class="overview-card"><label>Last backup ID</label><strong id="backupLast">—</strong><small>Monotonic recovery point</small></div>
+<div class="overview-card"><label>Mirror</label><strong id="backupMirror">READY</strong><small id="backupMirrorName">JSE Backend Backup</small></div>
+</div>
+<div class="admin-links">
+<button class="admin-nav-link" type="button" onclick="showBackupToken()">SHOW GOOGLE SHEETS SYNC TOKEN</button>
+<a class="admin-nav-link" href="https://github.com/patelajay0281/jain-stock-exchange/blob/main/backup/google-sheets-backup.gs" target="_blank" rel="noopener">OPEN GOOGLE SHEETS SCRIPT</a>
+<a class="admin-nav-link" href="/load-test.html">RUN 1,000 REQUEST TEST</a>
+</div>
+<div id="backupTokenBox" class="safety-note" style="display:none;word-break:break-all">Loading backup token…</div>
+</section>
+
+<section class="admin-panel" id="miAdminPanel">
+<div class="panel-head"><div><h2>Market Intelligence</h2><p>Hatchable-based Market Intelligence is available directly inside Event Admin.</p></div></div>
+<button class="admin-nav-link" type="button" id="openMiBtn" onclick="openMarketIntelligence()">OPEN LIVE MARKET INTELLIGENCE</button>
+<div id="miFrameWrap" style="display:none;margin-top:14px;border:1px solid #d8e0e9;border-radius:12px;overflow:hidden;background:#fff">
+<iframe id="miFrame" title="JSE Market Intelligence" style="display:block;width:100%;height:1100px;border:0" loading="lazy"></iframe>
+</div>
+</section>
 </div>
 
 <script>
@@ -192,6 +216,33 @@ function updateLiveClock(){
 setInterval(updateLiveClock,1000);
 updateLiveClock();
 
+async function loadBackupStatus(){
+ try{
+  const r=await fetch(A+'/backup-status',{cache:'no-store'});if(!r.ok)return;
+  const d=await r.json(),s=d.status||{},cfg=d.config||{};
+  document.querySelector('#backupTotal').textContent=Number(s.total_records||0).toLocaleString('en-IN');
+  document.querySelector('#backupPending').textContent=Number(s.pending_records||0).toLocaleString('en-IN');
+  document.querySelector('#backupLast').textContent=String(s.last_id||0);
+  document.querySelector('#backupMirrorName').textContent=cfg.sheet_name||'JSE Backend Backup';
+  document.querySelector('#backupMirror').textContent=cfg.enabled===false?'DISABLED':'READY';
+ }catch(_){}
+}
+async function showBackupToken(){
+ const box=document.querySelector('#backupTokenBox');
+ box.style.display='block';box.textContent='Loading sync token…';
+ try{
+  const r=await fetch(A+'/backup-config',{cache:'no-store'});const d=await r.json();
+  if(!r.ok)throw new Error(d.error||'Could not load backup configuration');
+  box.textContent='SYNC TOKEN: '+d.sync_token+'  |  Use this only in your private Google Apps Script.';
+ }catch(e){box.textContent=e.message||'Could not load backup configuration'}
+}
+function openMarketIntelligence(){
+ const wrap=document.querySelector('#miFrameWrap'),frame=document.querySelector('#miFrame'),btn=document.querySelector('#openMiBtn');
+ if(!frame.src)frame.src='/insights.html';
+ wrap.style.display='block';btn.textContent='REFRESH MARKET INTELLIGENCE';frame.contentWindow?.location?.reload?.();
+ wrap.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 async function load(){
  try{
   const r=await fetch(A+'/event',{cache:'no-store'});
@@ -211,6 +262,7 @@ async function load(){
   json.title=ready?'Download the raw JSON archive':'Available after FINALIZE EVENT';
   document.querySelector('#pauseBtn').textContent=currentStatus==='SETTLEMENT_ONLY'?'RESUME MARKET':'PAUSE MARKET';
   setMsg('Event state loaded. Administrator controls are active.','success');
+  await loadBackupStatus();
  }catch(e){setMsg(e.message||'Could not load event state','error')}
 }
 
