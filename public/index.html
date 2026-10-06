@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>JAIN STOCK EXCHANGE</title>
+  <link rel="stylesheet" href="/theme.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">JSE</span>
+        <span>
+          <strong>JAIN STOCK EXCHANGE</strong>
+          <small>MARKET • TRADE • SETTLE</small>
+        </span>
+      </a>
+      <div class="system-pill"><i></i><span id="systemStatus">CONNECTING</span></div>
+    </header>
+
+    <nav class="main-nav" aria-label="Primary">
+      <a class="active" href="/">Market</a>
+      <a href="/order.html">Create Order</a>
+      <a href="/orders.html">Order Tracking</a>
+      <a href="/portfolios.html">Portfolios</a>
+      <a href="/bank.html">Bank Settlement</a>
+      <a href="/exchange.html">Exchange Settlement</a>
+      <a href="/institutional.html">Institutional</a>
+      <a href="/admin.html">Admin</a>
+    </nav>
+
+    <main>
+      <section class="market-banner">
+        <div>
+          <span class="eyebrow">JSE MARKET DESK</span>
+          <h1>Jain Stock Exchange</h1>
+          <p>Participant trading terminal for the live event market.</p>
+        </div>
+        <div class="market-status">
+          <span>MARKET STATUS</span>
+          <strong id="marketStatus">READY</strong>
+        </div>
+      </section>
+
+      <section class="index-grid">
+        <article class="index-card primary">
+          <div>
+            <span class="card-label">CMS INDEX</span>
+            <strong id="cmsIndex">—</strong>
+            <small id="cmsChange">Awaiting market data</small>
+          </div>
+          <span class="badge neutral" id="cmsBadge">NEUTRAL</span>
+        </article>
+        <article class="stat-card">
+          <span class="card-label">LISTED SECURITIES</span>
+          <strong id="listedCount">12</strong>
+          <small>Initial market board</small>
+        </article>
+        <article class="stat-card">
+          <span class="card-label">MARKET MODE</span>
+          <strong id="marketMode">SIMULATION</strong>
+          <small>Event trading environment</small>
+        </article>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">MARKET WALL</span>
+            <h2>Listed Stocks</h2>
+          </div>
+          <span class="section-note">Indicative opening board</span>
+        </div>
+        <div id="marketWall" class="market-wall"></div>
+      </section>
+    </main>
+
+    <footer>JAIN STOCK EXCHANGE • CMS BUSINESS SCHOOL • BANGALORE</footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

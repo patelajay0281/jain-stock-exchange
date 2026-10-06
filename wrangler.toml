@@ -1,3 +1,7 @@
 name = "jain-stock-exchange"
 main = "src/index.js"
 compatibility_date = "2026-10-06"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
