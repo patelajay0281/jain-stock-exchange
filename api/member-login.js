@@ -34,7 +34,7 @@ export default async function(req,res){
     : password===String(account.initial_password||"");
   if(!valid) return res.status(401).json({error:"Invalid member account or password."});
 
-  await db.query("UPDATE member_accounts SET password_sha256=$1,updated_at=now() WHERE id=$2",[supplied,account.id]);
+  await db.query("UPDATE member_accounts SET password_sha256=$1,must_change_password=false,updated_at=now() WHERE id=$2",[supplied,account.id]);
 
   const raw=makeToken(), tokenHash=await sha256Hex(raw);
   await db.query("DELETE FROM member_sessions WHERE expires_at<now()");
