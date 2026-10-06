@@ -99,6 +99,10 @@ async function requestData(request) {
       body = await request.text().catch(()=>"");
     }
   }
+  const actorId=headers["x-jse-actor-id"]||"";
+  const actorEmail=headers["x-jse-actor-email"]||"";
+  const actorRole=headers["x-jse-actor-role"]||"participant";
+  const actorTeam=headers["x-jse-team"]||"";
   return {
     method: request.method,
     params: {},
@@ -106,7 +110,7 @@ async function requestData(request) {
     headers,
     cookies: cookies(headers.cookie || ""),
     body,
-    member: null,
+    member: actorEmail||actorId?{id:actorId||actorEmail,email:actorEmail||null,role:actorRole,team_code:actorTeam||null}:null,
     user: null,
     request
   };
