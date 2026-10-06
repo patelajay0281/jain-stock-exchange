@@ -4,17 +4,11 @@ let configuredUrl = null;
 let httpSql = null;
 
 function normalizeDatabaseUrl(connectionString) {
-  if (!connectionString) throw new Error("DATABASE_URL is not configured");
-  try {
-    const u = new URL(connectionString);
-    // The Neon serverless HTTP driver does not need libpq-only connection
-    // parameters such as channel_binding/sslmode; keep only the URI itself.
-    u.search = "";
-    u.hash = "";
-    return u.toString();
-  } catch {
-    throw new Error("DATABASE_URL is not a valid PostgreSQL URL");
-  }
+  const value=String(connectionString||"").trim().replace(/^["']|["']$/g,"");
+  if(!value) throw new Error("DATABASE_URL is not configured");
+  // Neon HTTP queries do not need libpq-only query parameters such as
+  // channel_binding or sslmode. Keep the PostgreSQL URI itself intact.
+  return value.split("?")[0].replace(/#.*$/,"");
 }
 
 function configure(connectionString) {
