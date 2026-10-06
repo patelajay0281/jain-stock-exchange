@@ -4,7 +4,11 @@ export const access="member";
 export const methods=["POST"];
 
 export default async function(req,res){
-  const team=String(req.body?.team||"");
+  const requestedTeam=String(req.body?.team||"");
+  const team=req.member?.role==="participant"
+    ? String(req.member?.team_code||"")
+    : requestedTeam;
+  const actorRole=String(req.member?.role||"participant");
   const assetType=String(req.body?.asset_type||"stock");
   const assetId=Number(req.body?.asset_id);
   const side=String(req.body?.side||"");
@@ -16,7 +20,7 @@ export default async function(req,res){
   const actorEmail=req.member?.email||null;
   const qty=assetType==="stock"?units*50:units;
 
-  if(!/^TEAM-\d{3}$/.test(team)||!["stock","ipo"].includes(assetType)||
+  if((actorRole==="participant"&&!req.member?.team_id)||!/^TEAM-\d{3}$/.test(team)||!["stock","ipo"].includes(assetType)||
      !Number.isSafeInteger(assetId)||!["BUY","SELL"].includes(side)||
      !Number.isSafeInteger(units)||units<=0||units>1000000||
      !Number.isFinite(price)||price<=0||price>10000000||
@@ -152,7 +156,7 @@ export default async function(req,res){
       {sql:`INSERT INTO audit_log(
                actor_id,actor_email,actor_role,action,order_id,team_id,details
              )
-             SELECT $1,$2,'participant','ORDER_CREATED',o.id,o.team_id,
+             SELECT $1,$2,$9::text,'ORDER_CREATED',o.id,o.team_id,
                     json_build_object(
                       'asset_type',$3::text,'asset_id',$4::bigint,'side',$5::text,
                       'quantity',o.quantity,'price',o.price,
@@ -161,7 +165,7 @@ export default async function(req,res){
                     )::text
              FROM orders o
              WHERE o.idempotency_key=$6 AND o.status='EXCHANGE_INTAKE'`,
-       params:[actorId,actorEmail,assetType,assetId,side,key]},
+       params:[actorId,actorEmail,assetType,assetId,side,key,qty,price,actorRole]},
       {sql:`UPDATE orders
              SET status='EXCHANGE_PENDING'
              WHERE idempotency_key=$1 AND status='EXCHANGE_INTAKE'
