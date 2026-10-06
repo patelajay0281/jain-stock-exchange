@@ -15,7 +15,7 @@
 
   async function pull(){
     try{
-      const r=await fetch("/api/realtime",{cache:"no-store"});
+      const r=await fetch("/api/realtime",{cache:"default"});
       if(!r.ok)return;
       const next=await r.json();
       const prev=lastState.realtime;
@@ -23,7 +23,7 @@
 
       if(!prev){
         try{
-          const er=await fetch("/api/event-status",{cache:"no-store"});
+          const er=await fetch("/api/event-status",{cache:"default"});
           if(er.ok){
             const d=await er.json();
             for(const x of d.approved_orders||[])lastState.approved.add(key(x.asset_type,x.asset_id)+":"+x.order_id);
@@ -40,7 +40,7 @@
       if(String(next.stock_updated_at)!==String(prev.stock_updated_at) ||
          String(next.ipo_updated_at)!==String(prev.ipo_updated_at)){
         try{
-          const mr=await fetch("/api/market",{cache:"no-store"});
+          const mr=await fetch("/api/market",{cache:"default"});
           if(mr.ok){
             const d=await mr.json();
             const combined=[...(d.stocks||[]).map(x=>({...x,_assetType:"stock"})),...(d.ipos||[]).map(x=>({...x,_assetType:"ipo"}))];
@@ -60,7 +60,7 @@
       if(Number(next.max_action_id||0)>Number(prev.max_action_id||0) ||
          Number(next.max_audit_id||0)>Number(prev.max_audit_id||0)){
         try{
-          const er=await fetch("/api/event-status",{cache:"no-store"});
+          const er=await fetch("/api/event-status",{cache:"default"});
           if(er.ok){
             const d=await er.json();
             for(const x of d.approved_orders||[]){
