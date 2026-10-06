@@ -86,28 +86,12 @@ export const admin = {
   }
 };
 
-async function sha256Hex(value){
-  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(value)));
-  return Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,"0")).join("");
-}
+import { verifyMember } from "./session.js";
 
 export async function memberFromRequest(req){
-  const raw=req.cookies?.jse_member||"";
-  if(!raw)return null;
   try{
-    const tokenHash=await sha256Hex(raw);
-    const q=await db.query(`
-      SELECT m.id,m.username,m.display_name,m.role,m.team_id,t.code AS team_code,m.active
-      FROM member_sessions s
-      JOIN member_accounts m ON m.id=s.member_id
-      LEFT JOIN teams t ON t.id=m.team_id
-      WHERE s.token_sha256=$1 AND s.expires_at>now() AND m.active=true
-      LIMIT 1
-    `,[tokenHash]);
-    const m=q.rows[0];
-    if(!m)return null;
-    return {id:m.username,email:m.username,username:m.username,display_name:m.display_name,role:m.role,team_id:m.team_id,team_code:m.team_code};
-  }catch(_){return null;}
+    return await verifyMember(req.cookies?.jse_member||"");
+  }catch(_){return null}
 }
 
 export const auth = {
