@@ -11,5 +11,5 @@ export default async function(req,res){
  if(!m)return res.status(401).json({error:"Invalid participant account or access code"});
  const token=await issueMember(m);
  res.setHeader("set-cookie",setMemberCookie(token));
- res.json({ok:true,member:{username:m.username,display_name:m.display_name,team:m.team_code,email:m.email||null}});
+ res.json({ok:true,member:{username:m.username,display_name:m.display_name,team:m.team_code,email:m.email||m.username}});
 }
