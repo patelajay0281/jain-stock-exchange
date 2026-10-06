@@ -2,9 +2,6 @@ import { db } from "../lib/hatchable.js";
 export const access="admin";
 export const methods=["POST"];
 export default async function(req,res){
- const password=String(req.body?.password||"");
- const expected=String(process.env.EVENT_ADMIN_PASSWORD||"");
- if(password!==expected) return res.status(401).json({error:"Invalid reset password"});
  await db.transaction([
   {sql:"DELETE FROM cash_ledger",params:[]},
   {sql:"DELETE FROM audit_log",params:[]},
@@ -24,6 +21,6 @@ export default async function(req,res){
   {sql:"DELETE FROM daily_order_counters",params:[]},
   {sql:"INSERT INTO event_control(id,status) VALUES(1,'NOT_STARTED') ON CONFLICT(id) DO UPDATE SET status='NOT_STARTED',updated_at=now()",params:[]}
  ]);
- await db.query("INSERT INTO audit_log(actor_id,actor_email,actor_role,action,details) VALUES($1,$2,'admin','EVENT_RESET','Reset authenticated with reset password')",[req.member?.id||"admin",req.member?.email||null]);
+ await db.query("INSERT INTO audit_log(actor_id,actor_email,actor_role,action,details) VALUES($1,$2,'admin','EVENT_RESET','Reset authenticated with administrator session')",[req.member?.id||"admin",req.member?.email||null]);
  res.json({status:"NOT_STARTED",reset:true});
 }
