@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JSE Load Test</title><link rel="stylesheet" href="/theme.css"><style>
+body{background:#f3f6f9;color:#172033}.wrap{max-width:1100px;margin:auto;padding:24px}.panel{background:#fff;border:1px solid #d8e0e9;border-radius:14px;padding:20px;margin-top:16px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{padding:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px}.metric span{display:block;font-size:10px;color:#667085;text-transform:uppercase}.metric b{display:block;margin-top:5px;font-size:23px}.btn{height:44px;padding:0 18px;border:0;border-radius:8px;background:#172b4d;color:#fff;font-weight:800}.btn:disabled{opacity:.5}.bar{height:12px;background:#e8edf3;border-radius:99px;overflow:hidden}.fill{height:100%;width:0;background:#1a7f4b;transition:width .15s}.small{font-size:11px;color:#667085;line-height:1.5}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style></head><body><div class="wrap"><header class="brand">JAIN STOCK EXCHANGE</header><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/admin.html">Event Admin</a></nav>
+<section class="panel"><h1 style="margin:0 0 6px">System Load Test</h1><p class="small">Read-only stress test against the consolidated market endpoint. Default profile: 25 client streams × 4 requests/second × 10 seconds = 1,000 requests.</p><p class="small"><b>This measures HTTP/database-backed throughput from your browser; it does not alter event data.</b></p><button id="run" class="btn">RUN 1,000-REQUEST TEST</button><span id="status" class="small" style="margin-left:12px">Ready</span></section>
+<section class="panel"><div class="bar"><div id="fill" class="fill"></div></div><div class="grid" style="margin-top:14px"><div class="metric"><span>Requests</span><b id="total">0 / 1000</b></div><div class="metric"><span>Successful</span><b id="ok">0</b></div><div class="metric"><span>Failed</span><b id="fail">0</b></div><div class="metric"><span>Throughput</span><b id="rps">0 req/s</b></div><div class="metric"><span>Average</span><b id="avg">0 ms</b></div><div class="metric"><span>P95</span><b id="p95">0 ms</b></div></div></section>
+<section class="panel"><h2 style="margin-top:0;font-size:15px">Interpretation</h2><div id="result" class="small">Run the test after deployment. A clean run should complete all 1,000 requests with 0 failures. Record the throughput and p95 shown here.</div></section></div>
+<script>
+const URL_PATH="/api/market",CLIENTS=25,RPS=4,SECONDS=10,TOTAL=CLIENTS*RPS*SECONDS;
+const $=id=>document.getElementById(id),pause=ms=>new Promise(r=>setTimeout(r,ms));
+let running=false;
+function pct(n){return Math.min(100,n/TOTAL*100)}
+function pctl(a,p){return a[Math.min(a.length-1,Math.floor(p/100*a.length))]||0}
+async function hit(samples){
+ const t=performance.now();
+ try{const r=await fetch(URL_PATH,{cache:"no-store"});await r.arrayBuffer();samples.push(performance.now()-t);return r.ok}
+ catch(e){samples.push(performance.now()-t);return false}
+}
+async function run(){
+ if(running)return;running=true;$("run").disabled=true;$("status").textContent="Running…";$("result").textContent="Sending 100 requests per second for 10 seconds.";
+ let ok=0,fail=0,samples=[],done=0;const start=performance.now();
+ for(let sec=0;sec<SECONDS;sec++){
+  const tick=performance.now(),batch=[];
+  for(let c=0;c<CLIENTS;c++)for(let n=0;n<RPS;n++)batch.push(hit(samples));
+  const res=await Promise.all(batch);
+  ok+=res.filter(Boolean).length;fail+=res.length-ok-(done-ok);done+=res.length;
+  $("total").textContent=done+" / "+TOTAL;$("ok").textContent=ok;$("fail").textContent=fail;$("fill").style.width=pct(done)+"%";
+  const e=performance.now()-start;$("rps").textContent=(done/(e/1000)).toFixed(2)+" req/s";
+  if(sec<SECONDS-1)await pause(Math.max(0,1000-(performance.now()-tick)));
+ }
+ samples.sort((a,b)=>a-b);const e=(performance.now()-start)/1000,avg=samples.reduce((a,b)=>a+b,0)/samples.length,p95=pctl(samples,.95);
+ $("rps").textContent=(done/e).toFixed(2)+" req/s";$("avg").textContent=avg.toFixed(2)+" ms";$("p95").textContent=p95.toFixed(2)+" ms";
+ $("status").textContent=fail===0&&done===TOTAL?"PASS":"CHECK ERRORS";
+ $("result").textContent=fail===0&&done===TOTAL?"PASS — 1,000 requests completed with zero failures. Compare throughput/p95 with the event target.":"FAIL — one or more requests failed. Do not use the event setup until the error rate is investigated.";
+ $("run").disabled=false;running=false;
+}
+$("run").onclick=run;
+</script></body></html>
