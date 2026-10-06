@@ -162,7 +162,7 @@ async function loginAdmin(){
  if(!password){msg.textContent='Enter the administrator password.';return;}
  btn.disabled=true; msg.textContent='Signing in…';
  try{
-   const r=await fetch(A+'/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+   const r=await fetch(A+'/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
    const d=await r.json().catch(()=>({}));
    if(!r.ok) throw new Error(d.error||'Administrator login failed.');
    window.location.reload();
@@ -247,9 +247,8 @@ async function historyAction(action){
 
 async function resetEvent(){
  if(!confirm('RESET EVENT will clear event transactions, holdings, ledgers, commissions and order history, restore starting balances, and restore every share to its permanent BASE PRICE. IPO prices also return to their base prices. Continue?'))return;
- const password=null;
  try{
-  const r=await fetch(A+'/reset-event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+  const r=await fetch(A+'/reset-event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
   const d=await r.json().catch(()=>({}));
   if(!r.ok){setMsg(d.error||'Reset failed','error');return}
   setMsg('Event reset successfully.','success');
