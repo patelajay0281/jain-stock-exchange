@@ -33,6 +33,7 @@ import memberLogout from "../api/member-logout.js";
 import memberMe from "../api/member-me.js";
 import memberAccounts from "../api/member-accounts.js";
 import perfTx from "../api/perf-tx.js";
+import perfDb from "../api/perf-db.js";
 import { configureRuntime, db, memberFromRequest } from "./hatchable-compat.js";
 
 const routes = {
@@ -70,7 +71,8 @@ const routes = {
   "/api/member-logout": memberLogout,
   "/api/member-me": memberMe,
   "/api/member-accounts": memberAccounts,
-  "/api/perf-tx": perfTx
+  "/api/perf-tx": perfTx,
+  "/api/perf-db": perfDb
 };
 
 function cookies(header = "") {
