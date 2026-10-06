@@ -3,6 +3,7 @@ export const access="public";
 export const methods=["GET","POST"];
 const MIN=20000,RATE=.02,rupee=n=>Math.round(Number(n||0));
 export default async function(req,res){
+ const actorId=req.member?.id||"loan",actorEmail=req.member?.email||null,actorRole=req.member?.role||"loan";
  const teamCode=String(req.body?.team||req.query?.team||"").trim();
  if(!/^TEAM-\d{3}$/.test(teamCode))return res.status(400).json({error:"Invalid team"});
  const team=(await db.query("SELECT id,code,total_cash,available_cash FROM teams WHERE code=$1",[teamCode])).rows[0];
@@ -26,6 +27,8 @@ export default async function(req,res){
    {sql:"UPDATE participant_loans SET principal_due=principal_due+$1,interest_due=interest_due+$2,interest_rate=$3,status='OUTSTANDING',updated_at=now() WHERE team_id=$4 AND principal_due=$5 AND interest_due=$6",params:[amount,interest,rate,team.id,loan.principal_due,loan.interest_due]},
    {sql:"INSERT INTO cash_ledger(team_id,entry_type,credit,balance_after,note) VALUES($1,'LOAN_WITHDRAWAL',$2,$3,'Participant loan withdrawal')",params:[team.id,amount,newCash]}
   ]);
+  await db.query("INSERT INTO audit_log(actor_id,actor_email,actor_role,action,team_id,details) VALUES($1,$2,$3,'LOAN_WITHDRAWAL',$4,$5)",
+    [actorId,actorEmail,actorRole,team.id,JSON.stringify({amount,interest_charged:interest,available_cash:newCash})]);
   return res.json({status:"OUTSTANDING",team:team.code,withdrawn:amount,interest_charged:interest,available_cash:newCash,principal_due:newPrincipal,interest_due:newInterest,total_due:newPrincipal+newInterest});
  }
  const principal=rupee(loan.principal_due),interest=rupee(loan.interest_due),outstanding=principal+interest,maxPayable=Math.max(0,rupee(team.available_cash)-MIN);
@@ -42,5 +45,7 @@ export default async function(req,res){
   {sql:"INSERT INTO cash_ledger(team_id,entry_type,debit,balance_after,note) VALUES($1,'LOAN_INTEREST_REPAYMENT',$2,$3,'Loan interest repayment collected first')",params:[team.id,interestPay,newBalance+principalPay]},
   {sql:"INSERT INTO cash_ledger(team_id,entry_type,debit,balance_after,note) VALUES($1,'LOAN_PRINCIPAL_REPAYMENT',$2,$3,'Loan principal repayment after interest')",params:[team.id,principalPay,newBalance]}
  ]);
+ await db.query("INSERT INTO audit_log(actor_id,actor_email,actor_role,action,team_id,details) VALUES($1,$2,$3,'LOAN_REPAYMENT',$4,$5)",
+   [actorId,actorEmail,actorRole,team.id,JSON.stringify({amount,interest_paid:interestPay,principal_paid:principalPay,available_cash:newBalance})]);
  return res.json({status,team:team.code,paid_total:amount,interest_paid:interestPay,principal_paid:principalPay,available_cash:newBalance,interest_due:nextInterest,principal_due:newPrincipal,total_due:newPrincipal+nextInterest});
 }
