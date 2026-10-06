@@ -180,12 +180,18 @@ export async function handleApi(request, env) {
   if (url.pathname === "/api/health") {
     try {
       const result = await db.query("SELECT NOW() AS server_time, current_database() AS database_name");
+      let transaction_test=null;
+      if(url.searchParams.get("tx")==="1"){
+        const tx=await db.transaction([{sql:"SELECT 1 AS transaction_ok",params:[]}]);
+        transaction_test=tx.results?.[0]?.rows?.[0]?.transaction_ok===1;
+      }
       return Response.json({
         status: "ok",
         service: "JAIN STOCK EXCHANGE",
         database: "connected",
         server_time: result.rows[0].server_time,
-        database_name: result.rows[0].database_name
+        database_name: result.rows[0].database_name,
+        transaction_test
       }, {headers: {"cache-control": "no-store"}});
     } catch (error) {
       return Response.json({
