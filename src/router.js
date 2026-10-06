@@ -32,6 +32,10 @@ import memberAccounts from "../api/member-accounts.js";
 import memberLogin from "../api/member-login.js";
 import memberMe from "../api/member-me.js";
 import memberLogout from "../api/member-logout.js";
+import backupLedger from "../api/backup-ledger.js";
+import backupAck from "../api/backup-ack.js";
+import backupStatus from "../api/backup-status.js";
+import backupConfig from "../api/backup-config.js";
 import { configureRuntime, db, memberFromRequest } from "./hatchable-compat.js";
 
 const routes = {
@@ -68,7 +72,11 @@ const routes = {
   "/api/member-accounts": memberAccounts,
   "/api/member-login": memberLogin,
   "/api/member-me": memberMe,
-  "/api/member-logout": memberLogout
+  "/api/member-logout": memberLogout,
+  "/api/backup-ledger": backupLedger,
+  "/api/backup-ack": backupAck,
+  "/api/backup-status": backupStatus,
+  "/api/backup-config": backupConfig
 };
 
 function cookies(header = "") {
