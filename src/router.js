@@ -103,6 +103,10 @@ async function requestData(request) {
   const actorEmail=headers["x-jse-actor-email"]||"";
   const actorRole=headers["x-jse-actor-role"]||"participant";
   const actorTeam=headers["x-jse-team"]||"";
+  let member=actorEmail||actorId?{id:actorId||actorEmail,email:actorEmail||null,role:actorRole,team_code:actorTeam||null}:null;
+  if(!member && cookies(headers.cookie || "").jse_member){
+    member=await verifyMember(cookies(headers.cookie || "").jse_member);
+  }
   return {
     method: request.method,
     params: {},
@@ -110,7 +114,7 @@ async function requestData(request) {
     headers,
     cookies: cookies(headers.cookie || ""),
     body,
-    member: actorEmail||actorId?{id:actorId||actorEmail,email:actorEmail||null,role:actorRole,team_code:actorTeam||null}:null,
+    member,
     user: null,
     request
   };
@@ -209,6 +213,9 @@ export async function handleApi(request, env) {
 
   if (Array.isArray(handler.methods) && !handler.methods.includes(request.method)) {
     return Response.json({error:"Method not allowed"},{status:405});
+  }
+  if (access === "member" && request.method === "POST" && !req.member) {
+    return Response.json({error:"Participant access required. Open Create Order and sign in."},{status:401});
   }
 
   const res = new ResponseAdapter();
