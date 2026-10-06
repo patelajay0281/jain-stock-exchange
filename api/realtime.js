@@ -1,4 +1,4 @@
-import { db } from "hatchable";
+import { db } from "../src/hatchable-compat.js";
 export const access="public";
 export const methods=["GET"];
 
