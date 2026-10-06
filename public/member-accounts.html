@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JSE Member Accounts</title><link rel="stylesheet" href="/theme.css">
+<style>
+.accounts-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin:20px 0 16px}
+.accounts-actions{display:flex;gap:8px;flex-wrap:wrap}.accounts-actions button{border:1px solid #cfd7e3;background:#fff;border-radius:8px;padding:9px 13px;font-weight:850;cursor:pointer}.accounts-actions .primary{background:#17314f;color:#fff;border-color:#17314f}
+.accounts-note{padding:11px 13px;border:1px solid #e8d69a;background:#fff9e8;border-radius:9px;color:#765b00;font-size:10px;line-height:1.5;margin-bottom:14px}
+.table-wrap{overflow:auto;background:#fff;border:1px solid #dde4ed;border-radius:12px}.acct-table{width:100%;border-collapse:collapse;min-width:860px}.acct-table th{background:#f6f8fb;color:#58677a;font-size:10px;text-transform:uppercase;padding:10px;text-align:left;white-space:nowrap}.acct-table td{padding:10px;border-top:1px solid #edf0f4;font-size:11px;white-space:nowrap}.acct-table td strong{color:#17314f}.pw{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+#msg{min-height:18px;font-size:10px;color:#667085;margin:10px 0}
+@media(max-width:700px){.accounts-head{align-items:flex-start;flex-direction:column}}
+</style></head><body>
+<div class="shell page">
+<header class="brand">JAIN STOCK EXCHANGE</header>
+<nav class="site-nav">
+<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a class="active" href="/member-accounts.html">Member Accounts</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a>
+</nav>
+<div class="accounts-head"><div><h1 style="margin-bottom:5px">Member Accounts</h1><p style="margin:0;color:#667085">Generate and distribute the event login accounts.</p></div><div class="accounts-actions"><button class="primary" onclick="downloadCsv()">DOWNLOAD CSV</button><button onclick="load()">REFRESH</button></div></div>
+<div class="accounts-note">Keep this page restricted to the event administrator. The CSV contains initial passwords. Each account is tied to one team (A/B) or a JSE operations role.</div>
+<div id="msg">Loading accounts…</div><div id="app"></div>
+</div>
+<script>
+async function load(){
+ const msg=document.querySelector("#msg"),app=document.querySelector("#app");msg.textContent="Loading accounts…";
+ try{
+  const r=await fetch("/api/member-accounts",{cache:"no-store"}),d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||"Administrator access required.");
+  window.accounts=d.accounts||[];
+  msg.textContent=window.accounts.length+" accounts ready.";
+  app.innerHTML='<div class="table-wrap"><table class="acct-table"><thead><tr><th>Username</th><th>Display Name</th><th>Role</th><th>Team</th><th>Initial Password</th><th>Active</th></tr></thead><tbody>'+
+  window.accounts.map(x=>'<tr><td><strong>'+esc(x.username)+'</strong></td><td>'+esc(x.display_name)+'</td><td>'+esc(x.role)+'</td><td>'+esc(x.team_code||"—")+'</td><td class="pw">'+esc(x.initial_password)+'</td><td>'+((x.active)?'YES':'NO')+'</td></tr>').join("")+
+  '</tbody></table></div>';
+ }catch(e){msg.textContent=e.message||"Unable to load member accounts.";app.innerHTML=""}
+}
+function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;")}
+function downloadCsv(){location.href="/api/member-accounts?format=csv"}
+load();
+</script></body></html>
