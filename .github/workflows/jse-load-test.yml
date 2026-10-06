@@ -11,6 +11,22 @@ jobs:
       - name: Wait for Cloudflare deploy
         run: sleep 45
 
+      - name: Verify public Worker connectivity
+        env:
+          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
+        run: |
+          set -o pipefail
+          curl -sS -D /tmp/headers.txt --max-time 20 "$BASE_URL/api/health" -o /tmp/body.txt || true
+          echo "=== HEADERS ==="
+          cat /tmp/headers.txt || true
+          echo "=== BODY ==="
+          cat /tmp/body.txt || true
+          node - <<'NODE'
+          fetch(process.env.BASE_URL+'/api/realtime?connectivity=1',{cache:'no-store'})
+            .then(async r=>console.log(JSON.stringify({status:r.status,body:(await r.text()).slice(0,1000)})))
+            .catch(e=>{console.error('FETCH_ERROR',e?.stack||e);process.exit(1)})
+          NODE
+
       - name: Run 1000 request probe
         env:
           BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
@@ -42,6 +58,8 @@ jobs:
           const elapsed=Date.now()-started;
           const ok=results.filter(x=>x.status===200);
           const failed=results.length-ok.length;
+          const statusCounts=Object.fromEntries([...new Set(results.map(x=>x.status))].map(s=>[String(s),results.filter(x=>x.status===s).length]));
+          const sampleErrors=results.filter(x=>x.error).slice(0,5).map(x=>x.error);
           const sorted=ok.map(x=>x.ms).sort((a,b)=>a-b);
           const pct=p=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))]||0;
           const rps=total/(elapsed/1000);
@@ -56,7 +74,9 @@ jobs:
             operations_per_10_seconds:Number((rps*10).toFixed(2)),
             p50_ms:Number(pct(.50).toFixed(2)),
             p95_ms:Number(pct(.95).toFixed(2)),
-            p99_ms:Number(pct(.99).toFixed(2))
+            p99_ms:Number(pct(.99).toFixed(2)),
+            status_counts:statusCounts,
+            sample_errors:sampleErrors
           },null,2));
 
           if(failed>0 || elapsed>10000){
