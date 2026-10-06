@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audit Log</title>
+<link rel="stylesheet" href="/theme.css">
+<style>
+.audit-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px}
+.audit-sub{margin:0;color:#5d6b7d}
+.audit-tools{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.audit-tools button{border:1px solid #d7dee8;background:#fff;color:#17314f;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer}
+.audit-tools button.active{background:#17314f;color:#fff;border-color:#17314f}
+.audit-search{margin-left:auto;min-width:250px;border:1px solid #d7dee8;border-radius:8px;padding:9px 12px;font:inherit}
+.audit-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.audit-stat{background:#fff;border:1px solid #e1e7ef;border-radius:10px;padding:14px 16px}
+.audit-stat .n{font-size:24px;font-weight:800;color:#17314f}
+.audit-stat .l{font-size:12px;color:#68778a;margin-top:3px}
+.audit-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff}
+.audit-table th{background:#f5f7fa;color:#566477;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:11px 10px;border-bottom:1px solid #dfe5ed;white-space:nowrap}
+.audit-table td{padding:11px 10px;border-bottom:1px solid #edf0f4;vertical-align:top;font-size:13px}
+.audit-table tr:hover td{background:#fafbfd}
+.time{white-space:nowrap;color:#667487;font-size:12px}
+.order-ref{font-weight:800;color:#17314f}
+.team-ref{font-weight:700}
+.asset-name{font-weight:800}
+.asset-symbol{font-size:11px;color:#718096;margin-top:2px}
+.trade{font-weight:800}
+.buy{color:#18864b}.sell{color:#c0392b}
+.value{white-space:nowrap}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+.badge-order{background:#eef4ff;color:#2459a6}.badge-approve{background:#eaf8f0;color:#187345}.badge-reject{background:#fff0f0;color:#b52f2f}.badge-event{background:#f1f3f6;color:#5c6877}
+.detail{color:#566477;line-height:1.4}
+.risk{display:inline-block;padding:6px 9px;border-radius:7px;font-size:10px;font-weight:900;line-height:1.25;white-space:nowrap}
+.risk-danger{background:#fff0f0;color:#b42318;border:1px solid #f4c7c3}
+.risk-warning{background:#fff7e6;color:#9a6700;border:1px solid #f0d59a}
+.risk-clear{color:#718096;font-size:11px;font-weight:700}
+.empty{padding:28px;text-align:center;color:#667487}
+@media(max-width:900px){.audit-stats{grid-template-columns:repeat(2,1fr)}.audit-search{margin-left:0;width:100%}.audit-table{min-width:980px}.table-wrap{overflow:auto}}
+</style>
+</head>
+<body>
+<div class="shell page">
+<header class="brand">JAIN STOCK EXCHANGE</header>
+<nav class="site-nav">
+<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a class="admin-only-link" href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a>
+</nav>
+
+<div class="audit-head">
+  <div>
+    <h1 style="margin-bottom:6px">Audit Log</h1>
+    <p class="audit-sub">A clear record of what happened in the exchange, who did it, and which order or team was affected.</p>
+  </div>
+</div>
+
+<div id="stats" class="audit-stats"></div>
+<div class="audit-tools">
+  <button class="active" data-filter="ALL">All Activity</button>
+  <button data-filter="ORDER">Orders</button>
+  <button data-filter="EXCHANGE">Exchange</button>
+  <button data-filter="EVENT">Event</button>
+  <input id="search" class="audit-search" placeholder="Search order, team, stock, or action…">
+</div>
+<div id="app"><p>Loading…</p></div>
+</div>
+
+<script>
+const A=window.__HATCHABLE__.api;
+let rows=[],filter="ALL",query="";
+const esc=v=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+
+function parsed(x){
+  try{return typeof x==="string"?JSON.parse(x):x||{}}catch{return{}}
+}
+function time(v){
+  const d=new Date(v);
+  if(Number.isNaN(d.getTime())) return esc(v);
+  return d.toLocaleString("en-IN",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+}
+function category(x){
+  if(x.action.startsWith("ORDER_")) return "ORDER";
+  if(x.action.startsWith("EXCHANGE_")) return "EXCHANGE";
+  if(x.action.startsWith("EVENT_")) return "EVENT";
+  return "OTHER";
+}
+function badge(x){
+  const c=category(x);
+  const cls=x.action.includes("REJECT")?"badge-reject":x.action==="EXCHANGE_APPROVED"?"badge-approve":c==="EVENT"?"badge-event":"badge-order";
+  return '<span class="badge '+cls+'">'+esc(x.action_label)+'</span>';
+}
+function asset(x){
+  if(x.asset_name) return '<div class="asset-name">'+esc(x.asset_name)+'</div><div class="asset-symbol">'+esc(x.asset_symbol||"")+' · '+esc(x.asset_type||"")+'</div>';
+  const d=parsed(x.details);
+  if(d.asset_id) return '<div class="asset-name">'+esc((d.asset_type||"Asset").toUpperCase())+' #'+esc(d.asset_id)+'</div>';
+  return '<span style="color:#8a95a3">—</span>';
+}
+function details(x){
+  const d=parsed(x.details);
+  if(x.action==="ORDER_CREATED"){
+    return esc((x.side||d.side||"").toUpperCase()+" order for "+(x.quantity||d.quantity||0)+" shares at ₹"+Number(x.price||d.price||0).toLocaleString("en-IN"));
+  }
+  if(x.action==="EXCHANGE_APPROVED"){
+    return '<span class="detail">Approved by Exchange and released to Bank Settlement.</span>';
+  }
+  if(x.action==="EXCHANGE_REJECTED"){
+    return '<span class="detail">Rejected by Exchange.</span>';
+  }
+  if(x.action==="EVENT_START") return '<span class="detail">Trading event was started.</span>';
+  if(x.action==="EVENT_RESET") return '<span class="detail">Event data was reset for a new session.</span>';
+  return '<span class="detail">'+esc(typeof x.details==="string"?x.details:JSON.stringify(d))+'</span>';
+}
+function visible(){
+  const q=query.trim().toLowerCase();
+  return rows.filter(x=>{
+    const ok=filter==="ALL"||category(x)===filter;
+    const hay=[x.action_label,x.action,x.order_code,x.team_code,x.asset_name,x.asset_symbol,x.actor_role,x.details].join(" ").toLowerCase();
+    return ok&&(!q||hay.includes(q));
+  });
+}
+function render(){
+  const v=visible();
+  document.querySelector("#stats").innerHTML=[
+    ["Total Entries",rows.length],
+    ["Orders Placed",rows.filter(x=>x.action==="ORDER_CREATED").length],
+    ["Exchange Approved",rows.filter(x=>x.action==="EXCHANGE_APPROVED").length],
+    ["Event Actions",rows.filter(x=>x.action.startsWith("EVENT_")).length]
+  ].map(s=>'<div class="audit-stat"><div class="n">'+s[1]+'</div><div class="l">'+s[0]+'</div></div>').join("");
+  if(!v.length){document.querySelector("#app").innerHTML='<div class="empty">No activity matches your filter.</div>';return}
+  document.querySelector("#app").innerHTML='<div class="table-wrap"><table class="audit-table"><thead><tr><th>Date / Time</th><th>User Email</th><th>Activity</th><th>Order</th><th>Team</th><th>Asset</th><th>Trade</th><th>Value</th><th>Risk / Exception</th><th>What Happened</th></tr></thead><tbody>'+
+  v.map(x=>{
+    const side=(x.side||parsed(x.details).side||"").toUpperCase();
+    const qty=x.quantity||parsed(x.details).quantity||"";
+    const value=x.trade_value?Number(x.trade_value).toLocaleString("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}):"—";
+    const risk=x.risk_label?'<span class="risk '+(x.risk_level==="danger"?"risk-danger":"risk-warning")+'">⚠ '+esc(x.risk_label)+'</span>':'<span class="risk-clear">CLEAR</span>';
+    return '<tr><td class="time">'+time(x.created_at)+'</td><td class="time">'+esc(x.actor_email||'SYSTEM')+'</td><td>'+badge(x)+'</td><td class="order-ref">'+(x.order_code?"#"+esc(x.order_code):"—")+'</td><td class="team-ref">'+esc(x.team_code||"—")+'</td><td>'+asset(x)+'</td><td class="trade '+(side==="BUY"?"buy":side==="SELL"?"sell":"")+'">'+(side?(esc(side)+" · "+esc(qty)+" shares"):"—")+'</td><td class="value">'+value+'</td><td>'+risk+'</td><td>'+details(x)+'</td></tr>';
+  }).join("")+'</tbody></table></div>';
+}
+document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-filter]").forEach(z=>z.classList.remove("active"));b.classList.add("active");filter=b.dataset.filter;render()}));
+document.querySelector("#search").addEventListener("input",e=>{query=e.target.value;render()});
+fetch(A+"/audit").then(async r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{rows=d.rows||[];render()}).catch(()=>document.querySelector("#app").innerHTML='<div class="empty">Unable to load the audit log. Please sign in with a collaborator account.</div>');
+</script>
+<script src="/admin-nav.js"></script></body>
+</html>

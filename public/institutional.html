@@ -1,0 +1,57 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Institutional Investor</title><link rel="stylesheet" href="/theme.css"></head>
+<body class="institutional-page"><div class="shell page">
+<header class="brand">JAIN STOCK EXCHANGE</header>
+<nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/insights.html">Market Intelligence</a><a class="admin-only-link" href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a></nav>
+
+<div class="inst-heading"><div><h1>Institutional Investor</h1><p>Institutional desk with its actual available cash and settled holdings. Participant teams are the trading counterparties.</p></div><div class="inst-badge">INSTITUTIONAL DESK</div></div>
+
+<section class="inst-account">
+<div><span>Investor</span><strong id="investorName">—</strong></div>
+<div><span>Available Cash</span><strong id="availableCash">—</strong></div>
+<div><span>Portfolio Market Value</span><strong id="portfolioValue">—</strong></div>
+<div><span>Unrealised P/L</span><strong id="pnl">—</strong></div>
+<div><span>Settled Positions</span><strong id="holdingCount">—</strong></div>
+</section>
+
+<section class="grid" id="stats"></section>
+
+<section class="inst-trade card"><div class="section-head"><div><h2>Place Institutional Order</h2><p>Order → Exchange approval → Bank settlement.</p></div><div class="order-flow"><span>1 ORDER</span><i>→</i><span>2 EXCHANGE</span><i>→</i><span>3 BANK</span></div></div>
+<form id="trade">
+<label>Participant Team (Counterparty)<select id="team" aria-label="Participant Team"></select></label>
+<label>Asset Type<select id="type"><option value="stock">Listed Stock</option><option value="ipo">IPO</option></select></label>
+<label>Asset<select id="asset"></select></label>
+<label>Side<select id="side"><option>BUY</option><option>SELL</option></select></label>
+<label>Quantity (Shares)<input id="qty" type="number" min="50" step="50" value="50"><small id="qtyHint">Listed stocks: multiples of 50 shares.</small></label>
+<label>Price<input id="price" type="number" min="0.01" step="0.01" inputmode="decimal"></label>
+<div class="inst-trade-value"><span>TRADE VALUE</span><strong id="tradeValue">₹0</strong></div>
+<button id="submitOrder" type="submit">SUBMIT ORDER</button>
+<div id="counterpartyNote" class="inst-counterparty-note"></div><div id="msg"></div>
+</form></section>
+
+<section class="inst-section"><div class="section-title"><h2>Portfolio</h2><span>Settled positions only</span></div>
+<div class="table-wrap"><table><thead><tr><th>Asset</th><th>Quantity</th><th>Average Price</th><th>Current Price</th><th>Market Value</th><th>P/L</th></tr></thead><tbody id="holdings"></tbody></table></div></section>
+
+<section class="inst-section"><div class="section-title"><h2>Order Status</h2><span>Latest 100 institutional orders</span></div>
+<div class="table-wrap"><table><thead><tr><th>Order</th><th>Counterparty</th><th>Asset</th><th>Side</th><th>Qty</th><th>Price</th><th>Value</th><th>Status</th></tr></thead><tbody id="orders"></tbody></table></div></section>
+</div>
+<script>
+const A=window.__HATCHABLE__.api,$=id=>document.getElementById(id);let stocks=[],ipos=[],investorId=null;
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+async function json(path,opts){const r=await fetch(A+path,opts);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
+function renderStats(s){$('stats').innerHTML='<div class="card"><b>Pending Exchange</b><h2>'+s.pending+'</h2></div><div class="card"><b>Settled Orders</b><h2>'+s.settled+'</h2></div><div class="card"><b>Institutional BUY Value</b><h2>'+money(s.buy_value)+'</h2></div><div class="card"><b>Institutional SELL Value</b><h2>'+money(s.sell_value)+'</h2></div><div class="card"><b>Net Institutional Flow</b><h2 class="'+(s.net_flow>=0?'up':'down')+'">'+money(s.net_flow)+'</h2></div><div class="card"><b>Total Orders</b><h2>'+s.total+'</h2></div>'}
+function renderAssets(){const isIpo=$('type').value==='ipo',list=isIpo?ipos:stocks;$('asset').innerHTML=list.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');$('qty').min=isIpo?'1':'50';$('qty').step=isIpo?'1':'50';$('qty').value=isIpo?'1':'50';$('qtyHint').textContent=isIpo?'IPO: any whole-share quantity.':'Listed stocks: quantity must be a multiple of 50 shares.';if(list[0]){$('price').value=Number(list[0].price||0);updateCalc()}}
+function updateCalc(){$('tradeValue').textContent=money(Number($('qty').value||0)*Number($('price').value||0))}
+function updateCounterparty(){$('counterpartyNote').textContent=$('side').value==='BUY'?'BUY = selected team sells to the institutional investor.':'SELL = selected team buys from the institutional investor.'}
+async function loadPortfolio(){
+ const d=await json('/institutional-portfolio?investor_id='+investorId),h=d.holdings||[];
+ $('investorName').textContent=d.investor.code+' — '+d.investor.name;$('availableCash').textContent=money(d.investor.available_cash);$('portfolioValue').textContent=money(d.stats.market_value);$('pnl').textContent=money(d.stats.pnl);$('pnl').className=Number(d.stats.pnl)>=0?'up':'down';$('holdingCount').textContent=h.length;renderStats(d.stats);
+ const teamNow=$('team').value;$('team').innerHTML=d.teams.map(x=>'<option value="'+x+'">'+x+'</option>').join('');if(d.teams.includes(teamNow))$('team').value=teamNow;
+ $('holdings').innerHTML=h.map(x=>'<tr><td><b>'+esc(x.stock||x.ipo)+'</b></td><td>'+x.quantity+'</td><td>'+money(x.average_price)+'</td><td>'+money(x.current_price)+'</td><td>'+money(x.market_value)+'</td><td class="'+(Number(x.pnl)>=0?'up':'down')+'">'+money(x.pnl)+'</td></tr>').join('')||'<tr><td colspan="6" class="empty-row">No settled holdings.</td></tr>';
+ $('orders').innerHTML=(d.orders||[]).map(x=>'<tr><td><b>'+esc(x.order_code)+'</b></td><td>'+esc(x.team)+'</td><td>'+esc(x.asset)+'</td><td>'+x.side+'</td><td>'+x.quantity+'</td><td>'+money(x.price)+'</td><td>'+money(x.trade_value)+'</td><td><span class="status-pill">'+esc(x.status)+'</span></td></tr>').join('')||'<tr><td colspan="8" class="empty-row">No orders yet.</td></tr>';
+}
+async function init(){try{const [s,m]=await Promise.all([json('/admin-state'),json('/market')]);stocks=(m.stocks||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),undefined,{sensitivity:'base'}));ipos=(s.ipos||[]).filter(x=>x.status==='OPEN').slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),undefined,{sensitivity:'base'}));const inv=s.institutional_investors||[];if(!inv.length)throw new Error('No institutional investor configured');investorId=Number(inv[0].id);renderAssets();updateCounterparty();await loadPortfolio()}catch(e){$('msg').textContent=e.message;$('msg').className='error'}}
+$('type').addEventListener('change',renderAssets);$('side').addEventListener('change',updateCounterparty);$('qty').addEventListener('input',updateCalc);$('price').addEventListener('input',updateCalc);$('asset').addEventListener('change',()=>{const list=$('type').value==='ipo'?ipos:stocks,x=list.find(x=>String(x.id)===$('asset').value);if(x)$('price').value=Number(x.price||0);updateCalc()});
+$('trade').addEventListener('submit',async e=>{e.preventDefault();const isIpo=$('type').value==='ipo',quantity=Number($('qty').value),price=Number($('price').value);if(!Number.isInteger(quantity)||quantity<=0||(!isIpo&&quantity%50!==0)){ $('msg').textContent=isIpo?'Enter a valid whole-share IPO quantity.':'Listed stocks must be traded in 50-share lots.';$('msg').className='error';return}if(!Number.isFinite(price)||price<=0){$('msg').textContent='Enter a valid price.';$('msg').className='error';return}const body={investor_id:investorId,team_code:$('team').value,side:$('side').value,quantity,price};body[isIpo?'ipo_id':'stock_id']=Number($('asset').value);const b=$('submitOrder');b.disabled=true;$('msg').textContent='Submitting order…';try{const d=await json('/institutional-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});$('msg').textContent='Order '+d.order_code+' created and sent to Exchange.';$('msg').className='success';await loadPortfolio()}catch(e){$('msg').textContent=e.message;$('msg').className='error'}finally{b.disabled=false}});
+init();setInterval(()=>{if(investorId)loadPortfolio().catch(()=>{})},10000);
+</script><script src="/admin-nav.js"></script></body></html>

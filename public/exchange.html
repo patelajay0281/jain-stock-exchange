@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Exchange Settlement | JAIN STOCK EXCHANGE</title><link rel="stylesheet" href="/theme.css">
+<style>
+body{background:#f4f6f9;color:#17233b;font-family:Inter,Segoe UI,Arial,sans-serif}
+.settle-page{max-width:1500px;margin:auto;padding:18px 24px}
+.settle-page .brand{font-size:20px;margin-bottom:10px}
+.settle-page .site-nav{margin-bottom:16px}
+.settle-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:14px}
+.settle-head h1{margin:0;font-size:30px;color:#14213d}
+.settle-head p{margin:5px 0 0;color:#718096;font-size:12px}
+.live-pill{background:#e8f4ef;color:#13704f;border:1px solid #cfe7dd;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:900;letter-spacing:.8px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.metric{background:#fff;border:1px solid #dfe5ee;border-radius:12px;padding:12px 14px}
+.metric span{display:block;color:#7a8495;font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.metric b{display:block;color:#14213d;font-size:20px;margin-top:4px}
+.settle-card{background:#fff;border:1px solid #dfe5ee;border-radius:15px;box-shadow:0 8px 24px rgba(20,33,61,.06);overflow:hidden}
+.card-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e7ebf1}
+.card-head strong{font-size:12px;letter-spacing:.7px;color:#14213d}
+.card-head span{font-size:10px;color:#7a8495}
+.table-wrap{overflow:auto;max-height:calc(100vh - 255px)}
+.settle-table{width:100%;border-collapse:collapse;font-size:11px}
+.settle-table th{position:sticky;top:0;background:#f6f8fb;color:#68748a;font-size:9px;letter-spacing:.7px;text-transform:uppercase;text-align:left;padding:10px 9px;border-bottom:1px solid #dfe5ee;z-index:1}
+.settle-table td{padding:9px;border-bottom:1px solid #eef1f5;color:#26344d;white-space:nowrap}
+.settle-table tr:hover td{background:#fafbfd}
+.order-code{font-weight:900;color:#14213d}.money{font-weight:800}
+.kind{display:inline-block;padding:4px 6px;border-radius:5px;background:#eef2f7;color:#536078;font-size:8px;font-weight:900}
+.actions{display:flex;gap:5px}.warning-ribbon{display:inline-block;padding:5px 8px;border-radius:6px;font-size:8px;font-weight:900;letter-spacing:.05em;white-space:nowrap}.warning-ribbon.short{background:#f9e7e9;color:#a23a43;border:1px solid #e5c0c5}.warning-ribbon.balance{background:#fff1dc;color:#9a5a00;border:1px solid #ead0a3}.ok-ribbon{display:inline-block;padding:5px 8px;border-radius:6px;font-size:8px;font-weight:900;letter-spacing:.05em;color:#23734f;background:#eef8f2;border:1px solid #cbe5d5}
+.approve,.reject{border:0;border-radius:6px;padding:7px 10px;font-size:9px;font-weight:900;cursor:pointer}
+.approve{background:#173b31;color:#fff}.reject{background:#f7e9ea;color:#a6323a}
+.empty{padding:50px;text-align:center;color:#7b8697;font-size:12px}.approval-popup{display:none;position:fixed;inset:0;z-index:9999;background:rgba(16,25,37,.5);align-items:center;justify-content:center}.approval-box{width:410px;max-width:92vw;background:#fff;border-radius:12px;padding:28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.28);border:1px solid #dfe5ee}.approval-icon{width:42px;height:42px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff1dc;color:#9a5a00;font-size:23px;font-weight:900}.approval-kicker{font-size:10px;font-weight:900;letter-spacing:1.2px;color:#a23a43}.approval-box h2{margin:7px 0;color:#14213d;font-size:21px}.approval-box p{margin:0 0 19px;color:#667085;font-size:12px;line-height:1.5}.approval-box button{border:0;border-radius:6px;background:#172b4d;color:#fff;padding:11px 18px;font-size:10px;font-weight:900;cursor:pointer}.danger-btn{background:#a23a43!important}
+@media(max-width:900px){.settle-page{padding:12px}.metrics{grid-template-columns:1fr 1fr}.settle-head{align-items:start}.table-wrap{max-height:none}}
+</style>
+<style>
+body.settle-exchange{background:#eef2f6}
+body.settle-exchange .settle-page{max-width:1500px;padding:14px 22px 34px}
+body.settle-exchange .settle-head{margin:18px 0 14px;padding:20px 22px;border-radius:15px;background:linear-gradient(135deg,#0f1b2d,#1d3b56);box-shadow:0 10px 25px rgba(15,31,55,.14)}
+body.settle-exchange .settle-head h1{color:#fff;font-size:28px}.settle-exchange .settle-head p{color:#c9d5e5}
+body.settle-exchange .live-pill{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);color:#dff8ea}
+body.settle-exchange .metrics{gap:11px}
+body.settle-exchange .metric{border:1px solid #d8e0e9;border-radius:12px;box-shadow:0 5px 16px rgba(20,33,61,.045);padding:13px 15px}
+body.settle-exchange .metric b{font-size:22px}
+body.settle-exchange .settle-card{border-color:#d8e0e9;border-radius:15px;box-shadow:0 8px 24px rgba(20,33,61,.055)}
+body.settle-exchange .card-head{padding:18px 20px;background:#fff;min-height:58px}
+body.settle-exchange .card-head strong{font-size:14px;letter-spacing:.8px}
+body.settle-exchange .card-head span{font-size:11px}
+body.settle-exchange .table-wrap{max-height:calc(100vh - 285px)}
+body.settle-exchange .settle-table{font-size:13px}
+body.settle-exchange .settle-table th{font-size:10px;padding:13px 12px;height:42px}
+body.settle-exchange .settle-table td{padding:15px 12px;height:64px;font-size:13px}
+body.settle-exchange .order-code{font-size:14px}
+body.settle-exchange .kind{padding:6px 8px;font-size:9px}
+body.settle-exchange .warning-ribbon,body.settle-exchange .ok-ribbon{padding:6px 9px;font-size:9px}
+body.settle-exchange .approve,body.settle-exchange .reject{padding:10px 14px;font-size:10px;border-radius:7px}
+body.settle-exchange .actions{gap:7px}
+body.settle-exchange .settlement-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 14px 16px;background:#f8fafc}
+body.settle-exchange .settlement-order-card{min-width:0;background:#fff;border:1px solid #d9e2ec;border-left:4px solid #155eef;border-radius:10px;padding:12px;box-shadow:0 4px 12px rgba(20,33,61,.045);transition:.15s ease}
+body.settle-exchange .settlement-order-card:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(20,33,61,.08);border-color:#bfd0e5}
+body.settle-exchange .settlement-order-card.has-warning{border-left-color:#c43d4b}
+body.settle-exchange .order-card-top{display:flex;justify-content:space-between;align-items:center;gap:6px;padding-bottom:9px;border-bottom:1px solid #edf1f5}
+body.settle-exchange .order-card-top>div:first-child{display:flex;align-items:center;gap:5px;min-width:0}
+body.settle-exchange .order-card-top .order-code{font-size:13px}
+body.settle-exchange .kind{padding:4px 5px;font-size:7px}
+body.settle-exchange .order-card-main{display:block;padding:9px 0 7px}
+body.settle-exchange .order-party{padding:5px 0}
+body.settle-exchange .order-party span,body.settle-exchange .order-card-stats span{display:block;font-size:7px;letter-spacing:.7px;font-weight:900;color:#8190a5;margin-bottom:2px}
+body.settle-exchange .order-party b{font-size:11px;color:#1d3557;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+body.settle-exchange .stock-party b{font-size:12px;color:#14213d}
+body.settle-exchange .order-card-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:#f5f8fc;border:1px solid #e4eaf1;border-radius:7px;padding:7px 6px}
+body.settle-exchange .order-card-stats>div{min-width:0}
+body.settle-exchange .order-card-stats strong{font-size:11px;color:#14213d}
+body.settle-exchange .order-card-stats .buy-side{color:#18794e}.settle-exchange .order-card-stats .sell-side{color:#b23843}
+body.settle-exchange .order-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding-top:8px}
+body.settle-exchange .order-card-actions button{min-width:0;width:100%;padding:8px 4px;font-size:8px}
+body.settle-exchange .warning-ribbon,body.settle-exchange .ok-ribbon{padding:4px 5px;font-size:7px}
+@media(max-width:1200px){body.settle-exchange .settlement-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){body.settle-exchange .settlement-cards{grid-template-columns:1fr}}
+body.settle-exchange .card-head strong:before{content:"";display:inline-block;width:4px;height:14px;border-radius:3px;background:#155eef;margin-right:8px;vertical-align:-2px}
+body.settle-exchange .settle-table th{background:#f5f8fc;padding:11px 10px}
+body.settle-exchange .settle-table td{padding:10px}
+body.settle-exchange .settle-table tbody tr:hover td{background:#f7fbff}
+body.settle-exchange .approve{background:#176b48;padding:8px 11px}.settle-exchange .reject{padding:8px 11px}
+body.settle-exchange .empty{padding:70px}
+body.settle-exchange .approval-box{border-radius:16px}
+</style></head>
+<body class="settle-exchange"><div class="settle-page">
+<nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a class="admin-only-link" href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a></nav>
+<div class="settle-head"><div><h1>JAIN STOCK EXCHANGE</h1><p>Review submitted orders before they move into bank settlement.</p></div><span class="live-pill">EXCHANGE CONTROL</span></div>
+<div id="metrics" class="metrics"></div>
+<section class="settle-card"><div class="card-head"><strong>PENDING EXCHANGE TRANSACTIONS</strong><span id="updated">Loading…</span></div><div id="app"></div></section><div id="shortPopup" class="approval-popup" aria-hidden="true"><div class="approval-box"><div class="approval-icon warning-icon">!</div><div class="approval-kicker warning-kicker">EXCHANGE REVIEW REQUIRED</div><h2>Short Selling Warning</h2><p id="shortText">This SELL order exceeds the participant holdings.</p><div style="display:flex;gap:8px;justify-content:center"><button type="button" onclick="closeShortPopup()">CANCEL</button><button type="button" class="danger-btn" onclick="confirmShortApproval()">APPROVE ANYWAY</button></div></div></div><script src="/exchange.js?v=242"></script></div><script src="/admin-nav.js"></script></body></html>

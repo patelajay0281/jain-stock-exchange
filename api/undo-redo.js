@@ -1,0 +1,25 @@
+import { db } from "../lib/hatchable.js";
+export const access="admin";
+export const methods=["POST"];
+export default async function(req,res){
+ const action=String(req.body?.action||"");
+ if(!["UNDO","REDO"].includes(action))return res.status(400).json({error:"Use UNDO or REDO"});
+ if(action==="UNDO"){
+  const h=(await db.query("SELECT ah.*,o.side,o.quantity,o.price,o.trade_value,o.brokerage,o.team_id,o.stock_id,t.available_cash FROM action_history ah JOIN orders o ON o.id=ah.order_id JOIN teams t ON t.id=o.team_id WHERE ah.action IN ('BANK_APPROVE','BANK_REJECT','AUTO_BANK_REJECT','BANK_REJECT') ORDER BY ah.id DESC LIMIT 1")).rows[0];
+  if(!h)return res.status(404).json({error:"No reversible action found"});
+  if(h.new_status==="SETTLED"){
+   if(h.side==="BUY"){await db.transaction([{sql:"UPDATE teams SET available_cash=available_cash+$1 WHERE id=$2",params:[Number(h.trade_value)+Number(h.brokerage),h.team_id]},{sql:"UPDATE holdings SET quantity=quantity-$1 WHERE team_id=$2 AND stock_id=$3",params:[h.quantity,h.team_id,h.stock_id]},{sql:"DELETE FROM broker_commissions WHERE order_id=$1",params:[h.order_id]},{sql:"UPDATE orders SET status='EXCHANGE_APPROVED' WHERE id=$1",params:[h.order_id]}]);}
+   else{const credit=Number(h.trade_value)-Number(h.brokerage);await db.transaction([{sql:"UPDATE teams SET available_cash=available_cash-$1 WHERE id=$2",params:[credit,h.team_id]},{sql:"INSERT INTO holdings(team_id,stock_id,quantity,average_price) VALUES($1,$2,$3,$4) ON CONFLICT(team_id,stock_id) DO UPDATE SET quantity=holdings.quantity+$3",params:[h.team_id,h.stock_id,h.quantity,h.price]},{sql:"DELETE FROM broker_commissions WHERE order_id=$1",params:[h.order_id]},{sql:"UPDATE orders SET status='EXCHANGE_APPROVED' WHERE id=$1",params:[h.order_id]}]);}
+  }else await db.query("UPDATE orders SET status=$1 WHERE id=$2",[h.previous_status||"EXCHANGE_APPROVED",h.order_id]);
+  await db.query("INSERT INTO action_history(order_id,action,previous_status,new_status,reversal_status) VALUES($1,'UNDO',$2,'EXCHANGE_APPROVED',$3)",[h.order_id,h.new_status,h.new_status]);
+  await db.query("INSERT INTO audit_log(actor_id,actor_email,actor_role,action,order_id,team_id,details) VALUES($1,$2,'admin','UNDO',$3,$4,'Last settlement reversed')",[req.member?.id||"admin",req.member?.email||null,h.order_id,h.team_id]);
+  return res.json({status:"UNDONE",order_id:h.order_id});
+ }
+ const u=(await db.query("SELECT * FROM action_history WHERE action='UNDO' ORDER BY id DESC LIMIT 1")).rows[0];
+ if(!u)return res.status(404).json({error:"Nothing to redo"});
+ const o=(await db.query("SELECT o.*,t.available_cash,t.broker_id FROM orders o JOIN teams t ON t.id=o.team_id WHERE o.id=$1",[u.order_id])).rows[0];
+ if(!o||o.status!=="EXCHANGE_APPROVED")return res.status(409).json({error:"Order is not ready to redo"});
+ if(o.side==="BUY"){const required=Number(o.trade_value)+Number(o.brokerage);if(Number(o.available_cash)-required<20000)return res.status(409).json({error:"Redo blocked: team would fall below ₹20,000 minimum cash"});await db.transaction([{sql:"UPDATE teams SET available_cash=available_cash-$1 WHERE id=$2",params:[required,o.team_id]},{sql:"INSERT INTO cash_ledger(team_id,order_id,entry_type,debit,credit,balance_after,note) VALUES($1,$2,'REDO_BUY',0+$3,0,(SELECT available_cash FROM teams WHERE id=$1),'Redo settlement')",params:[o.team_id,o.id,required]},{sql:"INSERT INTO broker_commissions(order_id,broker_id,team_id,commission_rate,commission_amount,status) VALUES($1,$2,$3,.001,$4,'SETTLED')",params:[o.id,o.broker_id,o.team_id,o.brokerage]},{sql:"INSERT INTO holdings(team_id,stock_id,quantity,average_price) VALUES($1,$2,$3,$4) ON CONFLICT(team_id,stock_id) DO UPDATE SET average_price=((holdings.quantity*holdings.average_price)+($3*$4))/(holdings.quantity+$3),quantity=holdings.quantity+$3",params:[o.team_id,o.stock_id,o.quantity,o.price]},{sql:"UPDATE orders SET status='SETTLED' WHERE id=$1",params:[o.id]}]);}
+ else{const credit=Number(o.trade_value)-Number(o.brokerage);await db.transaction([{sql:"UPDATE teams SET available_cash=available_cash+$1 WHERE id=$2",params:[credit,o.team_id]},{sql:"INSERT INTO cash_ledger(team_id,order_id,entry_type,debit,credit,balance_after,note) VALUES($1,$2,'REDO_SELL',0,$3,(SELECT available_cash FROM teams WHERE id=$1),'Redo settlement')",params:[o.team_id,o.id,credit]},{sql:"INSERT INTO broker_commissions(order_id,broker_id,team_id,commission_rate,commission_amount,status) VALUES($1,$2,$3,.001,$4,'SETTLED')",params:[o.id,o.broker_id,o.team_id,o.brokerage]},{sql:"UPDATE holdings SET quantity=quantity-$1 WHERE team_id=$2 AND stock_id=$3 AND quantity>=$1",params:[o.quantity,o.team_id,o.stock_id]},{sql:"UPDATE orders SET status='SETTLED' WHERE id=$1",params:[o.id]}]);}
+ await db.query("INSERT INTO action_history(order_id,action,previous_status,new_status) VALUES($1,'REDO','EXCHANGE_APPROVED','SETTLED')",[o.id]);res.json({status:"REDONE",order_id:o.id});
+}
