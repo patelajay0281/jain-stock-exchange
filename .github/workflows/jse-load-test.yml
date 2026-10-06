@@ -1,0 +1,78 @@
+name: JSE one-shot throughput test
+
+on:
+  push:
+
+jobs:
+  throughput:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for Cloudflare deploy
+        run: sleep 45
+
+      - name: Run 1000 request probe
+        env:
+          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
+        run: |
+          node <<'NODE'
+          const {performance} = require('node:perf_hooks');
+          const base=process.env.BASE_URL;
+          const total=1000;
+          const concurrency=100;
+          const results=new Array(total);
+          let cursor=0;
+
+          async function worker(){
+            while(true){
+              const i=cursor++;
+              if(i>=total)return;
+              const started=performance.now();
+              try{
+                const r=await fetch(base+'/api/realtime?probe='+i,{cache:'no-store'});
+                await r.text();
+                results[i]={status:r.status,ms:performance.now()-started};
+              }catch(e){
+                results[i]={status:0,ms:performance.now()-started,error:String(e)};
+              }
+            }
+          }
+
+          const started=performance.now();
+          await Promise.all(Array.from({length:concurrency},()=>worker()));
+          const elapsed=performance.now()-started;
+          const ok=results.filter(x=>x.status===200);
+          const failed=results.length-ok.length;
+          const sorted=ok.map(x=>x.ms).sort((a,b)=>a-b);
+          const pct=p=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))]||0;
+          const rps=total/(elapsed/1000);
+
+          console.log(JSON.stringify({
+            total_requests:total,
+            concurrency,
+            successful:ok.length,
+            failed,
+            elapsed_ms:Number(elapsed.toFixed(2)),
+            requests_per_second:Number(rps.toFixed(2)),
+            operations_per_10_seconds:Number((rps*10).toFixed(2)),
+            p50_ms:Number(pct(.50).toFixed(2)),
+            p95_ms:Number(pct(.95).toFixed(2)),
+            p99_ms:Number(pct(.99).toFixed(2))
+          },null,2));
+
+          if(failed>0 || elapsed>10000){
+            console.error('FAIL: 1000 realtime DB operations did not complete within 10 seconds with zero failures.');
+            process.exit(1);
+          }
+          NODE
+
+      - name: Verify transaction adapter
+        env:
+          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
+        run: |
+          node <<'NODE'
+          const r=await fetch(process.env.BASE_URL+'/api/perf-tx?probe=1',{cache:'no-store'});
+          const d=await r.json();
+          console.log(JSON.stringify(d,null,2));
+          if(r.status!==200 || !d.ok || !d.transaction) process.exit(1);
+          NODE
