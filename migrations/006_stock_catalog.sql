@@ -1,0 +1,1 @@
+CREATE TABLE stock_catalog (id BIGSERIAL PRIMARY KEY, stock_id BIGINT NOT NULL REFERENCES stocks(id), company_number INTEGER NOT NULL, UNIQUE(stock_id), UNIQUE(company_number))

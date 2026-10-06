@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS broker_commissions (id BIGSERIAL PRIMARY KEY, order_id BIGINT NOT NULL REFERENCES orders(id), broker_id BIGINT NOT NULL REFERENCES brokers(id), team_id BIGINT NOT NULL REFERENCES teams(id), commission_rate NUMERIC(8,5) NOT NULL, commission_amount NUMERIC(16,2) NOT NULL, status TEXT NOT NULL DEFAULT 'SETTLED', created_at TIMESTAMP NOT NULL DEFAULT now())

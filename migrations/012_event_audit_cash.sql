@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS cash_ledger (
+ id BIGSERIAL PRIMARY KEY,
+ team_id BIGINT NOT NULL REFERENCES teams(id),
+ order_id BIGINT REFERENCES orders(id),
+ entry_type TEXT NOT NULL,
+ debit NUMERIC NOT NULL DEFAULT 0,
+ credit NUMERIC NOT NULL DEFAULT 0,
+ balance_after NUMERIC NOT NULL,
+ note TEXT,
+ created_at TIMESTAMP NOT NULL DEFAULT now()
+)

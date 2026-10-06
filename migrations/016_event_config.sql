@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS event_config (
+ id BIGINT PRIMARY KEY DEFAULT 1,
+ max_price_move_pct NUMERIC NOT NULL DEFAULT 10,
+ min_order_value NUMERIC NOT NULL DEFAULT 1,
+ max_order_value NUMERIC NOT NULL DEFAULT 5000000,
+ brokerage_rate NUMERIC NOT NULL DEFAULT 0.001,
+ updated_at TIMESTAMP NOT NULL DEFAULT now(),
+ CHECK (id=1)
+)

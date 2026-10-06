@@ -1,0 +1,1 @@
+INSERT INTO event_control(id,status) VALUES(1,'NOT_STARTED') ON CONFLICT(id) DO NOTHING

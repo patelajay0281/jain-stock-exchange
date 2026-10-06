@@ -1,0 +1,1 @@
+DELETE FROM stock_catalog

@@ -1,0 +1,1 @@
+CREATE TABLE price_history (id BIGSERIAL PRIMARY KEY, stock_id BIGINT NOT NULL REFERENCES stocks(id), previous_price NUMERIC(14,2) NOT NULL, new_price NUMERIC(14,2) NOT NULL, order_id BIGINT REFERENCES orders(id), changed_at TIMESTAMP NOT NULL DEFAULT now())
