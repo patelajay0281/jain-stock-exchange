@@ -189,7 +189,15 @@ export async function handleApi(request, env) {
   try {
     const result = await handler(req, res);
     if (result instanceof Response) return result;
-    if (result === res || res.written) return res.toResponse();
+    if (result === res || res.written) {
+      if (url.pathname === "/api/market" && request.method === "GET") {
+        res.setHeader("cache-control","public, max-age=1, s-maxage=2, stale-while-revalidate=5, stale-if-error=30");
+      }
+      if (url.pathname === "/api/cms50" && request.method === "GET") {
+        res.setHeader("cache-control","public, max-age=1, s-maxage=2, stale-while-revalidate=5, stale-if-error=30");
+      }
+      return res.toResponse();
+    }
     if (result !== undefined) return Response.json(result);
     return new Response("");
   } catch (error) {
