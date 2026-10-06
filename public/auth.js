@@ -2,15 +2,21 @@
   const publicPaths=new Set(["/","/login.html","/admin.html","/member-accounts.html"]);
   if(publicPaths.has(location.pathname))return;
   try{
-    const r=await fetch("/api/member-me",{cache:"no-store"});
-    if(!r.ok){
-      const next=location.pathname+location.search+location.hash;
-      location.replace("/login.html?next="+encodeURIComponent(next));
-      return;
+    // Admin sessions are separate from participant/member sessions.
+    const admin=await fetch("/api/admin-state",{cache:"no-store"});
+    if(admin.ok){
+      window.JSE_MEMBER={username:"JSE-ADMIN",display_name:"JSE Administrator",role:"admin"};
+    }else{
+      const r=await fetch("/api/member-me",{cache:"no-store"});
+      if(!r.ok){
+        const next=location.pathname+location.search+location.hash;
+        location.replace("/login.html?next="+encodeURIComponent(next));
+        return;
+      }
+      const d=await r.json();
+      const m=d.member;
+      window.JSE_MEMBER=m;
     }
-    const d=await r.json();
-    const m=d.member;
-    window.JSE_MEMBER=m;
     const nav=document.querySelector(".site-nav");
     if(nav&&m){
       const chip=document.createElement("span");
