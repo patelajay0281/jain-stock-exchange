@@ -230,6 +230,30 @@ export async function handleApi(request, env) {
 }
 
 export async function serveSite(request, env) {
+  const url = new URL(request.url);
+  const pagePaths = new Set([
+    "/", "/login", "/login.html", "/admin", "/admin.html",
+    "/member-accounts", "/member-accounts.html",
+    "/order", "/order.html", "/exchange", "/exchange.html",
+    "/bank", "/bank.html", "/orders", "/orders.html",
+    "/institutional", "/institutional.html",
+    "/commissions", "/commissions.html",
+    "/portfolios", "/portfolios.html",
+    "/audit", "/audit.html", "/cash", "/cash.html",
+    "/certificates", "/certificates.html",
+    "/insights", "/insights.html",
+    "/load-test", "/load-test.html"
+  ]);
+
+  if (pagePaths.has(url.pathname) && !["/","/login","/login.html","/admin","/admin.html","/member-accounts","/member-accounts.html"].includes(url.pathname)) {
+    const member = await memberFromRequest({cookies:cookies(request.headers.get("cookie")||"")});
+    const reqLike = { cookies:cookies(request.headers.get("cookie")||""), headers:{} };
+    const adminOk = await adminAllowed(reqLike);
+    if(!member && !adminOk){
+      return Response.redirect(new URL("/login.html?next="+encodeURIComponent(url.pathname+url.search+url.hash),request.url),302);
+    }
+  }
+
   const response = await env.ASSETS.fetch(request);
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
