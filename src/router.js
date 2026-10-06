@@ -68,11 +68,7 @@ const routes = {
   "/api/member-accounts": memberAccounts,
   "/api/member-login": memberLogin,
   "/api/member-me": memberMe,
-  "/api/member-logout": memberLogout,
-  "/api/member-login": memberLogin,
-  "/api/member-logout": memberLogout,
-  "/api/member-me": memberMe,
-  "/api/member-accounts": memberAccounts
+  "/api/member-logout": memberLogout
 };
 
 function cookies(header = "") {
