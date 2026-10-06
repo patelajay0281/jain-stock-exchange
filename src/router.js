@@ -25,6 +25,9 @@ import reports from "../api/reports.js";
 import resetEvent from "../api/reset-event.js";
 import tracking from "../api/tracking.js";
 import undoRedo from "../api/undo-redo.js";
+import realtime from "../api/realtime.js";
+import adminLogin from "../api/admin-login.js";
+import adminLogout from "../api/admin-logout.js";
 import { configureRuntime, db } from "./hatchable-compat.js";
 
 const routes = {
@@ -54,7 +57,10 @@ const routes = {
   "/api/reports": reports,
   "/api/reset-event": resetEvent,
   "/api/tracking": tracking,
-  "/api/undo-redo": undoRedo
+  "/api/undo-redo": undoRedo,
+  "/api/realtime": realtime,
+  "/api/admin-login": adminLogin,
+  "/api/admin-logout": adminLogout
 };
 
 function cookies(header = "") {
@@ -129,10 +135,14 @@ class ResponseAdapter {
   }
 }
 
-function adminAllowed(req) {
-  const key = req.headers?.["x-jse-admin-key"] || "";
-  const expected = globalThis.process?.env?.EVENT_ADMIN_PASSWORD || "";
-  return req.cookies?.jse_admin === "1" || (expected && key === expected);
+async function adminAllowed(req) {
+  const raw=req.cookies?.jse_admin||"";
+  if(!raw)return false;
+  const bytes=new TextEncoder().encode(raw);
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  const hash=Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,"0")).join("");
+  const hit=await db.query("SELECT 1 FROM admin_sessions WHERE token_sha256=$1 AND expires_at>now()",[hash]);
+  return Boolean(hit.rows[0]);
 }
 
 export async function handleApi(request, env) {
@@ -167,7 +177,7 @@ export async function handleApi(request, env) {
   const req = await requestData(request);
 
   // Admin endpoints are protected once the admin credential is configured.
-  if (access === "admin" && !adminAllowed(req)) {
+  if (access === "admin" && !(await adminAllowed(req))) {
     return Response.json({error:"Administrator access required"},{status:403});
   }
 

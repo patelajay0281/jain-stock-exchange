@@ -49,7 +49,7 @@ export const db = {
         results.push({ rows: result.rows || [], rowCount: result.rowCount || 0 });
       }
       await client.query("COMMIT");
-      return results;
+      return { results };
     } catch (error) {
       try { await client.query("ROLLBACK"); } catch (_) {}
       throw error;
