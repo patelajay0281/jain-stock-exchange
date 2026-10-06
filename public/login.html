@@ -37,7 +37,10 @@ const form=document.querySelector("#loginForm"),btn=document.querySelector("#log
 form.addEventListener("submit",async e=>{
  e.preventDefault();btn.disabled=true;msg.textContent="Signing in…";msg.className="login-msg";
  try{
-  const r=await fetch("/api/member-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:username.value,access_code:password.value})});
+  const isAdmin=username.value.trim().toUpperCase()==="ADMINAP";
+  const endpoint=isAdmin?"/api/admin-login":"/api/member-login";
+  const payload=isAdmin?{username:username.value,password:password.value}:{username:username.value,access_code:password.value};
+  const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(d.error||"Sign in failed.");
   msg.textContent="Signed in. Loading JSE…";msg.className="login-msg success";
