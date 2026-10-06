@@ -390,3 +390,7 @@ body:has(#f) #f label small{line-height:1.3}
  body:has(#f) #f button{grid-column:1/2}
  body:has(#f) #f #msg{grid-column:2/5}
 }
+.jse-user-chip{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border-radius:8px;background:#eef4ff;color:#244a80;font-size:10px;font-weight:850;white-space:nowrap;margin-left:auto}
+.jse-logout-btn{min-height:36px;padding:0 10px;border:1px solid #d5dde7;border-radius:8px;background:#fff;color:#475467;font-size:10px;font-weight:850;cursor:pointer}
+.jse-logout-btn:hover{background:#f8fafc}
+@media(max-width:850px){.jse-user-chip{margin-left:0}}
