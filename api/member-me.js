@@ -1,9 +1,8 @@
-import { memberFromRequest } from "../src/hatchable-compat.js";
+import { verifyMember } from "../src/session.js";
 export const access="public";
 export const methods=["GET"];
-
 export default async function(req,res){
-  const member=await memberFromRequest(req);
-  if(!member) return res.status(401).json({error:"Not signed in"});
-  res.json({member});
+ const m=await verifyMember(req.cookies?.jse_member||"");
+ if(!m)return res.status(401).json({authenticated:false});
+ res.json({authenticated:true,member:{username:m.username,display_name:m.display_name,team:m.team_code,email:m.email||null}});
 }
