@@ -1,4 +1,5 @@
 import { handleApi, serveSite } from "./router.js";
+// Production JSE build marker: synced Hatchable v243 behavior with Neon/Cloudflare backend.
 
 export default {
   async fetch(request, env, ctx) {
