@@ -28,5 +28,6 @@ export default async function(req,res){
  if(!m || accessCode!==String(m.initial_password||"")) return res.status(401).json({error:"Invalid participant account or access code"});
  const token=await issueMember(m);
  res.setHeader("set-cookie",setMemberCookie(token));
+ await db.query(`INSERT INTO audit_log(actor_id,actor_email,actor_role,action,team_id,details) VALUES($1,$2,$3,$4,$5,$6)`,[m.username,m.username,m.role,"MEMBER_LOGIN",m.team_id,JSON.stringify({username:m.username,display_name:m.display_name,team_code:m.team_code})]);
  res.json({ok:true,member:{username:m.username,display_name:m.display_name,team:m.team_code,email:m.email||m.username}});
 }
