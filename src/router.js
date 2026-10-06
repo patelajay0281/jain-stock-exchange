@@ -138,6 +138,27 @@ function adminAllowed(req) {
 export async function handleApi(request, env) {
   configureRuntime(env);
   const url = new URL(request.url);
+
+  if (url.pathname === "/api/health") {
+    try {
+      const result = await db.query("SELECT NOW() AS server_time, current_database() AS database_name");
+      return Response.json({
+        status: "ok",
+        service: "JAIN STOCK EXCHANGE",
+        database: "connected",
+        server_time: result.rows[0].server_time,
+        database_name: result.rows[0].database_name
+      }, {headers: {"cache-control": "no-store"}});
+    } catch (error) {
+      return Response.json({
+        status: "error",
+        service: "JAIN STOCK EXCHANGE",
+        database: "connection_failed",
+        message: error instanceof Error ? error.message : String(error)
+      }, {status: 500, headers: {"cache-control": "no-store"}});
+    }
+  }
+
   const handler = routes[url.pathname];
   if (!handler) return new Response("Not Found", {status:404});
 
