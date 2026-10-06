@@ -242,7 +242,7 @@ export async function serveSite(request, env) {
     .on("head", {
       element(element) {
         element.prepend(
-          '<script>window.__HATCHABLE__={api:"/api"};</script><script src="/auth.js"></script>',
+          '<script>window.__HATCHABLE__={api:"/api"};</script><script src="/identity.js" defer></script><script src="/auth.js"></script>',
           {html:true}
         );
       }
