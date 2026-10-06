@@ -43,7 +43,7 @@
 <div class="shell page">
 <header class="brand">JAIN STOCK EXCHANGE</header>
 <nav class="site-nav">
-<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a class="admin-only-link" href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a>
+<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a class="admin-only-link" href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><span id="auditUser" style="margin-left:auto;font-size:10px;color:#667085"></span>
 </nav>
 
 <div class="audit-head">
@@ -126,18 +126,35 @@ function render(){
     ["Event Actions",rows.filter(x=>x.action.startsWith("EVENT_")).length]
   ].map(s=>'<div class="audit-stat"><div class="n">'+s[1]+'</div><div class="l">'+s[0]+'</div></div>').join("");
   if(!v.length){document.querySelector("#app").innerHTML='<div class="empty">No activity matches your filter.</div>';return}
-  document.querySelector("#app").innerHTML='<div class="table-wrap"><table class="audit-table"><thead><tr><th>Date / Time</th><th>User Email</th><th>Activity</th><th>Order</th><th>Team</th><th>Asset</th><th>Trade</th><th>Value</th><th>Risk / Exception</th><th>What Happened</th></tr></thead><tbody>'+
+  document.querySelector("#app").innerHTML='<div class="table-wrap"><table class="audit-table"><thead><tr><th>Date / Time</th><th>User / Account</th><th>Activity</th><th>Order</th><th>Team</th><th>Asset</th><th>Trade</th><th>Value</th><th>Risk / Exception</th><th>What Happened</th></tr></thead><tbody>'+
   v.map(x=>{
     const side=(x.side||parsed(x.details).side||"").toUpperCase();
     const qty=x.quantity||parsed(x.details).quantity||"";
     const value=x.trade_value?Number(x.trade_value).toLocaleString("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}):"—";
     const risk=x.risk_label?'<span class="risk '+(x.risk_level==="danger"?"risk-danger":"risk-warning")+'">⚠ '+esc(x.risk_label)+'</span>':'<span class="risk-clear">CLEAR</span>';
-    return '<tr><td class="time">'+time(x.created_at)+'</td><td class="time">'+esc(x.actor_email||'SYSTEM')+'</td><td>'+badge(x)+'</td><td class="order-ref">'+(x.order_code?"#"+esc(x.order_code):"—")+'</td><td class="team-ref">'+esc(x.team_code||"—")+'</td><td>'+asset(x)+'</td><td class="trade '+(side==="BUY"?"buy":side==="SELL"?"sell":"")+'">'+(side?(esc(side)+" · "+esc(qty)+" shares"):"—")+'</td><td class="value">'+value+'</td><td>'+risk+'</td><td>'+details(x)+'</td></tr>';
+    return '<tr><td class="time">'+time(x.created_at)+'</td><td class="time"><strong>${esc(x.actor_name||x.actor_email||'SYSTEM')}}</strong><br><span style="font-size:10px;color:#98a2b3">${esc(x.actor_username||x.actor_email||'')}}</span></td><td>'+badge(x)+'</td><td class="order-ref">'+(x.order_code?"#"+esc(x.order_code):"—")+'</td><td class="team-ref">'+esc(x.team_code||"—")+'</td><td>'+asset(x)+'</td><td class="trade '+(side==="BUY"?"buy":side==="SELL"?"sell":"")+'">'+(side?(esc(side)+" · "+esc(qty)+" shares"):"—")+'</td><td class="value">'+value+'</td><td>'+risk+'</td><td>'+details(x)+'</td></tr>';
   }).join("")+'</tbody></table></div>';
 }
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-filter]").forEach(z=>z.classList.remove("active"));b.classList.add("active");filter=b.dataset.filter;render()}));
 document.querySelector("#search").addEventListener("input",e=>{query=e.target.value;render()});
-fetch(A+"/audit").then(async r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{rows=d.rows||[];render()}).catch(()=>document.querySelector("#app").innerHTML='<div class="empty">Unable to load the audit log. Please sign in with a collaborator account.</div>');
+async function loadAudit(){
+ try{
+  const me=await fetch("/api/member-me",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
+  const chip=document.querySelector("#auditUser");
+  if(me?.member&&chip)chip.textContent="SIGNED IN: "+(me.member.display_name||me.member.username);
+  const r=await fetch(A+"/audit",{cache:"no-store"});
+  if(!r.ok)throw 0;
+  const d=await r.json();rows=d.rows||[];render();
+ }catch(_){
+  if(!rows.length)document.querySelector("#app").innerHTML='<div class="empty">Unable to load the audit log. Please sign in with a member account.</div>';
+ }
+}
+loadAudit();
+setInterval(()=>{if(document.visibilityState==="visible")loadAudit()},3000);
+try{
+  hatchable.events.connect().channel("market").on("order_created",loadAudit);
+  hatchable.events.connect().channel("market").on("order_approved",loadAudit);
+}catch(_){}
 </script>
 <script src="/admin-nav.js"></script></body>
 </html>
