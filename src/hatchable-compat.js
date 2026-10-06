@@ -3,11 +3,25 @@ import { neon, Client } from "@neondatabase/serverless";
 let configuredUrl = null;
 let httpSql = null;
 
-function configure(connectionString) {
+function normalizeDatabaseUrl(connectionString) {
   if (!connectionString) throw new Error("DATABASE_URL is not configured");
-  if (configuredUrl !== connectionString) {
-    configuredUrl = connectionString;
-    httpSql = neon(connectionString);
+  try {
+    const u = new URL(connectionString);
+    // The Neon serverless HTTP driver does not need libpq-only connection
+    // parameters such as channel_binding/sslmode; keep only the URI itself.
+    u.search = "";
+    u.hash = "";
+    return u.toString();
+  } catch {
+    throw new Error("DATABASE_URL is not a valid PostgreSQL URL");
+  }
+}
+
+function configure(connectionString) {
+  const normalized = normalizeDatabaseUrl(connectionString);
+  if (configuredUrl !== normalized) {
+    configuredUrl = normalized;
+    httpSql = neon(normalized);
   }
 }
 
