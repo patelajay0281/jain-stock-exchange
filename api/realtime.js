@@ -14,6 +14,6 @@ export default async function(req,res){
       (SELECT COALESCE(MAX(updated_at),TIMESTAMP '1970-01-01') FROM stocks) AS stock_updated_at,
       (SELECT COALESCE(MAX(created_at),TIMESTAMP '1970-01-01') FROM audit_log) AS ipo_updated_at
   `);
-  res.setHeader("cache-control","no-store");
+  res.setHeader("cache-control","public, max-age=1, s-maxage=1, stale-while-revalidate=2, stale-if-error=5");
   res.json(r.rows[0]||{});
 }
