@@ -14,6 +14,8 @@ export default async function(req,res){
       a.order_id,
       a.team_id,
       a.details,
+      m.display_name AS actor_name,
+      m.username AS actor_username,
       o.order_code,
       o.side,
       o.quantity,
@@ -42,6 +44,7 @@ export default async function(req,res){
     FROM audit_log a
     LEFT JOIN orders o ON o.id=a.order_id
     LEFT JOIN teams t ON t.id=a.team_id
+    LEFT JOIN member_accounts m ON upper(m.username)=upper(a.actor_id)
     LEFT JOIN stocks s ON s.id=o.stock_id
     LEFT JOIN ipo_offerings i ON i.id=o.ipo_id
     ORDER BY a.created_at DESC,a.id DESC
