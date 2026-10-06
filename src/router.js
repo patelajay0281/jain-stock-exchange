@@ -87,13 +87,9 @@ async function requestData(request) {
   let body = undefined;
   if (!["GET","HEAD"].includes(request.method)) {
     const type = request.headers.get("content-type") || "";
-    if (type.includes("application/json")) {
-      body = await request.json().catch(()=>null);
-    } else if (type.includes("application/x-www-form-urlencoded")) {
-      body = Object.fromEntries((await request.formData()).entries());
-    } else {
-      body = await request.text().catch(()=>"");
-    }
+    if (type.includes("application/json")) body = await request.json().catch(()=>null);
+    else if (type.includes("application/x-www-form-urlencoded")) body = Object.fromEntries((await request.formData()).entries());
+    else body = await request.text().catch(()=>"");
   }
   const actorId=headers["x-jse-actor-id"]||"";
   const actorEmail=headers["x-jse-actor-email"]||"";
@@ -102,15 +98,8 @@ async function requestData(request) {
   let member=actorEmail||actorId?{id:actorId||actorEmail,email:actorEmail||null,role:actorRole,team_code:actorTeam||null}:null;
   if(!member) member=await memberFromRequest({cookies:cookies(headers.cookie||"")});
   return {
-    method: request.method,
-    params: {},
-    query: Object.fromEntries(url.searchParams.entries()),
-    headers,
-    cookies: cookies(headers.cookie || ""),
-    body,
-    member,
-    user: null,
-    request
+    method:request.method,params:{},query:Object.fromEntries(url.searchParams.entries()),
+    headers,cookies:cookies(headers.cookie||""),body,member,user:null,request
   };
 }
 
