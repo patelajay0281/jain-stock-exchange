@@ -32,12 +32,6 @@ import memberAccounts from "../api/member-accounts.js";
 import memberLogin from "../api/member-login.js";
 import memberMe from "../api/member-me.js";
 import memberLogout from "../api/member-logout.js";
-import memberLogin from "../api/member-login.js";
-import memberLogout from "../api/member-logout.js";
-import memberMe from "../api/member-me.js";
-import memberAccounts from "../api/member-accounts.js";
-import perfTx from "../api/perf-tx.js";
-import perfDb from "../api/perf-db.js";
 import { configureRuntime, db, memberFromRequest } from "./hatchable-compat.js";
 
 const routes = {
@@ -78,9 +72,7 @@ const routes = {
   "/api/member-login": memberLogin,
   "/api/member-logout": memberLogout,
   "/api/member-me": memberMe,
-  "/api/member-accounts": memberAccounts,
-  "/api/perf-tx": perfTx,
-  "/api/perf-db": perfDb
+  "/api/member-accounts": memberAccounts
 };
 
 function cookies(header = "") {
@@ -112,9 +104,7 @@ async function requestData(request) {
   const actorRole=headers["x-jse-actor-role"]||"participant";
   const actorTeam=headers["x-jse-team"]||"";
   let member=actorEmail||actorId?{id:actorId||actorEmail,email:actorEmail||null,role:actorRole,team_code:actorTeam||null}:null;
-  if(!member && cookies(headers.cookie || "").jse_member){
-    member=await verifyMember(cookies(headers.cookie || "").jse_member);
-  }
+  if(!member) member=await memberFromRequest({cookies:cookies(headers.cookie||"")});
   return {
     method: request.method,
     params: {},
