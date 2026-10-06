@@ -22,7 +22,8 @@ async function run(){
   const tick=performance.now(),batch=[];
   for(let c=0;c<CLIENTS;c++)for(let n=0;n<RPS;n++)batch.push(hit(samples));
   const res=await Promise.all(batch);
-  ok+=res.filter(Boolean).length;fail+=res.length-ok-(done-ok);done+=res.length;
+  const batchOk=res.filter(Boolean).length;
+  ok+=batchOk; fail+=res.length-batchOk; done+=res.length;
   $("total").textContent=done+" / "+TOTAL;$("ok").textContent=ok;$("fail").textContent=fail;$("fill").style.width=pct(done)+"%";
   const e=performance.now()-start;$("rps").textContent=(done/(e/1000)).toFixed(2)+" req/s";
   if(sec<SECONDS-1)await pause(Math.max(0,1000-(performance.now()-tick)));
