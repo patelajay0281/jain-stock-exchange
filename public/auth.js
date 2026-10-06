@@ -3,9 +3,10 @@
   if(publicPaths.has(location.pathname))return;
   try{
     // Admin sessions are separate from participant/member sessions.
+    let m=null;
     const admin=await fetch("/api/admin-state",{cache:"no-store"});
     if(admin.ok){
-      window.JSE_MEMBER={username:"JSE-ADMIN",display_name:"JSE Administrator",role:"admin"};
+      m={username:"JSE-ADMIN",display_name:"JSE Administrator",role:"admin"};
     }else{
       const r=await fetch("/api/member-me",{cache:"no-store"});
       if(!r.ok){
@@ -14,8 +15,9 @@
         return;
       }
       const d=await r.json();
-      const m=d.member;
-      window.JSE_MEMBER=m;
+      m=d.member;
+    }
+    window.JSE_MEMBER=m;
     }
     const nav=document.querySelector(".site-nav");
     if(nav&&m){
