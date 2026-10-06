@@ -173,7 +173,6 @@ async function checkAccess(){
 
 async function loginAdmin(){
  const userInput=document.querySelector('#adminUsername');
- const userInput=document.querySelector('#adminUsername');
  const input=document.querySelector('#adminPassword');
  const btn=document.querySelector('#adminLoginBtn');
  const msg=document.querySelector('#adminLoginMsg');
@@ -189,7 +188,6 @@ async function loginAdmin(){
  }catch(e){msg.textContent=e.message||'Administrator login failed.';btn.disabled=false;}
 }
 
-document.querySelector('#adminUsername')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginAdmin();});
 document.querySelector('#adminUsername')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginAdmin();});
 document.querySelector('#adminPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginAdmin();});
 
