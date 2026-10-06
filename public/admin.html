@@ -220,11 +220,6 @@ async function pauseMarket(){
 }
 
 async function act(action){
- let password=null;
- if(action==='CLOSE'||action==='FINALIZE'){
-  password=prompt('Enter the event admin password:');
-  if(password===null)return;
- }
  try{
   const r=await fetch(A+'/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
   const d=await r.json().catch(()=>({}));
