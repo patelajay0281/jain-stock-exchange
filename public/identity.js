@@ -4,6 +4,7 @@
   const write=x=>localStorage.setItem(STORAGE_KEY,JSON.stringify(x));
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
   function ensureUI(){
+    if(location.pathname!="/order.html")return;
     if(document.getElementById("jseIdentityPill"))return;
     const pill=document.createElement("button");
     pill.id="jseIdentityPill";pill.type="button";pill.textContent="PARTICIPANT ACCESS";
