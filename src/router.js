@@ -28,7 +28,11 @@ import undoRedo from "../api/undo-redo.js";
 import realtime from "../api/realtime.js";
 import adminLogin from "../api/admin-login.js";
 import adminLogout from "../api/admin-logout.js";
-import { configureRuntime, db } from "./hatchable-compat.js";
+import memberLogin from "../api/member-login.js";
+import memberLogout from "../api/member-logout.js";
+import memberMe from "../api/member-me.js";
+import memberAccounts from "../api/member-accounts.js";
+import { configureRuntime, db, memberFromRequest } from "./hatchable-compat.js";
 
 const routes = {
   "/api/admin-state": adminState,
@@ -60,7 +64,11 @@ const routes = {
   "/api/undo-redo": undoRedo,
   "/api/realtime": realtime,
   "/api/admin-login": adminLogin,
-  "/api/admin-logout": adminLogout
+  "/api/admin-logout": adminLogout,
+  "/api/member-login": memberLogin,
+  "/api/member-logout": memberLogout,
+  "/api/member-me": memberMe,
+  "/api/member-accounts": memberAccounts
 };
 
 function cookies(header = "") {
@@ -175,9 +183,13 @@ export async function handleApi(request, env) {
   const access = handler.access || "public";
   if (access === "scheduler") return new Response("Not Found", {status:404});
   const req = await requestData(request);
+  const isAdmin = await adminAllowed(req);
+  req.member = isAdmin
+    ? {id:"JSE-ADMIN",email:"admin",username:"JSE-ADMIN",display_name:"JSE Administrator",role:"admin",team_id:null,team_code:null}
+    : await memberFromRequest(req);
 
   // Admin endpoints are protected once the admin credential is configured.
-  if (access === "admin" && !(await adminAllowed(req))) {
+  if (access === "admin" && !isAdmin) {
     return Response.json({error:"Administrator access required"},{status:403});
   }
 
