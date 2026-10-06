@@ -27,6 +27,19 @@ jobs:
             .catch(e=>{console.error('FETCH_ERROR',e?.stack||e);process.exit(1)})
           NODE
 
+      - name: Verify transaction adapter
+        env:
+          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
+        run: |
+          node - <<'NODE'
+          const r=await fetch(process.env.BASE_URL+'/api/perf-tx?probe=1',{cache:'no-store'});
+          const body=await r.text();
+          console.log(body);
+          if(r.status!==200) process.exit(1);
+          const d=JSON.parse(body);
+          if(!d.ok || !d.transaction) process.exit(1);
+          NODE
+
       - name: Run 1000 request probe
         env:
           BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
