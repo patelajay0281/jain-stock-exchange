@@ -263,7 +263,10 @@ export async function serveSite(request, env) {
     }
   }
 
-  const response = await env.ASSETS.fetch(request);
+  let response = await env.ASSETS.fetch(request);
+  if (url.pathname === "/" && response.status === 404) {
+    response = await env.ASSETS.fetch(new Request(new URL("/index.html", request.url), request));
+  }
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
 
