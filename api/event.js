@@ -9,9 +9,6 @@ export default async function(req,res){
  }
  const action=String(req.body?.action||"");
  const map={START:"LIVE",PAUSE:"SETTLEMENT_ONLY",CLOSE:"CLOSED",FINALIZE:"FINALIZED",RESET:"NOT_STARTED"};
- if(action==="RESET"||action==="CLOSE"||action==="FINALIZE"){
-  if(String(req.body?.password||"")!==String(process.env.EVENT_ADMIN_PASSWORD||"")) return res.status(401).json({error:"Invalid event admin password"});
- }
  if(!map[action]) return res.status(400).json({error:"Invalid event action"});
  const tx=[];
  if(action==="FINALIZE"){
