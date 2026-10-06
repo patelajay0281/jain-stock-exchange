@@ -188,6 +188,12 @@ export async function handleApi(request, env) {
     ? {id:"JSE-ADMIN",email:"admin",username:"JSE-ADMIN",display_name:"JSE Administrator",role:"admin",team_id:null,team_code:null}
     : await memberFromRequest(req);
 
+  // Match Hatchable's access tiers: member APIs/pages require a signed-in
+  // member or administrator, while public APIs remain anonymous.
+  if (access === "member" && !req.member) {
+    return Response.json({error:"Member access required"},{status:401});
+  }
+
   // Admin endpoints are protected once the admin credential is configured.
   if (access === "admin" && !isAdmin) {
     return Response.json({error:"Administrator access required"},{status:403});
