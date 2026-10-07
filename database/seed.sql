@@ -156,6 +156,7 @@ VALUES
   ('DLF',        'DLF',                       'LISTED_STOCK',  80000,  80000,  80000, 50, 34),
   ('ETERNAL',    'Zomato (Eternal)',           'LISTED_STOCK',  33100,  33100,  33100, 50, 35),
   ('ITC',        'ITC',                       'LISTED_STOCK',  26500,  26500,  26500, 50, 36),
+  ('WIPRO',      'Wipro',                    'LISTED_STOCK',  32000,  32000,  32000, 50, 37),
   ('ONGC',       'ONGC',                      'LISTED_STOCK',  23100,  23100,  23100, 50, 37),
   ('TCS',        'TCS',                       'LISTED_STOCK', 186400, 186400, 186400, 50, 38),
   ('AXISBANK',   'Axis Bank',                 'LISTED_STOCK', 108900, 108900, 108900, 50, 39),
