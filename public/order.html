@@ -112,11 +112,19 @@ body.order-page .popup-box button{border:0;border-radius:5px;background:#172b4d;
 <div class="actions">
 <button id="submitBtn" type="submit">SUBMIT ORDER</button>
 <p id="msg" role="status" aria-live="polite"></p>
+<div id="handoff" style="display:none;margin-top:10px;padding:11px 12px;border:1px solid #d8e7df;border-radius:7px;background:#f1f8f4;color:#275846;font-size:11px;font-weight:700">
+  <span id="handoffText"></span>
+  <span style="display:inline-flex;gap:8px;margin-left:8px;flex-wrap:wrap">
+    <a id="handoffExchange" href="/exchange.html" style="color:#173b31">Open Exchange</a>
+    <a id="handoffBank" href="/bank.html" style="color:#173b31">Open Bank</a>
+    <a id="handoffTracking" href="/orders.html" style="color:#173b31">Open Tracking</a>
+  </span>
+</div>
 </div>
 </form>
 </section>
 </div>
 
-<script src="/order.js?v=242"></script>
+<script src="/order.js?v=300"></script>
 <script src="/admin-nav.js"></script></body>
 </html>
