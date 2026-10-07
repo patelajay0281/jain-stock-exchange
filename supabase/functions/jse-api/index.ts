@@ -328,8 +328,8 @@ async function adminState(){
 
 async function adminAction(user:any,action:string){
   const actor=OPEN_MODE?await openActor("ADMIN"):user;
-  if(action==="RESET"){const {data,error}=await db.rpc("jse_reset_event",{p_user_id:actor.uid});if(error)return {error:error.message,status:400};return data;}
-  if(action==="FINALIZE"){const {data,error}=await db.rpc("jse_finalize_event",{p_user_id:actor.uid});if(error)return {error:error.message,status:400};return data;}
+  if(action==="RESET"){const {data,rpcError}=await db.rpc("jse_reset_event",{p_user_id:actor.uid});if(rpcError)return {error:rpcError.message,status:400};return data;}
+  if(action==="FINALIZE"){const {data,rpcError}=await db.rpc("jse_finalize_event",{p_user_id:actor.uid});if(rpcError)return {error:rpcError.message,status:400};return data;}
   const {data:s}=await db.from("event_state").select("status").eq("id",1).single(),cur=s?.status,next:any={START:"LIVE",PAUSE:"PAUSED",RESUME:"LIVE",CLOSE:"CLOSED"}[action];
   if(!next)return {error:"Unknown admin action",status:400};
   const valid=(cur==="NOT_STARTED"&&action==="START")||(cur==="LIVE"&&(action==="PAUSE"||action==="CLOSE"))||(cur==="PAUSED"&&(action==="RESUME"||action==="CLOSE"));
@@ -603,13 +603,13 @@ async function handle(req:Request){
   if(path.length>1) path=path.replace(/\/$/,"");
   try {
     if(path==="/member-login" && req.method==="POST") {
-      const b=await bodyJson(req); const {data,error}=await db.rpc("jse_login",{p_username:String(b.username||"ADMINAP"),p_password:String(b.access_code||b.password||"")});
-      if(error||!data)return error("Invalid credentials",401);
+      const b=await bodyJson(req); const {data,rpcError}=await db.rpc("jse_login",{p_username:String(b.username||"ADMINAP"),p_password:String(b.access_code||b.password||"")});
+      if(rpcError||!data)return error("Invalid credentials",401);
       return response({ok:true,token:await issueToken(data),member:{username:data.username,display_name:data.display_name,role:data.role,team_id:data.team_id,institution_id:data.institution_id}});
     }
     if(path==="/admin-login" && req.method==="POST") {
-      const b=await bodyJson(req); const {data,error}=await db.rpc("jse_login",{p_username:String(b.username||""),p_password:String(b.password||"")});
-      if(error||!data||data.role!=="ADMIN")return error("Invalid administrator credentials",401);
+      const b=await bodyJson(req); const {data,rpcError}=await db.rpc("jse_login",{p_username:String(b.username||""),p_password:String(b.password||"")});
+      if(rpcError||!data||data.role!=="ADMIN")return error("Invalid administrator credentials",401);
       return response({ok:true,token:await issueToken(data),member:{username:data.username,display_name:data.display_name,role:data.role}});
     }
 
@@ -644,8 +644,8 @@ async function handle(req:Request){
     if(path==="/undo-redo" && req.method==="POST") {
       if(!need(user,["ADMIN"])) return error("Administrator access required",403);
       const b=await bodyJson(req); const actor=OPEN_MODE?await openActor("ADMIN"):user;
-      const {data,error}=await db.rpc("jse_undo_redo",{p_user_id:actor.uid,p_action:String(b.action||"").toUpperCase()});
-      if(error)return error(error.message||"Recovery action failed",400);
+      const {data,rpcError}=await db.rpc("jse_undo_redo",{p_user_id:actor.uid,p_action:String(b.action||"").toUpperCase()});
+      if(rpcError)return error(rpcError.message||"Recovery action failed",400);
       return response(data);
     }
     if(path==="/admin-state" && req.method==="GET") {
@@ -654,8 +654,8 @@ async function handle(req:Request){
     }
     if(path==="/health" && req.method==="GET"){
       const started=performance.now();
-      const {data,error}=await db.rpc("jse_health_probe");
-      if(error) return error("Database unavailable",503);
+      const {data,rpcError}=await db.rpc("jse_health_probe");
+      if(rpcError) return error("Database unavailable",503);
       return response({ok:true,db:true,elapsed_ms:Number((performance.now()-started).toFixed(2)),timestamp:new Date().toISOString()},200,{"Cache-Control":"no-store"});
     }
     if(path==="/market" && req.method==="GET") return response(await market(),200,{"Cache-Control":"public,max-age=2,s-maxage=3,stale-while-revalidate=5"});
@@ -678,21 +678,21 @@ async function handle(req:Request){
         teamId=Number(team.id);
       }
       if(!teamId)return error("Customer team is required",400);
-      const {data,error}=await db.rpc("jse_create_order_for_team",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:Number(b.stock_id||b.asset_id),p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(Number(b.price||0)*100),p_idempotency_key:idem});
-      if(error){return error(error.message||"Order creation failed",400);} return response({ok:true,...data});
+      const {data,rpcError}=await db.rpc("jse_create_order_for_team",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:Number(b.stock_id||b.asset_id),p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(Number(b.price||0)*100),p_idempotency_key:idem});
+      if(rpcError){return error(rpcError.message||"Order creation failed",400);} return response({ok:true,...data});
     }
     if(path==="/exchange" && req.method==="GET") {if(!need(user,["EXCHANGE","ADMIN"]))return error("Exchange access required",403);return response({transactions:await transactionQueue("exchange")});}
     if(path==="/exchange" && req.method==="POST") {
       if(!need(user,["EXCHANGE","ADMIN"]))return error("Exchange access required",403);
       const b=await bodyJson(req); const actor=OPEN_MODE?await openActor("EXCHANGE"):user;
-      const {data,error}=await db.rpc("jse_exchange_action",{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||"")});
-      if(error)return error(error.message||"Exchange action failed",400); return response(data);
+      const {data,rpcError}=await db.rpc("jse_exchange_action",{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||"")});
+      if(rpcError)return error(rpcError.message||"Exchange action failed",400); return response(data);
     }
     if(path==="/bank" && req.method==="GET") {if(!need(user,["BANK","ADMIN"]))return error("Bank access required",403);return response({transactions:await transactionQueue("bank"),interest_earned:0});}
     if(path==="/bank" && req.method==="POST") {
       if(!need(user,["BANK","ADMIN"]))return error("Bank access required",403);
-      const b=await bodyJson(req);const actor=OPEN_MODE?await openActor("BANK"):user;const {data:ord}=await db.from("orders").select("source").eq("id",Number(b.order_id)).single();const fn=ord?.source==="INSTITUTION"?"jse_bank_institutional_action":"jse_bank_action";const args=ord?.source==="INSTITUTION"?{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||"")}:{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)};const {data,error}=await db.rpc(fn,args);
-      if(error)return error(error.message||"Bank action failed",400); if(data?.code==="NO_BALANCE")return response(data,200); return response(data);
+      const b=await bodyJson(req);const actor=OPEN_MODE?await openActor("BANK"):user;const {data:ord}=await db.from("orders").select("source").eq("id",Number(b.order_id)).single();const fn=ord?.source==="INSTITUTION"?"jse_bank_institutional_action":"jse_bank_action";const args=ord?.source==="INSTITUTION"?{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||"")}:{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)};const {data,rpcError}=await db.rpc(fn,args);
+      if(rpcError)return error(rpcError.message||"Bank action failed",400); if(data?.code==="NO_BALANCE")return response(data,200); return response(data);
     }
     if(path==="/loan" && req.method==="GET"){
       if(!need(user,["PARTICIPANT","ADMIN","EXCHANGE","BANK"])) return error("Access required",403);
@@ -705,8 +705,8 @@ async function handle(req:Request){
       let teamId=Number(b.team_id||0);
       if(!teamId && b.team){const {data:team}=await db.from("teams").select("id").eq("code",String(b.team)).single();teamId=Number(team?.id||0);}
       if(!teamId)return error("Customer team is required",400);
-      const {data,error}=await db.rpc("jse_loan_action_for_team",{p_user_id:actor.uid,p_team_id:teamId,p_action:String(b.action||"REPAY"),p_amount_paise:b.amount==null?null:Math.round(Number(b.amount)*100)});
-      if(error) return error(error.message||"Loan action failed",400);
+      const {data,rpcError}=await db.rpc("jse_loan_action_for_team",{p_user_id:actor.uid,p_team_id:teamId,p_action:String(b.action||"REPAY"),p_amount_paise:b.amount==null?null:Math.round(Number(b.amount)*100)});
+      if(rpcError) return error(rpcError.message||"Loan action failed",400);
       return response(data);
     }
     if(path==="/institutional-portfolio" && req.method==="GET"){
@@ -725,8 +725,8 @@ async function handle(req:Request){
       if(!assetId && b.ipo_id)assetId=Number(b.ipo_id);
       if(!assetId)return error("Asset is required",400);
       const idem=req.headers.get("idempotency-key")||crypto.randomUUID();
-      const {data,error}=await db.rpc("jse_create_institutional_order",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:assetId,p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(Number(b.price||0)*100),p_idempotency_key:idem});
-      if(error)return error(error.message||"Institutional order creation failed",400);
+      const {data,rpcError}=await db.rpc("jse_create_institutional_order",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:assetId,p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(Number(b.price||0)*100),p_idempotency_key:idem});
+      if(rpcError)return error(rpcError.message||"Institutional order creation failed",400);
       return response({ok:true,...data});
     }
     if(path==="/reports" && req.method==="GET"){
