@@ -98,6 +98,6 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
 $('#search').addEventListener('input',e=>{query=e.target.value;render()});
 loadAudit();setInterval(loadAudit,5000);
 try{hatchable.events.connect().channel('market').on('order_created',loadAudit).on('order_approved',loadAudit).on('price_updated',loadAudit)}catch(_){}
-</script></script>
+</script>
 <script src="/admin-nav.js"></script></body>
 </html>
