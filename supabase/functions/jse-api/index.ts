@@ -64,6 +64,13 @@ function response(body:any,status=200,headers:Record<string,string>={}) {
   return new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8",...CORS,...headers}});
 }
 function error(message:string,status=400,extra:any={}) { return response({error:message,...extra},status); }
+function csvResponse(rows:any[],filename:string){
+  const data=Array.isArray(rows)?rows:[];
+  const cols=[...new Set(data.flatMap(r=>Object.keys(r||{})))];
+  const escCsv=(v:any)=>'"'+String(v??"").replaceAll('"','""')+'"';
+  const text=[cols.map(escCsv).join(","),...data.map(r=>cols.map(c=>escCsv(r?.[c])).join(","))].join("\n");
+  return new Response(text,{status:200,headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":`attachment; filename="${filename}"`,...CORS}});
+}
 async function bodyJson(req:Request){ try{return await req.json();}catch{return {};}}
 async function auth(req:Request): Promise<any|null> {
   const h=req.headers.get("authorization")||"";
@@ -133,7 +140,7 @@ async function realtimeSnapshot(){
 async function orderList(user:any, page=1, limit=50, filters:any={}) {
   const safeLimit=Math.max(1,Math.min(100,Number(limit)||50)); const from=(Math.max(1,Number(page)||1)-1)*safeLimit;
   let q=db.from("orders").select("id,order_code,status,source,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,amount_paise,is_short_sale,created_at", {count:"exact"}).order("created_at",{ascending:false}).range(from,from+safeLimit-1);
-  if(user.role==="PARTICIPANT") q=q.eq("team_id",user.team_id);
+  if(user.role==="PARTICIPANT" && !OPEN_MODE) q=q.eq("team_id",user.team_id);
   if(filters.status) q=q.eq("status",filters.status);
   if(filters.team_id) q=q.eq("team_id",filters.team_id);
   if(filters.asset_id) q=q.eq("asset_id",filters.asset_id);
@@ -407,6 +414,54 @@ async function exportEvent(){
   };
 }
 
+async function brokerReports(type:string){
+  if(type==="commission_summary"){
+    const {data,error}=await db.from("broker_commissions").select("broker_id,commission_paise").eq("status","APPLIED");
+    if(error)throw error;
+    const ids=[...new Set((data||[]).map((x:any)=>x.broker_id).filter(Boolean))];
+    const bm=await maps(ids,"brokers","id","id,code,display_name");
+    const grouped=new Map<string,any>();
+    for(const x of (data||[])){
+      const b=bm.get(String(x.broker_id)); const key=String(x.broker_id);
+      const row=grouped.get(key)||{broker:b?.code||"",broker_name:b?.display_name||b?.code||"",commission_earned:0,transactions:0};
+      row.commission_earned+=Number(x.commission_paise||0)/100; row.transactions++;
+      grouped.set(key,row);
+    }
+    return {rows:[...grouped.values()].sort((a,b)=>b.commission_earned-a.commission_earned)};
+  }
+  if(type==="commissions"){
+    const [{data:rows,error:re},{data:brokers,error:be},{data:teams,error:te},{data:assets,error:ae}]=await Promise.all([
+      db.from("broker_commissions").select("id,order_id,broker_id,team_id,commission_rate_bps,commission_paise,status,created_at").order("created_at",{ascending:false}).limit(5000),
+      db.from("brokers").select("id,code,display_name"),
+      db.from("teams").select("id,code"),
+      db.from("assets").select("id,name,symbol,type")
+    ]);
+    if(re||be||te||ae)throw re||be||te||ae;
+    const bm=new Map((brokers||[]).map((x:any)=>[String(x.id),x])); const tm=new Map((teams||[]).map((x:any)=>[String(x.id),x]));
+    const am=new Map((assets||[]).map((x:any)=>[String(x.id),x]));
+    const orderIds=[...new Set((rows||[]).map((x:any)=>x.order_id).filter(Boolean))];
+    const {data:orders,error:oe}=await db.from("orders").select("id,order_code,asset_id,side,quantity,price_paise,trade_value_paise").in("id",orderIds.length?orderIds:[-1]);
+    if(oe)throw oe;
+    const om=new Map((orders||[]).map((x:any)=>[String(x.id),x]));
+    return {rows:(rows||[]).map((x:any)=>{const o=om.get(String(x.order_id)),b=bm.get(String(x.broker_id)),t=tm.get(String(x.team_id)),a=am.get(String(o?.asset_id));
+      return {broker:b?.code||"",order_code:o?.order_code||"",team:t?.code||"",stock:a?.name||"",symbol:a?.symbol||"",side:o?.side||"",quantity:o?.quantity||0,
+        price:Number(o?.price_paise||0)/100,trade_value:Number(o?.trade_value_paise||0)/100,commission_rate:Number(x.commission_rate_bps||0)/10000,
+        commission_amount:Number(x.commission_paise||0)/100,status:x.status,created_at:x.created_at};})};
+  }
+  return {rows:[]};
+}
+
+async function certificates(){
+  const [{data:orders,error:oe},{data:teams,error:te},{data:brokers,error:be},{data:assets,error:ae}]=await Promise.all([
+    db.from("orders").select("id,order_code,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,settled_at").eq("status","SETTLED").order("settled_at",{ascending:false}).limit(5000),
+    db.from("teams").select("id,code"),db.from("brokers").select("id,code"),db.from("assets").select("id,name,symbol,type")
+  ]);
+  if(oe||te||be||ae)throw oe||te||be||ae;
+  const tm=new Map((teams||[]).map((x:any)=>[String(x.id),x.code])); const bm=new Map((brokers||[]).map((x:any)=>[String(x.id),x.code])); const am=new Map((assets||[]).map((x:any)=>[String(x.id),x]));
+  return {certificates:(orders||[]).map((x:any)=>{const a=am.get(String(x.asset_id));return {order_code:x.order_code,team:tm.get(String(x.team_id))||"",broker:bm.get(String(x.broker_id))||"",
+    stock:a?.name||"",symbol:a?.symbol||"",side:x.side,quantity:x.quantity,price:Number(x.price_paise||0)/100,
+    trade_value:Number(x.trade_value_paise||0)/100,brokerage:Number(x.brokerage_paise||0)/100,created_at:x.settled_at};})};
+}
 async function loanData(user:any,teamCode?:string){
   let teamId=user.team_id;
   if(user.role!=="PARTICIPANT" && teamCode){
@@ -673,6 +728,20 @@ async function handle(req:Request){
       const {data,error}=await db.rpc("jse_create_institutional_order",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:assetId,p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(Number(b.price||0)*100),p_idempotency_key:idem});
       if(error)return error(error.message||"Institutional order creation failed",400);
       return response({ok:true,...data});
+    }
+    if(path==="/reports" && req.method==="GET"){
+      return response(await brokerReports(String(url.searchParams.get("type")||"commission_summary")));
+    }
+    if(path==="/certificates" && req.method==="GET"){
+      return response(await certificates());
+    }
+    if(path==="/export" && req.method==="GET"){
+      const type=String(url.searchParams.get("type")||"");
+      if(type==="commissions"){
+        const d=await brokerReports("commissions");
+        return csvResponse(d.rows||[],"JSE-broker-commissions.csv");
+      }
+      return error("Unknown export type",400);
     }
     if(path==="/tracking" && req.method==="GET") {if(!need(user,["PARTICIPANT","EXCHANGE","BANK","ADMIN"]))return error("Access required",403);
       return response(await orderList(user,Number(url.searchParams.get("page")||1),Number(url.searchParams.get("limit")||50),{status:url.searchParams.get("status")||"",team_id:undefined}));
