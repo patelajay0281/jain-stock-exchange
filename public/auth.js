@@ -8,11 +8,6 @@
       window.JSE_MEMBER=d.member||null;
       return;
     }
-    const admin=await fetch("/api/admin-state",{cache:"no-store"});
-    if(admin.ok){
-      window.JSE_MEMBER={username:"JSE-ADMIN",display_name:"JSE Administrator",role:"admin"};
-      return;
-    }
     const next=location.pathname+location.search+location.hash;
     location.replace("/login.html?next="+encodeURIComponent(next));
   }catch(_){
