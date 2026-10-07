@@ -56,7 +56,8 @@ async function load(){
  }
 }
 load();
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&state.length===0)load();});
+let marketTimer=setInterval(()=>{if(document.visibilityState==="visible")load();},5000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load();});
 try{
  hatchable.events.connect().channel('market').on('order_approved',ev=>{
   const p=ev?.payload||ev,type=p?.asset_type==='ipo'?'ipo':'stock',id=Number(p?.asset_id);
