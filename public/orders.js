@@ -1,4 +1,4 @@
-const A=window.__HATCHABLE__.api,$=s=>document.querySelector(s);
+const A=window.JSE_API,$=s=>document.querySelector(s);
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 let page=1;
