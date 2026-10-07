@@ -56,7 +56,8 @@ async function load(){
  }
 }
 load();
-let marketTimer=setInterval(()=>{if(document.visibilityState==="visible")load();},5000);
+const marketRefreshMs=localStorage.getItem("jse_token")?5000:10000;
+let marketTimer=setInterval(()=>{if(document.visibilityState==="visible")load();},marketRefreshMs);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load();});
 try{
  hatchable.events.connect().channel('market').on('order_approved',ev=>{
