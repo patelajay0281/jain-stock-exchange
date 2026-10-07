@@ -43,7 +43,7 @@ tbody tr:hover td{background:#fafbfd}
 @media(max-width:900px){.dashboard{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr 1fr}.page-head{align-items:start;gap:10px;flex-direction:column}.table-wrap{max-height:none}}
 @media(max-width:600px){.com-page{padding:10px}.site-nav{overflow-x:auto}.dashboard,.summary-grid{grid-template-columns:1fr}.page-head h1{font-size:24px}}
 </style>
-<script src="/__hatchable/events.js"></script><script src="/auth.js"></script></head>
+<script src="/jse-api.js"></script><script src="/auth.js"></script></head>
 <body>
 <div class="com-page">
 <header class="brand">JAIN STOCK EXCHANGE</header>
@@ -66,7 +66,7 @@ tbody tr:hover td{background:#fafbfd}
 </div>
 <script>
 (async()=>{
-const A=window.__HATCHABLE__.api;
+const A=window.JSE_API;
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const money=v=>'₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 try{
