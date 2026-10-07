@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bank Settlement | CMS BANK LTD</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f9;color:#172033}
+.shell{max-width:1600px;margin:0 auto;padding:14px 22px 28px}
+.brand{font-size:20px;font-weight:900;letter-spacing:1.5px;color:#14213d;margin-bottom:10px}
+.nav{display:flex;gap:6px;height:39px;overflow-x:auto;white-space:nowrap;margin-bottom:12px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
+.nav a{height:39px;display:flex;align-items:center;padding:0 12px;background:#fff;border:1px solid #d7dee7;border-radius:7px;text-decoration:none;color:#344054;font-size:11px;font-weight:800}
+.nav a.active{background:#173b31;color:#fff;border-color:#173b31}
+.heading{display:flex;justify-content:space-between;align-items:center;margin:6px 0 10px}
+.heading h1{margin:0;font-size:28px;color:#14213d}.heading p{margin:4px 0 0;font-size:11px;color:#7a8495}
+.pill{padding:8px 12px;border-radius:7px;background:#edf7f1;color:#176b48;border:1px solid #cfe3d7;font-size:10px;font-weight:900}.pill.bad{background:#faf0f1;border-color:#ecd0d4;color:#a23a43}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:10px}
+.metric{background:#fff;border:1px solid #d8e0e9;border-radius:9px;padding:11px 13px}.metric span{display:block;color:#7a8495;font-size:8px;font-weight:900;letter-spacing:.7px;text-transform:uppercase}.metric b{display:block;margin-top:4px;color:#14213d;font-size:20px}
+.card{background:#fff;border:1px solid #d8e0e9;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(20,33,61,.05)}
+.card-head{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #e6ebf0}.card-head strong{font-size:12px;letter-spacing:.6px}.card-head strong:before{content:"";display:inline-block;width:4px;height:14px;border-radius:3px;background:#176b48;margin-right:8px;vertical-align:-2px}.card-head span{font-size:10px;color:#7b8697}
+.notice{display:none;margin:10px 12px 0;padding:9px 11px;border-radius:7px;font-size:10px;font-weight:750}.notice.ok{display:block;background:#eef8f2;color:#23734f;border:1px solid #d8ebe0}.notice.error{display:block;background:#faf0f1;color:#a23a43;border:1px solid #edd0d4}
+.queue{padding:12px}.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:1150px}
+th{padding:10px 9px;background:#f5f8f6;border-bottom:1px solid #dce6e1;text-align:left;color:#718078;font-size:8px;font-weight:900;letter-spacing:.65px;text-transform:uppercase;white-space:nowrap}
+td{padding:11px 9px;border-bottom:1px solid #edf2ef;font-size:11px;color:#253a33;white-space:nowrap;vertical-align:middle}tbody tr:hover td{background:#f9fcfa}
+.order{font-weight:900;color:#153b2e}.security{font-weight:800;color:#173b31}.sub{display:block;margin-top:2px;color:#819088;font-size:8px}
+.side{font-size:9px;font-weight:900;padding:5px 7px;border-radius:5px}.buy{background:#edf8f2;color:#176b48}.sell{background:#faf0f1;color:#b23843}
+.risk{display:inline-block;font-size:8px;font-weight:900;padding:5px 7px;border-radius:5px}.clear{background:#eef8f2;color:#23734f;border:1px solid #cae6d5}.cash{background:#fff2df;color:#925b00;border:1px solid #ead4ad}.fatal{background:#fae9eb;color:#a23a43;border:1px solid #e6c4ca}
+.actions{display:flex;gap:5px}button{height:31px;border:0;border-radius:6px;padding:0 10px;font-size:8px;font-weight:900;cursor:pointer}.approve{background:#176b48;color:#fff}.reject{background:#f8e9eb;color:#a23a43}.approve:disabled,.reject:disabled{opacity:.45;cursor:not-allowed}
+.empty{padding:58px 15px;text-align:center;color:#7b8697;font-size:11px}
+.footerline{padding:10px 12px;background:#f9fbfa;border-top:1px solid #edf2ef;color:#718078;font-size:9px}
+.modal{display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(15,26,40,.5);z-index:20}.modal.open{display:flex}
+.box{width:450px;max-width:92vw;background:#fff;border:1px solid #dbe5df;border-radius:11px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.25)}.box h2{margin:0 0 8px;color:#173b31;font-size:19px}.box p{margin:0 0 16px;color:#667085;font-size:11px;line-height:1.5}.box .warn{color:#a23a43;font-weight:800}.box .btnrow{display:flex;justify-content:flex-end;gap:8px}.secondary{background:#fff!important;color:#344054;border:1px solid #d6dee8}.danger{background:#a23a43!important;color:#fff}.green{background:#176b48!important;color:#fff}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.shell{padding:12px}.metrics{grid-template-columns:1fr 1fr}.heading{flex-direction:column;align-items:flex-start;gap:8px}}
+@media(max-width:450px){.metrics{grid-template-columns:1fr}}
+.queue{padding:14px;background:#f3f8f5}.cardgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.order-card{background:#fff;border:1px solid #d5e4dc;border-radius:9px;overflow:hidden}.order-card.risk-card{border-color:#e6c4c9}.order-card.clear-card{border-color:#cfe3d8}.oc-head{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #e5eee9}.oc-code{font-size:12px;font-weight:900;color:#14372d}.oc-tag{font-size:7px;font-weight:900;padding:4px 6px;border-radius:5px;background:#eef4f1;color:#566b62}.oc-row{padding:9px 12px;border-bottom:1px solid #edf2ef}.oc-row label{display:block;font-size:7px;font-weight:900;letter-spacing:.7px;color:#728078;text-transform:uppercase;margin-bottom:4px}.oc-row b{font-size:10px;color:#173b31}.oc-sub{display:block;margin-top:2px;font-size:7px;color:#89968f}.oc-trade{display:grid;grid-template-columns:1fr 1fr 1fr;background:#0f4938;color:#fff}.oc-trade>div{padding:9px 10px;border-right:1px solid #ffffff22}.oc-trade label{display:block;font-size:7px;color:#b9d3ca;font-weight:900;text-transform:uppercase;margin-bottom:4px}.oc-trade b{font-size:10px}.oc-trade .buy{color:#72e0ad}.oc-trade .sell{color:#ffb2b8}.oc-risk{padding:8px 10px}.oc-risk span{display:block;text-align:center;font-size:7px;font-weight:900;padding:5px;border-radius:5px}.oc-risk .clear{background:#eef8f2;color:#23734f}.oc-risk .cash{background:#fff3e1;color:#925b00}.oc-risk .fatal{background:#fae9eb;color:#a23a43}.oc-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 10px 10px}.oc-actions button{width:100%;height:33px}@media(max-width:1250px){.cardgrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:900px){.cardgrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.cardgrid{grid-template-columns:1fr}}</style>
+<style>/* v4 control-desk polish */
+body{background:#eef2f7!important}.shell{max-width:1580px!important}.brand{color:#14213d!important}.heading{padding:14px 18px!important;border-radius:12px!important;background:#fff!important;border:1px solid #d8e0e9!important;box-shadow:0 5px 18px rgba(20,33,61,.05)!important}.metrics{grid-template-columns:repeat(5,1fr)!important}.metric{box-shadow:0 4px 14px rgba(20,33,61,.04)}.card{box-shadow:0 7px 22px rgba(20,33,61,.06)!important}.card-head{background:#fbfcfe}.oc-head{background:#fbfcfe}.oc-trade{background:#173b31!important}.footerline{background:#fafcfd}</style><style>
+/* White/light surfaces always use black text */
+body{color:#000}
+.nav a{color:#000!important;background:#fff!important}
+.heading h1,.heading p,.metrics .metric span,.metrics .metric b,
+.card,.card-head strong,.card-head span,.footerline,
+td,.order,.security,.sub,.box,.box h2,.box p,
+.modal .secondary{color:#000!important}
+.metric,.card,.order-card,.box{color:#000!important}
+.metric span,.card-head span,.sub,.footerline{color:#000!important}
+input,select{color:#000!important;background:#fff!important}
+</style></head>
+<body>
+<div class="shell">
+<div class="brand">JAIN STOCK EXCHANGE</div>
+<nav class="nav">
+<a href="/">Market</a><a href="/order">Create Order</a><a href="/exchange">Exchange Settlement</a><a class="active" href="/bank">Bank Settlement</a><a href="/orders">Order Tracking</a><a href="/institutional">Institutional Investors</a><a href="/commissions">Broker Commission</a><a href="/portfolios">Participant Portfolios</a><a href="/admin">Event Admin</a><a href="/audit">Audit Log</a><a href="/cash">Cash Ledger</a><a href="/insights">Market Intelligence</a>
+</nav>
+<div class="heading">
+<div><h1>Bank Settlement</h1><p>Settle exchange-approved transactions through CMS BANK LTD.</p></div>
+<div id="pill" class="pill">CMS BANK CONTROL</div>
+</div>
+<div class="metrics">
+<div class="metric"><span>Pending Bank</span><b id="mPending">0</b></div>
+<div class="metric"><span>No Balance</span><b id="mNoBal">0</b></div>
+<div class="metric"><span>Minimum Cash Warning</span><b id="mWarn">0</b></div>
+<div class="metric"><span>Institutional</span><b id="mInst">0</b></div>
+<div class="metric"><span>BUY / SELL</span><b id="mSides">0 / 0</b></div>
+</div>
+<section class="card">
+<div class="card-head"><strong>PENDING BANK TRANSACTIONS</strong><span id="updated">Loading…</span></div>
+<div id="notice" class="notice"></div>
+<div id="queue" class="queue"><div class="empty">Loading Bank Settlement queue…</div></div>
+<div id="footerline" class="footerline">Only EXCHANGE_APPROVED orders appear here. Successful approval settles cash, holdings, price history, brokerage and audit records.</div>
+</section>
+</div>
+
+<div id="modal" class="modal" aria-hidden="true">
+<div class="box">
+<h2 id="modalTitle">Bank Review</h2>
+<p id="modalText"></p>
+<div class="btnrow"><button class="secondary" onclick="closeModal()">CLOSE</button><button id="modalAction" class="green" onclick="confirmModal()">CONFIRM</button></div>
+</div>
+</div>
+<script>
+(function(){
+"use strict";
+var API="/api",rows=[],loading=false,activeId=null,activeMode="";
+var $=function(id){return document.getElementById(id)};
+var money=function(n){return "₹"+Math.round(Number(n||0)).toLocaleString("en-IN")};
+var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})};
+function headers(){var h=new Headers({"Accept":"application/json"}),t=localStorage.getItem("jse_token");if(t)h.set("Authorization","Bearer "+t);return h}
+function notice(t,k){var n=$("notice");n.textContent=t||"";n.className="notice"+(k?" "+k:"")}
+async function api(path,opt,retries){
+ opt=opt||{};retries=retries==null?2:retries;var last;
+ for(var i=0;i<=retries;i++){
+  try{
+   var h=headers();if(opt.body&&!h.has("Content-Type"))h.set("Content-Type","application/json");
+   var r=await fetch(API+path,{method:opt.method||"GET",headers:h,body:opt.body,cache:"no-store"});
+   var tx=await r.text(),d={};try{d=tx?JSON.parse(tx):{}}catch(e){d={error:tx}};
+   if(r.ok)return d;last=new Error(String(d.error||d.message||("HTTP "+r.status)));
+   if(![429,502,503,504].includes(r.status)||i===retries)throw last;
+  }catch(e){last=e;if(i===retries)throw e}
+  await new Promise(function(r){setTimeout(r,[500,1200,2400][i]||2400)});
+ }
+ throw last||new Error("Request failed");
+}
+function metrics(){
+ var no=rows.filter(function(x){return x.no_balance}),warn=rows.filter(function(x){return x.minimum_cash_warning}),inst=rows.filter(function(x){return x.kind==="INSTITUTION"}),buys=rows.filter(function(x){return x.side==="BUY"}),sells=rows.filter(function(x){return x.side==="SELL"});
+ $("mPending").textContent=rows.length;$("mNoBal").textContent=no.length;$("mWarn").textContent=warn.length;$("mInst").textContent=inst.length;$("mSides").textContent=buys.length+" / "+sells.length;
+}
+function risk(x){
+ if(x.no_balance)return '<span class="risk fatal">NO BALANCE — BLOCKED</span>';
+ if(x.minimum_cash_warning)return '<span class="risk cash">MIN CASH — CONFIRM</span>';
+ return '<span class="risk clear">CLEAR</span>';
+}
+function action(x){
+ if(x.no_balance)return '<div class="actions"><button class="reject" onclick="rejectOrder('+x.id+')">REJECT</button></div>';
+ if(x.minimum_cash_warning)return '<div class="actions"><button class="approve" onclick="openWarning('+x.id+')">REVIEW &amp; APPROVE</button><button class="reject" onclick="rejectOrder('+x.id+')">REJECT</button></div>';
+ return '<div class="actions"><button class="approve" onclick="approveOrder('+x.id+')">APPROVE</button><button class="reject" onclick="rejectOrder('+x.id+')">REJECT</button></div>';
+}
+function render(){
+ metrics();$("updated").textContent="Updated "+new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+ if(!rows.length){$("queue").innerHTML='<div class="empty">No exchange-approved orders are waiting for Bank settlement.</div>';return}
+ $("queue").innerHTML='<div class="cardgrid">'+rows.map(function(x){var rc=x.no_balance?"risk-card":"clear-card";var risk=x.no_balance?'<span class="fatal">NO BALANCE — BLOCKED</span>':x.minimum_cash_warning?'<span class="cash">MINIMUM CASH — REVIEW</span>':'<span class="clear">CLEAR</span>';var buttons=x.no_balance?'<button class="reject" onclick="rejectOrder('+x.id+')">REJECT</button>':'<button class="approve" onclick="'+(x.minimum_cash_warning?"openWarning":"approveOrder")+'('+x.id+')">'+(x.minimum_cash_warning?"REVIEW & APPROVE":"APPROVE")+'</button><button class="reject" onclick="rejectOrder('+x.id+')">REJECT</button>';return '<article class="order-card '+rc+'"><div class="oc-head"><span class="oc-code">'+esc(x.order_code||("ORD-"+x.id))+'</span><span class="oc-tag">'+(x.kind==="INSTITUTION"?"INSTITUTION":"PARTICIPANT")+'</span></div><div class="oc-row"><label>Team / Investor</label><b>'+esc(x.team||"—")+'</b></div><div class="oc-row"><label>Broker</label><b>'+esc(x.broker||"—")+'</b></div><div class="oc-row"><label>Stock / IPO</label><b>'+esc(x.stock||"—")+'</b><span class="oc-sub">'+esc(x.symbol||"")+'</span></div><div class="oc-trade"><div><label>Side</label><b class="'+(x.side==="BUY"?"buy":"sell")+'">'+esc(x.side)+'</b></div><div><label>Required</label><b>'+money(x.required_cash)+'</b></div><div><label>Available</label><b>'+money(x.available_cash)+'</b></div></div><div class="oc-row"><label>Cash After Settlement</label><b>'+money(x.cash_after)+'</b></div><div class="oc-risk">'+risk+'</div><div class="oc-actions">'+buttons+'</div></article>'}).join('')+'</div>';
+}
+function openWarning(id){
+ var x=rows.find(function(r){return String(r.id)===String(id)});if(!x)return;
+ activeId=x.id;activeMode="WARNING";$("modalTitle").textContent="Minimum Cash Warning";
+ $("modalText").innerHTML="Order <b>"+esc(x.order_code)+"</b> will leave <b>"+esc(x.team||x.payer)+"</b> with "+money(x.cash_after)+" cash, below the configured ₹20,000 minimum cash buffer. The Bank must explicitly acknowledge this warning before settlement.";
+ $("modalAction").textContent="APPROVE WITH WARNING";$("modalAction").className="green";
+ $("modal").className="modal open";$("modal").setAttribute("aria-hidden","false");
+}
+function openNoBalance(id){
+ var x=rows.find(function(r){return String(r.id)===String(id)});if(!x)return;
+ activeId=x.id;activeMode="NO_BALANCE";$("modalTitle").textContent="Insufficient Balance";
+ $("modalText").innerHTML="Order <b>"+esc(x.order_code)+"</b> requires "+money(x.required_cash)+" but only "+money(x.available_cash)+" is available. This transaction <span class='warn'>cannot be settled</span> and must be rejected.";
+ $("modalAction").textContent="REJECT ORDER";$("modalAction").className="danger";
+ $("modal").className="modal open";$("modal").setAttribute("aria-hidden","false");
+}
+function closeModal(){activeId=null;activeMode="";$("modal").className="modal";$("modal").setAttribute("aria-hidden","true")}
+function confirmModal(){if(!activeId)return;var id=activeId,mode=activeMode;closeModal();if(mode==="WARNING")postAction(id,"APPROVE",true);else if(mode==="NO_BALANCE")postAction(id,"REJECT",false)}
+async function postAction(id,actionName,warningAck){
+ try{
+  var d=await api("/bank",{method:"POST",body:JSON.stringify({order_id:Number(id),action:actionName,warning_ack:!!warningAck})},2);
+  if(d&&d.ok===false){
+    var x=rows.find(function(r){return String(r.id)===String(id)})||{};
+    if(d.code==="MINIMUM_CASH_WARNING"&&d.approval_allowed)openWarning(id);
+    else if(d.code==="INSUFFICIENT_BALANCE")openNoBalance(id);
+    else notice(d.message||"Bank review did not settle this order.","error");
+    await load();return;
+  }
+  var code=d&&d.order_code?d.order_code:(rows.find(function(r){return String(r.id)===String(id)})||{}).order_code||("ORD-"+id);
+  notice(actionName==="APPROVE"?(code+" settled successfully through Bank Settlement."):(code+" rejected by Bank Settlement."),"ok");
+  await load();
+ }catch(e){notice(e.message||"Bank action failed. Please retry.","error");await load()}
+}
+async function approveOrder(id){await postAction(id,"APPROVE",false)}
+async function rejectOrder(id){await postAction(id,"REJECT",false)}
+async function load(){
+ if(loading)return;loading=true;
+ try{
+  var d=await api("/bank",{},2);rows=Array.isArray(d.transactions)?d.transactions:[];$("pill").textContent="CMS BANK CONTROL";$("pill").className="pill";render();
+ }catch(e){
+  rows=[];metrics();$("queue").innerHTML='<div class="empty">Bank queue unavailable.<br><br>'+esc(e.message||"Unknown error")+'</div>';
+  $("pill").textContent="BANK ACCESS / CONNECTION ERROR";$("pill").className="pill bad";notice(e.message||"Bank connection error.","error");
+ }finally{loading=false}
+}
+window.approveOrder=approveOrder;window.rejectOrder=rejectOrder;window.openWarning=openWarning;window.openNoBalance=openNoBalance;window.closeModal=closeModal;window.confirmModal=confirmModal;
+load();setInterval(function(){if(document.visibilityState==="visible")load()},2500);
+try{if(window.hatchable&&window.hatchable.events){window.hatchable.events.connect().channel("market").on("order_approved",load)}}catch(e){}
+})();
+</script>
+</body>
+</html>
