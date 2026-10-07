@@ -25,5 +25,9 @@
     throw new Error("API request failed");
   }
   window.JSE_API=API;
+  window.__HATCHABLE__=window.__HATCHABLE__||{};
+  window.__HATCHABLE__.api=API;
+  window.hatchable=window.hatchable||{};
+  window.hatchable.events=window.hatchable.events||{connect(){return{channel(){return{on(){return this;}}}}}};
   window.jseFetch=request;
 })();
