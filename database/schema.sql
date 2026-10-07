@@ -1,5 +1,5 @@
 -- JAIN STOCK EXCHANGE — Phase 1 canonical PostgreSQL schema
--- Target: Neon Postgres
+-- Target: Supabase PostgreSQL 17 / managed Postgres
 -- Money: BIGINT integer paise. Never use floating point for financial values.
 -- Time: TIMESTAMPTZ stored in UTC; UI formats for the user's locale.
 -- This file intentionally contains the complete foundation schema in one migration.
@@ -868,4 +868,20 @@ INSERT INTO event_state (id, status)
 VALUES (1, 'NOT_STARTED')
 ON CONFLICT (id) DO NOTHING;
 
-COMMIT;
+
+-- Supabase hardening: all public-schema tables are server-managed through Edge Functions.
+-- Direct anon/authenticated Data API access is blocked by RLS until explicit policies are added.
+DO $
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT tablename
+    FROM pg_tables
+    WHERE schemaname = 'public'
+  LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', r.tablename);
+  END LOOP;
+END;
+$;
+
