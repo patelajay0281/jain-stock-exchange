@@ -3,6 +3,7 @@
   const channels = new Map();
   let started = false;
   let timer = null;
+  let pollMs = 5000;
   let previous = null;
   let originalFetch = window.fetch.bind(window);
 
@@ -57,6 +58,7 @@
 
   async function pull() {
     try {
+      if (!localStorage.getItem("jse_token")) return;
       const r = await fetch(API + "/realtime", {cache:"no-store"});
       if (!r.ok) return;
       const next = await r.json();
@@ -81,7 +83,8 @@
     if (started) return;
     started = true;
     pull();
-    timer = setInterval(pull, 3000);
+    pollMs = 5000;
+    timer = setInterval(pull, pollMs);
   }
 
   window.__HATCHABLE__ = window.__HATCHABLE__ || {};
