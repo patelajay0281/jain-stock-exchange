@@ -3,9 +3,9 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 let pendingShort=null,knownIds=new Set(),firstLoad=true,loading=false,refreshQueued=false,pendingIds=new Set(),currentRows=[];
 function review(x){return x.short_selling?'<span class="warning-ribbon short">SHORT SELLING</span>':'<span class="ok-ribbon">CLEAR</span>'}
 function closeShortPopup(){const p=$('#shortPopup');if(p){p.style.display='none';p.setAttribute('aria-hidden','true')}pendingShort=null}
-function showShortPopup(x){pendingShort=x;const p=$('#shortPopup');$('#shortText').textContent='Order '+(x.order_code||'')+' for '+(x.team||'participant')+' is a SELL order for '+Number(x.quantity||0).toLocaleString('en-IN')+' shares, but the participant holds only '+Number(x.holding_qty||0).toLocaleString('en-IN')+' shares. This is SHORT SELLING and requires explicit Exchange approval.';p.style.display='flex';p.setAttribute('aria-hidden','false')}
-async function confirmShortApproval(){const x=pendingShort;if(!x)return;closeShortPopup();await act(x.id,x.kind,'APPROVE',true)}
-function requestApproval(x){if(x.short_selling)showShortPopup(x);else act(x.id,x.kind,'APPROVE',false)}
+function showShortPopup(x){pendingShort=x;const p=$('#shortPopup');$('#shortText').textContent='Order '+(x.order_code||'')+' for '+(x.team||'customer team')+' attempts to sell '+Number(x.quantity||0).toLocaleString('en-IN')+' shares while only '+Number(x.holding_qty||0).toLocaleString('en-IN')+' are held. SHORT SELLING IS NOT POSSIBLE. Exchange cannot approve this order and it must be rejected.';p.style.display='flex';p.setAttribute('aria-hidden','false')}
+async function confirmShortApproval(){const x=pendingShort;if(!x)return;closeShortPopup();await act(x.id,x.kind,'REJECT',false)}
+function requestApproval(x){if(x.short_selling){showShortPopup(x);return}act(x.id,x.kind,'APPROVE',false)}
 function render(rows){
   const visible=(rows||[]).filter(x=>!pendingIds.has(String(x.id)+':'+String(x.kind)));
   $('#metrics').innerHTML='<div class="metric"><span>Pending</span><b>'+visible.length+'</b></div><div class="metric"><span>Trade Orders</span><b>'+visible.filter(x=>x.kind==='PARTICIPANT').length+'</b></div><div class="metric"><span>Short Selling</span><b style="color:#a23a43">'+visible.filter(x=>x.short_selling).length+'</b></div><div class="metric"><span>Action</span><b style="font-size:14px">REVIEW</b></div>';
