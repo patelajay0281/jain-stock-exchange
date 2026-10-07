@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create Order | JAIN STOCK EXCHANGE</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;padding:0}body,button,input,select{font-family:Arial,Helvetica,sans-serif}button,input,select{font:inherit}select,input{appearance:auto;-webkit-appearance:auto}
+
+body.order-page{background:#f4f6f9!important;color:#172033!important}
+body.order-page .order-shell{max-width:1580px;margin:0 auto;padding:14px 22px 22px}
+body.order-page .brand{font-size:19px;font-weight:850;letter-spacing:1.4px;color:#14213d;margin-bottom:10px}
+body.order-page .site-nav{display:flex;gap:6px;margin:0 0 11px;height:39px;align-items:stretch;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none}
+body.order-page .site-nav::-webkit-scrollbar{display:none}
+body.order-page .site-nav a{flex:0 0 auto;height:39px;display:flex;align-items:center;padding:0 12px;border:1px solid #d8dfe8;border-radius:7px;text-decoration:none;font-size:11px;font-weight:750;line-height:1;color:#344054;background:#fff}
+body.order-page .site-nav a[href="/order"]{background:#172b4d;color:#fff;border-color:#172b4d}
+body.order-page .order-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+body.order-page .order-heading h1{margin:0;color:#14213d;font-size:27px;letter-spacing:-.03em}
+body.order-page .live{font-size:10px;font-weight:850;letter-spacing:.06em;color:#176b48;background:#e9f5ef;border:1px solid #c6e3d3;border-radius:6px;padding:8px 12px}
+body.order-page .live.bad{background:#faf0f1;border-color:#edd0d4;color:#a23a43}
+body.order-page .order-card{background:#fff;border:1px solid #d5dde7;border-radius:10px;box-shadow:0 4px 18px rgba(20,33,61,.05);overflow:hidden}
+body.order-page .order-card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 19px;border-bottom:1px solid #e7ebf0}
+body.order-page .order-card-head strong{font-size:13px;color:#172033}
+body.order-page .order-card-head span{font-size:10px;color:#8a94a3}
+body.order-page form#orderForm{padding:18px 20px 16px}
+body.order-page .field-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px 18px!important;width:100%!important}
+body.order-page .field{min-width:0}
+body.order-page .field label{display:block!important;margin:0 0 5px!important;color:#566274!important;font-size:10px!important;font-weight:850!important;text-transform:uppercase!important;letter-spacing:.06em!important}
+body.order-page .field select,
+body.order-page .field input{display:block!important;width:100%!important;height:41px!important;margin:0!important;padding:0 11px!important;border:1px solid #cbd3de!important;border-radius:7px!important;background:#fff!important;color:#172033!important;font-size:13px!important;font-weight:650!important;box-shadow:none!important;outline:none!important}
+body.order-page .field select:focus,
+body.order-page .field input:focus{border-color:#6d7e94!important;box-shadow:0 0 0 2px rgba(52,73,98,.08)!important}
+body.order-page .section-title{margin:15px 0 9px;padding-top:13px;border-top:1px solid #e5e9ee;font-size:10px;font-weight:850;color:#4d5a6c;letter-spacing:.06em;text-transform:uppercase}
+body.order-page .security-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px 18px!important;width:100%!important}
+body.order-page .selected{margin-top:11px;padding:11px 12px;background:#f7f9fb;border:1px solid #dfe5eb;border-radius:7px;display:flex;justify-content:space-between;gap:12px;align-items:end}
+body.order-page .selected b{font-size:12px}
+body.order-page .selected small{display:block;color:#788394;font-size:9px;margin-top:3px}
+body.order-page .selected .price{font-size:20px;font-weight:900}
+body.order-page .summary{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;margin:0!important;padding:0!important;border:0!important}
+body.order-page .summary .metric{display:block!important;border:1px solid #e0e5eb!important;border-radius:6px!important;background:#f8fafc!important;padding:10px 11px!important}
+body.order-page .summary .metric span{display:block!important;margin:0!important;padding:0!important;border:0!important;color:#788394!important;font-size:8px!important;text-transform:uppercase!important;letter-spacing:.05em!important}
+body.order-page .summary .metric b{display:block!important;margin-top:4px!important;color:#172033!important;font-size:15px!important}
+body.order-page .actions{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid #e5e9ee}
+body.order-page #submitBtn{height:40px;min-width:170px;padding:0 20px;border:0;border-radius:7px;background:#172b4d;color:#fff;font-size:10px;font-weight:850;letter-spacing:.04em;cursor:pointer;box-shadow:none}
+body.order-page #submitBtn:hover{background:#243a5b}
+body.order-page #submitBtn:disabled{opacity:.58;cursor:wait}
+body.order-page #refreshBtn{height:40px;min-width:100px;padding:0 18px;border:1px solid #d8dfe8;border-radius:7px;background:#fff;color:#344054;font-size:10px;font-weight:850;cursor:pointer}
+body.order-page #msg{flex:1;margin:0;min-height:40px;display:flex;align-items:center;padding:9px 12px;border-radius:7px;background:#f8fafc;color:#667085;font-size:10px;font-weight:750;line-height:1.35}
+body.order-page #msg.error{background:#faf0f1;color:#a23a43}
+body.order-page #msg.warn{background:#fbf7ea;color:#8a6500}
+body.order-page #msg.success{background:#eef8f2;color:#23734f;border:1px solid #d8ebe0}
+body.order-page #handoff{display:none;margin-top:9px;padding:9px 11px;border:1px solid #d8e7df;border-radius:7px;background:#f1f8f4;color:#275846;font-size:10px;font-weight:750}
+body.order-page #handoff a{color:#173b31;font-weight:850;margin-left:10px;text-decoration:underline}
+body.order-page #loanFields{display:none}
+body.order-page .loan-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+body.order-page .loan-box{border:1px solid #e0e5eb;border-radius:6px;background:#f8fafc;padding:10px 11px}
+body.order-page .loan-box span{display:block;color:#788394;font-size:8px;text-transform:uppercase}
+body.order-page .loan-box b{display:block;margin-top:4px;color:#172033;font-size:14px}
+body.order-page .subtle{margin:8px 0 0;color:#8490a0;font-size:9px}
+@media(min-width:900px){
+ body.order-page{min-height:100vh}
+ body.order-page .order-shell{min-height:100vh}
+}
+@media(max-width:700px){
+ body.order-page .order-shell{padding:13px 12px 22px}
+ body.order-page .order-heading{align-items:flex-start;gap:8px;flex-direction:column}
+ body.order-page .field-grid,body.order-page .security-grid{grid-template-columns:1fr!important}
+ body.order-page .summary,.loan-summary{grid-template-columns:1fr 1fr!important}
+ body.order-page .actions{align-items:stretch;flex-direction:column}
+ body.order-page #submitBtn,body.order-page #refreshBtn{width:100%}
+ body.order-page #msg{width:100%;min-height:40px}
+}
+@media(max-width:430px){
+ body.order-page .summary,.loan-summary{grid-template-columns:1fr!important}
+}
+</style>
+</head>
+<body class="order-page">
+<div class="order-shell">
+<header class="brand">JAIN STOCK EXCHANGE</header>
+<nav class="site-nav" aria-label="JSE navigation">
+<a href="/">Market</a><a href="/order" aria-current="page">Create Order</a><a href="/exchange">Exchange Settlement</a><a href="/bank">Bank Settlement</a><a href="/orders">Order Tracking</a><a href="/institutional">Institutional Investors</a><a href="/commissions">Broker Commission</a><a href="/portfolios">Participant Portfolios</a><a href="/admin">Event Admin</a><a href="/audit">Audit Log</a><a href="/cash">Cash Ledger</a><a href="/insights">Market Intelligence</a>
+</nav>
+
+<div class="order-heading">
+<h1>Create Order</h1>
+<div id="eventState" class="live">CHECKING MARKET…</div>
+</div>
+
+<section class="order-card">
+<div class="order-card-head"><strong>Order Entry</strong><span id="modeHint">Participant trading</span></div>
+<form id="orderForm" novalidate>
+<div class="field-grid">
+<div class="field"><label for="transactionType">Transaction Type</label><select id="transactionType"><option value="trade">Trade Order</option><option value="loan_repay">Loan Repayment</option></select></div>
+<div class="field"><label for="team">Customer / Participant Team</label><select id="team"></select></div>
+</div>
+
+<div id="tradeFields">
+<div class="section-title">Security &amp; Order</div>
+<div class="security-grid">
+<div class="field"><label for="assetType">Asset Type</label><select id="assetType"><option value="stock">Listed Stock</option><option value="ipo">IPO</option></select></div>
+<div class="field"><label for="stock">Stock / IPO</label><select id="stock"></select></div>
+<div class="field"><label for="side">Transaction Side</label><select id="side"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+<div class="field"><label for="qty">Quantity</label><input id="qty" type="number" min="1" step="1" value="50" inputmode="numeric"></div>
+<div class="field"><label for="price">Price Per Share</label><input id="price" type="number" min="0.01" step="0.01" value="0.00" inputmode="decimal"></div>
+<div class="field"><label for="broker">Broker</label><input id="broker" type="text" readonly></div>
+</div>
+
+<div class="selected">
+<div><b id="selName">—</b><small id="selMeta">Waiting for market data</small></div>
+<div id="selPrice" class="price">₹0</div>
+</div>
+
+<div class="section-title">Settlement Preview</div>
+<div class="summary">
+<div class="metric"><span>Total Shares</span><b id="shares">0</b></div>
+<div class="metric"><span>Trade Value</span><b id="tv">₹0</b></div>
+<div class="metric"><span>Brokerage · 0.5%</span><b id="bc">₹0</b></div>
+<div class="metric"><span id="finalLabel">Total Required</span><b id="tr">₹0</b></div>
+</div>
+</div>
+
+<div id="loanFields">
+<div class="section-title">Loan Repayment</div>
+<div id="loanSummary" class="loan-summary"></div>
+<div class="field" style="margin-top:12px"><label for="repayAmount">Repayment Amount — Interest First</label><input id="repayAmount" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+<p class="subtle">Repayment uses the configured minimum cash buffer and applies interest before principal.</p>
+</div>
+
+<div class="actions">
+<button id="submitBtn" type="submit" disabled>SUBMIT ORDER</button>
+<button id="refreshBtn" type="button">REFRESH</button>
+<p id="msg" role="status" aria-live="polite">Loading market data…</p>
+</div>
+
+<div id="handoff">
+<span id="handoffText"></span>
+<a id="handoffExchange" href="/exchange">Exchange</a>
+<a id="handoffBank" href="/bank">Bank</a>
+<a id="handoffTracking" href="/orders">Tracking</a>
+</div>
+</form>
+</section>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var API="/api";
+var stocks=[],ipos=[],market=null,busy=false,manualPrice=false,lastCreatedCode="";
+var wait=function(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})};
+var money=function(n){return "₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:2})};
+var whole=function(n){return Math.round(Number(n||0)).toLocaleString("en-IN")};
+var makeKey=function(){
+ try{return crypto.randomUUID?crypto.randomUUID():"JSE-"+Date.now()+"-"+Math.random().toString(16).slice(2)}
+ catch(e){return "JSE-"+Date.now()+"-"+Math.random().toString(16).slice(2)}
+};
+function showMessage(text,kind){
+ var el=$("msg");el.textContent=String(text||"");el.className="";
+ if(kind)el.classList.add(kind);
+}
+function setEvent(state){
+ var x=String(state||"").toUpperCase();
+ var live=x==="LIVE";
+ $("eventState").textContent=live?"MARKET LIVE":x==="PAUSED"?"MARKET PAUSED":x==="CLOSED"||x==="FINALIZED"?"MARKET CLOSED":"MARKET "+(x||"UNAVAILABLE");
+ $("eventState").className="live"+(live?"":" bad");
+ if(!busy && $("transactionType").value==="trade")$("submitBtn").disabled=!live;
+ return live;
+}
+function teams(){
+ var nodes=[];
+ for(var i=1;i<=100;i++){
+  var id="TEAM-"+String(i).padStart(3,"0"),o=document.createElement("option");
+  o.value=id;o.textContent=id;nodes.push(o);
+ }
+ $("team").replaceChildren.apply($("team"),nodes);
+ var saved=localStorage.getItem("jse_selected_team");
+ if(saved && $("team").querySelector('option[value="'+saved+'"]'))$("team").value=saved;
+ updateBroker();
+}
+function updateBroker(){
+ var team=$("team").value||"TEAM-001";
+ var n=parseInt(team.slice(5),10)||1;
+ $("broker").value="BROKER-"+String(Math.ceil(n/10)).padStart(2,"0");
+}
+function assetList(){return $("assetType").value==="ipo"?ipos:stocks}
+function currentAsset(){
+ var id=$("stock").value;
+ return assetList().find(function(x){return String(x.id)===String(id)});
+}
+function populateAssets(){
+ var list=assetList().slice().sort(function(a,b){return String(a.name||"").localeCompare(String(b.name||""))});
+ var keep=$("stock").value;
+ $("stock").replaceChildren.apply($("stock"),list.map(function(x){
+   var o=document.createElement("option");o.value=x.id;o.textContent=x.name;return o;
+ }));
+ if(list.some(function(x){return String(x.id)===String(keep)}))$("stock").value=keep;
+ else if(list[0])$("stock").value=list[0].id;
+ var a=currentAsset();
+ $("qty").min=a?String(a.lot_size||1):"1";
+ $("qty").step=a?String(a.lot_size||1):"1";
+ if(a&&!manualPrice)$("price").value=Number(a.price||0).toFixed(2);
+ drawAsset();calculate();
+}
+function drawAsset(){
+ var a=currentAsset();
+ if(!a){
+  $("selName").textContent="—";
+  $("selMeta").textContent="Waiting for market data";
+  $("selPrice").textContent="₹0";
+  return;
+ }
+ $("selName").textContent=String(a.name||"");
+ $("selMeta").textContent=(a.symbol?a.symbol+" · ":"")+(a._type==="ipo"?"IPO":"LISTED STOCK")+" · LOT "+String(a.lot_size||1);
+ $("selPrice").textContent=money(a.price);
+}
+function calculate(){
+ var a=currentAsset(),q=Math.max(0,Number($("qty").value||0)),p=Math.max(0,Number($("price").value||0)),v=q*p,b=v*.005,sell=$("side").value==="SELL";
+ $("shares").textContent=whole(q);
+ $("tv").textContent=money(v);
+ $("bc").textContent=money(b);
+ $("finalLabel").textContent=sell?"Net Proceeds":"Total Required";
+ $("tr").textContent=money(sell?v-b:v+b);
+ if(a && q && q%Number(a.lot_size||1)!==0 && !busy){
+   showMessage("Quantity must be a multiple of "+String(a.lot_size||1)+".","warn");
+ }
+}
+async function api(path,options,tries){
+ options=options||{};
+ tries=tries==null?2:tries;
+ var last;
+ for(var i=0;i<=tries;i++){
+  try{
+   var headers=new Headers(options.headers||{});
+   headers.set("Accept","application/json");
+   if(options.body && !headers.has("Content-Type"))headers.set("Content-Type","application/json");
+   var token=localStorage.getItem("jse_token");
+   if(token)headers.set("Authorization","Bearer "+token);
+   var response=await fetch(API+path,{method:options.method||"GET",headers:headers,body:options.body,cache:"no-store"});
+   var text=await response.text(),data={};
+   try{data=text?JSON.parse(text):{}}catch(e){data={error:text||"Invalid server response"}}
+   if(response.ok)return data;
+   last=new Error(String(data.error||data.message||("HTTP "+response.status)));
+   if(![429,502,503,504].includes(response.status)||i===tries)throw last;
+  }catch(e){
+   last=e;
+   if(i===tries)throw e;
+  }
+  await wait([500,1200,2400][i]||2400);
+ }
+ throw last||new Error("Request failed");
+}
+async function loadMarket(){
+ try{
+  market=await api("/market",{},2);
+  stocks=(market.stocks||[]).map(function(x){return Object.assign({},x,{_type:"stock"})});
+  ipos=(market.ipos||[]).map(function(x){return Object.assign({},x,{_type:"ipo"})});
+  populateAssets();
+  setEvent(market.status);
+  if(!lastCreatedCode)showMessage("Ready.");
+ }catch(e){
+  market=null;
+  setEvent("ERROR");
+  $("submitBtn").disabled=true;
+  showMessage(e.message||"Market unavailable. Click Refresh and retry.","error");
+ }
+}
+async function loadLoan(){
+ try{
+  var d=await api("/loan?team="+encodeURIComponent($("team").value),{},1);
+  var l=d.loan||{},t=d.team||{},due=Number(l.total_due||0),max=Number(l.max_repayable||0);
+  $("loanSummary").innerHTML=
+   '<div class="loan-box"><span>Principal Due</span><b>'+money(l.principal_due)+'</b></div>'+
+   '<div class="loan-box"><span>Interest Due</span><b>'+money(l.interest_due)+'</b></div>'+
+   '<div class="loan-box"><span>Total Due</span><b>'+money(due)+'</b></div>'+
+   '<div class="loan-box"><span>Available Cash</span><b>'+money(t.available_cash)+'</b></div>';
+  $("repayAmount").max=String(Math.min(due,max));
+  $("repayAmount").value=String(Math.floor(Math.min(due,max)));
+  if(due && max)showMessage("Repayment ready. Interest is settled first.");
+  else if(due)showMessage("Repayment would breach the ₹20,000 minimum cash buffer.","warn");
+  else showMessage("No open loan for this team.");
+  $("submitBtn").disabled=busy;
+ }catch(e){
+  $("submitBtn").disabled=true;
+  showMessage(e.message||"Loan information unavailable.","error");
+ }
+}
+function cleanSuccess(code){
+ var safe=String(code||"").trim();
+ if(!safe || safe==="undefined" || safe==="null")return "";
+ return safe;
+}
+async function submitTrade(){
+ if(!setEvent(market&&market.status))return showMessage("Market is not LIVE. Orders are disabled.","error");
+ var a=currentAsset(),q=Math.floor(Number($("qty").value||0)),p=Number(Number($("price").value||0).toFixed(2));
+ if(!a)return showMessage("Select a security.","error");
+ if(!Number.isInteger(q)||q<=0||q%Number(a.lot_size||1)!==0)return showMessage("Quantity must be a positive multiple of "+String(a.lot_size||1)+".","error");
+ if(!Number.isFinite(p)||p<=0)return showMessage("Enter a valid positive price.","error");
+ var key=makeKey();
+ busy=true;$("submitBtn").disabled=true;$("refreshBtn").disabled=true;
+ showMessage("Creating order…");
+ try{
+  var d=await api("/orders",{method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":key},body:JSON.stringify({
+   team:$("team").value,
+   asset_id:Number(a.id),
+   asset_type:a._type,
+   side:$("side").value,
+   quantity:q,
+   price:p,
+   idempotency_key:key
+  })},3);
+  var code=cleanSuccess(d.order_code||(d.order&&d.order.order_code)||d.order_id||(d.order&&d.order.id)||d.id);
+  if(!code)throw new Error("Order was not confirmed by the exchange API.");
+  lastCreatedCode=code;
+  localStorage.setItem("jse_selected_team",$("team").value);
+  showMessage("Order "+code+" created and sent to Exchange Settlement. Any balance or holding issue will be reviewed there.","success");
+  $("submitBtn").textContent="ORDER CREATED";
+  $("submitBtn").disabled=true;
+  $("handoff").style.display="block";
+  $("handoffText").textContent=code+" is now PENDING EXCHANGE.";
+  $("handoffExchange").href="/exchange?order="+encodeURIComponent(code);
+  $("handoffBank").href="/bank?order="+encodeURIComponent(code);
+  $("handoffTracking").href="/orders?team="+encodeURIComponent($("team").value);
+ }catch(e){
+  lastCreatedCode="";
+  $("submitBtn").textContent="SUBMIT ORDER";
+  showMessage(e.message||"Order failed. Retry safely.","error");
+ }finally{
+  busy=false;$("refreshBtn").disabled=false;
+  if(!lastCreatedCode)setEvent(market&&market.status);
+ }
+}
+async function repayLoan(){
+ var amount=Math.floor(Number($("repayAmount").value||0));
+ if(!amount)return showMessage("Enter a valid repayment amount.","error");
+ busy=true;$("submitBtn").disabled=true;$("refreshBtn").disabled=true;showMessage("Processing loan repayment…");
+ try{
+  var d=await api("/loan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+   team:$("team").value,amount:amount,action:"REPAY"
+  })},2);
+  showMessage("Loan repayment recorded. Interest: "+money(d.interest_paid)+", Principal: "+money(d.principal_paid)+".","success");
+  await loadLoan();
+ }catch(e){
+  showMessage(e.message||"Loan repayment failed.","error");
+ }finally{
+  busy=false;$("refreshBtn").disabled=false;
+  $("submitBtn").textContent="REPAY LOAN";
+  $("submitBtn").disabled=false;
+ }
+}
+function resetCreatedState(){
+ if(!lastCreatedCode)return;
+ lastCreatedCode="";
+ $("submitBtn").textContent=$("transactionType").value==="loan_repay"?"REPAY LOAN":"SUBMIT ORDER";
+ $("handoff").style.display="none";
+ if($("transactionType").value==="trade")setEvent(market&&market.status);
+}
+$("orderForm").addEventListener("submit",function(e){
+ e.preventDefault();
+ if($("transactionType").value==="loan_repay")repayLoan();else submitTrade();
+});
+$("team").addEventListener("change",function(){
+ resetCreatedState();updateBroker();localStorage.setItem("jse_selected_team",$("team").value);
+ if($("transactionType").value==="loan_repay")loadLoan();
+});
+$("assetType").addEventListener("change",function(){resetCreatedState();manualPrice=false;populateAssets()});
+$("stock").addEventListener("change",function(){resetCreatedState();manualPrice=false;var a=currentAsset();if(a)$("price").value=Number(a.price||0).toFixed(2);drawAsset();calculate()});
+$("side").addEventListener("change",function(){resetCreatedState();calculate()});
+$("qty").addEventListener("input",function(){resetCreatedState();calculate()});
+$("price").addEventListener("input",function(){resetCreatedState();manualPrice=true;calculate()});
+$("transactionType").addEventListener("change",function(){
+ resetCreatedState();
+ var loan=$("transactionType").value==="loan_repay";
+ $("tradeFields").style.display=loan?"none":"block";
+ $("loanFields").style.display=loan?"block":"none";
+ $("modeHint").textContent=loan?"Loan settlement":"Participant trading";
+ $("submitBtn").textContent=loan?"REPAY LOAN":"SUBMIT ORDER";
+ if(loan)loadLoan();else setEvent(market&&market.status);
+});
+$("refreshBtn").addEventListener("click",function(){lastCreatedCode="";$("submitBtn").textContent=$("transactionType").value==="loan_repay"?"REPAY LOAN":"SUBMIT ORDER";$("handoff").style.display="none";showMessage("Refreshing market data…");loadMarket();if($("transactionType").value==="loan_repay")loadLoan()});
+teams();
+loadMarket();
+setInterval(function(){if(document.visibilityState==="visible")loadMarket()},5000);
+})();
+</script>
+</body>
+</html>
