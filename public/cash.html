@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cash Ledger</title><link rel="stylesheet" href="/theme.css"></head><body><div class="shell page"><header class="brand">JAIN STOCK EXCHANGE</header><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav><h1>Cash Ledger</h1><p>Complete cash movement audit trail. Current cash is shown separately from ledger movement.</p>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cash Ledger</title><link rel="stylesheet" href="/theme.css"><script src="/jse-api.js"></script><script src="/auth.js"></script></head><body><div class="shell page"><header class="brand">JAIN STOCK EXCHANGE</header><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav><h1>Cash Ledger</h1><p>Complete cash movement audit trail. Current cash is shown separately from ledger movement.</p>
 
 <div id="summary" class="grid"></div>
 <div class="card" style="margin:16px 0"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -12,7 +12,7 @@
 <div id="pager" style="display:flex;gap:8px;align-items:center;justify-content:center;margin:18px 0"></div>
 </div>
 <script>
-const A=window.__HATCHABLE__.api;
+const A=window.JSE_API;
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const money=v=>'₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});

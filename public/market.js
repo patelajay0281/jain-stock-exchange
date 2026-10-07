@@ -1,4 +1,4 @@
-const A=window.__HATCHABLE__.api,$=s=>document.querySelector(s),m=n=>'₹'+Math.round(Number(n||0)).toLocaleString('en-IN');
+const A=window.JSE_API,$=s=>document.querySelector(s),m=n=>'₹'+Math.round(Number(n||0)).toLocaleString('en-IN');
 let state=[],ipos=[],approvedKeys=[],indexBase=0;
 
 function key(type,id){return String(type)+':'+String(id)}
@@ -56,7 +56,9 @@ async function load(){
  }
 }
 load();
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&state.length===0)load();});
+const marketRefreshMs=localStorage.getItem("jse_token")?5000:10000;
+let marketTimer=setInterval(()=>{if(document.visibilityState==="visible")load();},marketRefreshMs);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load();});
 try{
  hatchable.events.connect().channel('market').on('order_approved',ev=>{
   const p=ev?.payload||ev,type=p?.asset_type==='ipo'?'ipo':'stock',id=Number(p?.asset_id);

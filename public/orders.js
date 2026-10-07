@@ -1,4 +1,4 @@
-const A=window.__HATCHABLE__.api,$=s=>document.querySelector(s);
+const A=window.JSE_API,$=s=>document.querySelector(s);
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 let page=1;
@@ -22,7 +22,7 @@ async function load(){
  const pg=d.pagination;
  $('#pager').innerHTML='<button id="prev" '+(pg.page<=1?'disabled':'')+'>← Previous</button><span>Page '+pg.page+' of '+pg.pages+' · '+pg.total.toLocaleString('en-IN')+' matching orders</span><button id="next" '+(pg.page>=pg.pages?'disabled':'')+'>Next →</button>';
  $('#prev').onclick=()=>{if(page>1){page--;load()}};$('#next').onclick=()=>{if(page<pg.pages){page++;load()}};
- if(!$('team').options.length){$('#team').innerHTML='<option value="">All teams</option>'+d.filters.teams.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('')}
+ if(!$('#team').options.length){$('#team').innerHTML='<option value="">All teams</option>'+d.filters.teams.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('')}
 }
 $('#status').onchange=()=>{page=1;load()};$('#team').onchange=()=>{page=1;load()};$('#limit').onchange=()=>{page=1;load()};$('#refresh').onclick=load;
 let timer;$('#search').oninput=()=>{clearTimeout(timer);timer=setTimeout(()=>{page=1;load()},250)};load();setInterval(load,10000);

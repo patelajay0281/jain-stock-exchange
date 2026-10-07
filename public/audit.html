@@ -38,7 +38,7 @@
 .empty{padding:28px;text-align:center;color:#667487}
 @media(max-width:900px){.audit-stats{grid-template-columns:repeat(2,1fr)}.audit-search{margin-left:0;width:100%}.audit-table{min-width:980px}.table-wrap{overflow:auto}}
 </style>
-</head>
+<script src="/jse-api.js"></script><script src="/auth.js"></script></head>
 <body>
 <div class="shell page">
 <header class="brand">JAIN STOCK EXCHANGE</header>
@@ -65,96 +65,39 @@
 </div>
 
 <script>
-const A=window.__HATCHABLE__.api;
-let rows=[],filter="ALL",query="";
-const esc=v=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
-
-function parsed(x){
-  try{return typeof x==="string"?JSON.parse(x):x||{}}catch{return{}}
-}
-function time(v){
-  const d=new Date(v);
-  if(Number.isNaN(d.getTime())) return esc(v);
-  return d.toLocaleString("en-IN",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
-}
-function category(x){
-  if(x.action.startsWith("ORDER_")) return "ORDER";
-  if(x.action.startsWith("EXCHANGE_")) return "EXCHANGE";
-  if(x.action.startsWith("EVENT_")) return "EVENT";
-  return "OTHER";
-}
-function badge(x){
-  const c=category(x);
-  const cls=x.action.includes("REJECT")?"badge-reject":x.action==="EXCHANGE_APPROVED"?"badge-approve":c==="EVENT"?"badge-event":"badge-order";
-  return '<span class="badge '+cls+'">'+esc(x.action_label)+'</span>';
-}
-function asset(x){
-  if(x.asset_name) return '<div class="asset-name">'+esc(x.asset_name)+'</div><div class="asset-symbol">'+esc(x.asset_symbol||"")+' · '+esc(x.asset_type||"")+'</div>';
-  const d=parsed(x.details);
-  if(d.asset_id) return '<div class="asset-name">'+esc((d.asset_type||"Asset").toUpperCase())+' #'+esc(d.asset_id)+'</div>';
-  return '<span style="color:#8a95a3">—</span>';
-}
-function details(x){
-  const d=parsed(x.details);
-  if(x.action==="ORDER_CREATED"){
-    return esc((x.side||d.side||"").toUpperCase()+" order for "+(x.quantity||d.quantity||0)+" shares at ₹"+Number(x.price||d.price||0).toLocaleString("en-IN"));
-  }
-  if(x.action==="EXCHANGE_APPROVED"){
-    return '<span class="detail">Approved by Exchange and released to Bank Settlement.</span>';
-  }
-  if(x.action==="EXCHANGE_REJECTED"){
-    return '<span class="detail">Rejected by Exchange.</span>';
-  }
-  if(x.action==="EVENT_START") return '<span class="detail">Trading event was started.</span>';
-  if(x.action==="EVENT_RESET") return '<span class="detail">Event data was reset for a new session.</span>';
-  return '<span class="detail">'+esc(typeof x.details==="string"?x.details:JSON.stringify(d))+'</span>';
-}
-function visible(){
-  const q=query.trim().toLowerCase();
-  return rows.filter(x=>{
-    const ok=filter==="ALL"||category(x)===filter;
-    const hay=[x.action_label,x.action,x.order_code,x.team_code,x.asset_name,x.asset_symbol,x.actor_role,x.details].join(" ").toLowerCase();
-    return ok&&(!q||hay.includes(q));
-  });
-}
+const A=window.JSE_API;
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+let rows=[],filter='ALL',query='';
+function category(a){if(String(a).startsWith('ORDER_')||a==='INSTITUTIONAL_ORDER_CREATED'||a==='INSTITUTIONAL_ORDER_SETTLED')return 'ORDER';if(String(a).startsWith('EXCHANGE_')||a==='SHORT_SELLING_BLOCKED')return 'EXCHANGE';if(String(a).startsWith('EVENT_'))return 'EVENT';return 'OTHER'}
+function label(a){const m={ORDER_CREATED:'Order Created',ORDER_SETTLED:'Order Settled',EXCHANGE_APPROVED:'Exchange Approved',EXCHANGE_REJECTED:'Exchange Rejected',SHORT_SELLING_BLOCKED:'Short Selling Blocked',BANK_REJECTED:'Bank Rejected',BANK_NO_BALANCE:'No Balance — Blocked',BANK_MINIMUM_CASH_WARNING:'Minimum Cash Warning',EVENT_START:'Event Started',EVENT_PAUSE:'Event Paused',EVENT_RESUME:'Event Resumed',EVENT_CLOSE:'Event Closed',EVENT_FINALIZE:'Event Finalized',EVENT_RESET:'Event Reset',LOAN_DRAW:'Loan Draw',LOAN_REPAYMENT:'Loan Repayment',SETTLEMENT_UNDO:'Settlement Undo',SETTLEMENT_REDO:'Settlement Redo',INSTITUTIONAL_ORDER_CREATED:'Institutional Order Created',INSTITUTIONAL_ORDER_SETTLED:'Institutional Order Settled'};return m[a]||a}
+function time(v){const d=new Date(v);return Number.isNaN(d.getTime())?esc(v):d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}
+function visible(){const q=query.trim().toLowerCase();return rows.filter(x=>(filter==='ALL'||category(x.action)===filter)&&(!q||[x.action,x.action_label,x.order_code,x.team_code,x.asset_name,x.asset_symbol,x.actor_name,x.actor_username,x.actor_role,JSON.stringify(x.details||{}),x.what_happened].join(' ').toLowerCase().includes(q)))}
 function render(){
-  const v=visible();
-  document.querySelector("#stats").innerHTML=[
-    ["Total Entries",rows.length],
-    ["Orders Placed",rows.filter(x=>x.action==="ORDER_CREATED").length],
-    ["Exchange Approved",rows.filter(x=>x.action==="EXCHANGE_APPROVED").length],
-    ["Event Actions",rows.filter(x=>x.action.startsWith("EVENT_")).length]
-  ].map(s=>'<div class="audit-stat"><div class="n">'+s[1]+'</div><div class="l">'+s[0]+'</div></div>').join("");
-  if(!v.length){document.querySelector("#app").innerHTML='<div class="empty">No activity matches your filter.</div>';return}
-  document.querySelector("#app").innerHTML='<div class="table-wrap"><table class="audit-table"><thead><tr><th>Date / Time</th><th>User / Account</th><th>Activity</th><th>Order</th><th>Team</th><th>Asset</th><th>Trade</th><th>Value</th><th>Risk / Exception</th><th>What Happened</th></tr></thead><tbody>'+
-  v.map(x=>{
-    const side=(x.side||parsed(x.details).side||"").toUpperCase();
-    const qty=x.quantity||parsed(x.details).quantity||"";
-    const value=x.trade_value?Number(x.trade_value).toLocaleString("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}):"—";
-    const risk=x.risk_label?'<span class="risk '+(x.risk_level==="danger"?"risk-danger":"risk-warning")+'">⚠ '+esc(x.risk_label)+'</span>':'<span class="risk-clear">CLEAR</span>';
-    return '<tr><td class="time">'+time(x.created_at)+'</td><td class="time"><strong>${esc(x.actor_name||x.actor_email||'SYSTEM')}}</strong><br><span style="font-size:10px;color:#98a2b3">${esc(x.actor_username||x.actor_email||'')}}</span></td><td>'+badge(x)+'</td><td class="order-ref">'+(x.order_code?"#"+esc(x.order_code):"—")+'</td><td class="team-ref">'+esc(x.team_code||"—")+'</td><td>'+asset(x)+'</td><td class="trade '+(side==="BUY"?"buy":side==="SELL"?"sell":"")+'">'+(side?(esc(side)+" · "+esc(qty)+" shares"):"—")+'</td><td class="value">'+value+'</td><td>'+risk+'</td><td>'+details(x)+'</td></tr>';
-  }).join("")+'</tbody></table></div>';
+ const v=visible();
+ $('#stats').innerHTML=[['Total Entries',rows.length],['Orders',rows.filter(x=>category(x.action)==='ORDER').length],['Exchange',rows.filter(x=>category(x.action)==='EXCHANGE').length],['Event',rows.filter(x=>category(x.action)==='EVENT').length]].map(s=>'<div class="audit-stat"><div class="n">'+s[1]+'</div><div class="l">'+s[0]+'</div></div>').join('');
+ if(!v.length){$('#app').innerHTML='<div class="empty">No audit activity matches the selected filter.</div>';return}
+ $('#app').innerHTML='<div class="table-wrap"><table class="audit-table"><thead><tr><th>Date / Time</th><th>Account</th><th>Activity</th><th>Order</th><th>Team</th><th>Asset</th><th>Trade</th><th>Value</th><th>Risk</th><th>What Happened</th></tr></thead><tbody>'+
+ v.map(x=>{
+   const side=String(x.side||'').toUpperCase(),qty=Number(x.quantity||0);
+   const risk=x.risk_label?'<span class="risk '+(x.risk_level==='danger'?'risk-danger':'risk-warning')+'">⚠ '+esc(x.risk_label)+'</span>':'<span class="risk-clear">CLEAR</span>';
+   const trade=side?(esc(side)+' · '+qty.toLocaleString('en-IN')+' shares'):'—';
+   return '<tr><td class="time">'+time(x.created_at)+'</td><td><strong>'+esc(x.actor_name||'SYSTEM')+'</strong><br><span style="font-size:10px;color:#98a2b3">'+esc(x.actor_username||x.actor_role||'')+'</span></td><td><span class="badge">'+esc(label(x.action))+'</span></td><td class="order-ref">'+(x.order_code?'#'+esc(x.order_code):'—')+'</td><td class="team-ref">'+esc(x.team_code||'—')+'</td><td>'+esc(x.asset_name||'—')+'<br><span style="font-size:9px;color:#98a2b3">'+esc(x.asset_symbol||'')+'</span></td><td class="trade">'+trade+'</td><td class="value">'+(x.trade_value?money(x.trade_value):'—')+'</td><td>'+risk+'</td><td>'+esc(x.what_happened||'')+'</td></tr>';
+ }).join('')+'</tbody></table></div>';
 }
-document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-filter]").forEach(z=>z.classList.remove("active"));b.classList.add("active");filter=b.dataset.filter;render()}));
-document.querySelector("#search").addEventListener("input",e=>{query=e.target.value;render()});
 async function loadAudit(){
  try{
-  const me=await fetch("/api/member-me",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
-  const chip=document.querySelector("#auditUser");
-  if(me?.member&&chip)chip.textContent="SIGNED IN: "+(me.member.display_name||me.member.username);
-  const r=await fetch(A+"/audit",{cache:"no-store"});
-  if(!r.ok)throw 0;
-  const d=await r.json();rows=d.rows||[];render();
- }catch(_){
-  if(!rows.length)document.querySelector("#app").innerHTML='<div class="empty">Unable to load the audit log. Please sign in with a member account.</div>';
- }
+   const r=await fetch(A+'/audit?page=1&limit=100',{cache:'no-store'});
+   const d=await r.json().catch(()=>({}));
+   if(!r.ok)throw new Error(d.error||'Audit log unavailable');
+   rows=d.rows||[];render();$('#auditUser').textContent='OPEN EVENT MODE';
+ }catch(e){if(!rows.length)$('#app').innerHTML='<div class="empty">'+esc(e.message||'Audit log unavailable')+'</div>'}
 }
-loadAudit();
-setInterval(()=>{if(document.visibilityState==="visible")loadAudit()},3000);
-try{
-  hatchable.events.connect().channel("market").on("order_created",loadAudit);
-  hatchable.events.connect().channel("market").on("order_approved",loadAudit);
-}catch(_){}
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(z=>z.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()}));
+$('#search').addEventListener('input',e=>{query=e.target.value;render()});
+loadAudit();setInterval(loadAudit,5000);
+try{hatchable.events.connect().channel('market').on('order_created',loadAudit).on('order_approved',loadAudit).on('price_updated',loadAudit)}catch(_){}
 </script>
 <script src="/admin-nav.js"></script></body>
 </html>

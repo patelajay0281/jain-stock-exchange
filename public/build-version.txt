@@ -1,0 +1,3 @@
+JSE CORE REBUILD — 2026-10-07
+Workflow: Create Order -> Exchange -> Bank -> Settlement
+Open-event mode: enabled
