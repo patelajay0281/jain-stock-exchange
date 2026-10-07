@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Institutional Investor</title><link rel="stylesheet" href="/theme.css"><script src="/__hatchable/events.js"></script><script src="/auth.js"></script></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Institutional Investor</title><link rel="stylesheet" href="/theme.css"><script src="/jse-api.js"></script><script src="/auth.js"></script></head>
 <body class="institutional-page"><div class="shell page">
 <header class="brand">JAIN STOCK EXCHANGE</header>
 <nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/insights.html">Market Intelligence</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a></nav>
@@ -35,7 +35,7 @@
 <div class="table-wrap"><table><thead><tr><th>Order</th><th>Counterparty</th><th>Asset</th><th>Side</th><th>Qty</th><th>Price</th><th>Value</th><th>Status</th></tr></thead><tbody id="orders"></tbody></table></div></section>
 </div>
 <script>
-const A=window.__HATCHABLE__.api,$=id=>document.getElementById(id);let stocks=[],ipos=[],investorId=null;
+const A=window.JSE_API,$=id=>document.getElementById(id);let stocks=[],ipos=[],investorId=null;
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 async function json(path,opts){const r=await fetch(A+path,opts);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
