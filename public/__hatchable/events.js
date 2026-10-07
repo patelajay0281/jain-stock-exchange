@@ -58,7 +58,6 @@
 
   async function pull() {
     try {
-      if (!localStorage.getItem("jse_token")) return;
       const r = await fetch(API + "/realtime", {cache:"no-store"});
       if (!r.ok) return;
       const next = await r.json();
