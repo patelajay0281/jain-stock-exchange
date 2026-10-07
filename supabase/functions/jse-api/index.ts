@@ -167,13 +167,14 @@ async function orderList(user:any, page=1, limit=50, filters:any={}) {
 
 async function transactionQueue(kind:string) {
   const wanted=kind==="exchange"?"PENDING_EXCHANGE":"EXCHANGE_APPROVED";
-  const {data:orders,error}=await db.from("orders").select("id,order_code,status,source,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,amount_paise,is_short_sale,created_at").eq("status",wanted).order("created_at",{ascending:true}).limit(100);
+  const {data:orders,error}=await db.from("orders").select("id,order_code,status,source,team_id,institution_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,amount_paise,is_short_sale,created_at").eq("status",wanted).order("created_at",{ascending:true}).limit(100);
   if(error)throw error;
   const rows=orders||[];
-  const [teams,brokers,assets]=await Promise.all([
-    maps([...new Set(rows.map((x:any)=>x.team_id))],"teams","id","id,code,cash_paise,broker_id"),
-    maps([...new Set(rows.map((x:any)=>x.broker_id))],"brokers","id","id,code,display_name"),
-    maps([...new Set(rows.map((x:any)=>x.asset_id))],"assets","id","id,name,symbol,type,current_price_paise")
+  const [teams,brokers,assets,institutions]=await Promise.all([
+    maps([...new Set(rows.map((x:any)=>x.team_id).filter(Boolean))],"teams","id","id,code,cash_paise,broker_id"),
+    maps([...new Set(rows.map((x:any)=>x.broker_id).filter(Boolean))],"brokers","id","id,code,display_name"),
+    maps([...new Set(rows.map((x:any)=>x.asset_id).filter(Boolean))],"assets","id","id,name,symbol,type,current_price_paise"),
+    maps([...new Set(rows.map((x:any)=>x.institution_id).filter(Boolean))],"institutions","id","id,code,name,cash_paise")
   ]);
   const holdingKeys=rows.filter((x:any)=>x.side==="SELL").map((x:any)=>[x.team_id,x.asset_id]);
   const holdingQ=new Map<string,number>();
@@ -184,11 +185,20 @@ async function transactionQueue(kind:string) {
   }
   return rows.map((x:any)=>{
     const t=teams.get(String(x.team_id)); const a=assets.get(String(x.asset_id));
-    return {id:x.id,kind:x.source,order_code:x.order_code,team:t?.code||"",broker:brokers.get(String(x.broker_id))?.code||"",
+    const inst=institutions.get(String((x as any).institution_id));
+    const payer=x.source==="INSTITUTION" ? (x.side==="BUY" ? inst : t) : t;
+    const payerCash=Number(payer?.cash_paise||0)/100;
+    const required=Number(x.amount_paise||0)/100;
+    const minimumCash=(x.source==="INSTITUTION" && x.side==="BUY")?0:20000;
+    const cashAfter=payerCash-required;
+    const absoluteInsufficient=payerCash<required;
+    const minimumWarning=!absoluteInsufficient && cashAfter<minimumCash;
+    return {id:x.id,kind:x.source,order_code:x.order_code,team:t?.code||"",investor:inst?.code||"",broker:brokers.get(String(x.broker_id))?.code||"",
       stock:a?.name||"",symbol:a?.symbol||"",side:x.side,quantity:x.quantity,price:Number(x.price_paise)/100,
-      trade_value:Number(x.trade_value_paise)/100,required_cash:Number(x.amount_paise)/100,
-      available_cash:Number(t?.cash_paise||0)/100,no_balance:x.side==="BUY"&&Number(t?.cash_paise||0)<Number(x.amount_paise),
-      short_selling:x.is_short_sale,holding_qty:holdingQ.get(String(x.team_id)+":"+String(x.asset_id))||0,created_at:x.created_at};
+      trade_value:Number(x.trade_value_paise)/100,required_cash:required,available_cash:payerCash,cash_after:cashAfter,
+      payer:x.source==="INSTITUTION"?(x.side==="BUY"?"INSTITUTION":"CUSTOMER_TEAM"):"CUSTOMER_TEAM",
+      no_balance:absoluteInsufficient,minimum_cash:minimumCash,minimum_cash_warning:minimumWarning,
+      short_selling:!!x.is_short_sale,holding_qty:holdingQ.get(String(x.team_id)+":"+String(x.asset_id))||0,created_at:x.created_at};
   });
 }
 
@@ -686,12 +696,17 @@ async function handle(req:Request){
       if(!need(user,["EXCHANGE","ADMIN"]))return error("Exchange access required",403);
       const b=await bodyJson(req); const actor=OPEN_MODE?await openActor("EXCHANGE"):user;
       const {data,rpcError}=await db.rpc("jse_exchange_action",{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||"")});
-      if(rpcError)return error(rpcError.message||"Exchange action failed",400); return response(data);
+      if(rpcError){
+        const msg=rpcError.message||"Exchange action failed";
+        if(msg.includes("SHORT_SELLING_NOT_POSSIBLE")) return error("Short selling is not possible on JSE.",409,{code:"SHORT_SELLING_NOT_POSSIBLE",approval_allowed:false});
+        return error(msg,400);
+      }
+      return response(data);
     }
     if(path==="/bank" && req.method==="GET") {if(!need(user,["BANK","ADMIN"]))return error("Bank access required",403);return response({transactions:await transactionQueue("bank"),interest_earned:0});}
     if(path==="/bank" && req.method==="POST") {
       if(!need(user,["BANK","ADMIN"]))return error("Bank access required",403);
-      const b=await bodyJson(req);const actor=OPEN_MODE?await openActor("BANK"):user;const {data:ord}=await db.from("orders").select("source").eq("id",Number(b.order_id)).single();const fn=ord?.source==="INSTITUTION"?"jse_bank_institutional_action":"jse_bank_action";const args=ord?.source==="INSTITUTION"?{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||"")}:{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)};const {data,rpcError}=await db.rpc(fn,args);
+      const b=await bodyJson(req);const actor=OPEN_MODE?await openActor("BANK"):user;const {data:ord}=await db.from("orders").select("source").eq("id",Number(b.order_id)).single();const fn=ord?.source==="INSTITUTION"?"jse_bank_institutional_action":"jse_bank_action";const args=ord?.source==="INSTITUTION"?{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)}:{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)};const {data,rpcError}=await db.rpc(fn,args);
       if(rpcError)return error(rpcError.message||"Bank action failed",400); if(data?.code==="NO_BALANCE")return response(data,200); return response(data);
     }
     if(path==="/loan" && req.method==="GET"){
