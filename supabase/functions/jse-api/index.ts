@@ -758,8 +758,21 @@ async function handle(req:Request){
       }
       return error("Unknown export type",400);
     }
-    if(path==="/tracking" && req.method==="GET") {if(!need(user,["PARTICIPANT","EXCHANGE","BANK","ADMIN"]))return error("Access required",403);
-      return response(await orderList(user,Number(url.searchParams.get("page")||1),Number(url.searchParams.get("limit")||50),{status:url.searchParams.get("status")||"",team_id:undefined}));
+    if(path==="/tracking" && req.method==="GET") {
+      if(!need(user,["PARTICIPANT","EXCHANGE","BANK","ADMIN"])) return error("Access required",403);
+      let trackingTeamId:any=undefined;
+      const teamCode=String(url.searchParams.get("team")||"").trim();
+      if(teamCode){
+        const {data:t,error:te}=await db.from("teams").select("id").eq("code",teamCode).single();
+        if(te||!t) return error("Customer team not found",404);
+        trackingTeamId=t.id;
+      }
+      return response(await orderList(
+        user,
+        Number(url.searchParams.get("page")||1),
+        Number(url.searchParams.get("limit")||50),
+        {status:url.searchParams.get("status")||"",team_id:trackingTeamId}
+      ));
     }
     if(path==="/portfolios" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await teamPortfolio(user));}
     if(path==="/portfolio-details" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await teamPortfolio(user));}
