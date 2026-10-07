@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="/theme.css"><script src="/__hatchable/events.js"></script>
+<link rel="stylesheet" href="/theme.css"><script src="/jse-api.js"></script>
 <style>
 body.admin-page{background:#f3f5f8}
 body.admin-page .shell{max-width:1380px;padding:18px 24px 42px}
@@ -157,7 +157,7 @@ body.admin-page .safety-note{border-radius:9px}
 </div>
 
 <script>
-const A=window.__HATCHABLE__.api;
+const A=window.JSE_API;
 let currentStatus='NOT_STARTED';
 
 async function checkAccess(){
