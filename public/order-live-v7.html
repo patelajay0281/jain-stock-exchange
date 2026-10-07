@@ -198,8 +198,7 @@ function populateAssets(){
  if(list.some(function(x){return String(x.id)===String(keep)}))$("stock").value=keep;
  else if(list[0])$("stock").value=list[0].id;
  var a=currentAsset();
- $("qty").min=a?String(a.lot_size||1):"1";
- $("qty").step=a?String(a.lot_size||1):"1";
+ $("qty").value=(Number($("qty").value)%50===0&&Number($("qty").value)>=50)?$("qty").value:"50";
  if(a&&!manualPrice)$("price").value=Math.round(Number(a.price||0));
  drawAsset();calculate();
 }
@@ -222,8 +221,8 @@ function calculate(){
  $("bc").textContent=money(b);
  $("finalLabel").textContent=sell?"Net Proceeds":"Total Required";
  $("tr").textContent=money(sell?v-b:v+b);
- if(a && q && q%Number(a.lot_size||1)!==0 && !busy){
-   showMessage("Quantity must be a multiple of "+String(a.lot_size||1)+".","warn");
+ if(a && q && (q<50 || q%50!==0) && !busy){
+   showMessage("Quantity must be in multiples of 50 shares: 50, 100, 150…","warn");
  }
 }
 async function api(path,options,tries){
@@ -295,7 +294,7 @@ async function submitTrade(){
  if(!setEvent(market&&market.status))return showMessage("Market is not LIVE. Orders are disabled.","error");
  var a=currentAsset(),q=Math.floor(Number($("qty").value||0)),p=Math.round(Number($("price").value||0));
  if(!a)return showMessage("Select a security.","error");
- if(!Number.isInteger(q)||q<=0||q%Number(a.lot_size||1)!==0)return showMessage("Quantity must be a positive multiple of "+String(a.lot_size||1)+".","error");
+ if(!Number.isInteger(q)||q<=0||q<50||q%50!==0)return showMessage("Quantity must be in multiples of 50 shares: 50, 100, 150…","error");
  if(!Number.isFinite(p)||p<=0)return showMessage("Enter a valid positive price.","error");
  var key=makeKey();
  busy=true;$("submitBtn").disabled=true;$("refreshBtn").disabled=true;
