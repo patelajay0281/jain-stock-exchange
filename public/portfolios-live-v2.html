@@ -1,0 +1,103 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Participant Portfolios</title><link rel="stylesheet" href="/theme.css">
+<style>
+.portfolio-page{max-width:1500px;margin:auto}
+.page-head{display:flex;justify-content:space-between;align-items:end;gap:24px;margin:20px 0 13px}
+.page-head h1{margin:0;font-size:29px;letter-spacing:-.5px}.page-head p{margin:5px 0 0;color:#64748b;font-size:13px}
+.policy-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid #dbe3ec;background:#fff;padding:9px 13px;border-radius:9px;color:#52657a;font-size:12px;margin-bottom:12px}
+.policy-strip b{color:#19324d}.dot{color:#a5b0bd}
+.overview{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.ov{background:#fff;border:1px solid #d8e0e9;border-radius:10px;padding:12px 14px}
+.ov span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.7px;font-weight:900;color:#718096}.ov b{display:block;font-size:20px;color:#172f4b;margin-top:4px}.ov small{font-size:9px;color:#8a96a5}
+.selector-card{background:#fff;border:1px solid #d8e0e9;border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.selector-card label{font-weight:900;color:#19324d;font-size:11px;letter-spacing:.4px;white-space:nowrap}.selector-card select{width:300px;height:38px;border:1px solid #cfd8e3;border-radius:7px;padding:0 10px;background:#fff}
+.selector-card input{flex:1;height:38px;border:1px solid #cfd8e3;border-radius:7px;padding:0 11px;font:inherit;font-size:12px}
+#detail>.portfolio-detail{background:#fff;border:1px solid #d8e0e9;border-radius:10px;overflow:hidden;margin-bottom:14px}
+.detail-head{padding:14px 18px;border-bottom:1px solid #e3e8ef;display:flex;justify-content:space-between;align-items:center}.detail-head h2{margin:0;font-size:19px}.broker-tag{font-size:10px;font-weight:800;color:#526b84;background:#f1f5f9;border:1px solid #dbe3eb;padding:5px 8px;border-radius:6px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px}.metric{border:1px solid #e0e6ed;border-radius:8px;padding:9px 11px;background:#fcfdff}.metric span{display:block;font-size:10px;color:#6b7d90;margin-bottom:4px}.metric b{font-size:15px;color:#172f4b}
+.section-title{padding:0 14px;margin:3px 0 8px;font-size:14px}.holdings{padding:0 14px 14px}.table-wrap{border:1px solid #dce3ea;border-radius:8px;overflow:auto;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12px}th{background:#f5f7fa;color:#53687d;font-size:9px;text-transform:uppercase;letter-spacing:.4px;text-align:left;padding:9px 10px;border-bottom:1px solid #dce3ea;white-space:nowrap}td{padding:9px 10px;border-bottom:1px solid #edf1f5;white-space:nowrap}tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fafcff}
+.report-section{margin-top:14px}.report-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.report-section h2{font-size:18px;margin:0}.count{font-size:10px;color:#718096}.rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.rank-card{background:#fff;border:1px solid #d8e0e9;border-radius:10px;padding:13px}.rank-card h2{margin:0 0 9px;font-size:14px}.empty-row{text-align:center;color:#7b8b9b;padding:20px!important}
+.up{color:#16834b!important}.down{color:#d13b3b!important}.neutral{color:#64748b!important}.attempt-rejected{color:#c0392b;font-weight:900}.attempt-settled{color:#16834b;font-weight:900}
+.status{display:inline-block;padding:4px 7px;border-radius:5px;background:#eef5f1;color:#23734f;font-size:8px;font-weight:900}.loan-status{display:inline-block;padding:4px 7px;border-radius:5px;background:#eef2f7;color:#526178;font-size:8px;font-weight:900}
+.notice{color:#6b7d90;margin:0;font-size:12px}
+@media(max-width:900px){.overview{grid-template-columns:repeat(2,1fr)}.metric-grid{grid-template-columns:repeat(2,1fr)}.rank-grid{grid-template-columns:1fr}.selector-card{flex-wrap:wrap}.selector-card input{min-width:220px}}
+@media(max-width:560px){.overview,.metric-grid{grid-template-columns:1fr}.selector-card{display:block}.selector-card select,.selector-card input{width:100%;margin-top:7px}}
+/* Participant Portfolio Desk — premium dashboard refresh */
+body{background:#eef2f7}
+.portfolio-page{max-width:1540px;padding-top:12px;padding-bottom:36px}
+.portfolio-page>.brand{font-size:19px;color:#14213d;margin-bottom:8px}
+.portfolio-page .site-nav{margin-bottom:12px}
+.portfolio-page .page-head{margin:8px 0 12px;padding:20px 22px;border-radius:15px;background:linear-gradient(135deg,#10233d,#1b4665);color:#fff;box-shadow:0 10px 28px rgba(16,35,61,.14);align-items:center}
+.portfolio-page .page-head h1{color:#fff;font-size:29px;letter-spacing:-.04em}
+.portfolio-page .page-head p{color:#bcd0e1;font-size:12px}
+.portfolio-page .page-head:after{content:"PORTFOLIO CONTROL • LIVE";display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:8px 11px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(255,255,255,.07);font-size:9px;font-weight:900;letter-spacing:.1em;color:#d9f5e5}
+.portfolio-page .policy-strip{margin-bottom:10px;border:0;background:#fff;border-radius:10px;box-shadow:0 4px 15px rgba(20,33,61,.045);padding:10px 14px}
+.portfolio-page .overview{grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px}
+.portfolio-page .ov{position:relative;overflow:hidden;border:1px solid #d7e0ea;border-radius:11px;padding:13px 15px;box-shadow:0 5px 18px rgba(20,33,61,.045)}
+.portfolio-page .ov:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#155eef}
+.portfolio-page .ov:nth-child(2):before{background:#16803c}
+.portfolio-page .ov:nth-child(3):before{background:#7c3aed}
+.portfolio-page .ov:nth-child(4):before{background:#0f9f9a}
+.portfolio-page .ov b{font-size:21px}
+.portfolio-page .selector-card{border:1px solid #d7e0ea;border-radius:11px;box-shadow:0 5px 18px rgba(20,33,61,.045);padding:11px 14px;background:#fff}
+.portfolio-page .selector-card label{color:#53657a}
+.portfolio-page .selector-card select,.portfolio-page .selector-card input{height:40px;border-color:#cbd5e1;background:#f9fbfd}
+.portfolio-page #detail>.portfolio-detail{border:1px solid #d5dee8;border-radius:14px;box-shadow:0 8px 28px rgba(20,33,61,.07);overflow:hidden}
+.portfolio-page .detail-head{padding:17px 20px;background:linear-gradient(135deg,#f8fbff,#edf4fa);border-bottom:1px solid #dbe4ed}
+.portfolio-page .detail-head h2{font-size:20px;color:#14213d}
+.portfolio-page .broker-tag{background:#172f4b;color:#fff;border-color:#172f4b;border-radius:999px;padding:6px 10px}
+.portfolio-page .metric-grid{grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 14px}
+.portfolio-page .metric{position:relative;border:1px solid #dce4ec;border-radius:9px;padding:10px 11px;background:#fbfcfe}
+.portfolio-page .metric span{font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#748397}
+.portfolio-page .metric b{font-size:15px;color:#172f4b}
+.portfolio-page .section-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#52657a;margin-top:7px}
+.portfolio-page .holdings{padding-bottom:12px}
+.portfolio-page .table-wrap{border:1px solid #d8e1ea;border-radius:9px;box-shadow:0 2px 10px rgba(20,33,61,.025)}
+.portfolio-page table{font-size:11px}
+.portfolio-page th{background:#f3f6fa;padding:10px 11px;font-size:8px;color:#607286}
+.portfolio-page td{padding:10px 11px}
+.portfolio-page tbody tr:hover td{background:#f6faff}
+.portfolio-page .report-section{margin-top:12px}
+.portfolio-page .report-head{padding:4px 2px}
+.portfolio-page .report-section h2{font-size:16px;color:#14213d}
+.portfolio-page .rank-grid{gap:10px;margin-top:10px}
+.portfolio-page .rank-card{border:1px solid #d7e0ea;border-radius:11px;padding:12px;box-shadow:0 5px 18px rgba(20,33,61,.04)}
+.portfolio-page .rank-card:first-child{border-top:3px solid #16803c}
+.portfolio-page .rank-card:last-child{border-top:3px solid #c62828}
+.portfolio-page .rank-card h2{font-size:13px}
+@media(min-width:1200px){.portfolio-page #detail>.portfolio-detail .metric-grid{grid-template-columns:repeat(6,1fr)}}
+@media(max-width:1100px){.portfolio-page .overview{grid-template-columns:repeat(3,1fr)}.portfolio-page .metric-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.portfolio-page .page-head{align-items:flex-start;flex-direction:column}.portfolio-page .page-head:after{display:none}.portfolio-page .overview{grid-template-columns:1fr 1fr}.portfolio-page .metric-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.portfolio-page .overview,.portfolio-page .metric-grid{grid-template-columns:1fr}}
+</style><script src="/jse-api.js"></script><script src="/auth.js"></script><style>/* v2 control-desk polish */
+body{background:#eef2f7!important}.portfolio-page{max-width:1540px!important}.portfolio-page>.brand{color:#14213d!important}.portfolio-page .page-head{box-shadow:0 8px 24px rgba(20,33,61,.10)!important}.portfolio-page .selector-card{background:#fff!important}.portfolio-page .overview{grid-template-columns:repeat(5,1fr)!important}.portfolio-page .detail-head{background:#fff!important}.portfolio-page .table-wrap{box-shadow:0 3px 12px rgba(20,33,61,.035)}</style></head>
+<body><div class="shell page portfolio-page">
+<header class="brand">JAIN STOCK EXCHANGE</header>
+<nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav>
+<div class="page-head"><div><h1>Participant Portfolios</h1><p>Portfolio, cash, loan and brokerage position for all participant teams.</p></div></div>
+<div class="policy-strip"><span>BASE CAPITAL <b>₹20,00,000</b></span><span class="dot">•</span><span>LOAN LIMIT <b>₹5,00,000</b></span><span class="dot">•</span><span>INTEREST <b>2%</b></span><span class="dot">•</span><span>BROKERAGE <b>0.5%</b></span></div>
+<div id="overview" class="overview"></div>
+<div id="topperRule"></div>
+<div class="selector-card"><label>PARTICIPANT TEAM</label><select id="team"><option value="">Select a team</option></select><input id="teamSearch" placeholder="Search team or broker…"></div>
+<div id="detail"><p class="notice">Select a participant team to view its complete position.</p></div>
+<div id="app"><p class="notice">Loading participant report...</p></div>
+</div>
+<script>
+const A=window.JSE_API,app=document.querySelector('#app'),sel=document.querySelector('#team'),search=document.querySelector('#teamSearch'),money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0}),esc=v=>String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const row=x=>'<tr><td><b>'+x.team+'</b></td><td>'+x.broker+'</td><td>'+money(x.available_cash)+'</td><td>'+money(x.holdings_value)+'</td><td>'+money(x.loan_money_left)+'</td><td>'+money(x.current_value)+'</td><td class="'+(Number(x.pnl)>0?'up':Number(x.pnl)<0?'down':'neutral')+'">'+money(x.pnl)+'</td><td class="'+(Number(x.return_pct)>0?'up':Number(x.return_pct)<0?'down':'neutral')+'">'+Number(x.return_pct||0).toFixed(2)+'%</td><td><span class="status">'+(Number(x.loan_withdrawn)>0?'LOAN USED':'CLEAR')+'</span></td></tr>';
+function renderAll(){
+ const d=window.portfolio;if(!d)return;
+ const all=d.teams||[],q=(search.value||'').toLowerCase().trim(),filtered=all.filter(x=>(x.team+' '+x.broker).toLowerCase().includes(q));
+ const totalCash=all.reduce((a,x)=>a+Number(x.available_cash||0),0),holdings=all.reduce((a,x)=>a+Number(x.holdings_value||0),0),loans=all.reduce((a,x)=>a+Number(x.loan_withdrawn||0),0),pnl=all.reduce((a,x)=>a+Number(x.pnl||0),0);
+ const best=[...all].sort((a,b)=>Number(b.realized_pl)-Number(a.realized_pl))[0];
+ const winner=d.topper;
+ document.querySelector('#topperRule').innerHTML='<section class="report-section"><div class="rank-card" style="border-top:3px solid #16803c"><h2>TOPPER DECISION</h2><p class="notice"><b>Mandatory:</b> use at least ₹19,80,000 of own ₹20,00,000 allocation at peak, repay all loan principal + interest, finish with at least ₹20,000 cash, and have no settled short sale. <b>Winner:</b> highest realized profit among eligible teams; if no eligible team has realized profit, least loss wins.</p><div class="metric-grid"><div class="metric"><span>Selected Team</span><b>'+esc(winner?.team||'NO ELIGIBLE TOPPER')+'</b></div><div class="metric"><span>Realized P/L</span><b class="'+(Number(winner?.realized_pl||0)>=0?'up':'down')+'">'+money(winner?.realized_pl||0)+'</b></div><div class="metric"><span>Capital Utilization</span><b>'+Number(winner?.capital_utilization_pct||0).toFixed(2)+'%</b></div><div class="metric"><span>Loan Repaid</span><b>'+esc(winner?.loan_repaid_rule||'—')+'</b></div><div class="metric"><span>Minimum Cash</span><b>'+esc(winner?.minimum_cash_rule||'—')+'</b></div><div class="metric"><span>Selection</span><b style="font-size:12px">'+esc(d.topper_selection_mode||'—')+'</b></div></div></div></section>';
+ document.querySelector('#overview').innerHTML='<div class="ov"><span>Teams</span><b>'+all.length+'</b><small>Participant accounts</small></div><div class="ov"><span>Total Cash</span><b>'+money(totalCash)+'</b><small>Across all teams</small></div><div class="ov"><span>Holdings Value</span><b>'+money(holdings)+'</b><small>Current market value</small></div><div class="ov"><span>Best P/L</span><b class="'+(Number(best?.pnl||0)>=0?'up':'down')+'">'+money(best?.pnl||0)+'</b><small>'+esc(best?.team||'—')+'</small></div>';
+ app.innerHTML='<section class="report-section"><div class="report-head"><h2>All Participant Teams</h2><span class="count">Showing '+filtered.length+' of '+all.length+'</span></div><div class="table-wrap"><table><thead><tr><th>Team</th><th>Broker</th><th>Cash</th><th>Holdings</th><th>Loan Available</th><th>Current Value</th><th>P/L</th><th>Return</th><th>Loan Status</th></tr></thead><tbody>'+ (filtered.length?filtered.map(row).join(''):'<tr><td colspan="9" class="empty-row">No teams match your search.</td></tr>')+'</tbody></table></div></section><div class="rank-grid"><section class="rank-card"><h2>Topper-Eligible Ranking</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P/L</th><th>Return</th></tr></thead><tbody>'+ (d.top_gainers||[]).map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+x.team+'</b></td><td class="up">'+money(x.pnl)+'</td><td class="up">'+Number(x.return_pct||0).toFixed(2)+'%</td></tr>').join('')+'</tbody></table></div></section><section class="rank-card"><h2>Top 10 Losers</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P/L</th><th>Return</th></tr></thead><tbody>'+ (d.top_losers||[]).map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+x.team+'</b></td><td class="down">'+money(x.pnl)+'</td><td class="down">'+Number(x.return_pct||0).toFixed(2)+'%</td></tr>').join('')+'</tbody></table></div></section></div>';
+}
+async function load(){const r=await fetch(A+'/portfolio-details');if(!r.ok){app.textContent='Access required.';return}const d=await r.json();window.portfolio=d;sel.innerHTML='<option value="">Select a team</option>'+(d.teams||[]).map(x=>'<option value="'+x.team+'">'+x.team+' — '+x.broker+'</option>').join('');renderAll();}
+search.oninput=renderAll;
+function show(){const d=window.portfolio;if(!d||!sel.value){document.querySelector('#detail').innerHTML='<p class="notice">Select a participant team to view its complete position.</p>';return;}const t=d.teams.find(x=>x.team===sel.value),hs=d.holdings.filter(x=>x.team===sel.value),sold=d.sold_holdings.filter(x=>x.team===sel.value),attempts=(d.attempts||[]).filter(x=>x.team===sel.value),loanRemaining=Number(t.principal_due||0),loanRepaid=Number(t.principal_paid||0);document.querySelector('#detail').innerHTML='<section class="portfolio-detail"><div class="detail-head"><h2>'+t.team+'</h2><span class="broker-tag">'+t.broker+'</span></div><div class="metric-grid"><div class="metric"><span>Base Capital</span><b>'+money(2000000)+'</b></div><div class="metric"><span>Loan Sanctioned</span><b>'+money(t.original_principal)+'</b></div><div class="metric"><span>Base Money Left</span><b>'+money(t.base_money_left)+'</b></div><div class="metric"><span>Loan Available</span><b>'+money(t.loan_money_left)+'</b></div><div class="metric"><span>Total Cash</span><b>'+money(t.available_cash)+'</b></div><div class="metric"><span>Portfolio Value</span><b>'+money(t.current_value)+'</b></div><div class="metric"><span>Portfolio P/L</span><b class="'+(Number(t.pnl)>=0?'up':'down')+'">'+money(t.pnl)+'</b></div><div class="metric"><span>Realized P/L</span><b class="'+(Number(t.realized_pl)>=0?'up':'down')+'">'+money(t.realized_pl)+'</b></div><div class="metric"><span>Brokerage Paid</span><b>'+money(t.brokerage_paid)+'</b></div></div><h3 class="section-title">Participant Loan</h3><div class="metric-grid"><div class="metric"><span>Loan Remaining</span><b>'+money(loanRemaining)+'</b></div><div class="metric"><span>Principal Repaid</span><b>'+money(loanRepaid)+'</b></div><div class="metric"><span>Interest Rate</span><b>'+Number(t.interest_rate||0)*100+'%</b></div><div class="metric"><span>Interest Due</span><b>'+money(t.interest_due)+'</b></div><div class="metric"><span>Interest Paid</span><b>'+money(t.interest_paid)+'</b></div><div class="metric"><span>Loan Status</span><b>'+t.loan_status+'</b></div></div><h3 class="section-title">Transaction Attempts</h3><div class="holdings"><div class="table-wrap"><table><thead><tr><th>Order</th><th>Asset</th><th>Side</th><th>Quantity</th><th>Price</th><th>Status</th></tr></thead><tbody>'+ (attempts.length?attempts.map(x=>'<tr><td><b>'+esc(x.order_code)+'</b></td><td>'+esc(x.asset||'—')+'</td><td>'+esc(x.side)+'</td><td>'+Number(x.quantity||0).toLocaleString('en-IN')+'</td><td>'+money(x.price)+'</td><td class="'+(x.status==='SETTLED'?'attempt-settled':'attempt-rejected')+'">'+esc(x.attempt_result)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty-row">No transaction attempts.</td></tr>')+'</tbody></table></div></div><div class="holdings"><h3 class="section-title" style="padding:0;margin:0 0 10px">Holdings</h3><div class="table-wrap"><table><thead><tr><th>Share / IPO</th><th>Quantity</th><th>Average Price</th><th>Current Price</th><th>Invested</th><th>Current Value</th><th>P/L</th></tr></thead><tbody>'+(hs.length?hs.map(x=>'<tr><td><b>'+x.stock+'</b></td><td>'+x.quantity+'</td><td>'+money(x.average_price)+'</td><td>'+money(x.current_price)+'</td><td>'+money(x.invested_value)+'</td><td>'+money(x.current_value)+'</td><td class="'+(Number(x.unrealized_pl)>=0?'up':'down')+'">'+money(x.unrealized_pl)+'</td></tr>').join(''):'<tr><td colspan="7" class="empty-row">No settled holdings.</td></tr>')+'</tbody></table></div></div><div class="holdings"><h3 class="section-title" style="padding:0;margin:0 0 10px">Sold Stocks / IPOs</h3><div class="table-wrap"><table><thead><tr><th>Share / IPO</th><th>Sold Quantity</th><th>Average Sale Price</th><th>Gross Proceeds</th><th>Cost Basis</th><th>Gross P/L</th><th>Brokerage</th><th>Net P/L</th></tr></thead><tbody>'+(sold.length?sold.map(x=>'<tr><td><b>'+x.stock+'</b></td><td>'+x.quantity+'</td><td>'+money(x.average_sale_price)+'</td><td>'+money(x.gross_proceeds)+'</td><td>'+money(x.cost_basis)+'</td><td class="'+(Number(x.realized_gross_pl)>=0?'up':'down')+'">'+money(x.realized_gross_pl)+'</td><td>'+money(x.brokerage)+'</td><td class="'+(Number(x.realized_pl)>=0?'up':'down')+'">'+money(x.realized_pl)+'</td></tr>').join(''):'<tr><td colspan="8" class="empty-row">No sold stocks or IPOs.</td></tr>')+'</tbody></table></div></div></section>'}
+sel.onchange=show;load();
+</script><script src="/admin-nav.js"></script></body></html>
