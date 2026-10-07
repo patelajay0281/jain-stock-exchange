@@ -165,7 +165,6 @@ CREATE TABLE assets (
   CHECK (current_price_paise > 0),
   CHECK (previous_price_paise > 0),
   CHECK (lot_size > 0),
-  CHECK (lot_size % 50 = 0),
   CHECK (display_order > 0)
 );
 
@@ -193,7 +192,6 @@ CREATE TABLE event_settings (
   CHECK (brokerage_bps BETWEEN 0 AND 10000),
   CHECK (minimum_cash_buffer_paise >= 0),
   CHECK (listed_lot_size > 0),
-  CHECK (listed_lot_size % 50 = 0),
   CHECK (institutional_cash_paise >= 0),
   CHECK (cms_index_base_value_hundredths >= 0)
 );
@@ -244,7 +242,6 @@ CREATE TABLE orders (
     (source = 'INSTITUTION' AND institution_id IS NOT NULL)
   ),
   CHECK (quantity > 0),
-  CHECK (quantity % 50 = 0),
   CHECK (price_paise > 0),
   CHECK (trade_value_paise = quantity * price_paise),
   CHECK (brokerage_bps BETWEEN 0 AND 10000),
@@ -576,10 +573,108 @@ CREATE TRIGGER orders_set_order_code
 BEFORE INSERT ON orders
 FOR EACH ROW EXECUTE FUNCTION set_order_code();
 
+CREATE FUNCTION enforce_event_transition()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $
+BEGIN
+  IF NEW.status = OLD.status THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT (
+    (OLD.status = 'NOT_STARTED' AND NEW.status = 'LIVE')
+    OR
+    (OLD.status = 'LIVE' AND NEW.status IN ('PAUSED', 'CLOSED'))
+    OR
+    (OLD.status = 'PAUSED' AND NEW.status IN ('LIVE', 'CLOSED'))
+    OR
+    (OLD.status = 'CLOSED' AND NEW.status = 'FINALIZED')
+  ) THEN
+    RAISE EXCEPTION 'Illegal event transition: % -> %', OLD.status, NEW.status
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER event_state_machine
+BEFORE UPDATE OF status ON event_state
+FOR EACH ROW EXECUTE FUNCTION enforce_event_transition();
+
+CREATE FUNCTION enforce_settlement_transition()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $
+BEGIN
+  IF NEW.status <> OLD.status
+     AND NOT (
+       (OLD.status = 'APPLIED' AND NEW.status = 'REVERSED')
+       OR
+       (OLD.status = 'REVERSED' AND NEW.status = 'APPLIED')
+     ) THEN
+    RAISE EXCEPTION 'Illegal settlement transition: % -> %', OLD.status, NEW.status
+      USING ERRCODE = 'P0001';
+  END IF;
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER settlements_state_machine
+BEFORE UPDATE OF status ON settlements
+FOR EACH ROW EXECUTE FUNCTION enforce_settlement_transition();
+
+CREATE FUNCTION enforce_commission_transition()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $
+BEGIN
+  IF NEW.status <> OLD.status
+     AND NOT (
+       (OLD.status = 'APPLIED' AND NEW.status = 'REVERSED')
+       OR
+       (OLD.status = 'REVERSED' AND NEW.status = 'APPLIED')
+     ) THEN
+    RAISE EXCEPTION 'Illegal commission transition: % -> %', OLD.status, NEW.status
+      USING ERRCODE = 'P0001';
+  END IF;
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER broker_commission_state_machine
+BEFORE UPDATE OF status ON broker_commissions
+FOR EACH ROW EXECUTE FUNCTION enforce_commission_transition();
+
+CREATE FUNCTION require_live_event_for_order_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $
+DECLARE
+  v_status event_status;
+BEGIN
+  SELECT status INTO v_status
+  FROM event_state
+  WHERE id = 1;
+
+  IF v_status <> 'LIVE' THEN
+    RAISE EXCEPTION 'Order creation is not allowed while event status is %', v_status
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER orders_require_live_event
+BEFORE INSERT ON orders
+FOR EACH ROW EXECUTE FUNCTION require_live_event_for_order_insert();
+
 CREATE FUNCTION enforce_order_transition()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $
 BEGIN
   IF NEW.status = OLD.status THEN
     RETURN NEW;
