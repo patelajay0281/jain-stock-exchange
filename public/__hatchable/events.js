@@ -81,7 +81,7 @@
     if (started) return;
     started = true;
     pull();
-    timer = setInterval(pull, 1500);
+    timer = setInterval(pull, 3000);
   }
 
   window.__HATCHABLE__ = window.__HATCHABLE__ || {};
