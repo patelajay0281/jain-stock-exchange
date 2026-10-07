@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order Tracking | JAIN STOCK EXCHANGE</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f9;color:#172033}
+.shell{max-width:1600px;margin:0 auto;padding:14px 22px 26px}.brand{font-size:20px;font-weight:900;letter-spacing:1.5px;color:#14213d;margin-bottom:10px}
+.nav{display:flex;gap:6px;height:39px;overflow:auto;white-space:nowrap;margin-bottom:13px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav a{height:39px;display:flex;align-items:center;padding:0 12px;background:#fff;border:1px solid #d7dee7;border-radius:7px;text-decoration:none;color:#344054;font-size:11px;font-weight:800}.nav a.active{background:#172b4d;color:#fff;border-color:#172b4d}
+.head{display:flex;justify-content:space-between;align-items:center;margin:6px 0 10px}.head h1{margin:0;color:#14213d;font-size:28px;letter-spacing:-.03em}.head p{margin:4px 0 0;color:#7a8495;font-size:11px}.pill{padding:8px 12px;border:1px solid #d6e0ea;background:#fff;border-radius:7px;color:#526173;font-size:9px;font-weight:900}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:10px}.stat{background:#fff;border:1px solid #d9e1e9;border-radius:8px;padding:10px 11px}.stat span{display:block;color:#7b8696;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.6px}.stat b{display:block;margin-top:4px;color:#172b4d;font-size:18px}
+.card{background:#fff;border:1px solid #d8e0e8;border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(20,33,61,.045)}.toolbar{display:flex;flex-wrap:wrap;gap:7px;padding:12px;border-bottom:1px solid #e6ebf0;background:#fafbfd}.toolbar input,.toolbar select,.toolbar button{height:36px;border:1px solid #cfd8e2;border-radius:6px;background:#fff;color:#26364d;font-size:10px;font-weight:700;padding:0 10px}.toolbar input{min-width:250px;flex:1}.toolbar button{background:#172b4d;color:#fff;border-color:#172b4d;cursor:pointer}.toolbar button.secondary{background:#fff;color:#344054;border-color:#cfd8e2}
+.filter-note{padding:9px 12px;background:#f6f8fa;border-bottom:1px solid #e8edf1;color:#788494;font-size:9px}
+.table-wrap{overflow:auto}.table{width:100%;min-width:1250px;border-collapse:collapse}.table th{position:sticky;top:0;z-index:1;background:#f4f7fa;padding:10px 9px;border-bottom:1px solid #dce3ea;text-align:left;color:#667487;font-size:8px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;white-space:nowrap}.table td{padding:11px 9px;border-bottom:1px solid #edf1f5;color:#27374c;font-size:10px;white-space:nowrap}.table tr:hover td{background:#fafcff}
+.order{font-weight:900;color:#193a61}.security{font-weight:800;color:#172b4d}.sub{display:block;margin-top:2px;color:#8993a1;font-size:8px}.buy{color:#18794e;font-weight:900}.sell{color:#b23843;font-weight:900}
+.status{display:inline-block;padding:5px 7px;border-radius:5px;font-size:8px;font-weight:900}.pending{background:#eef3f8;color:#52677d}.approved{background:#edf6f1;color:#23734f}.settled{background:#eaf7ef;color:#176b48}.rejected{background:#faecee;color:#a23a43}
+.money{font-weight:800}.empty{padding:55px 15px;text-align:center;color:#7b8697;font-size:11px}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;border-top:1px solid #e6ebf0;background:#fafbfd}.pager button{height:32px;border:1px solid #cfd8e2;border-radius:6px;background:#fff;padding:0 11px;font-size:9px;font-weight:900;color:#344054}.pager button:disabled{opacity:.45}.pager span{font-size:9px;color:#6e7b8b;font-weight:700}
+.notice{display:none;padding:9px 12px;font-size:9px;font-weight:800}.notice.error{display:block;background:#faf0f1;color:#a23a43;border-bottom:1px solid #ecd2d6}.notice.ok{display:block;background:#eef8f2;color:#23734f;border-bottom:1px solid #d6e9de}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.shell{padding:12px}.stats{grid-template-columns:1fr 1fr}.head{align-items:flex-start;gap:8px;flex-direction:column}.toolbar input{min-width:100%;flex-basis:100%}}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="brand">JAIN STOCK EXCHANGE</div>
+<nav class="nav">
+<a href="/">Market</a><a href="/order">Create Order</a><a href="/exchange">Exchange Settlement</a><a href="/bank">Bank Settlement</a><a class="active" href="/orders">Order Tracking</a><a href="/institutional">Institutional Investors</a><a href="/commissions">Broker Commission</a><a href="/portfolios">Participant Portfolios</a><a href="/admin">Event Admin</a><a href="/audit">Audit Log</a><a href="/cash">Cash Ledger</a><a href="/insights">Market Intelligence</a>
+</nav>
+<div class="head"><div><h1>Order Tracking</h1><p>Follow every customer order from creation through Exchange and Bank settlement.</p></div><div class="pill">LIVE ORDER STATUS</div></div>
+<div class="stats">
+<div class="stat"><span>Total Orders</span><b id="sTotal">0</b></div><div class="stat"><span>Pending Exchange</span><b id="sPending">0</b></div><div class="stat"><span>Exchange Approved</span><b id="sApproved">0</b></div><div class="stat"><span>Settled</span><b id="sSettled">0</b></div><div class="stat"><span>Exchange Rejected</span><b id="sER">0</b></div><div class="stat"><span>Bank Rejected</span><b id="sBR">0</b></div>
+</div>
+<section class="card">
+<div id="notice" class="notice"></div>
+<div class="toolbar">
+<input id="search" placeholder="Search order, team, stock or symbol">
+<select id="team"><option value="">All Teams</option></select>
+<select id="status"><option value="">All Statuses</option><option value="PENDING_EXCHANGE">Pending Exchange</option><option value="EXCHANGE_APPROVED">Exchange Approved</option><option value="SETTLED">Settled</option><option value="EXCHANGE_REJECTED">Exchange Rejected</option><option value="BANK_REJECTED">Bank Rejected</option></select>
+<select id="limit"><option value="50">50 Rows</option><option value="100">100 Rows</option><option value="25">25 Rows</option></select>
+<button id="refresh" type="button">REFRESH</button><button id="clear" class="secondary" type="button">CLEAR</button>
+</div>
+<div class="filter-note" id="note">Auto-refreshes every 5 seconds. Status is updated by Exchange and Bank settlement actions.</div>
+<div id="app"><div class="empty">Loading order history…</div></div>
+<div id="pager" class="pager"></div>
+</section>
+</div>
+<script>
+(function(){
+"use strict";
+var API="/api",page=1,loading=false,timer=null;
+var $=function(id){return document.getElementById(id)};
+var money=function(n){return "₹"+Math.round(Number(n||0)).toLocaleString("en-IN")};
+var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})};
+function headers(){var h=new Headers({"Accept":"application/json"}),t=localStorage.getItem("jse_token");if(t)h.set("Authorization","Bearer "+t);return h}
+function notice(t,k){var n=$("notice");n.textContent=t||"";n.className="notice"+(k?" "+k:"")}
+function statusClass(s){s=String(s||"");if(s==="PENDING_EXCHANGE")return"pending";if(s==="EXCHANGE_APPROVED")return"approved";if(s==="SETTLED")return"settled";return"rejected"}
+function statusLabel(s){return String(s||"").replaceAll("_"," ")}
+async function load(){
+ if(loading)return;loading=true;
+ try{
+  var p=new URLSearchParams({page:String(page),limit:String($("limit").value),q:$("search").value.trim()});
+  var st=$("status").value,tm=$("team").value;if(st)p.set("status",st);if(tm)p.set("team",tm);
+  var r=await fetch(API+"/tracking?"+p.toString(),{headers:headers(),cache:"no-store"});
+  var d=await r.json().catch(function(){return{}});
+  if(!r.ok)throw new Error(d.error||"Order tracking unavailable");
+  var s=d.summary||{},rows=d.rows||[],pg=d.pagination||{page:1,pages:1,total:0,limit:50};
+  $("sTotal").textContent=Number(s.total||0).toLocaleString("en-IN");
+  $("sPending").textContent=Number(s.pending||0).toLocaleString("en-IN");
+  $("sApproved").textContent=Number(s.exchange_approved||0).toLocaleString("en-IN");
+  $("sSettled").textContent=Number(s.settled||0).toLocaleString("en-IN");
+  $("sER").textContent=Number(s.exchange_rejected||0).toLocaleString("en-IN");
+  $("sBR").textContent=Number(s.bank_rejected||0).toLocaleString("en-IN");
+  if(!rows.length){$("app").innerHTML='<div class="empty">No orders match the selected filters.</div>'}
+  else $("app").innerHTML='<div class="table-wrap"><table class="table"><thead><tr><th>Order</th><th>Team</th><th>Broker</th><th>Security</th><th>Side</th><th>Quantity</th><th>Price</th><th>Trade Value</th><th>Brokerage</th><th>Amount</th><th>Status</th><th>Created</th></tr></thead><tbody>'+
+   rows.map(function(x){var side=x.side==="BUY";return '<tr><td class="order">'+esc(x.order_code)+'</td><td>'+esc(x.team)+'</td><td>'+esc(x.broker)+'</td><td class="security">'+esc(x.stock)+'<span class="sub">'+esc(x.symbol)+'</span></td><td class="'+(side?"buy":"sell")+'">'+esc(x.side)+'</td><td>'+Number(x.quantity||0).toLocaleString("en-IN")+'</td><td class="money">'+money(x.price)+'</td><td class="money">'+money(x.trade_value)+'</td><td class="money">'+money(x.brokerage)+'</td><td class="money">'+money(x.amount)+'</td><td><span class="status '+statusClass(x.status)+'">'+esc(statusLabel(x.status))+'</span></td><td>'+new Date(x.created_at).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</td></tr>'}).join("")+
+   '</tbody></table></div>';
+  $("pager").innerHTML='<button id="prev" '+(pg.page<=1?"disabled":"")+'>← PREVIOUS</button><span>Page '+pg.page+' of '+pg.pages+' · '+Number(pg.total||0).toLocaleString("en-IN")+' orders</span><button id="next" '+(pg.page>=pg.pages?"disabled":"")+'>NEXT →</button>';
+  $("prev").onclick=function(){if(page>1){page--;load()}};$("next").onclick=function(){if(page<pg.pages){page++;load()}};
+  if($("team").options.length===1)$("team").innerHTML='<option value="">All Teams</option>'+(d.filters&&d.filters.teams||[]).map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join("");
+  notice("","");$("note").textContent="Auto-refreshes every 5 seconds · "+Number(pg.total||0).toLocaleString("en-IN")+" matching order"+(Number(pg.total||0)===1?"":"s")+" · Total value "+money(s.trade_value)+" · Brokerage "+money(s.brokerage);
+ }catch(e){$("app").innerHTML='<div class="empty">'+esc(e.message||"Order tracking unavailable")+'</div>';notice(e.message||"Order tracking unavailable","error")}
+ finally{loading=false}
+}
+$("status").onchange=function(){page=1;load()};$("team").onchange=function(){page=1;load()};$("limit").onchange=function(){page=1;load()};
+$("refresh").onclick=function(){load()};$("clear").onclick=function(){$("search").value="";$("team").value="";$("status").value="";page=1;load()};
+var st;$("search").oninput=function(){clearTimeout(st);st=setTimeout(function(){page=1;load()},300)};
+load();timer=setInterval(function(){if(document.visibilityState==="visible")load()},5000);
+})();
+</script>
+</body>
+</html>
