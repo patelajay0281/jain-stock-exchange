@@ -37,6 +37,10 @@ SET username='INST-01',display_name='Institutional Investor 01',email='instituti
     is_active=true,updated_at=now()
 WHERE username='INSTITUTION';
 
+INSERT INTO public.users(email,display_name,role,username,is_active)
+SELECT 'admin@jse.local','JSE Administrator','ADMIN','ADMINAP',true
+WHERE NOT EXISTS (SELECT 1 FROM public.users u WHERE lower(u.username)=lower('ADMINAP'));
+
 UPDATE public.users
 SET username='ADMINAP',display_name='JSE Administrator',email='admin@jse.local',
     role='ADMIN',team_id=NULL,institution_id=NULL,is_active=true,updated_at=now()
