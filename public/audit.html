@@ -38,7 +38,7 @@
 .empty{padding:28px;text-align:center;color:#667487}
 @media(max-width:900px){.audit-stats{grid-template-columns:repeat(2,1fr)}.audit-search{margin-left:0;width:100%}.audit-table{min-width:980px}.table-wrap{overflow:auto}}
 </style>
-<script src="/__hatchable/events.js"></script><script src="/auth.js"></script></head>
+<script src="/jse-api.js"></script><script src="/auth.js"></script></head>
 <body>
 <div class="shell page">
 <header class="brand">JAIN STOCK EXCHANGE</header>
@@ -65,7 +65,7 @@
 </div>
 
 <script>
-const A=window.__HATCHABLE__.api;
+const A=window.JSE_API;
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
