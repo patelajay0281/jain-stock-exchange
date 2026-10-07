@@ -1,4 +1,4 @@
-const API='/api';
+const API=window.JSE_API;
 let stocks=[],ipos=[];
 const $=id=>document.getElementById(id);
 const money=n=>'₹'+Math.round(Number(n||0)).toLocaleString('en-IN');
