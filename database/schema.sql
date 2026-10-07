@@ -11,7 +11,9 @@ CREATE TYPE user_role AS ENUM (
   'EXCHANGE',
   'BANK',
   'INSTITUTION',
-  'ADMIN'
+  'ADMIN',
+  'PIT_MANAGER',
+  'ASSOCIATE_ADMIN'
 );
 
 CREATE TYPE asset_type AS ENUM (
@@ -130,6 +132,8 @@ CREATE TABLE users (
   display_name TEXT,
   google_subject TEXT UNIQUE,
   role user_role NOT NULL,
+  username TEXT,
+  password_hash TEXT,
   team_id BIGINT REFERENCES teams(id) ON DELETE RESTRICT,
   institution_id BIGINT REFERENCES institutions(id) ON DELETE RESTRICT,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -140,11 +144,12 @@ CREATE TABLE users (
     OR
     (role = 'INSTITUTION' AND institution_id IS NOT NULL AND team_id IS NULL)
     OR
-    (role IN ('EXCHANGE', 'BANK', 'ADMIN') AND team_id IS NULL AND institution_id IS NULL)
+    (role IN ('EXCHANGE', 'BANK', 'PIT_MANAGER', 'ADMIN', 'ASSOCIATE_ADMIN') AND team_id IS NULL AND institution_id IS NULL)
   )
 );
 
 CREATE UNIQUE INDEX users_email_lower_uq ON users (LOWER(email));
+CREATE UNIQUE INDEX users_username_lower_uq ON users (LOWER(username)) WHERE username IS NOT NULL;
 CREATE INDEX users_role_idx ON users (role);
 CREATE INDEX users_team_id_idx ON users (team_id);
 
