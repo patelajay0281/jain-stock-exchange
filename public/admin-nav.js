@@ -1,6 +1,2 @@
-(async()=>{try{
-  const A=window.__HATCHABLE__.api;
-  const r=await fetch(A+'/admin-state',{cache:'no-store'});
-  if(r.ok){document.querySelectorAll('.admin-only-link').forEach(a=>a.classList.remove('admin-only-link'));return;}
-  document.querySelectorAll('.admin-only-link').forEach(a=>a.classList.add('admin-only-link'));
-}catch(e){}})();
+// Open-event mode: internal navigation is available without a login gate.
+document.querySelectorAll('.admin-only-link').forEach(a=>a.classList.remove('admin-only-link'));
