@@ -871,7 +871,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Supabase hardening: all public-schema tables are server-managed through Edge Functions.
 -- Direct anon/authenticated Data API access is blocked by RLS until explicit policies are added.
-DO $
+DO $$
 DECLARE
   r RECORD;
 BEGIN
