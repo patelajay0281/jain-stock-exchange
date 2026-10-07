@@ -39,7 +39,7 @@ SELECT
   s.base_capital_paise,
   s.base_capital_paise,
   0,
-  s.base_capital_paise
+  s.minimum_cash_buffer_paise
 FROM generate_series(1, 100) AS g(n)
 CROSS JOIN event_settings s
 JOIN brokers b
