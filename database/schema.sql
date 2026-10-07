@@ -576,7 +576,7 @@ FOR EACH ROW EXECUTE FUNCTION set_order_code();
 CREATE FUNCTION enforce_event_transition()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   IF NEW.status = OLD.status THEN
     RETURN NEW;
@@ -597,7 +597,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER event_state_machine
 BEFORE UPDATE OF status ON event_state
@@ -606,7 +606,7 @@ FOR EACH ROW EXECUTE FUNCTION enforce_event_transition();
 CREATE FUNCTION enforce_settlement_transition()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   IF NEW.status <> OLD.status
      AND NOT (
@@ -619,7 +619,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER settlements_state_machine
 BEFORE UPDATE OF status ON settlements
@@ -628,7 +628,7 @@ FOR EACH ROW EXECUTE FUNCTION enforce_settlement_transition();
 CREATE FUNCTION enforce_commission_transition()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   IF NEW.status <> OLD.status
      AND NOT (
@@ -641,7 +641,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER broker_commission_state_machine
 BEFORE UPDATE OF status ON broker_commissions
@@ -650,7 +650,7 @@ FOR EACH ROW EXECUTE FUNCTION enforce_commission_transition();
 CREATE FUNCTION require_live_event_for_order_insert()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $$
 DECLARE
   v_status event_status;
 BEGIN
@@ -665,7 +665,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER orders_require_live_event
 BEFORE INSERT ON orders
@@ -674,7 +674,7 @@ FOR EACH ROW EXECUTE FUNCTION require_live_event_for_order_insert();
 CREATE FUNCTION enforce_order_transition()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   IF NEW.status = OLD.status THEN
     RETURN NEW;
@@ -883,5 +883,5 @@ BEGIN
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', r.tablename);
   END LOOP;
 END;
-$;
+$$;
 
