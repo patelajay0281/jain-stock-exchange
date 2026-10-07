@@ -1,4 +1,4 @@
-const A=window.__HATCHABLE__.api,$=s=>document.querySelector(s),m=n=>'₹'+Math.round(Number(n||0)).toLocaleString('en-IN');
+const A=window.JSE_API,$=s=>document.querySelector(s),m=n=>'₹'+Math.round(Number(n||0)).toLocaleString('en-IN');
 let state=[],ipos=[],approvedKeys=[],indexBase=0;
 
 function key(type,id){return String(type)+':'+String(id)}
