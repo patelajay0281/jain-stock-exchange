@@ -18,11 +18,13 @@ INSERT INTO institutions (
 SELECT
   'INST-01',
   'Institutional Investor',
-  200000000,
-  200000000
+  2000000000,
+  2000000000
 WHERE NOT EXISTS (
   SELECT 1 FROM institutions WHERE code = 'INST-01'
 );
+
+UPDATE institutions SET initial_cash_paise=2000000000,cash_paise=2000000000 WHERE code='INST-01';
 
 -- Exactly 100 participant teams. Broker assignment cycles 01..10, ten teams per broker.
 INSERT INTO teams (
@@ -196,6 +198,38 @@ WHEN 'PIDILITE' THEN 55 WHEN 'SHRIRAMFIN' THEN 56 WHEN 'HINDALCO' THEN 57 WHEN '
 ELSE display_order END,
 name=CASE WHEN symbol='NESTLEIND' THEN 'Nestlé India' ELSE name END
 WHERE type='LISTED_STOCK';
+
+-- Internal JSE staff accounts. Customer teams are not application users.
+INSERT INTO users(email,display_name,role,username,is_active)
+SELECT 'admin@jse.local','JSE Administrator','ADMIN','ADMINAP',true
+WHERE NOT EXISTS (SELECT 1 FROM users u WHERE lower(u.username)=lower('ADMINAP'));
+
+INSERT INTO users(email,display_name,role,username,is_active)
+SELECT 'associate-admin@jse.local','Associate Administrator','ASSOCIATE_ADMIN','ASSOC-ADMIN',true
+WHERE NOT EXISTS (SELECT 1 FROM users u WHERE lower(u.username)=lower('ASSOC-ADMIN'));
+
+INSERT INTO users(email,display_name,role,username,is_active)
+SELECT 'pit-manager-'||lpad(n::text,2,'0')||'@jse.local','Pit Manager '||lpad(n::text,2,'0'),'PIT_MANAGER','PIT-'||lpad(n::text,2,'0'),true
+FROM generate_series(1,10) n
+WHERE NOT EXISTS (SELECT 1 FROM users u WHERE lower(u.username)=lower('PIT-'||lpad(n::text,2,'0')));
+
+INSERT INTO users(email,display_name,role,username,is_active)
+SELECT 'exchange-'||lpad(n::text,2,'0')||'@jse.local','Exchange '||lpad(n::text,2,'0'),'EXCHANGE','EXCHANGE-'||lpad(n::text,2,'0'),true
+FROM generate_series(1,4) n
+WHERE NOT EXISTS (SELECT 1 FROM users u WHERE lower(u.username)=lower('EXCHANGE-'||lpad(n::text,2,'0')));
+
+INSERT INTO users(email,display_name,role,username,is_active)
+SELECT 'bank-'||lpad(n::text,2,'0')||'@jse.local','Bank '||lpad(n::text,2,'0'),'BANK','BANK-'||lpad(n::text,2,'0'),true
+FROM generate_series(1,4) n
+WHERE NOT EXISTS (SELECT 1 FROM users u WHERE lower(u.username)=lower('BANK-'||lpad(n::text,2,'0')));
+
+INSERT INTO users(email,display_name,role,username,institution_id,is_active)
+SELECT 'institution-'||lpad(n::text,2,'0')||'@jse.local','Institutional Investor '||lpad(n::text,2,'0'),'INSTITUTION','INST-'||lpad(n::text,2,'0'),
+       (SELECT id FROM institutions WHERE code='INST-01' LIMIT 1),true
+FROM generate_series(1,4) n
+WHERE NOT EXISTS (SELECT 1 FROM users u WHERE lower(u.username)=lower('INST-'||lpad(n::text,2,'0')));
+
+UPDATE users SET is_active=false,updated_at=now() WHERE role='PARTICIPANT';
 
 INSERT INTO event_state (id, status)
 VALUES (1, 'NOT_STARTED')
