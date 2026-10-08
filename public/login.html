@@ -1,1 +1,78 @@
-<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/"><title>JAIN STOCK EXCHANGE</title></head><body><script>location.replace("/");</script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JAIN STOCK EXCHANGE · Staff Login</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#eef2f6;color:#14213d}
+body{display:flex;align-items:center;justify-content:center;padding:24px}.shell{width:min(460px,100%)}
+.brand{text-align:center;font-size:18px;font-weight:900;letter-spacing:1.5px;margin-bottom:18px}
+.card{background:#fff;border:1px solid #d7dfe9;border-radius:16px;padding:24px;box-shadow:0 12px 32px rgba(20,33,61,.08)}
+h1{margin:0;font-size:24px}.sub{margin:6px 0 20px;color:#667085;font-size:12px;line-height:1.5}
+label{display:block;margin:0 0 6px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+input{width:100%;height:44px;border:1px solid #cbd4df;border-radius:8px;padding:0 12px;font-size:14px;margin-bottom:13px}
+button{width:100%;height:44px;border:0;border-radius:8px;background:#172b4d;color:#fff;font-weight:850;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}.msg{margin-top:12px;padding:10px 12px;border-radius:8px;background:#f5f7fa;color:#667085;font-size:11px;line-height:1.4}.msg.error{background:#fff0f1;color:#a23a43}.msg.success{background:#eef8f2;color:#23734f}
+.hidden{display:none!important}.divider{height:1px;background:#e6ebf0;margin:20px 0}.mini{font-size:10px;color:#8490a0;line-height:1.5;margin-top:12px}
+</style></head><body><main class="shell"><div class="brand">JAIN STOCK EXCHANGE</div>
+<section class="card" id="loginCard"><h1>Staff Login</h1><p class="sub">Sign in with your JSE operating account to access the trading, exchange, bank, institutional, audit and administration desks.</p>
+<form id="loginForm"><label for="username">Username</label><input id="username" autocomplete="username" required>
+<label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+<button id="loginBtn" type="submit">SIGN IN</button><div id="loginMsg" class="msg hidden"></div></form>
+<p id="deniedMsg" class="mini hidden">Your account is valid, but it does not have permission for the requested desk.</p>
+</section>
+<section class="card hidden" id="changeCard"><h1>Set New Password</h1><p class="sub">Your account is using its bootstrap password. Set a new password before continuing.</p>
+<form id="changeForm"><label for="newPassword">New Password</label><input id="newPassword" type="password" minlength="10" autocomplete="new-password" required>
+<label for="confirmPassword">Confirm New Password</label><input id="confirmPassword" type="password" minlength="10" autocomplete="new-password" required>
+<button id="changeBtn" type="submit">SAVE NEW PASSWORD</button><div id="changeMsg" class="msg hidden"></div></form>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+const safeNext=(v)=>v&&v.startsWith('/')&&!v.startsWith('//')?v:'/';
+let next=safeNext(params.get('next'));
+const showMsg=(el,text,kind)=>{el.textContent=text;el.className='msg '+kind};
+if(params.get('denied')==='1')$('deniedMsg').classList.remove('hidden');
+
+async function finish(member,token){
+  localStorage.setItem('jse_token',token);
+  localStorage.setItem('jse_member',JSON.stringify(member||{}));
+  if(member?.needs_password_change){ $('loginCard').classList.add('hidden'); $('changeCard').classList.remove('hidden'); return; }
+  location.replace(next||'/');
+}
+async function tryExisting(){
+  const token=localStorage.getItem('jse_token');
+  if(!token)return;
+  try{
+    const r=await fetch('/api/member-me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.member){localStorage.setItem('jse_member',JSON.stringify(d.member));await finish(d.member,token)}
+    else {localStorage.removeItem('jse_token');localStorage.removeItem('jse_member')}
+  }catch(_){}
+}
+$('loginForm').addEventListener('submit',async e=>{
+ e.preventDefault();$('loginBtn').disabled=true;
+ try{
+  const r=await fetch('/api/member-login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({username:$('username').value.trim(),password:$('password').value})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.token)throw new Error(d.error||'Invalid credentials');
+  showMsg($('loginMsg'),'Login successful.','success');
+  await finish(d.member,d.token);
+ }catch(err){showMsg($('loginMsg'),err.message||'Login failed','error');$('loginBtn').disabled=false}
+});
+$('changeForm').addEventListener('submit',async e=>{
+ e.preventDefault();$('changeBtn').disabled=true;
+ const a=$('newPassword').value,b=$('confirmPassword').value;
+ if(a.length<10){showMsg($('changeMsg'),'Password must be at least 10 characters.','error');$('changeBtn').disabled=false;return}
+ if(a!==b){showMsg($('changeMsg'),'Passwords do not match.','error');$('changeBtn').disabled=false;return}
+ try{
+  const token=localStorage.getItem('jse_token');
+  const r=await fetch('/api/change-password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'Accept':'application/json'},body:JSON.stringify({new_password:a})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.token)throw new Error(d.error||'Could not change password');
+  localStorage.setItem('jse_token',d.token);
+  localStorage.setItem('jse_member',JSON.stringify({...JSON.parse(localStorage.getItem('jse_member')||'{}'),needs_password_change:false}));
+  showMsg($('changeMsg'),'Password updated. Opening your desk…','success');
+  setTimeout(()=>location.replace(next||'/'),300);
+ }catch(err){showMsg($('changeMsg'),err.message||'Password update failed','error');$('changeBtn').disabled=false}
+});
+tryExisting();
+</script></body></html>
