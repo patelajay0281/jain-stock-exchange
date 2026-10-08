@@ -359,9 +359,11 @@ async function pauseMarket(){
 async function historyAction(action){
   if(busy)return;
   if(!confirm(action==="UNDO"?"Undo the most recent settlement?":"Redo the most recently undone settlement?"))return;
+  const control_password=await requestControlPassword(action);
+  if(control_password===null)return;
   busy=true;
   try{
-    const d=await api("/undo-redo",{method:"POST",body:JSON.stringify({action})});
+    const d=await api("/undo-redo",{method:"POST",body:JSON.stringify({action,control_password})});
     setMsg(d.message||("Recovery action completed: "+action),"success");
   }catch(e){setMsg(e.message||"Recovery action failed","error")}
   finally{busy=false;await load()}
