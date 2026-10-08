@@ -54,7 +54,7 @@ async function load(){
   const pg=d.pagination; $('pager').innerHTML='<button '+(pg.page<=1?'disabled':'')+' id="prev">← Previous</button><span>Page '+pg.page+' of '+pg.pages+' · '+pg.total.toLocaleString('en-IN')+' matching entries</span><button '+(pg.page>=pg.pages?'disabled':'')+' id="next">Next →</button>';
   $('prev').onclick=()=>{if(page>1){page--;load()}};
   $('next').onclick=()=>{if(page<pg.pages){page++;load()}};
- }catch(e){$('app').innerHTML='<p class="notice">Admin access required.</p>'}
+ }catch(e){$('app').innerHTML='<p class="notice">Cash ledger could not be loaded: '+esc(e.message||'Please retry.')+'</p>'}
  finally{loading=false}
 }
 let searchTimer;
