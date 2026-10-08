@@ -12,9 +12,11 @@ const MARKET_CACHE_MS = 1500;
 const REALTIME_CACHE_MS = 900;
 const QUEUE_CACHE_MS = 750;
 const INSIGHTS_CACHE_MS = 3000;
+const PORTFOLIO_CACHE_MS = 1500;
 let insightsCache:any = null;
 let insightsCacheAt = 0;
 const queueCache = new Map<string,{at:number,data:any}>();
+const portfolioCache = new Map<string,{at:number,data:any}>();
 
 const PROTECTED_ADMIN_ACTIONS = new Set(["PAUSE","RESUME","CLOSE","FINALIZE","RESET"]);
 
@@ -248,6 +250,13 @@ async function transactionQueue(kind:string) {
 }
 
 async function teamPortfolio(user:any) {
+  const cacheKey=[
+    String(user.role||""),
+    String(user.team_id||""),
+    String(user.institution_id||"")
+  ].join("|");
+  const cached=portfolioCache.get(cacheKey);
+  if(cached && Date.now()-cached.at<PORTFOLIO_CACHE_MS) return cached.data;
   let teamIds:any[]=[];
   if(user.role==="PARTICIPANT") teamIds=[user.team_id];
   else { const {data}=await db.from("teams").select("id"); teamIds=(data||[]).map((x:any)=>x.id); }
@@ -348,9 +357,11 @@ async function teamPortfolio(user:any) {
   const topLosers=teamRows.filter((x:any)=>x.realized_pl<0).sort((a:any,b:any)=>a.realized_pl-b.realized_pl).slice(0,10);
   const {data:state}=await db.from("event_state").select("status,topper_team_id,topper_realized_profit_paise,finalization_note").eq("id",1).single();
   const finalTop=state?.status==="FINALIZED"?teamRows.find((x:any)=>x.id===state.topper_team_id):null;
-  return {teams:teamRows,holdings:holdingRows,sold_holdings:soldRows,attempts,top_gainers:eligible.slice(0,10),top_losers:topLosers,
+  const result={teams:teamRows,holdings:holdingRows,sold_holdings:soldRows,attempts,top_gainers:eligible.slice(0,10),top_losers:topLosers,
     topper:finalTop||eligible[0]||null,topper_selection_mode:state?.status==="FINALIZED"?"FINALIZED RESULT":"LIVE ELIGIBILITY PREVIEW",
     event_status:state?.status||"NOT_STARTED"};
+  portfolioCache.set(cacheKey,{at:Date.now(),data:result});
+  return result;
 }
 
 async function cashLedger(user:any,url:URL) {
