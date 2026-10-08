@@ -329,24 +329,22 @@ async function teamPortfolio(user:any) {
 }
 
 async function cashLedger(user:any,url:URL) {
-  let q=db.from("cash_ledger").select("id,team_id,order_id,entry_type,debit_paise,credit_paise,balance_after_paise,note,created_at").order("created_at",{ascending:false});
+  let q=db.from("cash_ledger").select("id,team_id,order_id,entry_type,debit_paise,credit_paise,balance_after_paise,note,created_at,orders(order_code)").order("created_at",{ascending:false}).order("id",{ascending:false});
   if(user.role==="PARTICIPANT")q=q.eq("team_id",user.team_id);
   if(url.searchParams.get("team")){const {data:t}=await db.from("teams").select("id").eq("code",url.searchParams.get("team")).single();if(t)q=q.eq("team_id",t.id);}
   if(url.searchParams.get("entry_type"))q=q.eq("entry_type",url.searchParams.get("entry_type"));
   const {data:rows0,error}=await q.limit(50000);if(error)throw error;let rows=rows0||[];
-  const orderMap=await maps([...new Set(rows.map((x:any)=>x.order_id).filter(Boolean))],"orders","id","id,order_code");
   const search=(url.searchParams.get("q")||"").trim().toLowerCase();
-  if(search)rows=rows.filter((x:any)=>String(x.note||"").toLowerCase().includes(search)||String(x.entry_type||"").toLowerCase().includes(search)||String(orderMap.get(String(x.order_id))||"").toLowerCase().includes(search));
+  if(search)rows=rows.filter((x:any)=>String(x.note||"").toLowerCase().includes(search)||String(x.entry_type||"").toLowerCase().includes(search)||String(x.orders?.order_code||"").toLowerCase().includes(search));
   const page=Math.max(1,Number(url.searchParams.get("page")||1)),limit=Math.min(100,Math.max(1,Number(url.searchParams.get("limit")||50))),total=rows.length,paged=rows.slice((page-1)*limit,page*limit);
   const teams=await maps([...new Set(paged.map((x:any)=>x.team_id))],"teams","id","id,code,cash_paise");
   const allTeams=(await db.from("teams").select("id,code,cash_paise").order("code")).data||[],types=(await db.from("cash_ledger").select("entry_type").limit(1000)).data||[];
   const debit=rows.reduce((s:number,x:any)=>s+Number(x.debit_paise||0),0)/100,credit=rows.reduce((s:number,x:any)=>s+Number(x.credit_paise||0),0)/100;
   const currentCash=user.role==="PARTICIPANT"?Number(allTeams.find((x:any)=>x.id===user.team_id)?.cash_paise||0)/100:allTeams.reduce((s:number,x:any)=>s+Number(x.cash_paise||0),0)/100;
   return {summary:{entries:total,total_debit:debit,total_credit:credit,net_movement:credit-debit,current_cash:currentCash},filters:{teams:allTeams.map((x:any)=>x.code),types:[...new Set(types.map((x:any)=>x.entry_type))]},
-    rows:paged.map((x:any)=>({...x,team:teams.get(String(x.team_id))?.code||"",order_code:orderMap.get(String(x.order_id))||"",debit:Number(x.debit_paise||0)/100,credit:Number(x.credit_paise||0)/100,balance_after:Number(x.balance_after_paise||0)/100})),
+    rows:paged.map((x:any)=>({...x,team:teams.get(String(x.team_id))?.code||"",order_code:x.orders?.order_code||"",debit:Number(x.debit_paise||0)/100,credit:Number(x.credit_paise||0)/100,balance_after:Number(x.balance_after_paise||0)/100})),
     pagination:{page,limit,total,pages:Math.max(1,Math.ceil(total/limit))}};
 }
-
 async function audit(user:any,url:URL) {
   let q=db.from("audit_log").select("id,actor_user_id,actor_email,actor_role,action,order_id,team_id,asset_id,side,quantity,trade_value_paise,risk_status,what_happened,details_json,created_at",{count:"exact"}).order("created_at",{ascending:false});
   if(user.role==="PARTICIPANT") q=q.eq("team_id",user.team_id);
@@ -490,7 +488,7 @@ async function brokerReports(type:string){
   }
   if(type==="commissions"){
     const [{data:rows,error:re},{data:brokers,error:be},{data:teams,error:te},{data:assets,error:ae}]=await Promise.all([
-      db.from("broker_commissions").select("id,order_id,broker_id,team_id,commission_rate_bps,commission_paise,status,created_at").order("created_at",{ascending:false}).order("id",{ascending:false}).limit(15000),
+      db.from("broker_commissions").select("id,order_id,broker_id,team_id,commission_rate_bps,commission_paise,status,created_at,orders(order_code,asset_id,side,quantity,price_paise,trade_value_paise)").order("created_at",{ascending:false}).order("id",{ascending:false}).limit(15000),
       db.from("brokers").select("id,code,display_name"),
       db.from("teams").select("id,code"),
       db.from("assets").select("id,name,symbol,type")
@@ -498,11 +496,7 @@ async function brokerReports(type:string){
     if(re||be||te||ae)throw re||be||te||ae;
     const bm=new Map((brokers||[]).map((x:any)=>[String(x.id),x])); const tm=new Map((teams||[]).map((x:any)=>[String(x.id),x]));
     const am=new Map((assets||[]).map((x:any)=>[String(x.id),x]));
-    const orderIds=[...new Set((rows||[]).map((x:any)=>x.order_id).filter(Boolean))];
-    const {data:orders,error:oe}=await db.from("orders").select("id,order_code,asset_id,side,quantity,price_paise,trade_value_paise").in("id",orderIds.length?orderIds:[-1]);
-    if(oe)throw oe;
-    const om=new Map((orders||[]).map((x:any)=>[String(x.id),x]));
-    return {rows:(rows||[]).map((x:any)=>{const o=om.get(String(x.order_id)),b=bm.get(String(x.broker_id)),t=tm.get(String(x.team_id)),a=am.get(String(o?.asset_id));
+    return {rows:(rows||[]).map((x:any)=>{const o=x.orders||{},b=bm.get(String(x.broker_id)),t=tm.get(String(x.team_id)),a=am.get(String(o.asset_id));
       return {broker:b?.code||"",order_code:o?.order_code||"",team:t?.code||"",stock:a?.name||"",symbol:a?.symbol||"",side:o?.side||"",quantity:o?.quantity||0,
         price:Number(o?.price_paise||0)/100,trade_value:Number(o?.trade_value_paise||0)/100,commission_rate:Number(x.commission_rate_bps||0)/10000,
         commission_amount:Number(x.commission_paise||0)/100,status:x.status,created_at:x.created_at};})};
