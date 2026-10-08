@@ -20,6 +20,32 @@ const portfolioCache = new Map<string,{at:number,data:any}>();
 
 const PROTECTED_ADMIN_ACTIONS = new Set(["PAUSE","RESUME","CLOSE","FINALIZE","RESET"]);
 
+// Temporary open-access event mode. Set to false to restore normal authentication.
+const OPEN_ACCESS_MODE = true;
+let openAccessUser:any = null;
+async function getOpenAccessUser(): Promise<any|null> {
+  if (openAccessUser) return openAccessUser;
+  const {data,error}=await db.from("users")
+    .select("id,username,display_name,role,team_id,institution_id,is_active")
+    .eq("is_active",true)
+    .eq("role","ADMIN")
+    .order("id",{ascending:true})
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  openAccessUser = {
+    uid:Number(data.id),
+    user_id:Number(data.id),
+    username:"OPEN_ACCESS",
+    display_name:"JSE Open Access",
+    role:"ADMIN",
+    team_id:null,
+    institution_id:null,
+    needs_password_change:false
+  };
+  return openAccessUser;
+}
+
 const CORS = {
   "Access-Control-Allow-Origin": "https://jain-stock-exchange.pages.dev",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, idempotency-key",
@@ -84,6 +110,7 @@ function csvResponse(rows:any[],filename:string){
 }
 async function bodyJson(req:Request){ try{return await req.json();}catch{return {};}}
 async function auth(req:Request): Promise<any|null> {
+  if(OPEN_ACCESS_MODE) return await getOpenAccessUser();
   const h=req.headers.get("authorization")||"";
   if(!h.toLowerCase().startsWith("bearer ")) return null;
   return await verifyToken(h.slice(7).trim());
@@ -729,7 +756,10 @@ async function handle(req:Request){
     }
 
     const user=await auth(req);
-    if(path==="/member-me") return user?response({member:{username:user.username,role:user.role,team_id:user.team_id,institution_id:user.institution_id,needs_password_change:Boolean(user.needs_password_change)}}):error("Authentication required",401);
+    if(path==="/member-me") {
+      if(!user) return error("Open access administrator identity unavailable",503);
+      return response({member:{username:user.username,role:user.role,team_id:user.team_id,institution_id:user.institution_id,needs_password_change:false}});
+    }
     if(path==="/change-password" && req.method==="POST") {
       if(!user) return error("Authentication required",401);
       const b=await bodyJson(req);
