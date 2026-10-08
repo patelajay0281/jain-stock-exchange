@@ -414,25 +414,9 @@ function makeExcelLike(data){
     for(const row of rows)html+="<tr>"+cols.map(k=>"<td>"+esc(row?.[k])+"</td>").join("")+"</tr>";
     html+="</table><br>";
   }
-  return html+"<script>
-(function(){
-"use strict";
-const adminButtons=document.querySelectorAll("button.admin-btn");
-function bindAdminControls(){
-  const start=document.querySelector("#startBtn"),pause=document.querySelector("#pauseBtn"),close=document.querySelector("#closeBtn"),finalize=document.querySelector("#finalizeBtn"),reset=document.querySelector("#resetBtn");
-  if(start)start.addEventListener("click",()=>{if(typeof act==="function")act("START")});
-  if(pause)pause.addEventListener("click",()=>{if(typeof pauseMarket==="function")pauseMarket()});
-  if(close)close.addEventListener("click",()=>{if(typeof act==="function")act("CLOSE")});
-  if(finalize)finalize.addEventListener("click",()=>{if(typeof act==="function")act("FINALIZE")});
-  if(reset)reset.addEventListener("click",()=>{if(typeof resetEvent==="function")resetEvent()});
-  const undo=document.querySelector("#undoBtn"); if(undo)undo.addEventListener("click",()=>historyAction("UNDO"));
-  const redo=document.querySelector("#redoBtn"); if(redo)redo.addEventListener("click",()=>historyAction("REDO"));
-  const m=document.querySelector("#openMiBtn"); if(m)m.addEventListener("click",()=>openMarketIntelligence());
+  return html+"</body></html>";
 }
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bindAdminControls);else bindAdminControls();
-})();
-</script></body></html>";
-}
+
 async function downloadArchive(){
   if(busy)return;
   try{
