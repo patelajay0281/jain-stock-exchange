@@ -1,5 +1,5 @@
 (() => {
-  const API = "https://yxmztxtbgqkvardwgrak.supabase.co/functions/v1/jse-api";
+  const API = "/api";
   function makeHeaders(init) {
     const h = new Headers(init && init.headers ? init.headers : {});
     h.set("Accept","application/json");
