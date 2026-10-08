@@ -85,7 +85,7 @@ input,select{color:#000!important;background:#fff!important}
 <script>
 (function(){
 "use strict";
-var API="/api",rows=[],loading=false,activeId=null,activeMode="";
+var API="/api",rows=[],busy=new Set(),loading=false,activeId=null,activeMode="";
 var $=function(id){return document.getElementById(id)};
 var money=function(n){return "₹"+Math.round(Number(n||0)).toLocaleString("en-IN")};
 var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})};
@@ -93,15 +93,17 @@ function headers(){var h=new Headers({"Accept":"application/json"}),t=localStora
 function notice(t,k){var n=$("notice");n.textContent=t||"";n.className="notice"+(k?" "+k:"")}
 async function api(path,opt,retries){
  opt=opt||{};retries=retries==null?2:retries;var last;
- for(var i=0;i<=retries;i++){
+ var method=String(opt.method||"GET").toUpperCase();
+ var maxAttempts=(method==="GET"||method==="HEAD"||method==="OPTIONS")?retries+1:1;
+ for(var i=0;i<maxAttempts;i++){
   try{
    var h=headers();if(opt.body&&!h.has("Content-Type"))h.set("Content-Type","application/json");
    var r=await fetch(API+path,{method:opt.method||"GET",headers:h,body:opt.body,cache:"no-store"});
    var tx=await r.text(),d={};try{d=tx?JSON.parse(tx):{}}catch(e){d={error:tx}};
    if(r.ok)return d;last=new Error(String(d.error||d.message||("HTTP "+r.status)));
-   if(![429,502,503,504].includes(r.status)||i===retries)throw last;
-  }catch(e){last=e;if(i===retries)throw e}
-  await new Promise(function(r){setTimeout(r,[500,1200,2400][i]||2400)});
+   if(![429,502,503,504].includes(r.status)||i===maxAttempts-1)throw last;
+  }catch(e){last=e;if(i===maxAttempts-1)throw e}
+  if(maxAttempts>1)await new Promise(function(r){setTimeout(r,[500,1200,2400][i]||2400)});
  }
  throw last||new Error("Request failed");
 }
