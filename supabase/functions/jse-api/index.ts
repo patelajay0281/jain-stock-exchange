@@ -58,7 +58,7 @@ async function verifyToken(token: string): Promise<any|null> {
   } catch { return null; }
 }
 function response(body:any,status=200,headers:Record<string,string>={}) {
-  return new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8",...CORS,...headers}});
+  return new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer",...CORS,...headers}});
 }
 function error(message:string,status=400,extra:any={}) { return response({error:message,...extra},status); }
 function wholeRupeePrice(value:any): number {
@@ -79,8 +79,8 @@ async function auth(req:Request): Promise<any|null> {
   if(!h.toLowerCase().startsWith("bearer ")) return null;
   return await verifyToken(h.slice(7).trim());
 }
-function need(user:any, roles:string[]){ return !!user && roles.includes(user.role); }
-function needAdmin(user:any){ return !!user && user.role==="ADMIN"; }
+function need(user:any, roles:string[]){ return !!user && !user.needs_password_change && roles.includes(user.role); }
+function needAdmin(user:any){ return !!user && !user.needs_password_change && user.role==="ADMIN"; }
 async function verifyAdminControlPassword(value:string): Promise<boolean> {
   if (!value) return false;
   const {data,error}=await db.rpc("jse_verify_admin_control_password",{p_password:value});
@@ -645,6 +645,8 @@ async function insights(){
 async function handle(req:Request){
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
   const url=new URL(req.url);
+  const contentLength=Number(req.headers.get("content-length")||"0");
+  if(req.method==="POST" && Number.isFinite(contentLength) && contentLength>128*1024) return error("Request payload too large",413);
   const rawPath=url.pathname;
   const prefixes=["/functions/v1/jse-api","/jse-api"];
   let path=rawPath;
