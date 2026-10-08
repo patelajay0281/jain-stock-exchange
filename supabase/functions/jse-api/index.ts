@@ -146,25 +146,30 @@ async function realtimeSnapshot(){
 }
 
 async function summarizeOrders(user:any, filters:any={}) {
-  const teamId=user.role==="PARTICIPANT" && !OPEN_MODE ? Number(user.team_id||0)||null : (filters.team_id?Number(filters.team_id):null);
-  const raw=String(filters.q||"").trim();
-  const query=raw.replace(/&/g,"_").replace(/[^A-Za-z0-9_. -]/g,"").trim();
-  const status=String(filters.status||"").trim().toUpperCase()||null;
-  const {data,error}=await db.rpc("jse_order_summary",{p_team_id:teamId,p_status:status,p_query:query||null});
+  let teamId=filters.team_id?Number(filters.team_id):null;
+  const status=String(filters.status||"");
+  const query=String(filters.q||"");
+  const assetId=filters.asset_id?Number(filters.asset_id):null;
+  if(user.role==="PARTICIPANT" && !OPEN_MODE) teamId=Number(user.team_id||0)||null;
+  const {data,error}=await db.rpc("jse_order_summary_v2",{
+    p_team_id:teamId,
+    p_status:status||null,
+    p_query:query||null,
+    p_asset_id:assetId
+  });
   if(error) throw error;
-  const s=data||{};
+  const summary=typeof data==="string"?JSON.parse(data):data||{};
   return {
-    total:Number(s.total||0),
-    pending:Number(s.pending||0),
-    exchange_approved:Number(s.exchange_approved||0),
-    settled:Number(s.settled||0),
-    exchange_rejected:Number(s.exchange_rejected||0),
-    bank_rejected:Number(s.bank_rejected||0),
-    trade_value:Number(s.trade_value||0),
-    brokerage:Number(s.brokerage||0)
+    total:Number(summary.total||0),
+    pending:Number(summary.pending||0),
+    exchange_approved:Number(summary.exchange_approved||0),
+    settled:Number(summary.settled||0),
+    exchange_rejected:Number(summary.exchange_rejected||0),
+    bank_rejected:Number(summary.bank_rejected||0),
+    trade_value:Number(summary.trade_value||0),
+    brokerage:Number(summary.brokerage||0)
   };
 }
-
 async function orderList(user:any, page=1, limit=50, filters:any={}){
   const safeLimit=Math.max(1,Math.min(100,Number(limit)||50)); const from=(Math.max(1,Number(page)||1)-1)*safeLimit;
   let q=db.from("orders").select("id,order_code,status,source,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,amount_paise,is_short_sale,created_at", {count:"exact"}).order("created_at",{ascending:false}).order("id",{ascending:false}).range(from,from+safeLimit-1);
