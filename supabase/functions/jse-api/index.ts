@@ -256,18 +256,24 @@ async function teamPortfolio(user:any) {
 
   const bmap=new Map((brokers||[]).map((x:any)=>[String(x.id),x.code]));
   const amap=new Map((assets||[]).map((x:any)=>[String(x.id),x]));
-  const loanMap=new Map((loans||[]).map((x:any)=>[String(x.team_id),x]));
+  const tmap=new Map((teams||[]).map((x:any)=>[String(x.id),x.code]));
+  const loanMap=new Map<string,any>();
+  for(const l of loans||[]){const k=String(l.team_id);if(!loanMap.has(k))loanMap.set(k,l);}
+  const holdingsByTeam=new Map<number,any[]>();
+  for(const h of holdings||[]){const k=Number(h.team_id);const arr=holdingsByTeam.get(k)||[];arr.push(h);holdingsByTeam.set(k,arr);}
+  const brokerageByTeam=new Map<number,number>();
+  for(const bc of commissions||[]) if(bc.status==="APPLIED") brokerageByTeam.set(Number(bc.team_id),(brokerageByTeam.get(Number(bc.team_id))||0)+Number(bc.commission_paise||0));
   const hs=holdings||[], ord=orders||[];
 
   const teamRows=(teams||[]).map((t:any)=>{
     const l=loanMap.get(String(t.id));
-    const hrows=hs.filter((h:any)=>h.team_id===t.id);
+    const hrows=holdingsByTeam.get(Number(t.id))||[];
     const holdingsValue=hrows.reduce((s:number,h:any)=>s+Number(h.quantity)*Number(amap.get(String(h.asset_id))?.current_price_paise||0),0)/100;
     const cash=Number(t.cash_paise)/100, base=Number(t.base_capital_paise)/100;
     const liability=l?Number(l.principal_outstanding_paise+l.interest_due_paise)/100:0;
     const currentValue=cash+holdingsValue;
     const loanWithdrawn=l?Number(l.principal_paise)/100:0;
-    const brokeragePaid=(commissions||[]).filter((c:any)=>c.team_id===t.id&&c.status==="APPLIED").reduce((s:number,c:any)=>s+Number(c.commission_paise),0)/100;
+    const brokeragePaid=Number(brokerageByTeam.get(Number(t.id))||0)/100;
     const eligible=Number(t.peak_own_capital_used_paise)>=Number(t.base_capital_paise)-Number(t.minimum_cash_paise)
       && cash>=Number(t.minimum_cash_paise)/100 && Number(t.short_sale_count)===0 && liability===0;
     return {
@@ -285,7 +291,7 @@ async function teamPortfolio(user:any) {
 
   const holdingRows=hs.map((h:any)=>{
     const a=amap.get(String(h.asset_id)), current=Number(h.quantity)*Number(a?.current_price_paise||0)/100, invested=Number(h.cost_basis_paise||0)/100;
-    return {team:teams?.find((t:any)=>t.id===h.team_id)?.code||"",stock:a?.name||"",symbol:a?.symbol||"",type:a?.type||"",
+    return {team:tmap.get(String(h.team_id))||"",stock:a?.name||"",symbol:a?.symbol||"",type:a?.type||"",
       quantity:Number(h.quantity),average_price:Number(h.average_price_paise)/100,current_price:Number(a?.current_price_paise||0)/100,
       invested_value:invested,current_value:current,market_value:current,unrealized_pl:current-invested};
   });
@@ -304,7 +310,7 @@ async function teamPortfolio(user:any) {
   }
   const soldRows=[...soldMap.values()].map((x:any)=>({...x,average_sale_price:x.qty_value?x.gross_proceeds/x.qty_value:0}));
 
-  const attempts=ord.map((o:any)=>({team:teams?.find((t:any)=>t.id===o.team_id)?.code||"",order_code:o.order_code,status:o.status,
+  const attempts=ord.map((o:any)=>({team:tmap.get(String(o.team_id))||"",order_code:o.order_code,status:o.status,
     attempt_result:o.status==="SETTLED"?"SETTLED":(o.status==="BANK_REJECTED"||o.status==="EXCHANGE_REJECTED"?"REJECTED":"PENDING"),
     side:o.side,quantity:o.quantity,price:Number(o.price_paise)/100,asset:amap.get(String(o.asset_id))?.name||"",created_at:o.created_at}));
 
