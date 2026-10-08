@@ -744,7 +744,7 @@ async function handle(req:Request){
     }
     if(path==="/admin-state" && req.method==="GET") {
       const adminUser=await auth(req);
-      if(!needAdmin(adminUser))return error("Administrator login required",401);
+      if(!adminUser || adminUser.needs_password_change || !["ADMIN","ASSOCIATE_ADMIN"].includes(adminUser.role)) return error("Administrator login required",401);
       return response(await adminState());
     }
     if(path==="/health" && req.method==="GET"){
@@ -833,7 +833,7 @@ async function handle(req:Request){
       return response({ok:true,...data});
     }
     if(path==="/reports" && req.method==="GET"){
-      if(!need(user,["ADMIN","PIT_MANAGER","BANK","EXCHANGE"]))return error("Access required",403);
+      if(!need(user,["ADMIN","PIT_MANAGER","BANK","EXCHANGE","ASSOCIATE_ADMIN"]))return error("Access required",403);
       return response(await brokerReports(String(url.searchParams.get("type")||"commission_summary")));
     }
     if(path==="/certificates" && req.method==="GET"){
@@ -842,14 +842,14 @@ async function handle(req:Request){
     if(path==="/export" && req.method==="GET"){
       const type=String(url.searchParams.get("type")||"");
       if(type==="commissions"){
-        if(!need(user,["ADMIN","PIT_MANAGER","BANK","EXCHANGE"]))return error("Access required",403);
+        if(!need(user,["ADMIN","PIT_MANAGER","BANK","EXCHANGE","ASSOCIATE_ADMIN"]))return error("Access required",403);
         const d=await brokerReports("commissions");
         return csvResponse(d.rows||[],"JSE-broker-commissions.csv");
       }
       return error("Unknown export type",400);
     }
     if(path==="/tracking" && req.method==="GET") {
-      if(!need(user,["PIT_MANAGER","EXCHANGE","BANK","ADMIN"])) return error("Access required",403);
+      if(!need(user,["PIT_MANAGER","EXCHANGE","BANK","ADMIN","ASSOCIATE_ADMIN"])) return error("Access required",403);
       let trackingTeamId:any=undefined;
       const teamCode=String(url.searchParams.get("team")||"").trim();
       if(teamCode){
@@ -866,8 +866,8 @@ async function handle(req:Request){
     }
     if(path==="/portfolios" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN"]))return error("Pit Manager access required",403);return response(await teamPortfolio(user));}
     if(path==="/portfolio-details" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN"]))return error("Pit Manager access required",403);return response(await teamPortfolio(user));}
-    if(path==="/cash" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN","BANK","EXCHANGE"]))return error("Access required",403);return response(await cashLedger(user,url));}
-    if(path==="/audit" && req.method==="GET") {if(!need(user,["ADMIN","EXCHANGE","BANK","PIT_MANAGER"]))return error("Access required",403);return response(await audit(user,url));}
+    if(path==="/cash" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN","BANK","EXCHANGE","ASSOCIATE_ADMIN"]))return error("Access required",403);return response(await cashLedger(user,url));}
+    if(path==="/audit" && req.method==="GET") {if(!need(user,["ADMIN","EXCHANGE","BANK","PIT_MANAGER","ASSOCIATE_ADMIN"]))return error("Access required",403);return response(await audit(user,url));}
     if(path==="/member-accounts" && req.method==="GET") {
       const adminUser=await auth(req);
       if(!needAdmin(adminUser))return error("Administrator login required",401);
