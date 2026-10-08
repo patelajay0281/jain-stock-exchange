@@ -38,9 +38,11 @@ async function rawPage(env,req,path){
  if(!r.ok)return new Response("JSE page not found",{status:404,headers:NC});
  return r;
 }
-async function rawAsset(path){
+async function rawAsset(env,req,path){
  const name=String(path||"").replace(/^\/+/, "");
  if(!name||name.includes(".."))return new Response("Not Found",{status:404,headers:NC});
+ const local=await env.ASSETS.fetch(new Request(new URL("/"+name,req.url),req));
+ if(local.status!==404)return local;
  return fetch(RAW+name,{headers:{"accept":"*/*"}});
 }
 async function page(req,path){
@@ -61,7 +63,7 @@ export default{async fetch(req,env){
    const mapped=ALIASES[url.pathname];
    if(mapped)return await page(req,mapped);
    // Serve shared static files directly from the live branch.
-   return await rawAsset(url.pathname);
+   return await rawAsset(env,req,url.pathname);
  }catch(e){
    return new Response("JSE temporarily unavailable",{status:502,headers:{...NC,"content-type":"text/plain; charset=utf-8"}});
  }
