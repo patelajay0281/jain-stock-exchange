@@ -256,17 +256,16 @@ function createLoginGate(){
   document.body.appendChild(gate);gate.querySelector("#adminLoginBtn").onclick=loginAdmin;gate.querySelector("#adminUsername").onkeydown=e=>{if(e.key==="Enter")loginAdmin()};gate.querySelector("#adminPassword").onkeydown=e=>{if(e.key==="Enter")loginAdmin()};return gate;
 }
 async function checkAccess(){
-  const gate=document.querySelector("#accessGate");
-  if(gate)gate.hidden=true;
+  const gate=document.querySelector('#accessGate');
+  if(gate)gate.remove();
   try{
-    const d=await api("/admin-state");
+    const d=await api('/admin-state');
+    window.JSE_MEMBER={username:'OPEN_ACCESS',display_name:'JSE Open Access',role:'ADMIN',team_id:null,institution_id:null,needs_password_change:false};
     showAdmin();
     applyState(d);
   }catch(e){
-    const loginGate=createLoginGate();
-    loginGate.style.display="flex";
-    loginGate.querySelector("#adminLoginMsg").textContent="Administrator login required.";
-    loginGate.querySelector("#adminUsername")?.focus();
+    setMsg(e.message||'Event administration is temporarily unavailable. Please refresh.','error');
+    document.body.classList.add('ready');
   }
 }
 async function loginAdmin(){
