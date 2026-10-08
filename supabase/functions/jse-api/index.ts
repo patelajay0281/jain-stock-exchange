@@ -555,16 +555,17 @@ async function insights(){
     change_pct:x.previous_price_paise?((Number(x.current_price_paise)-Number(x.previous_price_paise))*100/Number(x.previous_price_paise)):0}))
     .sort((a:any,b:any)=>b.change_pct-a.change_pct);
   const gainers=ranked.slice(0,10), losers=ranked.slice(-10).reverse();
+  let totalBuy=0,totalSell=0,participantBuy=0,participantSell=0,institutionalBuy=0,institutionalSell=0;
+  for(const o of ord){
+    const v=Number(o.trade_value_paise||0)/100;
+    if(o.side==="BUY"){totalBuy+=v;if(o.source==="INSTITUTION")institutionalBuy+=v;else participantBuy+=v;}
+    else if(o.side==="SELL"){totalSell+=v;if(o.source==="INSTITUTION")institutionalSell+=v;else participantSell+=v;}
+  }
   const summary:any={
     positive:ranked.filter((x:any)=>x.change_pct>0.005).length,
     negative:ranked.filter((x:any)=>x.change_pct<-0.005).length,
     flat:ranked.filter((x:any)=>Math.abs(x.change_pct)<=0.005).length,
-    totalBuy:ord.filter((x:any)=>x.side==="BUY").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
-    totalSell:ord.filter((x:any)=>x.side==="SELL").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
-    participantBuy:ord.filter((x:any)=>x.side==="BUY"&&x.source==="PARTICIPANT").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
-    participantSell:ord.filter((x:any)=>x.side==="SELL"&&x.source==="PARTICIPANT").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
-    institutionalBuy:instOrd.filter((x:any)=>x.side==="BUY").reduce((s:number,x:any)=>s+Number(x.trade_value_paise||0)/100,0),
-    institutionalSell:instOrd.filter((x:any)=>x.side==="SELL").reduce((s:number,x:any)=>s+Number(x.trade_value_paise||0)/100,0),
+    totalBuy,totalSell,participantBuy,participantSell,institutionalBuy,institutionalSell,
     settledOrders:ord.length,activeAssets:aset.length
   };
   summary.sentiment=summary.positive>summary.negative?"BULLISH":summary.negative>summary.positive?"BEARISH":"NEUTRAL";
@@ -594,7 +595,7 @@ async function insights(){
     sectorMap.set(sec,row);
   }
   for(const o of ord){
-    const a=aset.find((x:any)=>x.id===o.asset_id); if(!a) continue;
+    const a=assetMap.get(o.asset_id); if(!a) continue;
     const row=sectorMap.get(sectorOf(a));
     if(o.side==="BUY") row.buy_value+=Number(o.trade_value_paise)/100; else row.sell_value+=Number(o.trade_value_paise)/100;
   }
@@ -623,10 +624,10 @@ async function insights(){
   const strongestBuy=flows.filter((x:any)=>x.net_value>0).sort((a:any,b:any)=>b.net_value-a.net_value).slice(0,10);
   const strongestSell=flows.filter((x:any)=>x.net_value<0).sort((a:any,b:any)=>a.net_value-b.net_value).slice(0,10);
 
-  const assetMap=new Map(aset.map((x:any)=>[x.id,x]));
   const holdingValue=new Map<number,number>();
   for(const h of holdings||[]) holdingValue.set(h.team_id,(holdingValue.get(h.team_id)||0)+Number(h.quantity)*Number(assetMap.get(h.asset_id)?.current_price_paise||0)/100);
-  const loanMap=new Map((loans||[]).map((x:any)=>[String(x.team_id),x]));
+  const loanMap=new Map<string,any>();
+  for(const loan of loans||[]){const k=String(loan.team_id);if(!loanMap.has(k))loanMap.set(k,loan);}
   const participantRows=tm.map((t:any)=>{
     const loan=loanMap.get(String(t.id));
     const liability=loan?Number(loan.principal_outstanding_paise+loan.interest_due_paise)/100:0;
