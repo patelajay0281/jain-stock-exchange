@@ -111,7 +111,7 @@ tbody tr:hover td{background:#f8fafc!important;color:#000!important}
 <script>
 (function(){
 "use strict";
-var API="/api",rows=[],busy=new Set(),selectedShort=null,loading=false,lastError="";
+var API="/api",rows=[],busy=new Set(),selectedShort=null,loading=false,lastError="",focusOrder=new URLSearchParams(location.search).get("order")||"";
 var $=function(id){return document.getElementById(id)};
 var money=function(n){return "₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:0})};
 var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})};
@@ -208,7 +208,7 @@ async function doReject(id){await action(id,"REJECT")}
 async function load(){
  if(loading)return;loading=true;
  try{
-  var d=await api("/exchange",{},2);rows=Array.isArray(d.transactions)?d.transactions:[];
+  var d=await api("/exchange",{},2);rows=Array.isArray(d.transactions)?d.transactions:[];if(focusOrder)rows.sort(function(a,b){return String(a.order_code)===String(focusOrder)?-1:String(b.order_code)===String(focusOrder)?1:0});
   $("statusPill").textContent="EXCHANGE CONTROL";$("statusPill").className="pill";
   lastError="";render();
  }catch(e){
