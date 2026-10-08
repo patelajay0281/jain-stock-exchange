@@ -261,7 +261,10 @@ async function api(path,options,tries){
  }
  throw last||new Error("Request failed");
 }
+let marketLoading=false;
 async function loadMarket(){
+ if(marketLoading)return;
+ marketLoading=true;
  try{
   market=await api("/market",{},2);
   stocks=(market.stocks||[]).map(function(x){return Object.assign({},x,{_type:"stock"})});
@@ -274,8 +277,9 @@ async function loadMarket(){
   setEvent("ERROR");
   $("submitBtn").disabled=true;
   showMessage(e.message||"Market unavailable. Click Refresh and retry.","error");
- }
+ }finally{marketLoading=false}
 }
+let loanLoading=false;
 async function loadLoan(){
  try{
   var d=await api("/loan?team="+encodeURIComponent($("team").value),{},1);
@@ -294,7 +298,7 @@ async function loadLoan(){
  }catch(e){
   $("submitBtn").disabled=true;
   showMessage(e.message||"Loan information unavailable.","error");
- }
+ }finally{loanLoading=false}
 }
 function cleanSuccess(code){
  var safe=String(code||"").trim();
