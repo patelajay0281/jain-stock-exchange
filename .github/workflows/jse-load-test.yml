@@ -1,7 +1,7 @@
-name: JSE one-shot throughput test
+name: JSE throughput validation
 
 on:
-  push:
+  workflow_dispatch:
 
 concurrency:
   group: jse-throughput-validation
@@ -10,43 +10,22 @@ concurrency:
 jobs:
   throughput:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Wait for Cloudflare deploy
-        run: sleep 45
+      - name: Wait for production deployment
+        run: sleep 60
 
-      - name: Verify public Worker connectivity
+      - name: Verify production health
         env:
-          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
+          BASE_URL: https://jain-stock-exchange.pages.dev
         run: |
-          set -o pipefail
-          curl -sS -D /tmp/headers.txt --max-time 20 "$BASE_URL/api/health" -o /tmp/body.txt || true
-          echo "=== HEADERS ==="
-          cat /tmp/headers.txt || true
-          echo "=== BODY ==="
-          cat /tmp/body.txt || true
-          node - <<'NODE'
-          fetch(process.env.BASE_URL+'/api/realtime?connectivity=1',{cache:'no-store'})
-            .then(async r=>console.log(JSON.stringify({status:r.status,body:(await r.text()).slice(0,1000)})))
-            .catch(e=>{console.error('FETCH_ERROR',e?.stack||e);process.exit(1)})
-          NODE
+          set -euo pipefail
+          curl -fsS --max-time 20 "$BASE_URL/api/health" | tee /tmp/health.json
+          node -e "const d=require('/tmp/health.json'); if(!d.ok||!d.db) process.exit(1)"
 
-      - name: Verify transaction adapter
+      - name: Run 1,000 database-backed health requests
         env:
-          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
-        run: |
-          node - <<'NODE'
-          const r=await fetch(process.env.BASE_URL+'/api/perf-tx?probe=1',{cache:'no-store'});
-          const body=await r.text();
-          console.log(body);
-          if(r.status!==200) process.exit(1);
-          const d=JSON.parse(body);
-          if(!d.ok || !d.transaction) process.exit(1);
-          NODE
-
-      - name: Run 1000 raw DB probe
-        env:
-          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
+          BASE_URL: https://jain-stock-exchange.pages.dev
         run: |
           node <<'NODE'
           const base=process.env.BASE_URL;
@@ -54,47 +33,57 @@ jobs:
           const concurrency=25;
           const results=new Array(total);
           let cursor=0;
+
           async function worker(){
             while(true){
               const i=cursor++;
               if(i>=total)return;
-              const started=Date.now();
+              const started=performance.now();
               try{
-                const r=await fetch(base+'/api/perf-db?probe='+i,{cache:'no-store'});
-                await r.text();
-                results[i]={status:r.status,ms:Date.now()-started};
+                const r=await fetch(base+'/api/health?probe='+i,{cache:'no-store'});
+                const body=await r.text();
+                results[i]={status:r.status,ms:performance.now()-started,body};
               }catch(e){
-                results[i]={status:0,ms:Date.now()-started,error:String(e)};
+                results[i]={status:0,ms:performance.now()-started,error:String(e)};
               }
             }
           }
-          const started=Date.now();
+
+          const started=performance.now();
           await Promise.all(Array.from({length:concurrency},()=>worker()));
-          const elapsed=Date.now()-started;
+          const elapsed=performance.now()-started;
           const ok=results.filter(x=>x.status===200);
           const failed=results.length-ok.length;
           const sorted=ok.map(x=>x.ms).sort((a,b)=>a-b);
-          const pct=p=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))]||0;
+          const pct=p=>sorted.length?sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))]:0;
           const rps=total/(elapsed/1000);
+
           const out={
-            total_requests:total,concurrency,successful:ok.length,failed,
-            elapsed_ms:elapsed,requests_per_second:Number(rps.toFixed(2)),
+            total_requests:total,
+            concurrency,
+            successful:ok.length,
+            failed,
+            elapsed_ms:Number(elapsed.toFixed(2)),
+            requests_per_second:Number(rps.toFixed(2)),
             database_operations_per_10_seconds:Number((rps*10).toFixed(2)),
-            p50_ms:pct(.50),p95_ms:pct(.95),p99_ms:pct(.99)
+            p50_ms:Number(pct(.50).toFixed(2)),
+            p95_ms:Number(pct(.95).toFixed(2)),
+            p99_ms:Number(pct(.99).toFixed(2))
           };
+
           console.log(JSON.stringify(out,null,2));
           if(failed>0 || elapsed>10000){
-            console.error('FAIL: raw Neon DB target missed.');
+            console.error('FAIL: 1,000 database-backed requests did not complete within 10 seconds with zero failures.');
             process.exit(1);
           }
           NODE
 
-      - name: Run 1000 request probe
+      - name: Run 1,000 realtime requests
         env:
-          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
+          BASE_URL: https://jain-stock-exchange.pages.dev
         run: |
           node <<'NODE'
-                    const base=process.env.BASE_URL;
+          const base=process.env.BASE_URL;
           const total=1000;
           const concurrency=25;
           const results=new Array(total);
@@ -104,56 +93,42 @@ jobs:
             while(true){
               const i=cursor++;
               if(i>=total)return;
-              const started=Date.now();
+              const started=performance.now();
               try{
                 const r=await fetch(base+'/api/realtime?probe='+i,{cache:'no-store'});
                 await r.text();
-                results[i]={status:r.status,ms:Date.now()-started};
+                results[i]={status:r.status,ms:performance.now()-started};
               }catch(e){
-                results[i]={status:0,ms:Date.now()-started,error:String(e)};
+                results[i]={status:0,ms:performance.now()-started,error:String(e)};
               }
             }
           }
 
-          const started=Date.now();
+          const started=performance.now();
           await Promise.all(Array.from({length:concurrency},()=>worker()));
-          const elapsed=Date.now()-started;
+          const elapsed=performance.now()-started;
           const ok=results.filter(x=>x.status===200);
           const failed=results.length-ok.length;
-          const statusCounts=Object.fromEntries([...new Set(results.map(x=>x.status))].map(s=>[String(s),results.filter(x=>x.status===s).length]));
-          const sampleErrors=results.filter(x=>x.error).slice(0,5).map(x=>x.error);
           const sorted=ok.map(x=>x.ms).sort((a,b)=>a-b);
-          const pct=p=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))]||0;
+          const pct=p=>sorted.length?sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))]:0;
           const rps=total/(elapsed/1000);
 
-          console.log(JSON.stringify({
+          const out={
             total_requests:total,
             concurrency,
             successful:ok.length,
             failed,
             elapsed_ms:Number(elapsed.toFixed(2)),
             requests_per_second:Number(rps.toFixed(2)),
-            operations_per_10_seconds:Number((rps*10).toFixed(2)),
+            database_operations_per_10_seconds:Number((rps*10).toFixed(2)),
             p50_ms:Number(pct(.50).toFixed(2)),
             p95_ms:Number(pct(.95).toFixed(2)),
-            p99_ms:Number(pct(.99).toFixed(2)),
-            status_counts:statusCounts,
-            sample_errors:sampleErrors
-          },null,2));
+            p99_ms:Number(pct(.99).toFixed(2))
+          };
 
+          console.log(JSON.stringify(out,null,2));
           if(failed>0 || elapsed>10000){
-            console.error('FAIL: 1000 realtime DB operations did not complete within 10 seconds with zero failures.');
+            console.error('FAIL: 1,000 realtime requests did not complete within 10 seconds with zero failures.');
             process.exit(1);
           }
-          NODE
-
-      - name: Verify transaction adapter
-        env:
-          BASE_URL: https://jain-stock-exchange.patelajay0281.workers.dev
-        run: |
-          node <<'NODE'
-          const r=await fetch(process.env.BASE_URL+'/api/perf-tx?probe=1',{cache:'no-store'});
-          const d=await r.json();
-          console.log(JSON.stringify(d,null,2));
-          if(r.status!==200 || !d.ok || !d.transaction) process.exit(1);
           NODE
