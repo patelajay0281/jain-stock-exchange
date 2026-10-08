@@ -115,9 +115,10 @@ function risk(x){
  return '<span class="risk clear">CLEAR</span>';
 }
 function action(x){
- if(x.no_balance)return '<div class="actions"><button class="reject" data-bank-action="REJECT">REJECT</button></div>';
- if(x.minimum_cash_warning)return '<div class="actions"><button class="approve" data-bank-action="WARNING">REVIEW &amp; APPROVE</button><button class="reject" data-bank-action="REJECT">REJECT</button></div>';
- return '<div class="actions"><button class="approve" data-bank-action="APPROVE">APPROVE</button><button class="reject" data-bank-action="REJECT">REJECT</button></div>';
+ var waiting=busy.has(String(x.id));
+ if(x.no_balance)return '<div class="actions"><button class="reject" '+(waiting?"disabled":"")+' data-bank-action="REJECT">REJECT</button></div>';
+ if(x.minimum_cash_warning)return '<div class="actions"><button class="approve" data-bank-action="WARNING" '+(waiting?"disabled":"")+'>REVIEW &amp; APPROVE</button><button class="reject" '+(waiting?"disabled":"")+' data-bank-action="REJECT">REJECT</button></div>';
+ return '<div class="actions"><button class="approve" data-bank-action="APPROVE" '+(waiting?"disabled":"")+'>APPROVE</button><button class="reject" '+(waiting?"disabled":"")+' data-bank-action="REJECT">REJECT</button></div>';
 }
 function render(){
  metrics();$("updated").textContent="Updated "+new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -141,6 +142,8 @@ function openNoBalance(id){
 function closeModal(){activeId=null;activeMode="";$("modal").className="modal";$("modal").setAttribute("aria-hidden","true")}
 function confirmModal(){if(!activeId)return;var id=activeId,mode=activeMode;closeModal();if(mode==="WARNING")postAction(id,"APPROVE",true);else if(mode==="NO_BALANCE")postAction(id,"REJECT",false)}
 async function postAction(id,actionName,warningAck){
+ var key=String(id); if(busy.has(key))return;
+ busy.add(key); render();
  try{
   var d=await api("/bank",{method:"POST",body:JSON.stringify({order_id:Number(id),action:actionName,warning_ack:!!warningAck})},2);
   if(d&&d.ok===false){
@@ -154,6 +157,7 @@ async function postAction(id,actionName,warningAck){
   notice(actionName==="APPROVE"?(code+" settled successfully through Bank Settlement."):(code+" rejected by Bank Settlement."),"ok");
   await load();
  }catch(e){notice(e.message||"Bank action failed. Please retry.","error");await load()}
+ finally{busy.delete(key);render()}
 }
 async function approveOrder(id){await postAction(id,"APPROVE",false)}
 async function rejectOrder(id){await postAction(id,"REJECT",false)}
