@@ -38,8 +38,7 @@
       // Once authenticated, show only the desks permitted to the current role.
       a.hidden = !loggedIn || !allowed.includes(role);
     });
-
-
+  }
 
   window.addEventListener("jse-auth-ready", e => apply(e.detail || window.JSE_MEMBER));
   apply(window.JSE_MEMBER || null);
