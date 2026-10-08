@@ -939,8 +939,8 @@ async function handle(req:Request){
         {status:url.searchParams.get("status")||"",team_id:trackingTeamId,q:url.searchParams.get("q")||""}
       ));
     }
-    if(path==="/portfolios" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN"]))return error("Pit Manager access required",403);return response(await teamPortfolio(user));}
-    if(path==="/portfolio-details" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN"]))return error("Pit Manager access required",403);return response(await teamPortfolio(user));}
+    if(path==="/portfolios" && req.method==="GET") {if(!need(user,["PIT_MANAGER","EXCHANGE","BANK","ADMIN","ASSOCIATE_ADMIN"]))return error("Reporting access required",403);return response(await teamPortfolio(user));}
+    if(path==="/portfolio-details" && req.method==="GET") {if(!need(user,["PIT_MANAGER","EXCHANGE","BANK","ADMIN","ASSOCIATE_ADMIN"]))return error("Reporting access required",403);return response(await teamPortfolio(user));}
     if(path==="/cash" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN","BANK","EXCHANGE","ASSOCIATE_ADMIN"]))return error("Access required",403);return response(await cashLedger(user,url));}
     if(path==="/audit" && req.method==="GET") {if(!need(user,["ADMIN","EXCHANGE","BANK","PIT_MANAGER","ASSOCIATE_ADMIN"]))return error("Access required",403);return response(await audit(user,url));}
     if(path==="/member-accounts" && req.method==="GET") {
