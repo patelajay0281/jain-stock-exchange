@@ -30,7 +30,11 @@ const params=new URLSearchParams(location.search);
 const safeNext=(v)=>v&&v.startsWith('/')&&!v.startsWith('//')?v:'/';
 let next=safeNext(params.get('next'));
 const showMsg=(el,text,kind)=>{el.textContent=text;el.className='msg '+kind};
-if(params.get('denied')==='1')$('deniedMsg').classList.remove('hidden');
+if(params.get('denied')==='1'){
+  $('deniedMsg').classList.remove('hidden');
+  localStorage.removeItem('jse_token');
+  localStorage.removeItem('jse_member');
+}
 
 async function finish(member,token){
   localStorage.setItem('jse_token',token);
@@ -39,6 +43,7 @@ async function finish(member,token){
   location.replace(next||'/');
 }
 async function tryExisting(){
+  if(params.get('denied')==='1')return;
   const token=localStorage.getItem('jse_token');
   if(!token)return;
   try{
