@@ -359,7 +359,7 @@ async function submitTrade(){
   }
   $("handoffExchange").href="/exchange?order="+encodeURIComponent(code);
   $("handoffBank").href="/bank?order="+encodeURIComponent(code);
-  $("handoffTracking").href="/orders?team="+encodeURIComponent($("team").value);
+  $("handoffTracking").href="/orders?team="+encodeURIComponent($("team").value)+"&q="+encodeURIComponent(code);
  }catch(e){
   lastCreatedCode="";
   $("submitBtn").textContent="SUBMIT ORDER";
