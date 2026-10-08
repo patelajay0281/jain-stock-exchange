@@ -45,7 +45,8 @@ async function hmac(data: string): Promise<Uint8Array> {
 }
 async function issueToken(user: any): Promise<string> {
   const header = b64u(JSON.stringify({alg:"HS256",typ:"JSE"}));
-  const payload = b64u(JSON.stringify({uid:user.user_id,role:user.role,team_id:user.team_id||null,institution_id:user.institution_id||null,username:user.username,needs_password_change:Boolean(user.needs_password_change),exp:Math.floor(Date.now()/1000)+4*60*60}));
+  const ttlSeconds=Boolean(user.needs_password_change)?15*60:4*60*60;
+  const payload = b64u(JSON.stringify({uid:user.user_id,role:user.role,team_id:user.team_id||null,institution_id:user.institution_id||null,username:user.username,needs_password_change:Boolean(user.needs_password_change),exp:Math.floor(Date.now()/1000)+ttlSeconds}));
   const body = header+"."+payload;
   return body+"."+b64u(await hmac(body));
 }
@@ -268,7 +269,21 @@ async function teamPortfolio(user:any) {
   const amap=new Map((assets||[]).map((x:any)=>[String(x.id),x]));
   const tmap=new Map((teams||[]).map((x:any)=>[String(x.id),x.code]));
   const loanMap=new Map<string,any>();
-  for(const l of loans||[]){const k=String(l.team_id);if(!loanMap.has(k))loanMap.set(k,l);}
+  for(const l of loans||[]){
+    const k=String(l.team_id);
+    const prev=loanMap.get(k)||{
+      principal_paise:0,principal_outstanding_paise:0,interest_due_paise:0,interest_paid_paise:0,
+      interest_rate_bps:0,status:"NONE",open:false
+    };
+    prev.principal_paise+=Number(l.principal_paise||0);
+    prev.principal_outstanding_paise+=Number(l.principal_outstanding_paise||0);
+    prev.interest_due_paise+=Number(l.interest_due_paise||0);
+    prev.interest_paid_paise+=Number(l.interest_paid_paise||0);
+    if(prev.interest_rate_bps===0) prev.interest_rate_bps=Number(l.interest_rate_bps||0);
+    if(l.status==="OPEN"){prev.open=true;prev.status="OPEN";prev.interest_rate_bps=Number(l.interest_rate_bps||0);}
+    else if(prev.status==="NONE") prev.status=String(l.status||"NONE");
+    loanMap.set(k,prev);
+  }
   const holdingsByTeam=new Map<number,any[]>();
   for(const h of holdings||[]){const k=Number(h.team_id);const arr=holdingsByTeam.get(k)||[];arr.push(h);holdingsByTeam.set(k,arr);}
   const brokerageByTeam=new Map<number,number>();
@@ -630,7 +645,16 @@ async function insights(){
   const holdingValue=new Map<number,number>();
   for(const h of holdings||[]) holdingValue.set(h.team_id,(holdingValue.get(h.team_id)||0)+Number(h.quantity)*Number(assetMap.get(h.asset_id)?.current_price_paise||0)/100);
   const loanMap=new Map<string,any>();
-  for(const loan of loans||[]){const k=String(loan.team_id);if(!loanMap.has(k))loanMap.set(k,loan);}
+  for(const loan of loans||[]){
+    const k=String(loan.team_id);
+    const prev=loanMap.get(k)||{
+      principal_outstanding_paise:0,interest_due_paise:0,open:false
+    };
+    prev.principal_outstanding_paise+=Number(loan.principal_outstanding_paise||0);
+    prev.interest_due_paise+=Number(loan.interest_due_paise||0);
+    if(loan.status==="OPEN") prev.open=true;
+    loanMap.set(k,prev);
+  }
   const participantRows=tm.map((t:any)=>{
     const loan=loanMap.get(String(t.id));
     const liability=loan?Number(loan.principal_outstanding_paise+loan.interest_due_paise)/100:0;
