@@ -1,0 +1,57 @@
+/* JSE Readability Layer — applied after page CSS */
+:root{--jse-black:#000}
+body{font-family:Inter,Segoe UI,Arial,sans-serif}
+.site-nav a:not(.active):not([aria-current="page"]){
+  color:#000!important;
+}
+.site-nav a:not(.active):not([aria-current="page"]):hover{
+  color:#000!important;
+}
+.heat-stock,
+.heat-stock b,
+.heat-stock span,
+.heat-stock em,
+.heat-stock small{
+  color:#000!important;
+}
+.heat-stock .tile-top small{
+  color:#000!important;
+}
+.cms50-card,
+.cms50-card *{
+  color:#000!important;
+}
+.card,.panel,.kpi,.metric,.overview-card,.report-section,.rank-card,.portfolio-detail,
+.mi-card,.audit-stat,.broker,.filters,.table-wrap,.formcard,.form-card,.loan-box,
+.summary,.summary-box,.market-row,.order-card,.calc,.inst-account,
+.inst-trade,.section-card,.toolbar,.notice,.empty,.note{
+  color:#000!important;
+}
+.card p,.panel p,.kpi small,.metric span,.overview-card small,.section-note,
+.notice,.note,.sub,.muted,.empty{
+  color:#000!important;
+}
+input,select,textarea{
+  color:#000!important;
+}
+input::placeholder,textarea::placeholder{
+  color:#444!important;opacity:1!important;
+}
+table th{
+  color:#000!important;
+}
+table td{
+  color:#000!important;
+}
+.admin-actions.secondary .admin-btn,
+.toolbar button.secondary,
+.export,
+.btn.secondary{
+  color:#000!important;
+}
+@media(min-width:1000px){
+  .heat-stock b{font-size:12px!important}
+  .heat-stock span{font-size:18px!important}
+  .heat-stock em{font-size:10px!important}
+  .site-nav a{font-size:11px!important}
+}
