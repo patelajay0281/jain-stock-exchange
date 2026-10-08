@@ -42,7 +42,7 @@ function renderIndex(d){
 }
 async function load(){
  try{
-  const r=await fetch(A+'/market');
+  const r=await fetch(A+'/market',{cache:'no-store'});
   if(!r.ok)throw new Error('Market data unavailable');
   const d=await r.json();
   state=updateList(state,d.stocks||[],'stock');
