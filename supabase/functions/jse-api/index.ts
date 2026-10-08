@@ -617,7 +617,7 @@ async function insights(){
     flowMap.set(o.asset_id,row);
   }
   const flows=[...flowMap.values()].map((x:any)=>{
-    const a=aset.find((y:any)=>y.id===x.asset_id);
+    const a=assetMap.get(x.asset_id);
     const pressure=x.gross_value?Math.min(100,Math.abs(x.net_value)/x.gross_value*100):0;
     return {...x,asset:a?.name||"",pressure};
   });
