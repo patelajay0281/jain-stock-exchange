@@ -1,4 +1,6 @@
 (() => {
+  if (window.__JSE_ADMIN_NAV_BOOTED) return;
+  window.__JSE_ADMIN_NAV_BOOTED = true;
   const RULES = {
     "/order": ["PIT_MANAGER","ADMIN"],
     "/orders": ["PIT_MANAGER","EXCHANGE","BANK","ADMIN","ASSOCIATE_ADMIN"],
@@ -67,4 +69,5 @@
 
   window.addEventListener("jse-auth-ready", e => apply(e.detail || window.JSE_MEMBER));
   apply(window.JSE_MEMBER || null);
+
 })();
