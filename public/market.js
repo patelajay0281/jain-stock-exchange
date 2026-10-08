@@ -40,7 +40,10 @@ function renderIndex(d){
  $('#cms50Change').textContent=flat?'0.00%':(up?'▲ ':'▼ ')+Math.abs(c).toFixed(2)+'%';
  $('#cms50Change').className=flat?'cms50-flat':(up?'cms50-up':'cms50-down');
 }
+let loading=false,loadQueued=false;
 async function load(){
+ if(loading){loadQueued=true;return;}
+ loading=true;
  try{
   const r=await fetch(A+'/market',{cache:'no-store'});
   if(!r.ok)throw new Error('Market data unavailable');
@@ -54,6 +57,9 @@ async function load(){
  }catch(e){
   const el=$("#marketStatus");
   if(el){el.textContent="RETRYING";el.className="market-status status-paused";}
+ }finally{
+  loading=false;
+  if(loadQueued){loadQueued=false;queueMicrotask(load);}
  }
 }
 load();
