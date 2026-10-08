@@ -34,10 +34,11 @@ function renderMarketStatus(status){
  el.className="market-status status-"+label.toLowerCase().replace(/\s+/g,"-");
 }
 function renderIndex(d){
- const v=Number(d?.value||0),c=Number(d?.change_pct||0),up=c>=0;
+ const v=Number(d?.value||0),c=Number(d?.change_pct||0);
+ const flat=Math.abs(c)<0.0001,up=c>0;
  $('#cms50Value').textContent=Math.round(v).toLocaleString('en-IN');
- $('#cms50Change').textContent=(up?'▲ ':'▼ ')+Math.abs(c).toFixed(2)+'%';
- $('#cms50Change').className=up?'cms50-up':'cms50-down';
+ $('#cms50Change').textContent=flat?'0.00%':(up?'▲ ':'▼ ')+Math.abs(c).toFixed(2)+'%';
+ $('#cms50Change').className=flat?'cms50-flat':(up?'cms50-up':'cms50-down');
 }
 async function load(){
  try{
