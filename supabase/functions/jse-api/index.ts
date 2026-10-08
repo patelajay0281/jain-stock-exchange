@@ -81,6 +81,11 @@ async function auth(req:Request): Promise<any|null> {
 }
 function need(user:any, roles:string[]){ return !!user && !user.needs_password_change && roles.includes(user.role); }
 function needAdmin(user:any){ return !!user && !user.needs_password_change && user.role==="ADMIN"; }
+function generateTemporaryPassword(): string {
+  const raw = new Uint8Array(18);
+  crypto.getRandomValues(raw);
+  return "JSE-" + b64u(raw).slice(0,20) + "!";
+}
 async function verifyAdminControlPassword(value:string): Promise<boolean> {
   if (!value) return false;
   const {data,error}=await db.rpc("jse_verify_admin_control_password",{p_password:value});
@@ -391,7 +396,10 @@ async function memberAccounts(user:any){
   const {data,error}=await db.from("users").select("id,username,email,display_name,role,team_id,institution_id,is_active").eq("is_active",true).order("username");
   if(error)throw error;
   const tm=await maps([...new Set((data||[]).map((x:any)=>x.team_id).filter(Boolean))],"teams","id","id,code");
-  return {accounts:(data||[]).map((x:any)=>{const t=tm.get(String(x.team_id));return {...x,team:t?.code||"",team_code:t?.code||"",access_code:x.role==="PARTICIPANT"?x.username:"",initial_password:x.role==="PARTICIPANT"?x.username:"",active:x.is_active};})};
+  return {accounts:(data||[]).map((x:any)=>{const t=tm.get(String(x.team_id));return {
+    id:x.id,username:x.username,email:x.email,display_name:x.display_name,role:x.role,
+    team:t?.code||"",team_code:t?.code||"",active:x.is_active
+  };})};
 }
 
 
@@ -678,6 +686,23 @@ async function handle(req:Request){
       return response({...data,token:refreshedToken});
     }
     if(path==="/member-logout") return response({ok:true});
+    if(path==="/admin-reset-password" && req.method==="POST") {
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser)) return error("Administrator login required",401);
+      const b=await bodyJson(req);
+      const targetUserId=Number(b.user_id||0);
+      if(!targetUserId) return error("Target user is required",400);
+      const controlPassword=String(b.control_password||"");
+      if(!(await verifyAdminControlPassword(controlPassword))) return error("Invalid administrator control password",403);
+      const temporaryPassword=generateTemporaryPassword();
+      const {data,rpcError}=await db.rpc("jse_set_temporary_password",{
+        p_admin_user_id:Number(adminUser.uid),
+        p_target_user_id:targetUserId,
+        p_new_password:temporaryPassword
+      });
+      if(rpcError) return error(rpcError.message||"Temporary password reset failed",400);
+      return response({...data,temporary_password:temporaryPassword});
+    }
     if(path==="/event" && req.method==="GET") {
       const adminUser=await auth(req);
       if(!needAdmin(adminUser)) return error("Administrator login required",401);
