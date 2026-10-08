@@ -145,7 +145,7 @@ body.admin-page #stateMsg{background:#fff!important}
 
 <header class="admin-head">
 <div><h1>Event Administration</h1><p>Control the JAIN STOCK EXCHANGE event, settlement lifecycle, recovery tools and final reports.</p></div>
-<div class="admin-lock">OPEN EVENT MODE</div>
+<div class="admin-lock">ADMIN CONTROL MODE</div>
 </header>
 
 <div id="stateMsg">Loading event control…</div>
@@ -415,8 +415,8 @@ function bindAdminControls(){
   if(close)close.addEventListener("click",()=>{if(typeof act==="function")act("CLOSE")});
   if(finalize)finalize.addEventListener("click",()=>{if(typeof act==="function")act("FINALIZE")});
   if(reset)reset.addEventListener("click",()=>{if(typeof resetEvent==="function")resetEvent()});
-  const u=document.querySelector("button[onclick*=\"historyAction('UNDO')\"]"); if(u)u.addEventListener("click",()=>historyAction("UNDO"));
-  const r=document.querySelector("button[onclick*=\"historyAction('REDO')\"]"); if(r)r.addEventListener("click",()=>historyAction("REDO"));
+  const undo=document.querySelector("#undoBtn"); if(undo)undo.addEventListener("click",()=>historyAction("UNDO"));
+  const redo=document.querySelector("#redoBtn"); if(redo)redo.addEventListener("click",()=>historyAction("REDO"));
   const m=document.querySelector("#openMiBtn"); if(m)m.addEventListener("click",()=>openMarketIntelligence());
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bindAdminControls);else bindAdminControls();
