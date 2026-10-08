@@ -150,7 +150,8 @@ async function summarizeOrders(user:any, filters:any={}) {
     if(filters.asset_id) q=q.eq("asset_id",filters.asset_id);
     const search=String(filters.q||"").trim();
     if(search){
-      const like="%"+search.replace(/[\\%_,]/g,m=>"\\"+m)+"%";
+      const normalized=search.replace(/&/g,"_").replace(/[^A-Za-z0-9_. -]/g,"");
+    const like="%"+normalized+"%";
       const [{data:teamMatches,error:te},{data:assetMatches,error:ae}]=await Promise.all([
         db.from("teams").select("id").ilike("code",like).limit(500),
         db.from("assets").select("id").or("name.ilike."+like+",symbol.ilike."+like).limit(500)
