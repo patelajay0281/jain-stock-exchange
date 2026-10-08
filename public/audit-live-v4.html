@@ -82,7 +82,7 @@ const A=window.JSE_API;
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
-let rows=[],filter='ALL',query='';
+let rows=[],filter='ALL',query=new URLSearchParams(location.search).get('order')||'';
 function category(a){if(String(a).startsWith('ORDER_')||a==='INSTITUTIONAL_ORDER_CREATED'||a==='INSTITUTIONAL_ORDER_SETTLED')return 'ORDER';if(String(a).startsWith('EXCHANGE_')||a==='SHORT_SELLING_BLOCKED')return 'EXCHANGE';if(String(a).startsWith('EVENT_'))return 'EVENT';return 'OTHER'}
 function label(a){const m={ORDER_CREATED:'Order Created',ORDER_SETTLED:'Order Settled',EXCHANGE_APPROVED:'Exchange Approved',EXCHANGE_REJECTED:'Exchange Rejected',SHORT_SELLING_BLOCKED:'Short Selling Blocked',BANK_REJECTED:'Bank Rejected',BANK_NO_BALANCE:'No Balance — Blocked',BANK_MINIMUM_CASH_WARNING:'Minimum Cash Warning',EVENT_START:'Event Started',EVENT_PAUSE:'Event Paused',EVENT_RESUME:'Event Resumed',EVENT_CLOSE:'Event Closed',EVENT_FINALIZE:'Event Finalized',EVENT_RESET:'Event Reset',LOAN_DRAW:'Loan Draw',LOAN_REPAYMENT:'Loan Repayment',SETTLEMENT_UNDO:'Settlement Undo',SETTLEMENT_REDO:'Settlement Redo',INSTITUTIONAL_ORDER_CREATED:'Institutional Order Created',INSTITUTIONAL_ORDER_SETTLED:'Institutional Order Settled'};return m[a]||a}
 function time(v){const d=new Date(v);return Number.isNaN(d.getTime())?esc(v):d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}
@@ -99,7 +99,7 @@ function render(){
    return '<tr><td class="time">'+time(x.created_at)+'</td><td><strong>'+esc(x.actor_name||'SYSTEM')+'</strong><br><span style="font-size:10px;color:#98a2b3">'+esc(x.actor_username||x.actor_role||'')+'</span></td><td><span class="badge">'+esc(label(x.action))+'</span></td><td class="order-ref">'+(x.order_code?'#'+esc(x.order_code):'—')+'</td><td class="team-ref">'+esc(x.team_code||'—')+'</td><td>'+esc(x.asset_name||'—')+'<br><span style="font-size:9px;color:#98a2b3">'+esc(x.asset_symbol||'')+'</span></td><td class="trade">'+trade+'</td><td class="value">'+(x.trade_value?money(x.trade_value):'—')+'</td><td>'+risk+'</td><td>'+esc(x.what_happened||'')+'</td></tr>';
  }).join('')+'</tbody></table></div>';
 }
-let auditLoading=false;
+let auditLoading=false;$("#search").value=query;
 async function loadAudit(){
  if(auditLoading)return;
  auditLoading=true;
