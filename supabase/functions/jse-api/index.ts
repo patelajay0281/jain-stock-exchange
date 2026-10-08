@@ -140,45 +140,23 @@ async function realtimeSnapshot(){
 }
 
 async function summarizeOrders(user:any, filters:any={}) {
-  const BATCH=5000, MAX_ROWS=50000;
-  const summary={total:0,pending:0,exchange_approved:0,settled:0,exchange_rejected:0,bank_rejected:0,trade_value:0,brokerage:0};
-  for(let offset=0;offset<MAX_ROWS;offset+=BATCH){
-    let q:any=db.from("orders").select("status,trade_value_paise,brokerage_paise").order("id",{ascending:true}).range(offset,offset+BATCH-1);
-    if(user.role==="PARTICIPANT" && !OPEN_MODE) q=q.eq("team_id",user.team_id);
-    if(filters.status) q=q.eq("status",filters.status);
-    if(filters.team_id) q=q.eq("team_id",filters.team_id);
-    if(filters.asset_id) q=q.eq("asset_id",filters.asset_id);
-    const search=String(filters.q||"").trim();
-    if(search){
-      const normalized=search.replace(/&/g,"_").replace(/[^A-Za-z0-9_. -]/g,"");
-    const like="%"+normalized+"%";
-      const [{data:teamMatches,error:te},{data:assetMatches,error:ae}]=await Promise.all([
-        db.from("teams").select("id").ilike("code",like).limit(500),
-        db.from("assets").select("id").or("name.ilike."+like+",symbol.ilike."+like).limit(500)
-      ]);
-      if(te||ae)throw te||ae;
-      const clauses=["order_code.ilike."+like];
-      if((teamMatches||[]).length)clauses.push("team_id.in.("+(teamMatches||[]).map((x:any)=>x.id).join(",")+")");
-      if((assetMatches||[]).length)clauses.push("asset_id.in.("+(assetMatches||[]).map((x:any)=>x.id).join(",")+")");
-      q=q.or(clauses.join(","));
-    }
-    const {data,error}=await q;
-    if(error) throw error;
-    const batch=data||[];
-    for(const x of batch){
-      summary.total++;
-      const s=String(x.status||"");
-      if(s==="PENDING_EXCHANGE")summary.pending++;
-      else if(s==="EXCHANGE_APPROVED")summary.exchange_approved++;
-      else if(s==="SETTLED")summary.settled++;
-      else if(s==="EXCHANGE_REJECTED")summary.exchange_rejected++;
-      else if(s==="BANK_REJECTED")summary.bank_rejected++;
-      summary.trade_value+=Number(x.trade_value_paise||0)/100;
-      summary.brokerage+=Number(x.brokerage_paise||0)/100;
-    }
-    if(batch.length<BATCH)break;
-  }
-  return summary;
+  const teamId=user.role==="PARTICIPANT" && !OPEN_MODE ? Number(user.team_id||0)||null : (filters.team_id?Number(filters.team_id):null);
+  const raw=String(filters.q||"").trim();
+  const query=raw.replace(/&/g,"_").replace(/[^A-Za-z0-9_. -]/g,"").trim();
+  const status=String(filters.status||"").trim().toUpperCase()||null;
+  const {data,error}=await db.rpc("jse_order_summary",{p_team_id:teamId,p_status:status,p_query:query||null});
+  if(error) throw error;
+  const s=data||{};
+  return {
+    total:Number(s.total||0),
+    pending:Number(s.pending||0),
+    exchange_approved:Number(s.exchange_approved||0),
+    settled:Number(s.settled||0),
+    exchange_rejected:Number(s.exchange_rejected||0),
+    bank_rejected:Number(s.bank_rejected||0),
+    trade_value:Number(s.trade_value||0),
+    brokerage:Number(s.brokerage||0)
+  };
 }
 
 async function orderList(user:any, page=1, limit=50, filters:any={}){
