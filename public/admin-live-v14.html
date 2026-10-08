@@ -289,7 +289,11 @@ async function loginAdmin(){
 async function load(){
   if(loadBusy)return false;
   loadBusy=true;
-  try{applyState(await api("/event"));return true}
+  try{
+    const member=window.JSE_MEMBER||JSON.parse(localStorage.getItem("jse_member")||"{}");
+    const endpoint=member.role==="ASSOCIATE_ADMIN"?"/admin-state":"/event";
+    applyState(await api(endpoint));return true;
+  }
   catch(e){setMsg(e.message||"Could not load event state","error");return false}
   finally{loadBusy=false}
 }
