@@ -12,7 +12,7 @@ th{background:#f3f6fa!important;color:#000!important}
 td{background:#fff!important;color:#000!important}
 </style></head><body><div class="shell"><header class="brand">JAIN STOCK EXCHANGE</header><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/institutional.html">Institutional Investors</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a></nav>
 <header class="hero"><h1>JSE Staff Directory</h1><p>24 internal operating accounts. Customer teams are trading counterparties, not application users.</p></header>
-<section class="card"><div class="tools"><input id="search" placeholder="Search role, staff name or username"><button class="btn" onclick="downloadCsv()">DOWNLOAD CSV</button><button class="btn" onclick="loadAccounts()">REFRESH</button></div><p class="note">Administrator access is required for the staff directory. Customer teams are trading counterparties, not application users.</p></section>
+<section class="card"><div class="tools"><input id="search" placeholder="Search role, staff name or username"><button class="btn" onclick="downloadCsv()">DOWNLOAD CSV</button><button class="btn" onclick="loadAccounts()">REFRESH</button><button class="btn" id="resetAllBtn">RESET ALL CHANGE-REQUIRED</button></div><p class="note">Administrator access is required for the staff directory. Customer teams are trading counterparties, not application users.</p></section>
 <section class="card"><table><thead><tr><th>Role</th><th>Staff Member</th><th>Username</th><th>Institution / Area</th><th>Password</th><th>Active</th><th>Action</th></tr></thead><tbody id="rows"></tbody></table><p id="resetMsg" class="note" style="margin:12px 0 0"></p></section></div>
 <script>
 const A="/api";let all=[];
@@ -22,6 +22,29 @@ function roleLabel(r){return r==='INSTITUTION'?'INSTITUTIONAL INVESTOR':r.replac
 function area(x){if(x.role==='PIT_MANAGER')return 'PIT DESK';if(x.role==='BANK')return 'BANK DESK';if(x.role==='EXCHANGE')return 'EXCHANGE DESK';if(x.role==='INSTITUTION')return 'INSTITUTIONAL DESK';return x.role==='ASSOCIATE_ADMIN'?'ADMINISTRATION':'ADMINISTRATION'}
 function render(){const q=document.getElementById('search').value.trim().toLowerCase();const view=all.filter(x=>!q||[x.role,x.display_name,x.username].join(' ').toLowerCase().includes(q));document.getElementById('rows').innerHTML=view.map(x=>'<tr><td><span class="badge">'+esc(roleLabel(x.role))+'</span></td><td><b>'+esc(x.display_name||'')+'</b></td><td class="code">'+esc(x.username||'')+'</td><td>'+esc(area(x))+'</td><td>'+esc(x.password_status||'SET')+'</td><td class="active">YES</td><td>'+(x.role==='ADMIN'?'<span class="note">Use admin login change</span>':'<button class="btn reset-btn" data-id="'+esc(x.id)+'" data-name="'+esc(x.username||'')+'">RESET TEMP</button>')+'</td></tr>').join('')||'<tr><td colspan="7">No active staff accounts found.</td></tr>'}
 function downloadCsv(){const lines=[['ROLE','STAFF MEMBER','USERNAME','AREA','ACTIVE'].join(',')];all.forEach(x=>lines.push([roleLabel(x.role),x.display_name||'',x.username||'',area(x),'YES'].map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')));const blob=new Blob([lines.join('\n')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='JSE-staff-directory.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function downloadTempCredentials(rows){
+  const lines=[["USERNAME","STAFF MEMBER","ROLE","TEMPORARY PASSWORD"].join(",")];
+  for(const x of rows) lines.push([x.username,x.display_name||"",x.role,x.temporary_password].map(v=>'"'+String(v??"").replaceAll('"','""')+'"').join(","));
+  const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="JSE-temporary-staff-credentials.csv";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function resetAllTemporaryPasswords(){
+  const control=window.prompt('Enter the protected administrator control password to provision all staff accounts marked CHANGE_REQUIRED.');
+  if(!control)return;
+  const msg=document.getElementById('resetMsg');msg.textContent='Provisioning temporary passwords…';
+  const b=document.getElementById('resetAllBtn');if(b)b.disabled=true;
+  try{
+    const token=localStorage.getItem('jse_token');
+    const r=await fetch('/api/admin-reset-all-passwords',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'Accept':'application/json'},body:JSON.stringify({control_password:control}),cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Bulk provisioning failed');
+    msg.textContent=d.count+' temporary passwords created. Download the CSV now and distribute each password securely.';
+    if(Array.isArray(d.credentials)&&d.credentials.length)downloadTempCredentials(d.credentials);
+    await loadAccounts();
+  }catch(e){msg.textContent=e.message||'Bulk provisioning failed'}
+  finally{if(b)b.disabled=false}
+}
 async function resetTempPassword(userId,username){
   const control=window.prompt('Enter the protected administrator control password to reset '+username+'.');
   if(!control)return;
@@ -41,5 +64,6 @@ document.getElementById('rows').addEventListener('click',e=>{
   const b=e.target.closest('.reset-btn'); if(!b)return;
   resetTempPassword(b.dataset.id,b.dataset.name);
 });
+document.getElementById('resetAllBtn')?.addEventListener('click',resetAllTemporaryPasswords);
 document.getElementById('search').addEventListener('input',render);loadAccounts();
 </script></body></html>
