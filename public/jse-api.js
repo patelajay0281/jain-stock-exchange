@@ -12,13 +12,16 @@
     const value=String(path);
     const url=value.startsWith("http")?value:API+(value.startsWith("/")?value:"/"+value);
     const opts={...init,headers:makeHeaders(init)};
-    for(let attempt=0;attempt<3;attempt++){
+    const method=String(opts.method||"GET").toUpperCase();
+    const retryable=method==="GET" || method==="HEAD" || method==="OPTIONS";
+    const maxAttempts=retryable?3:1;
+    for(let attempt=0;attempt<maxAttempts;attempt++){
       try{
         const r=await fetch(url,opts);
-        if(r.ok || ![429,502,503,504].includes(r.status) || attempt===2) return r;
+        if(r.ok || ![429,502,503,504].includes(r.status) || attempt===maxAttempts-1) return r;
         await new Promise(x=>setTimeout(x,700*(attempt+1)));
       }catch(e){
-        if(attempt===2) throw e;
+        if(attempt===maxAttempts-1) throw e;
         await new Promise(x=>setTimeout(x,700*(attempt+1)));
       }
     }
