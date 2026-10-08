@@ -12,10 +12,10 @@ th{background:#f3f6fa!important;color:#000!important}
 td{background:#fff!important;color:#000!important}
 </style></head><body><div class="shell"><header class="brand">JAIN STOCK EXCHANGE</header><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/institutional.html">Institutional Investors</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a></nav>
 <header class="hero"><h1>JSE Staff Directory</h1><p>24 internal operating accounts. Customer teams are trading counterparties, not application users.</p></header>
-<section class="card"><div class="tools"><input id="search" placeholder="Search role, staff name or username"><button class="btn" onclick="downloadCsv()">DOWNLOAD CSV</button><button class="btn" onclick="loadAccounts()">REFRESH</button></div><p class="note">Current open-event mode does not require login. Staff accounts are retained for the controlled-access mode that can be enabled later.</p></section>
+<section class="card"><div class="tools"><input id="search" placeholder="Search role, staff name or username"><button class="btn" onclick="downloadCsv()">DOWNLOAD CSV</button><button class="btn" onclick="loadAccounts()">REFRESH</button></div><p class="note">Administrator access is required for the staff directory. Customer teams are trading counterparties, not application users.</p></section>
 <section class="card"><table><thead><tr><th>Role</th><th>Staff Member</th><th>Username</th><th>Institution / Area</th><th>Active</th></tr></thead><tbody id="rows"></tbody></table></section></div>
 <script>
-const A="https://yxmztxtbgqkvardwgrak.supabase.co/functions/v1/jse-api";let all=[];
+const A="/api";let all=[];
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 async function loadAccounts(){try{const h=new Headers({'Accept':'application/json'}),t=localStorage.getItem('jse_token');if(t)h.set('Authorization','Bearer '+t);const r=await fetch(A+'/member-accounts',{headers:h,cache:'no-store'});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not load staff accounts');all=(d.accounts||[]).filter(x=>x.active);render()}catch(e){document.getElementById('rows').innerHTML='<tr><td colspan="5">'+esc(e.message||'Could not load staff accounts')+'</td></tr>'}}
 function roleLabel(r){return r==='INSTITUTION'?'INSTITUTIONAL INVESTOR':r.replaceAll('_',' ')}
