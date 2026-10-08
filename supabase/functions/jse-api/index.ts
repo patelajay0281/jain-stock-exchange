@@ -80,6 +80,7 @@ async function auth(req:Request): Promise<any|null> {
   return await verifyToken(h.slice(7).trim());
 }
 function need(user:any, roles:string[]){ return !!user && (OPEN_MODE || roles.includes(user.role)); }
+function needAdmin(user:any){ return !!user && user.role==="ADMIN"; }
 
 async function openActor(role:string, teamCode?:string){
   const key=role+"|"+(teamCode||"");
@@ -373,7 +374,7 @@ async function adminAction(user:any,action:string,controlPassword=""){
   if(PROTECTED_ADMIN_ACTIONS.has(action) && controlPassword!==CONTROL_PASSWORD){
     return {error:"Invalid administrator control password",status:403};
   }
-  const actor=OPEN_MODE?await openActor("ADMIN"):user;
+  const actor=user;
   if(action==="RESET"){const {data,rpcError}=await db.rpc("jse_reset_event",{p_user_id:actor.uid});if(rpcError)return {error:rpcError.message,status:400};return data;}
   if(action==="FINALIZE"){const {data,rpcError}=await db.rpc("jse_finalize_event",{p_user_id:actor.uid});if(rpcError)return {error:rpcError.message,status:400};return data;}
   const {data:s}=await db.from("event_state").select("status").eq("id",1).single(),cur=s?.status,next:any={START:"LIVE",PAUSE:"PAUSED",RESUME:"LIVE",CLOSE:"CLOSED"}[action];
@@ -673,38 +674,46 @@ async function handle(req:Request){
     if(path==="/member-me") return user?response({member:{username:user.username,role:user.role,team_id:user.team_id,institution_id:user.institution_id}}):error("Authentication required",401);
     if(path==="/member-logout") return response({ok:true});
     if(path==="/event" && req.method==="GET") {
-      if(!need(user,["ADMIN"])) return error("Administrator access required",403);
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser)) return error("Administrator login required",401);
       return response(await eventStateCompat());
     }
     if(path==="/event" && req.method==="POST") {
-      if(!need(user,["ADMIN"])) return error("Administrator access required",403);
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser)) return error("Administrator login required",401);
       const b=await bodyJson(req);
       let action=String(b.action||"").toUpperCase();
       if(action==="SETTLEMENT_ONLY") action="PAUSE";
-      const result=await adminAction(user,action,String(b.control_password||""));
+      const result=await adminAction(adminUser,action,String(b.control_password||""));
       if(result?.error) return error(result.error,Number(result.status||400));
       return response(result);
     }
     if(path==="/reset-event" && req.method==="POST") {
-      if(!need(user,["ADMIN"])) return error("Administrator access required",403);
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser)) return error("Administrator login required",401);
       const b=await bodyJson(req);
-      const result=await adminAction(user,"RESET",String(b.control_password||""));
+      const result=await adminAction(adminUser,"RESET",String(b.control_password||""));
       if(result?.error) return error(result.error,Number(result.status||400));
       return response(result);
     }
     if(path==="/export-event" && req.method==="GET") {
-      if(!need(user,["ADMIN"])) return error("Administrator access required",403);
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser)) return error("Administrator login required",401);
       return response(await exportEvent(),200,{"Cache-Control":"no-store"});
     }
     if(path==="/undo-redo" && req.method==="POST") {
-      if(!need(user,["ADMIN"])) return error("Administrator access required",403);
-      const b=await bodyJson(req); const actor=OPEN_MODE?await openActor("ADMIN"):user;
-      const {data,rpcError}=await db.rpc("jse_undo_redo",{p_user_id:actor.uid,p_action:String(b.action||"").toUpperCase()});
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser)) return error("Administrator login required",401);
+      const b=await bodyJson(req);
+      const controlPassword=String(b.control_password||"");
+      if(controlPassword!==CONTROL_PASSWORD) return error("Invalid administrator control password",403);
+      const {data,rpcError}=await db.rpc("jse_undo_redo",{p_user_id:adminUser.uid,p_action:String(b.action||"").toUpperCase()});
       if(rpcError)return error(rpcError.message||"Recovery action failed",400);
       return response(data);
     }
     if(path==="/admin-state" && req.method==="GET") {
-      if(!need(user,["ADMIN"]))return error("Administrator access required",403);
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser))return error("Administrator login required",401);
       return response(await adminState());
     }
     if(path==="/health" && req.method==="GET"){
@@ -824,12 +833,17 @@ async function handle(req:Request){
     if(path==="/portfolio-details" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await teamPortfolio(user));}
     if(path==="/cash" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await cashLedger(user,url));}
     if(path==="/audit" && req.method==="GET") {if(!need(user,["ADMIN","EXCHANGE","BANK","PARTICIPANT"]))return error("Access required",403);return response(await audit(user,url));}
-    if(path==="/member-accounts" && req.method==="GET") {if(!need(user,["ADMIN"]))return error("Administrator access required",403);return response(await memberAccounts(user));}
+    if(path==="/member-accounts" && req.method==="GET") {
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser))return error("Administrator login required",401);
+      return response(await memberAccounts(adminUser));
+    }
     if(path==="/insights" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await insights());}
     if(path==="/admin-action" && req.method==="POST") {
-      if(!need(user,["ADMIN"]))return error("Administrator access required",403);
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser))return error("Administrator login required",401);
       const b=await bodyJson(req);
-      const result=await adminAction(user,String(b.action||"").toUpperCase(),String(b.control_password||""));
+      const result=await adminAction(adminUser,String(b.action||"").toUpperCase(),String(b.control_password||""));
       if(result?.error) return error(result.error,Number(result.status||400));
       return response(result);
     }
