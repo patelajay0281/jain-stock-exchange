@@ -110,5 +110,5 @@ async function safeLoad(){
 safeLoad();
 let timer=setInterval(function(){if(document.visibilityState==='visible')safeLoad()},10000);
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')safeLoad()});
-try{hatchable.events.connect().channel('market').on('price_updated',load).on('order_approved',load)}catch(e){}
+try{hatchable.events.connect().channel('market').on('price_updated',safeLoad).on('order_approved',safeLoad)}catch(e){}
 </script><script src="/admin-nav.js"></script></body></html>
