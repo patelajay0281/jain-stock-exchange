@@ -393,12 +393,12 @@ async function adminAction(user:any,action:string,controlPassword=""){
 }
 
 async function memberAccounts(user:any){
-  const {data,error}=await db.from("users").select("id,username,email,display_name,role,team_id,institution_id,is_active").eq("is_active",true).order("username");
+  const {data,error}=await db.from("users").select("id,username,email,display_name,role,team_id,institution_id,is_active,must_change_password").eq("is_active",true).order("username");
   if(error)throw error;
   const tm=await maps([...new Set((data||[]).map((x:any)=>x.team_id).filter(Boolean))],"teams","id","id,code");
   return {accounts:(data||[]).map((x:any)=>{const t=tm.get(String(x.team_id));return {
     id:x.id,username:x.username,email:x.email,display_name:x.display_name,role:x.role,
-    team:t?.code||"",team_code:t?.code||"",active:x.is_active
+    team:t?.code||"",team_code:t?.code||"",password_status:x.must_change_password?"CHANGE_REQUIRED":"SET",active:x.is_active
   };})};
 }
 
@@ -664,7 +664,7 @@ async function handle(req:Request){
   if(path.length>1) path=path.replace(/\/$/,"");
   try {
     if(path==="/member-login" && req.method==="POST") {
-      const b=await bodyJson(req); const {data,rpcError}=await db.rpc("jse_login",{p_username:String(b.username||"ADMINAP"),p_password:String(b.access_code||b.password||"")});
+      const b=await bodyJson(req); const {data,rpcError}=await db.rpc("jse_login",{p_username:String(b.username||""),p_password:String(b.access_code||b.password||"")});
       if(rpcError||!data)return error("Invalid credentials",401);
       return response({ok:true,token:await issueToken(data),member:{username:data.username,display_name:data.display_name,role:data.role,team_id:data.team_id,institution_id:data.institution_id,needs_password_change:Boolean(data.needs_password_change)}});
     }
