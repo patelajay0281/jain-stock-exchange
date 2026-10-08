@@ -169,7 +169,7 @@ async function summarizeOrders(user:any, filters:any={}) {
 
 async function orderList(user:any, page=1, limit=50, filters:any={}){
   const safeLimit=Math.max(1,Math.min(100,Number(limit)||50)); const from=(Math.max(1,Number(page)||1)-1)*safeLimit;
-  let q=db.from("orders").select("id,order_code,status,source,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,amount_paise,is_short_sale,created_at", {count:"exact"}).order("created_at",{ascending:false}).range(from,from+safeLimit-1);
+  let q=db.from("orders").select("id,order_code,status,source,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,amount_paise,is_short_sale,created_at", {count:"exact"}).order("created_at",{ascending:false}).order("id",{ascending:false}).range(from,from+safeLimit-1);
   if(user.role==="PARTICIPANT" && !OPEN_MODE) q=q.eq("team_id",user.team_id);
   if(filters.status) q=q.eq("status",filters.status);
   if(filters.team_id) q=q.eq("team_id",filters.team_id);
@@ -193,7 +193,7 @@ async function orderList(user:any, page=1, limit=50, filters:any={}){
 
 async function transactionQueue(kind:string) {
   const wanted=kind==="exchange"?"PENDING_EXCHANGE":"EXCHANGE_APPROVED";
-  const {data:orders,error}=await db.from("orders").select("id,order_code,status,source,team_id,institution_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,amount_paise,is_short_sale,created_at").eq("status",wanted).order("created_at",{ascending:true}).limit(100);
+  const {data:orders,error}=await db.from("orders").select("id,order_code,status,source,team_id,institution_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,amount_paise,is_short_sale,created_at").eq("status",wanted).order("created_at",{ascending:true}).order("id",{ascending:true}).limit(100);
   if(error)throw error;
   const rows=orders||[];
   const [teams,brokers,assets,institutions]=await Promise.all([
@@ -241,7 +241,7 @@ async function teamPortfolio(user:any) {
     db.from("holdings").select("team_id,asset_id,quantity,average_price_paise,cost_basis_paise").in("team_id",teamIds),
     db.from("assets").select("id,name,symbol,type,current_price_paise").eq("is_active",true),
     db.from("loans").select("team_id,principal_paise,principal_outstanding_paise,interest_rate_bps,interest_due_paise,interest_paid_paise,status").in("team_id",teamIds),
-    db.from("orders").select("id,order_code,team_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,status,is_short_sale,source,created_at").in("team_id",teamIds).order("created_at",{ascending:false}).limit(15000),
+    db.from("orders").select("id,order_code,team_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,status,is_short_sale,source,created_at").in("team_id",teamIds).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(15000),
     db.from("broker_commissions").select("team_id,commission_paise,status").in("team_id",teamIds)
   ]);
   if(te||be||he||ae||le||oe||ce) throw te||be||he||ae||le||oe||ce;
@@ -400,7 +400,7 @@ async function institutionalPortfolio(user:any,url:URL){
     db.from("institutions").select("id,code,name,cash_paise,initial_cash_paise").eq("id",institutionId).single(),
     db.from("assets").select("id,name,symbol,type,current_price_paise").eq("is_active",true).order("display_order"),
     db.from("institutional_holdings").select("asset_id,quantity,average_price_paise,cost_basis_paise").eq("institution_id",institutionId),
-    db.from("orders").select("id,order_code,team_id,asset_id,side,quantity,price_paise,trade_value_paise,status,created_at").eq("institution_id",institutionId).order("created_at",{ascending:false}).limit(100),
+    db.from("orders").select("id,order_code,team_id,asset_id,side,quantity,price_paise,trade_value_paise,status,created_at").eq("institution_id",institutionId).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100),
     db.from("orders").select("side,trade_value_paise,status").eq("institution_id",institutionId).limit(50000),
     db.from("teams").select("code").order("code")
   ]);
@@ -471,7 +471,7 @@ async function brokerReports(type:string){
   }
   if(type==="commissions"){
     const [{data:rows,error:re},{data:brokers,error:be},{data:teams,error:te},{data:assets,error:ae}]=await Promise.all([
-      db.from("broker_commissions").select("id,order_id,broker_id,team_id,commission_rate_bps,commission_paise,status,created_at").order("created_at",{ascending:false}).limit(15000),
+      db.from("broker_commissions").select("id,order_id,broker_id,team_id,commission_rate_bps,commission_paise,status,created_at").order("created_at",{ascending:false}).order("id",{ascending:false}).limit(15000),
       db.from("brokers").select("id,code,display_name"),
       db.from("teams").select("id,code"),
       db.from("assets").select("id,name,symbol,type")
