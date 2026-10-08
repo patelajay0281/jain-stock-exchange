@@ -567,7 +567,12 @@ async function insights(){
 
   const sectorMap=new Map<string,any>();
   for(const a of aset){
-    const sec=sectorOf(a); sectorMap.set(sec,sectorMap.get(sec)||{sector:sec,buy_value:0,sell_value:0,net_value:0,positive:0,negative:0});
+    const sec=sectorOf(a);
+    const row=sectorMap.get(sec)||{sector:sec,buy_value:0,sell_value:0,net_value:0,positive:0,negative:0};
+    const changePct=a.previous_price_paise?((Number(a.current_price_paise)-Number(a.previous_price_paise))*100/Number(a.previous_price_paise)):0;
+    if(changePct>0.005)row.positive++;
+    else if(changePct<-0.005)row.negative++;
+    sectorMap.set(sec,row);
   }
   for(const o of ord){
     const a=aset.find((x:any)=>x.id===o.asset_id); if(!a) continue;
