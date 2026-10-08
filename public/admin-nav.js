@@ -15,21 +15,26 @@
     "/member-accounts": ["ADMIN"],
     "/load-test": ["ADMIN"]
   };
-
-  const keyFor = path => Object.keys(RULES).find(k => path === k || path.startsWith(k + "/") || path === k + ".html" || path.startsWith(k + "-"));
   const pathFor = href => {
     try { return new URL(href, location.origin).pathname.replace(/\/$/,"") || "/"; }
     catch (_) { return ""; }
   };
+  const keyFor = path => Object.keys(RULES).find(k =>
+    path === k || path === k + ".html" || path.startsWith(k + "/") || path.startsWith(k + "-")
+  );
 
   function apply(member) {
     const role = member?.role || "";
+    const loggedIn = !!member;
+
     document.querySelectorAll("nav a[href]").forEach(a => {
       const p = pathFor(a.getAttribute("href"));
       const key = keyFor(p);
       if (!key) return;
       const allowed = RULES[key] || [];
-      a.hidden = !allowed.includes(role);
+      // Until authentication is confirmed, hide all protected desks.
+      // Once authenticated, show only the desks permitted to the current role.
+      a.hidden = !loggedIn || !allowed.includes(role);
     });
 
     let access = document.getElementById("jse-access-link");
