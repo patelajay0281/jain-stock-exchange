@@ -203,7 +203,7 @@ body.admin-page #stateMsg{background:#fff!important}
 "use strict";
 const API="/api";
 let currentStatus="NOT_STARTED";
-let busy=false;
+let busy=false,loadBusy=false;
 
 function headers(extra){
   const h=new Headers(extra||{});
@@ -276,8 +276,11 @@ async function loginAdmin(){
   finally{btn.disabled=false}
 }
 async function load(){
+  if(loadBusy)return false;
+  loadBusy=true;
   try{applyState(await api("/event"));return true}
   catch(e){setMsg(e.message||"Could not load event state","error");return false}
+  finally{loadBusy=false}
 }
 function applyState(d){
   currentStatus=String(d?.event?.status||"NOT_STARTED").toUpperCase();
@@ -346,7 +349,6 @@ async function act(action){
     const body={action};if(control_password)body.control_password=control_password;
     const d=await api("/event",{method:"POST",body:JSON.stringify(body)});
     setMsg(d.message||("Event action completed: "+action),"success");
-    await load();
   }catch(e){setMsg(e.message||("Action failed: "+action),"error")}
   finally{busy=false;await load()}
 }
@@ -436,6 +438,8 @@ function openMarketIntelligence(){
   wrap.scrollIntoView({behavior:"smooth",block:"start"});
 }
 setInterval(updateClock,1000);
+setInterval(function(){if(document.visibilityState==="visible"&&!busy)load()},3000);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!busy)load()});
 checkAccess();
 </script></body>
 </html>
