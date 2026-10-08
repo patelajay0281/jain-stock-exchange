@@ -8,7 +8,7 @@
     { match: p => /^\/exchange(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["EXCHANGE","ADMIN"] },
     { match: p => /^\/bank(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["BANK","ADMIN"] },
     { match: p => /^\/institutional(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["INSTITUTION","ADMIN"] },
-    { match: p => /^\/portfolios(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","ADMIN"] },
+    { match: p => /^\/portfolios(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","EXCHANGE","BANK","ADMIN","ASSOCIATE_ADMIN"] },
     { match: p => /^\/cash(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"] },
     { match: p => /^\/audit(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"] },
     { match: p => /^\/commissions(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"] },
