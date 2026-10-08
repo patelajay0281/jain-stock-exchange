@@ -303,10 +303,11 @@ function cleanSuccess(code){
 }
 async function submitTrade(){
  if(!setEvent(market&&market.status))return showMessage("Market is not LIVE. Orders are disabled.","error");
- var a=currentAsset(),q=Math.floor(Number($("qty").value||0)),p=Math.round(Number($("price").value||0));
+ var a=currentAsset(),q=Math.floor(Number($("qty").value||0)),rawPrice=Number($("price").value||0);
+ var p=rawPrice;
  if(!a)return showMessage("Select a security.","error");
  if(!Number.isInteger(q)||q<=0||q<50||q%50!==0)return showMessage("Quantity must be in multiples of 50 shares: 50, 100, 150…","error");
- if(!Number.isFinite(p)||p<=0)return showMessage("Enter a valid positive price.","error");
+ if(!Number.isFinite(rawPrice)||!Number.isInteger(rawPrice)||rawPrice<=0)return showMessage("Share price must be a whole number greater than ₹0.","error");
  var key=makeKey();
  busy=true;$("submitBtn").disabled=true;$("refreshBtn").disabled=true;
  showMessage("Creating order…");
@@ -378,7 +379,7 @@ $("assetType").addEventListener("change",function(){resetCreatedState();manualPr
 $("stock").addEventListener("change",function(){resetCreatedState();manualPrice=false;var a=currentAsset();if(a)$("price").value=Math.round(Number(a.price||0));drawAsset();calculate()});
 $("side").addEventListener("change",function(){resetCreatedState();calculate()});
 $("qty").addEventListener("input",function(){resetCreatedState();calculate()});
-$("price").addEventListener("input",function(){resetCreatedState();manualPrice=true;calculate()});
+$("price").addEventListener("input",function(){resetCreatedState();manualPrice=true;$("price").value=$("price").value.replace(/[^0-9]/g,"");calculate()});
 $("transactionType").addEventListener("change",function(){
  resetCreatedState();
  var loan=$("transactionType").value==="loan_repay";
