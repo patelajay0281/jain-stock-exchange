@@ -47,7 +47,7 @@ async function load(){
  if($('type').value)p.set('entry_type',$('type').value);
  if($('q').value.trim())p.set('q',$('q').value.trim());
  try{
-  const r=await fetch(A+'/cash?'+p.toString(),{cache:'no-store'}); if(!r.ok)throw 0;
+  const r=await jseFetch('/cash?'+p.toString(),{cache:'no-store'}); if(!r.ok)throw 0;
   const d=await r.json(); summary(d.summary); loadFilters(d.filters);
   const rows=d.rows||[];
   $('app').innerHTML=rows.length?'<div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Team</th><th>Order</th><th>Entry Type</th><th>Debit</th><th>Credit</th><th>Balance After</th><th>Note</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(new Date(x.created_at).toLocaleString('en-IN'))+'</td><td><b>'+esc(x.team)+'</b></td><td>'+esc(x.order_code)+'</td><td>'+esc(x.entry_type)+'</td><td class="down">'+money(x.debit)+'</td><td class="up">'+money(x.credit)+'</td><td>'+money(x.balance_after)+'</td><td>'+esc(x.note)+'</td></tr>').join('')+'</tbody></table></div>':'<p class="notice">No cash ledger entries match the selected filters.</p>';
