@@ -683,7 +683,7 @@ async function handle(req:Request){
       const newPassword=String(b.new_password||"");
       const {data,rpcError}=await db.rpc("jse_set_password",{p_user_id:Number(user.uid),p_new_password:newPassword});
       if(rpcError) return error(rpcError.message||"Password update failed",400);
-      const refreshedToken=await issueToken({user_id:currentUser.uid,role:currentUser.role,team_id:currentUser.team_id,institution_id:currentUser.institution_id,username:currentUser.username,needs_password_change:false});
+      const refreshedToken=await issueToken({user_id:user.uid,role:user.role,team_id:user.team_id,institution_id:user.institution_id,username:user.username,needs_password_change:false});
       return response({...data,token:refreshedToken});
     }
     if(path==="/member-logout") return response({ok:true});
