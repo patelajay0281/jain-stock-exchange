@@ -174,7 +174,7 @@ body.admin-page #stateMsg{background:#fff!important}
 <button class="admin-btn undo" id="undoBtn" type="button">UNDO LAST SETTLEMENT</button>
 <button class="admin-btn redo" id="redoBtn" type="button">REDO LAST SETTLEMENT</button>
 <button class="admin-btn reset" id="resetBtn" type="button">RESET EVENT + BASE PRICES</button>
-<button class="admin-btn" onclick="downloadMemberAccounts()">DOWNLOAD MEMBER ACCOUNTS</button>
+<button class="admin-btn" id="downloadMemberAccountsBtn" onclick="downloadMemberAccounts()">DOWNLOAD MEMBER ACCOUNTS</button>
 <button class="admin-btn" id="downloadArchive" onclick="downloadArchive()" disabled>DOWNLOAD EXCEL REPORT</button>
 </div>
 <div class="admin-actions secondary">
@@ -239,7 +239,7 @@ function showAdmin(){
   document.body.classList.add("ready");
   const member=window.JSE_MEMBER||JSON.parse(localStorage.getItem("jse_member")||"{}");
   if(member.role==="ASSOCIATE_ADMIN"){
-    document.querySelectorAll("#startBtn,#pauseBtn,#closeBtn,#finalizeBtn,#undoBtn,#redoBtn,#resetBtn,#downloadArchive,#downloadJson").forEach(b=>{if(b)b.style.display="none"});
+    document.querySelectorAll("#startBtn,#pauseBtn,#closeBtn,#finalizeBtn,#undoBtn,#redoBtn,#resetBtn,#downloadArchive,#downloadJson,#downloadMemberAccountsBtn").forEach(b=>{if(b)b.style.display="none"});
     const panel=document.querySelector(".admin-panel");
     if(panel){
       const note=document.createElement("div");
