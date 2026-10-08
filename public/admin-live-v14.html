@@ -452,6 +452,16 @@ function openMarketIntelligence(){
   try{frame.contentWindow?.location?.reload?.()}catch(_){}
   wrap.scrollIntoView({behavior:"smooth",block:"start"});
 }
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelector("#startBtn")?.addEventListener("click",()=>act("START"));
+  document.querySelector("#pauseBtn")?.addEventListener("click",pauseMarket);
+  document.querySelector("#closeBtn")?.addEventListener("click",()=>act("CLOSE"));
+  document.querySelector("#finalizeBtn")?.addEventListener("click",()=>act("FINALIZE"));
+  document.querySelector("#undoBtn")?.addEventListener("click",()=>historyAction("UNDO"));
+  document.querySelector("#redoBtn")?.addEventListener("click",()=>historyAction("REDO"));
+  document.querySelector("#resetBtn")?.addEventListener("click",resetEvent);
+  document.querySelector("#openMiBtn")?.addEventListener("click",openMarketIntelligence);
+});
 setInterval(updateClock,1000);
 setInterval(function(){if(document.visibilityState==="visible"&&!busy)load()},3000);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!busy)load()});
