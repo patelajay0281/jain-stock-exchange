@@ -71,6 +71,7 @@ tbody tr:hover td{background:#f8fafc!important;color:#000!important}
   <button class="active" data-filter="ALL">All Activity</button>
   <button data-filter="ORDER">Orders</button>
   <button data-filter="EXCHANGE">Exchange</button>
+  <button data-filter="BANK">Bank</button>
   <button data-filter="EVENT">Event</button>
   <input id="search" class="audit-search" placeholder="Search order, team, stock, or action…">
 </div>
@@ -83,13 +84,13 @@ const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
 let rows=[],filter='ALL',query=new URLSearchParams(location.search).get('order')||'';
-function category(a){if(String(a).startsWith('ORDER_')||a==='INSTITUTIONAL_ORDER_CREATED'||a==='INSTITUTIONAL_ORDER_SETTLED')return 'ORDER';if(String(a).startsWith('EXCHANGE_')||a==='SHORT_SELLING_BLOCKED')return 'EXCHANGE';if(String(a).startsWith('EVENT_'))return 'EVENT';return 'OTHER'}
+function category(a){a=String(a||'');if(a.startsWith('ORDER_')||a==='INSTITUTIONAL_ORDER_CREATED'||a==='INSTITUTIONAL_ORDER_SETTLED')return 'ORDER';if(a.startsWith('EXCHANGE_')||a==='SHORT_SELLING_BLOCKED')return 'EXCHANGE';if(a.startsWith('BANK_')||a==='ORDER_SETTLED')return 'BANK';if(a.startsWith('EVENT_'))return 'EVENT';return 'OTHER'}
 function label(a){const m={ORDER_CREATED:'Order Created',ORDER_SETTLED:'Order Settled',EXCHANGE_APPROVED:'Exchange Approved',EXCHANGE_REJECTED:'Exchange Rejected',SHORT_SELLING_BLOCKED:'Short Selling Blocked',BANK_REJECTED:'Bank Rejected',BANK_NO_BALANCE:'No Balance — Blocked',BANK_MINIMUM_CASH_WARNING:'Minimum Cash Warning',EVENT_START:'Event Started',EVENT_PAUSE:'Event Paused',EVENT_RESUME:'Event Resumed',EVENT_CLOSE:'Event Closed',EVENT_FINALIZE:'Event Finalized',EVENT_RESET:'Event Reset',LOAN_DRAW:'Loan Draw',LOAN_REPAYMENT:'Loan Repayment',SETTLEMENT_UNDO:'Settlement Undo',SETTLEMENT_REDO:'Settlement Redo',INSTITUTIONAL_ORDER_CREATED:'Institutional Order Created',INSTITUTIONAL_ORDER_SETTLED:'Institutional Order Settled'};return m[a]||a}
 function time(v){const d=new Date(v);return Number.isNaN(d.getTime())?esc(v):d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}
 function visible(){const q=query.trim().toLowerCase();return rows.filter(x=>(filter==='ALL'||category(x.action)===filter)&&(!q||[x.action,x.action_label,x.order_code,x.team_code,x.asset_name,x.asset_symbol,x.actor_name,x.actor_username,x.actor_role,JSON.stringify(x.details||{}),x.what_happened].join(' ').toLowerCase().includes(q)))}
 function render(){
  const v=visible();
- $('#stats').innerHTML=[['Total Entries',rows.length],['Orders',rows.filter(x=>category(x.action)==='ORDER').length],['Exchange',rows.filter(x=>category(x.action)==='EXCHANGE').length],['Event',rows.filter(x=>category(x.action)==='EVENT').length]].map(s=>'<div class="audit-stat"><div class="n">'+s[1]+'</div><div class="l">'+s[0]+'</div></div>').join('');
+ $('#stats').innerHTML=[['Total Entries',rows.length],['Orders',rows.filter(x=>category(x.action)==='ORDER').length],['Exchange',rows.filter(x=>category(x.action)==='EXCHANGE').length],['Bank',rows.filter(x=>category(x.action)==='BANK').length],['Event',rows.filter(x=>category(x.action)==='EVENT').length]].map(s=>'<div class="audit-stat"><div class="n">'+s[1]+'</div><div class="l">'+s[0]+'</div></div>').join('');
  if(!v.length){$('#app').innerHTML='<div class="empty">No audit activity matches the selected filter.</div>';return}
  $('#app').innerHTML='<div class="table-wrap"><table class="audit-table"><thead><tr><th>Date / Time</th><th>Account</th><th>Activity</th><th>Order</th><th>Team</th><th>Asset</th><th>Trade</th><th>Value</th><th>Risk</th><th>What Happened</th></tr></thead><tbody>'+
  v.map(x=>{
