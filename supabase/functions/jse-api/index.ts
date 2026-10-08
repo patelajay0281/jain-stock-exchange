@@ -456,7 +456,7 @@ async function exportEvent(){
 
 async function brokerReports(type:string){
   if(type==="commission_summary"){
-    const {data,error}=await db.from("broker_commissions").select("broker_id,commission_paise").eq("status","APPLIED");
+    const {data,error}=await db.from("broker_commissions").select("broker_id,commission_paise").eq("status","APPLIED").limit(50000);
     if(error)throw error;
     const ids=[...new Set((data||[]).map((x:any)=>x.broker_id).filter(Boolean))];
     const bm=await maps(ids,"brokers","id","id,code,display_name");
