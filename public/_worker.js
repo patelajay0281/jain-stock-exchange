@@ -1,1 +1,72 @@
-const API="https://yxmztxtbgqkvardwgrak.supabase.co/functions/v1/jse-api";const ALIASES={"/":"/market-v3.html","/login":"/login.html","/login.html":"/login.html","/admin":"/admin-live-v14.html","/admin.html":"/admin-live-v14.html","/admin-live-v2":"/admin-live-v14.html","/member-accounts":"/member-accounts-v2.html","/member-accounts.html":"/member-accounts-v2.html","/member-accounts-v2":"/member-accounts-v2.html","/member-accounts-v2/":"/member-accounts-v2.html","/member-accounts-v2.html":"/member-accounts-v2.html","/order":"/order-live-v8.html","/order.html":"/order-live-v8.html","/order-live-v7":"/order-live-v8.html","/order-live-v7.html":"/order-live-v8.html","/exchange":"/exchange-live-v5.html","/exchange.html":"/exchange-live-v5.html","/exchange-live-v3":"/exchange-live-v5.html","/exchange-live-v3.html":"/exchange-live-v5.html","/bank":"/bank-live-v7.html","/bank.html":"/bank-live-v7.html","/bank-live-v4":"/bank-live-v7.html","/bank-live-v4.html":"/bank-live-v7.html","/orders":"/orders-live-v3.html","/orders.html":"/orders-live-v3.html","/orders-live-v2":"/orders-live-v3.html","/orders-live-v2.html":"/orders-live-v3.html","/institutional":"/institutional-live-v5.html","/institutional.html":"/institutional-live-v5.html","/institutional-live-v3":"/institutional-live-v5.html","/institutional-live-v3.html":"/institutional-live-v5.html","/commissions":"/commissions-live-v5.html","/commissions.html":"/commissions-live-v5.html","/commissions-live-v2":"/commissions-live-v5.html","/commissions-live-v2.html":"/commissions-live-v5.html","/portfolios":"/portfolios-live-v4.html","/portfolios.html":"/portfolios-live-v4.html","/portfolios-live-v2":"/portfolios-live-v4.html","/portfolios-live-v2.html":"/portfolios-live-v4.html","/audit":"/audit-live-v4.html","/audit.html":"/audit-live-v4.html","/audit-live-v2":"/audit-live-v4.html","/audit-live-v2.html":"/audit-live-v4.html","/cash":"/cash-live-v4.html","/cash.html":"/cash-live-v4.html","/cash-live-v2":"/cash-live-v4.html","/cash-live-v2.html":"/cash-live-v4.html","/certificates":"/certificates-v2.html","/certificates.html":"/certificates-v2.html","/certificates-v2":"/certificates-v2.html","/certificates-v2.html":"/certificates-v2.html","/insights":"/insights-live-v4.html","/insights.html":"/insights-live-v4.html","/insights-live-v2":"/insights-live-v4.html","/insights-live-v2.html":"/insights-live-v4.html","/load-test":"/load-test-v2.html","/load-test.html":"/load-test-v2.html","/load-test-v2":"/load-test-v2.html","/load-test-v2/":"/load-test-v2.html","/load-test-v2.html":"/load-test-v2.html"};async function forward(req,u){const x=new URL(API);x.pathname=x.pathname.replace(/\/$/,"")+(u.pathname.slice(4)||"/");x.search=u.search;const h=new Headers(req.headers);h.delete("host");h.delete("content-length");const o={method:req.method,headers:h,redirect:"manual"};if(req.method!=="GET"&&req.method!=="HEAD")o.body=req.body;try{let r;for(let i=0;i<3;i++){r=await fetch(x,o);if(req.method!=="GET"||![502,503,504].includes(r.status)||i===2)break;await new Promise(s=>setTimeout(s,100*(i+1)))}const rh=new Headers(r.headers);rh.set("x-jse-api","supabase-edge-function");const isPublic=req.method==="GET"&&["/api/market","/api/realtime"].includes(u.pathname);rh.set("cache-control",isPublic?"public,max-age=1,s-maxage=1,stale-while-revalidate=2":"no-store");if(isPublic)rh.set("x-jse-cache","edge-1s");return new Response(r.body,{status:r.status,statusText:r.statusText,headers:rh})}catch(_){return new Response(JSON.stringify({error:"JSE backend temporarily unavailable. Please retry."}),{status:502,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}})}}async function page(req,env,p){const u=new URL(p,req.url);if(u.pathname==="/order-live-v8.html")u.searchParams.set("__jse_order","v3");const r=await env.ASSETS.fetch(new Request(u,req));if(!(r.headers.get("content-type")||"").includes("text/html"))return r;const h=new Headers(r.headers);h.set("Cache-Control","no-store, no-cache, must-revalidate");h.set("Pragma","no-cache");return new HTMLRewriter().on("head",{element(e){e.append('<script src="/order-hatchable.js"></script><script src="/auth.js"></script>',{html:true})}}).transform(new Response(r.body,{status:r.status,statusText:r.statusText,headers:h}))}export default{async fetch(req,env){const u=new URL(req.url);if(u.pathname==="/api"||u.pathname.startsWith("/api/"))return forward(req,u);if(u.pathname==="/order"||u.pathname==="/order.html")return page(req,env,"/order-live-v8.html");const p=ALIASES[u.pathname];const r=await env.ASSETS.fetch(p?new Request(new URL(p+u.search,req.url),req):req);const ct=(r.headers.get("content-type")||"");if(ct.includes("text/html")){const admin=u.pathname==="/admin"||u.pathname==="/admin.html"||u.pathname==="/admin-live-v2"||u.pathname==="/admin-live-v2.html"||u.pathname==="/admin-live-v5"||u.pathname==="/admin-live-v5.html"||u.pathname==="/admin-live-v6"||u.pathname==="/admin-live-v14"||u.pathname==="/admin-live-v14.html"||u.pathname==="/admin-live-v6.html";let rw=new HTMLRewriter().on("head",{element(e){e.append('<link rel="stylesheet" href="/readability.css?v=20261008-2"><script src="/auth.js"></script>',{html:true})}});if(!admin)rw=rw.on("a",{element(e){const h=e.getAttribute("href");if(h==="/insights"||h==="/insights.html")e.remove()}});const hh=new Headers(r.headers);hh.set("Cache-Control","no-store, no-cache, must-revalidate");hh.set("Pragma","no-cache");return rw.transform(new Response(r.body,{status:r.status,statusText:r.statusText,headers:hh}))}return r}};
+const API="https://yxmztxtbgqkvardwgrak.supabase.co/functions/v1/jse-api";
+const RAW_BASE="https://raw.githubusercontent.com/patelajay0281/jain-stock-exchange/live/public";
+const ALIASES={
+  "/":"/market-v3.html","/login":"/login.html","/login.html":"/login.html",
+  "/admin":"/admin-live-v14.html","/admin.html":"/admin-live-v14.html",
+  "/member-accounts":"/member-accounts-v2.html","/member-accounts.html":"/member-accounts-v2.html",
+  "/order":"/order-live-v8.html","/order.html":"/order-live-v8.html",
+  "/exchange":"/exchange-live-v5.html","/exchange.html":"/exchange-live-v5.html",
+  "/bank":"/bank-live-v7.html","/bank.html":"/bank-live-v7.html",
+  "/orders":"/orders-live-v3.html","/orders.html":"/orders-live-v3.html",
+  "/institutional":"/institutional-live-v5.html","/institutional.html":"/institutional-live-v5.html",
+  "/commissions":"/commissions-live-v5.html","/commissions.html":"/commissions-live-v5.html",
+  "/portfolios":"/portfolios-live-v4.html","/portfolios.html":"/portfolios-live-v4.html",
+  "/audit":"/audit-live-v4.html","/audit.html":"/audit-live-v4.html",
+  "/cash":"/cash-live-v4.html","/cash.html":"/cash-live-v4.html",
+  "/certificates":"/certificates-v2.html","/certificates.html":"/certificates-v2.html",
+  "/insights":"/insights-live-v4.html","/insights.html":"/insights-live-v4.html",
+  "/load-test":"/load-test-v2.html","/load-test.html":"/load-test-v2.html"
+};
+const NO_CACHE={"cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer"};
+function copyHeaders(r,extra={}){const h=new Headers(r.headers);for(const [k,v] of Object.entries(extra))h.set(k,v);return h;}
+async function forward(req,u){
+  const x=new URL(API);x.pathname=x.pathname.replace(/\/$/,"")+(u.pathname.slice(4)||"/");x.search=u.search;
+  const h=new Headers(req.headers);h.delete("host");h.delete("content-length");
+  const o={method:req.method,headers:h,redirect:"manual"};
+  if(req.method!=="GET"&&req.method!=="HEAD"&&req.method!=="OPTIONS")o.body=req.body;
+  let r;
+  for(let i=0;i<3;i++){
+    try{r=await fetch(x,o);}catch(e){if(i===2)throw e;await new Promise(s=>setTimeout(s,120*(i+1)));continue;}
+    if(req.method!=="GET"||![502,503,504].includes(r.status)||i===2)break;
+    await new Promise(s=>setTimeout(s,120*(i+1)));
+  }
+  const h2=copyHeaders(r,{"x-jse-api":"supabase-edge-function","cache-control":"no-store"});
+  if(req.method==="GET"&&["/api/market","/api/realtime"].includes(u.pathname))h2.set("cache-control","public,max-age=1,s-maxage=1,stale-while-revalidate=2");
+  return new Response(r.body,{status:r.status,statusText:r.statusText,headers:h2});
+}
+async function fetchAsset(env,req,path){
+  const clean=String(path||"/").replace(/^\/+/, "");
+  if(!clean||clean.includes("..")||clean.includes("\\")||clean.startsWith("."))return new Response("Not Found",{status:404,headers:NO_CACHE});
+  const assetUrl=new URL("/"+clean,req.url);
+  let r=await env.ASSETS.fetch(new Request(assetUrl,req));
+  if(r.status===404){
+    const raw=await fetch(RAW_BASE+"/"+clean,{headers:{"Accept":"*/*"}});
+    if(raw.ok)r=raw;
+  }
+  return r;
+}
+async function servePage(env,req,path){
+  const u=new URL(req.url);
+  const target=new URL(path,req.url);
+  const r=await fetchAsset(env,new Request(target,req),target.pathname);
+  if(r.status===404)return new Response("JSE page not found",{status:404,headers:NO_CACHE});
+  const ct=r.headers.get("content-type")||"";
+  if(!ct.includes("text/html"))return r;
+  const h=copyHeaders(r,NO_CACHE);
+  h.set("content-type","text/html; charset=utf-8");
+  let rw=new HTMLRewriter().on("head",{element(e){
+    e.append('<link rel="stylesheet" href="/readability.css?v=20261008-3"><script src="/auth.js"></script><script src="/admin-nav.js"></script>',{html:true});
+    if(target.pathname==="/order-live-v8.html")e.append('<script src="/order-hatchable.js"></script>',{html:true});
+  }});
+  return rw.transform(new Response(r.body,{status:r.status,statusText:r.statusText,headers:h}));
+}
+export default{async fetch(req,env){
+  const u=new URL(req.url);
+  try{
+    if(u.pathname==="/api"||u.pathname.startsWith("/api/"))return await forward(req,u);
+    const path=ALIASES[u.pathname]||u.pathname;
+    return await servePage(env,req,path);
+  }catch(e){
+    return new Response("JSE temporarily unavailable",{status:502,headers:{...NO_CACHE,"content-type":"text/plain; charset=utf-8"}});
+  }
+}};
