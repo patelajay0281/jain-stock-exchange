@@ -242,6 +242,8 @@ async function transactionQueue(kind:string) {
       no_balance:absoluteInsufficient,minimum_cash:minimumCash,minimum_cash_warning:minimumWarning,
       short_selling:!!x.is_short_sale,holding_qty:holdingQ.get(String(x.team_id)+":"+String(x.asset_id))||0,created_at:x.created_at};
   });
+  queueCache.set(kind,{at:Date.now(),data:result});
+  return result;
 }
 
 async function teamPortfolio(user:any) {
