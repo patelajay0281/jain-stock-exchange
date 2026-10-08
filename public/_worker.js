@@ -49,9 +49,9 @@ async function page(req,env,path){
  const r=await rawPage(env,req,path);
  if(r.status!==200)return r;
  const h=cloneHeaders(r,NC);h.set("content-type","text/html; charset=utf-8");
- const special=path==="/order-live-v8.html"?' on="head"':"";
+ const isAdmin=path==="/admin-live-v14.html";
  const rw=new HTMLRewriter().on("head",{element(e){
-   e.append('<link rel="stylesheet" href="/readability.css?v=20261008-4"><script src="/auth.js"></script><script src="/admin-nav.js"></script>',{html:true});
+   e.append('<link rel="stylesheet" href="/readability.css?v=20261008-4">'+(isAdmin?'':'<script src="/auth.js"></script><script src="/admin-nav.js"></script>'),{html:true});
    if(path==="/order-live-v8.html")e.append('<script src="/order-hatchable.js"></script>',{html:true});
  }});
  return rw.transform(new Response(r.body,{status:r.status,statusText:r.statusText,headers:h}));
