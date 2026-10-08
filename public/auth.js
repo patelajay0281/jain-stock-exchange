@@ -2,8 +2,7 @@
   if (window.__JSE_AUTH_BOOTED) return;
   window.__JSE_AUTH_BOOTED = true;
 
-  // Temporary event mode: no staff/member login is required.
-  // The API provides an open-access ADMIN session server-side.
+  // Temporary open-access event mode: no login screen or client-side role gate.
   const guest = {
     username: "OPEN_ACCESS",
     display_name: "JSE Open Access",
