@@ -766,6 +766,7 @@ async function handle(req:Request){
       if(rpcError){
         const msg=rpcError.message||"Exchange action failed";
         if(msg.includes("SHORT_SELLING_NOT_POSSIBLE")) return error("Short selling is not possible on JSE.",409,{code:"SHORT_SELLING_NOT_POSSIBLE",approval_allowed:false});
+        if(msg.includes("INSTITUTIONAL_COUNTERPARTY_HOLDING_NOT_POSSIBLE")) return error("Institutional BUY cannot be approved because the customer team does not hold enough shares.",409,{code:"INSTITUTIONAL_COUNTERPARTY_HOLDING_NOT_POSSIBLE",approval_allowed:false});
         return error(msg,400);
       }
       return response(data);
