@@ -388,8 +388,8 @@ async function downloadMemberAccounts(){
   try{
     const d=await api("/member-accounts");
     const rows=Array.isArray(d.accounts)?d.accounts:[];
-    const cols=["USERNAME","TEAM","DISPLAY NAME","ACCESS CODE","EMAIL","ACTIVE"];
-    const out=[cols.join(","),...rows.map(x=>[x.username,x.team,x.display_name,x.access_code,x.email||"",x.active?"YES":"NO"].map(csvEscape).join(","))].join("\n");
+    const cols=["USERNAME","TEAM","DISPLAY NAME","EMAIL","PASSWORD STATUS","ACTIVE"];
+    const out=[cols.join(","),...rows.map(x=>[x.username,x.team,x.display_name,x.email||"",x.password_status||"SECURE","YES"].map(csvEscape).join(","))].join("\n");
     const url=URL.createObjectURL(new Blob([out],{type:"text/csv;charset=utf-8"}));
     const a=document.createElement("a");a.href=url;a.download="JSE-member-accounts.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     setMsg("Member account sheet downloaded.","success");
