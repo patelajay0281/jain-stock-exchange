@@ -14,7 +14,6 @@ const REALTIME_CACHE_MS = 900;
 // Temporary event mode: no login is required.
 // Set this to false later to restore normal role-based authentication.
 const OPEN_MODE = true;
-const CONTROL_PASSWORD = "ZEROGROWW";
 const PROTECTED_ADMIN_ACTIONS = new Set(["PAUSE","RESUME","CLOSE","FINALIZE","RESET"]);
 const openActorCache = new Map<string, any>();
 
@@ -86,6 +85,12 @@ async function auth(req:Request): Promise<any|null> {
 }
 function need(user:any, roles:string[]){ return !!user && (OPEN_MODE || roles.includes(user.role)); }
 function needAdmin(user:any){ return !!user && user.role==="ADMIN"; }
+async function verifyAdminControlPassword(value:string): Promise<boolean> {
+  if (!value) return false;
+  const {data,error}=await db.rpc("jse_verify_admin_control_password",{p_password:value});
+  return !error && data===true;
+}
+
 
 async function openActor(role:string, teamCode?:string){
   const key=role+"|"+(teamCode||"");
@@ -385,7 +390,7 @@ async function adminState(){
 }
 
 async function adminAction(user:any,action:string,controlPassword=""){
-  if(PROTECTED_ADMIN_ACTIONS.has(action) && controlPassword!==CONTROL_PASSWORD){
+  if(PROTECTED_ADMIN_ACTIONS.has(action) && !(await verifyAdminControlPassword(controlPassword))){
     return {error:"Invalid administrator control password",status:403};
   }
   const actor=user;
@@ -717,7 +722,7 @@ async function handle(req:Request){
       if(!needAdmin(adminUser)) return error("Administrator login required",401);
       const b=await bodyJson(req);
       const controlPassword=String(b.control_password||"");
-      if(controlPassword!==CONTROL_PASSWORD) return error("Invalid administrator control password",403);
+      if(!(await verifyAdminControlPassword(controlPassword))) return error("Invalid administrator control password",403);
       const {data,rpcError}=await db.rpc("jse_undo_redo",{p_user_id:adminUser.uid,p_action:String(b.action||"").toUpperCase()});
       if(rpcError)return error(rpcError.message||"Recovery action failed",400);
       return response(data);
