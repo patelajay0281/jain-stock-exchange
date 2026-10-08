@@ -273,14 +273,18 @@ async function teamPortfolio(user:any) {
     const k=String(l.team_id);
     const prev=loanMap.get(k)||{
       principal_paise:0,principal_outstanding_paise:0,interest_due_paise:0,interest_paid_paise:0,
-      interest_rate_bps:0,status:"NONE",open:false
+      open_principal_paise:0,interest_rate_bps:0,status:"NONE",open:false
     };
     prev.principal_paise+=Number(l.principal_paise||0);
     prev.principal_outstanding_paise+=Number(l.principal_outstanding_paise||0);
     prev.interest_due_paise+=Number(l.interest_due_paise||0);
     prev.interest_paid_paise+=Number(l.interest_paid_paise||0);
     if(prev.interest_rate_bps===0) prev.interest_rate_bps=Number(l.interest_rate_bps||0);
-    if(l.status==="OPEN"){prev.open=true;prev.status="OPEN";prev.interest_rate_bps=Number(l.interest_rate_bps||0);}
+    if(l.status==="OPEN"){
+      prev.open=true;prev.status="OPEN";
+      prev.open_principal_paise+=Number(l.principal_paise||0);
+      prev.interest_rate_bps=Number(l.interest_rate_bps||0);
+    }
     else if(prev.status==="NONE") prev.status=String(l.status||"NONE");
     loanMap.set(k,prev);
   }
@@ -305,7 +309,8 @@ async function teamPortfolio(user:any) {
       id:t.id,team:t.code,broker:bmap.get(String(t.broker_id))||"",available_cash:cash,holdings_value:holdingsValue,
       current_value:currentValue,pnl:currentValue-base-liability,realized_pl:Number(t.realized_profit_paise)/100,
       return_pct:base?(currentValue-base-liability)/base*100:0,loan_withdrawn:loanWithdrawn,
-      loan_money_left:Math.max(0,500000-loanWithdrawn),original_principal:loanWithdrawn,
+      loan_money_left:Math.max(0,500000-Number(l?.open_principal_paise||0)/100),
+      original_principal:Number(l?.open_principal_paise||0)/100,
       principal_due:l?Number(l.principal_outstanding_paise)/100:0,principal_paid:l?Number(l.principal_paise-l.principal_outstanding_paise)/100:0,
       interest_rate:l?Number(l.interest_rate_bps)/10000:0,interest_due:l?Number(l.interest_due_paise)/100:0,
       interest_paid:l?Number(l.interest_paid_paise)/100:0,loan_status:l?.status?.toString()||"NONE",
@@ -874,6 +879,7 @@ async function handle(req:Request){
       return response(await brokerReports(String(url.searchParams.get("type")||"commission_summary")));
     }
     if(path==="/certificates" && req.method==="GET"){
+      if(!need(user,["PIT_MANAGER","EXCHANGE","BANK","INSTITUTION","ADMIN","ASSOCIATE_ADMIN"]))return error("Staff access required",403);
       return response(await certificates());
     }
     if(path==="/export" && req.method==="GET"){
@@ -910,7 +916,7 @@ async function handle(req:Request){
       if(!needAdmin(adminUser))return error("Administrator login required",401);
       return response(await memberAccounts(adminUser));
     }
-    if(path==="/insights" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await insights());}
+    if(path==="/insights" && req.method==="GET") {if(!need(user,["PIT_MANAGER","EXCHANGE","BANK","INSTITUTION","ADMIN","ASSOCIATE_ADMIN"]))return error("Staff access required",403);return response(await insights());}
     if(path==="/admin-action" && req.method==="POST") {
       const adminUser=await auth(req);
       if(!needAdmin(adminUser))return error("Administrator login required",401);
