@@ -122,7 +122,9 @@ function authHeaders(extra){
 }
 async function api(path,opt,retries){
  opt=opt||{};retries=retries==null?2:retries;var last;
- for(var i=0;i<=retries;i++){
+ var method=String(opt.method||"GET").toUpperCase();
+ var maxAttempts=(method==="GET"||method==="HEAD"||method==="OPTIONS")?retries+1:1;
+ for(var i=0;i<maxAttempts;i++){
   try{
    var h=authHeaders(opt.headers||{});
    if(opt.body&&!h.has("Content-Type"))h.set("Content-Type","application/json");
@@ -130,9 +132,9 @@ async function api(path,opt,retries){
    var tx=await r.text(),d={};try{d=tx?JSON.parse(tx):{}}catch(e){d={error:tx||"Invalid server response"}}
    if(r.ok)return d;
    last=new Error(String(d.error||d.message||("HTTP "+r.status)));
-   if(![429,502,503,504].includes(r.status)||i===retries)throw last;
-  }catch(e){last=e;if(i===retries)throw e}
-  await new Promise(function(res){setTimeout(res,[500,1200,2400][i]||2400)});
+   if(![429,502,503,504].includes(r.status)||i===maxAttempts-1)throw last;
+  }catch(e){last=e;if(i===maxAttempts-1)throw e}
+  if(maxAttempts>1)await new Promise(function(res){setTimeout(res,[500,1200,2400][i]||2400)});
  }
  throw last||new Error("Request failed");
 }
