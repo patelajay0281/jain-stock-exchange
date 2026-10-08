@@ -290,9 +290,17 @@ function applyState(d){
   const pause=document.querySelector("#pauseBtn");
   if(pause)pause.textContent=(currentStatus==="SETTLEMENT_ONLY"||currentStatus==="PAUSED")?"RESUME MARKET":"PAUSE MARKET";
   const final=currentStatus==="FINALIZED";
+  const start=document.querySelector("#startBtn"),pause=document.querySelector("#pauseBtn"),close=document.querySelector("#closeBtn"),finalize=document.querySelector("#finalizeBtn"),reset=document.querySelector("#resetBtn"),undo=document.querySelector("#undoBtn"),redo=document.querySelector("#redoBtn");
+  if(start)start.disabled=!!busy||currentStatus!=="NOT_STARTED";
+  if(pause)pause.disabled=!!busy||!["LIVE","PAUSED"].includes(currentStatus);
+  if(close)close.disabled=!!busy||!["LIVE","PAUSED"].includes(currentStatus);
+  if(finalize)finalize.disabled=!!busy||currentStatus!=="CLOSED";
+  if(reset)reset.disabled=!!busy||!["NOT_STARTED","FINALIZED"].includes(currentStatus);
+  if(undo)undo.disabled=!!busy;
+  if(redo)redo.disabled=!!busy;
   const excel=document.querySelector("#downloadArchive"),json=document.querySelector("#downloadJson");
-  if(excel){excel.disabled=!final&&!busy;excel.title=final?"Download final Excel report":"Available after FINALIZE EVENT"}
-  if(json){json.disabled=!final&&!busy;json.title=final?"Download raw JSON archive":"Available after FINALIZE EVENT"}
+  if(excel){excel.disabled=!!busy||!final;excel.title=final?"Download final Excel report":"Available after FINALIZE EVENT"}
+  if(json){json.disabled=!!busy||!final;json.title=final?"Download raw JSON archive":"Available after FINALIZE EVENT"}
   updateClock();
   setMsg("Event state loaded. Administrator controls are active.","success");
 }
