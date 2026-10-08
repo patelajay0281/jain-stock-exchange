@@ -101,13 +101,13 @@ async function load(){
   $('updated').textContent='Retrying live intelligence…';
  }
 }
-safeLoad();
 let loading=false,queued=false;
 async function safeLoad(){
   if(loading){queued=true;return;}
   loading=true;
   try{await load()}finally{loading=false;if(queued){queued=false;queueMicrotask(safeLoad)}}
 }
+safeLoad();
 let timer=setInterval(function(){if(document.visibilityState==='visible')safeLoad()},10000);
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')safeLoad()});
 try{hatchable.events.connect().channel('market').on('price_updated',load).on('order_approved',load)}catch(e){}
