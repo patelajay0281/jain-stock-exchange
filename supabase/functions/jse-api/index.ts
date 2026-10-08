@@ -10,6 +10,11 @@ let realtimeCache:any = null;
 let realtimeCacheAt = 0;
 const MARKET_CACHE_MS = 1500;
 const REALTIME_CACHE_MS = 900;
+const QUEUE_CACHE_MS = 750;
+const INSIGHTS_CACHE_MS = 3000;
+let insightsCache:any = null;
+let insightsCacheAt = 0;
+const queueCache = new Map<string,{at:number,data:any}>();
 
 const PROTECTED_ADMIN_ACTIONS = new Set(["PAUSE","RESUME","CLOSE","FINALIZE","RESET"]);
 
@@ -59,7 +64,7 @@ async function verifyToken(token: string): Promise<any|null> {
   } catch { return null; }
 }
 function response(body:any,status=200,headers:Record<string,string>={}) {
-  return new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer",...CORS,...headers}});
+  return new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer",...CORS,...headers}});
 }
 function error(message:string,status=400,extra:any={}) { return response({error:message,...extra},status); }
 function wholeRupeePrice(value:any): number {
@@ -72,7 +77,7 @@ function csvResponse(rows:any[],filename:string){
   const cols=[...new Set(data.flatMap(r=>Object.keys(r||{})))];
   const escCsv=(v:any)=>'"'+String(v??"").replaceAll('"','""')+'"';
   const text=[cols.map(escCsv).join(","),...data.map(r=>cols.map(c=>escCsv(r?.[c])).join(","))].join("\n");
-  return new Response(text,{status:200,headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":`attachment; filename="${filename}"`,...CORS}});
+  return new Response(text,{status:200,headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":`attachment; filename="${filename}"`,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer",...CORS}});
 }
 async function bodyJson(req:Request){ try{return await req.json();}catch{return {};}}
 async function auth(req:Request): Promise<any|null> {
@@ -200,6 +205,8 @@ async function orderList(user:any, page=1, limit=50, filters:any={}){
 }
 
 async function transactionQueue(kind:string) {
+  const cached=queueCache.get(kind);
+  if(cached && Date.now()-cached.at<QUEUE_CACHE_MS) return cached.data;
   const wanted=kind==="exchange"?"PENDING_EXCHANGE":"EXCHANGE_APPROVED";
   const {data:orders,error}=await db.from("orders").select("id,order_code,status,source,team_id,institution_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,amount_paise,is_short_sale,created_at").eq("status",wanted).order("created_at",{ascending:true}).order("id",{ascending:true}).limit(100);
   if(error)throw error;
@@ -217,7 +224,7 @@ async function transactionQueue(kind:string) {
     const {data:h}=await db.from("holdings").select("team_id,asset_id,quantity").in("team_id",teamIds).in("asset_id",assetIds);
     for(const x of h||[]) holdingQ.set(String(x.team_id)+":"+String(x.asset_id),Number(x.quantity));
   }
-  return rows.map((x:any)=>{
+  const result=rows.map((x:any)=>{
     const t=teams.get(String(x.team_id)); const a=assets.get(String(x.asset_id));
     const inst=institutions.get(String((x as any).institution_id));
     const payer=x.source==="INSTITUTION" ? (x.side==="BUY" ? inst : t) : t;
@@ -534,6 +541,7 @@ async function loanData(user:any,teamCode?:string){
     interest_rate:loan?Number(loan.interest_rate_bps)/10000:0,max_repayable:Math.max(0,cash-minCash)}};
 }
 async function insights(){
+  if(insightsCache && Date.now()-insightsCacheAt<INSIGHTS_CACHE_MS) return insightsCache;
   const [{data:assets},{data:orders},{data:teams},{data:loans},{data:state},{data:holdings}]=await Promise.all([
     db.from("assets").select("id,symbol,name,type,current_price_paise,previous_price_paise").eq("is_active",true),
     db.from("orders").select("id,team_id,asset_id,side,quantity,trade_value_paise,source,status").eq("status","SETTLED").limit(50000),
@@ -643,13 +651,16 @@ async function insights(){
     change_pct:x.previous_price_paise?((Number(x.current_price_paise)-Number(x.previous_price_paise))*100/Number(x.previous_price_paise)):0,
     available_quantity:0,remaining_quantity:0,status:"OPEN"}));
 
-  return {
+  const result={
     summary,alerts,topMovers:gainers,bottomMovers:losers,sectors,strongestBuy,strongestSell,
     topParticipants:participantRows.sort((a:any,b:any)=>b.realized_pl-a.realized_pl).slice(0,25),
     topper:top?{team:top.team,realized_pl:top.realized_pl,capital_utilization_pct:top.capital_utilization_pct,
       loan_repaid_rule:top.liability===0,minimum_cash_rule:top.cash>=20000?"YES":"NO"}:null,
     topperSelectionMode:state?.status==="FINALIZED"?"FINALIZED RESULT":"LIVE ELIGIBILITY PREVIEW",ipos
   };
+  insightsCache=result;
+  insightsCacheAt=Date.now();
+  return result;
 }
 async function handle(req:Request){
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
