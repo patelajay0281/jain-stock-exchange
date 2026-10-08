@@ -243,10 +243,11 @@ async function transactionQueue(kind:string) {
     const payer=x.source==="INSTITUTION" ? (x.side==="BUY" ? inst : t) : t;
     const payerCash=Number(payer?.cash_paise||0)/100;
     const required=Number(x.amount_paise||0)/100;
-    const minimumCash=(x.source==="INSTITUTION" && x.side==="BUY")?0:20000;
+    const unlimitedInstitutionBuy=x.source==="INSTITUTION" && x.side==="BUY";
+    const minimumCash=unlimitedInstitutionBuy?0:20000;
     const cashAfter=payerCash-required;
-    const absoluteInsufficient=payerCash<required;
-    const minimumWarning=!absoluteInsufficient && cashAfter<minimumCash;
+    const absoluteInsufficient=unlimitedInstitutionBuy?false:payerCash<required;
+    const minimumWarning=!unlimitedInstitutionBuy && !absoluteInsufficient && cashAfter<minimumCash;
     return {id:x.id,kind:x.source,order_code:x.order_code,team:t?.code||"",investor:inst?.code||"",broker:brokers.get(String(x.broker_id))?.code||"",
       stock:a?.name||"",symbol:a?.symbol||"",side:x.side,quantity:x.quantity,price:Number(x.price_paise)/100,
       trade_value:Number(x.trade_value_paise)/100,required_cash:required,available_cash:payerCash,cash_after:cashAfter,
