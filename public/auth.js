@@ -3,7 +3,7 @@
   window.__JSE_AUTH_BOOTED = true;
 
   // Temporary open-access event mode: no login screen or client-side role gate.
-  const guest = {
+  if (/^\/login(?:\.html)?\/?$/.test(location.pathname)) { location.replace("/"); return; }\n\n  const guest = {
     username: "OPEN_ACCESS",
     display_name: "JSE Open Access",
     role: "ADMIN",
