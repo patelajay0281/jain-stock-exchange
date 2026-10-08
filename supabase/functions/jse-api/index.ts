@@ -745,20 +745,21 @@ async function handle(req:Request){
       if(!needAdmin(adminUser)) return error("Administrator login required",401);
       const b=await bodyJson(req);
       if(!(await verifyAdminControlPassword(String(b.control_password||"")))) return error("Invalid administrator control password",403);
-      const {data:staff,error:se}=await db.from("users").select("id,username,display_name,role").eq("is_active",true).neq("role","ADMIN").eq("must_change_password",true).order("username");
+      const {data:staff,error:se}=await db.from("users").select("username,display_name,role").eq("is_active",true).neq("role","ADMIN").eq("must_change_password",true).order("username");
       if(se) return error(se.message||"Could not load unprovisioned staff",500);
-      const credentials=[];
-      for(const member of staff||[]){
-        const temporaryPassword=generateTemporaryPassword();
-        const {data:updated,rpcError}=await db.rpc("jse_set_temporary_password",{
-          p_admin_user_id:Number(adminUser.uid),
-          p_target_user_id:Number(member.id),
-          p_new_password:temporaryPassword
-        });
-        if(rpcError) return error(rpcError.message||("Could not reset "+member.username),400);
-        credentials.push({username:member.username,display_name:member.display_name||"",role:member.role,temporary_password:temporaryPassword,needs_password_change:true});
-      }
-      return response({ok:true,count:credentials.length,credentials,warning:"Temporary passwords are shown once. Each staff member must change their password after signing in."});
+      const credentials=(staff||[]).map((member:any)=>({
+        username:member.username,
+        display_name:member.display_name||"",
+        role:member.role,
+        temporary_password:generateTemporaryPassword(),
+        needs_password_change:true
+      }));
+      const {data:bulkResult,rpcError}=await db.rpc("jse_bulk_set_temporary_passwords",{
+        p_admin_user_id:Number(adminUser.uid),
+        p_credentials:credentials.map((x:any)=>({username:x.username,temporary_password:x.temporary_password}))
+      });
+      if(rpcError) return error(rpcError.message||"Bulk credential provisioning failed",400);
+      return response({...bulkResult,credentials,warning:"Temporary passwords are shown once. Each staff member must change the password after signing in."});
     }
     if(path==="/admin-reset-password" && req.method==="POST") {
       const adminUser=await auth(req);
