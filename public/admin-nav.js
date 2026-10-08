@@ -8,7 +8,7 @@
     "/bank": ["BANK","ADMIN"],
     "/institutional": ["INSTITUTION","ADMIN"],
     "/commissions": ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"],
-    "/portfolios": ["PIT_MANAGER","ADMIN"],
+    "/portfolios": ["PIT_MANAGER","EXCHANGE","BANK","ADMIN","ASSOCIATE_ADMIN"],
     "/admin": ["ADMIN","ASSOCIATE_ADMIN"],
     "/audit": ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"],
     "/cash": ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"],
