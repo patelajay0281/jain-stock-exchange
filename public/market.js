@@ -73,7 +73,7 @@ try{
  });
  hatchable.events.connect().channel('market').on('price_updated',ev=>{
   const p=ev?.payload||ev,type=p?.asset_type==='ipo'?'ipo':'stock',id=Number(p?.asset_id),price=Number(p?.price||0);
-  if(!id)return;
+  if(!id){load();return;}
   const list=type==='ipo'?ipos:state,x=list.find(i=>Number(i.id)===id);
   if(x){
    x.price=price;
