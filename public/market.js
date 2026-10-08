@@ -31,7 +31,7 @@ function renderMarketStatus(status){
  const el=$("#marketStatus");
  if(!el)return;
  el.textContent=label;
- el.className="market-status status-"+label.toLowerCase().replace(/s+/g,"-");
+ el.className="market-status status-"+label.toLowerCase().replace(/\s+/g,"-");
 }
 function renderIndex(d){
  const v=Number(d?.value||0),c=Number(d?.change_pct||0),up=c>=0;
@@ -74,7 +74,8 @@ try{
    x.change_pct=base?((price-base)*100/base):0;
   }
   render();
-  const total=[...state,...ipos].reduce((n,x)=>n+Number(x.price||0),0);
-  renderIndex({value:total,change_pct:indexBase?((total-indexBase)*100/indexBase):0});
+  // CMS INDEX is calculated from the permanent stock base basket on the API.
+  // Reload the authoritative index instead of using a raw sum of share prices.
+  load();
  });
 }catch(e){}
