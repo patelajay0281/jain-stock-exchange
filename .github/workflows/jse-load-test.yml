@@ -15,15 +15,15 @@ jobs:
       - name: Wait for production deployment
         run: sleep 60
 
-      - name: Verify production health
+      - name: Verify production realtime health
         env:
           BASE_URL: https://jain-stock-exchange.pages.dev
         run: |
           set -euo pipefail
-          curl -fsS --max-time 20 "$BASE_URL/api/health" | tee /tmp/health.json
-          node -e "const d=require('/tmp/health.json'); if(!d.ok||!d.db) process.exit(1)"
+          curl -fsS --max-time 20 "$BASE_URL/api/realtime?probe=ci" | tee /tmp/realtime.json
+          node -e "const d=require('/tmp/realtime.json'); if(!d || !d.event_status) process.exit(1)"
 
-      - name: Run 1,000 database-backed health requests
+      - name: Run 1,000 public DB-backed realtime requests
         env:
           BASE_URL: https://jain-stock-exchange.pages.dev
         run: |
@@ -40,7 +40,7 @@ jobs:
               if(i>=total)return;
               const started=performance.now();
               try{
-                const r=await fetch(base+'/api/health?probe='+i,{cache:'no-store'});
+                const r=await fetch(base+'/api/realtime?probe='+i,{cache:'no-store'});
                 const body=await r.text();
                 results[i]={status:r.status,ms:performance.now()-started,body};
               }catch(e){
@@ -73,7 +73,7 @@ jobs:
 
           console.log(JSON.stringify(out,null,2));
           if(failed>0 || elapsed>10000){
-            console.error('FAIL: 1,000 database-backed requests did not complete within 10 seconds with zero failures.');
+            console.error('FAIL: 1,000 realtime requests did not complete within 10 seconds with zero failures.');
             process.exit(1);
           }
           NODE
