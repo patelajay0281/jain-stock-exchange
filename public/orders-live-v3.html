@@ -59,7 +59,7 @@ tr:hover td{background:#f8fafc!important;color:#000!important}
 <script>
 (function(){
 "use strict";
-var API="/api",page=1,loading=false,timer=null,focusTeam=new URLSearchParams(location.search).get("team")||"";
+var API="/api",page=1,loading=false,timer=null,focusTeam=new URLSearchParams(location.search).get("team")||"",focusOrder=new URLSearchParams(location.search).get("q")||"";
 var $=function(id){return document.getElementById(id)};
 var money=function(n){return "₹"+Math.round(Number(n||0)).toLocaleString("en-IN")};
 var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})};
@@ -70,7 +70,7 @@ function statusLabel(s){return String(s||"").replaceAll("_"," ")}
 async function load(){
  if(loading)return;loading=true;
  try{
-  var p=new URLSearchParams({page:String(page),limit:String($("limit").value),q:$("search").value.trim()});
+  var p=new URLSearchParams({page:String(page),limit:String($("limit").value),q:$("search").value.trim()||focusOrder});
   var st=$("status").value,tm=$("team").value;if(st)p.set("status",st);if(tm)p.set("team",tm);
   var r=await fetch(API+"/tracking?"+p.toString(),{headers:headers(),cache:"no-store"});
   var d=await r.json().catch(function(){return{}});
@@ -88,7 +88,7 @@ async function load(){
    '</tbody></table></div>';
   $("pager").innerHTML='<button id="prev" '+(pg.page<=1?"disabled":"")+'>← PREVIOUS</button><span>Page '+pg.page+' of '+pg.pages+' · '+Number(pg.total||0).toLocaleString("en-IN")+' orders</span><button id="next" '+(pg.page>=pg.pages?"disabled":"")+'>NEXT →</button>';
   $("prev").onclick=function(){if(page>1){page--;load()}};$("next").onclick=function(){if(page<pg.pages){page++;load()}};
-  if($("team").options.length===1)$("team").innerHTML='<option value="">All Teams</option>'+(d.filters&&d.filters.teams||[]).map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join("");if(focusTeam&&$("team").querySelector('option[value="'+focusTeam+'"]'))$("team").value=focusTeam;
+  if($("team").options.length===1)$("team").innerHTML='<option value="">All Teams</option>'+(d.filters&&d.filters.teams||[]).map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join("");if(focusTeam&&$("team").querySelector('option[value="'+focusTeam+'"]'))$("team").value=focusTeam;if(focusOrder&&$("search").value!==focusOrder){$("search").value=focusOrder;focusOrder="";}
   notice("","");$("note").textContent="Auto-refreshes every 5 seconds · "+Number(pg.total||0).toLocaleString("en-IN")+" matching order"+(Number(pg.total||0)===1?"":"s")+" · Total value "+money(s.trade_value)+" · Brokerage "+money(s.brokerage);
  }catch(e){$("app").innerHTML='<div class="empty">'+esc(e.message||"Order tracking unavailable")+'</div>';notice(e.message||"Order tracking unavailable","error")}
  finally{loading=false}
