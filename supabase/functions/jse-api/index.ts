@@ -253,7 +253,7 @@ async function teamPortfolio(user:any) {
     db.from("brokers").select("id,code").order("code"),
     db.from("holdings").select("team_id,asset_id,quantity,average_price_paise,cost_basis_paise").in("team_id",teamIds),
     db.from("assets").select("id,name,symbol,type,current_price_paise").eq("is_active",true),
-    db.from("loans").select("team_id,principal_paise,principal_outstanding_paise,interest_rate_bps,interest_due_paise,interest_paid_paise,status").in("team_id",teamIds),
+    db.from("loans").select("team_id,principal_paise,principal_outstanding_paise,interest_rate_bps,interest_due_paise,interest_paid_paise,status").in("team_id",teamIds).order("id",{ascending:false}),
     db.from("orders").select("id,order_code,team_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,status,is_short_sale,source,created_at").in("team_id",teamIds).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(15000),
     db.from("broker_commissions").select("team_id,commission_paise,status").in("team_id",teamIds)
   ]);
@@ -545,7 +545,7 @@ async function insights(){
     db.from("assets").select("id,symbol,name,type,current_price_paise,previous_price_paise").eq("is_active",true),
     db.from("orders").select("id,team_id,asset_id,side,quantity,trade_value_paise,source,status").eq("status","SETTLED").limit(50000),
     db.from("teams").select("id,code,cash_paise,base_capital_paise,realized_profit_paise,peak_own_capital_used_paise,minimum_cash_paise,short_sale_count,broker_id"),
-    db.from("loans").select("team_id,principal_outstanding_paise,interest_due_paise,status"),
+    db.from("loans").select("team_id,principal_outstanding_paise,interest_due_paise,status").order("id",{ascending:false}),
     db.from("event_state").select("status,topper_team_id,topper_realized_profit_paise,finalization_note").eq("id",1).single(),
     db.from("holdings").select("team_id,asset_id,quantity")
   ]);
