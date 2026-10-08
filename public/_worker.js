@@ -51,7 +51,7 @@ async function page(req,env,path){
  const h=cloneHeaders(r,NC);h.set("content-type","text/html; charset=utf-8");
  const isAdmin=path==="/admin-live-v14.html";
  const rw=new HTMLRewriter().on("head",{element(e){
-   e.append('<link rel="stylesheet" href="/readability.css?v=20261008-4">'+(isAdmin?'':'<script src="/auth.js"></script><script src="/admin-nav.js"></script>'),{html:true});
+   e.append('<link rel="stylesheet" href="/readability.css?v=20261008-5">'+(isAdmin?'':'<script src="/jse-api.js?v=20261008-open"></script><script src="/auth.js?v=20261008-open"></script><script src="/admin-nav.js?v=20261008-open"></script>'),{html:true});
    if(path==="/order-live-v8.html")e.append('<script src="/order-hatchable.js"></script>',{html:true});
  }});
  return rw.transform(new Response(r.body,{status:r.status,statusText:r.statusText,headers:h}));
