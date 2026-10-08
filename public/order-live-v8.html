@@ -209,7 +209,13 @@ function populateAssets(){
  if(list.some(function(x){return String(x.id)===String(keep)}))$("stock").value=keep;
  else if(list[0])$("stock").value=list[0].id;
  var a=currentAsset();
- $("qty").value=(Number($("qty").value)%50===0&&Number($("qty").value)>=50)?$("qty").value:"50";
+ var lot=a?Number(a.lot_size||1):50;
+ if(!Number.isFinite(lot)||lot<=0)lot=50;
+ var oldQty=Number($("qty").value||0),safeQty=(oldQty>=lot&&oldQty%lot===0)?oldQty:lot;
+ var options=[];
+ for(var n=lot;n<=10000;n+=lot){var qo=document.createElement("option");qo.value=String(n);qo.textContent=String(n);options.push(qo)}
+ $("qty").replaceChildren.apply($("qty"),options);
+ $("qty").value=String(Math.min(10000,safeQty>=lot&&safeQty%lot===0?safeQty:lot));
  if(a&&!manualPrice)$("price").value=Math.round(Number(a.price||0));
  drawAsset();calculate();
 }
@@ -232,8 +238,9 @@ function calculate(){
  $("bc").textContent=money(b);
  $("finalLabel").textContent=sell?"Net Proceeds":"Total Required";
  $("tr").textContent=money(sell?v-b:v+b);
- if(a && q && (q<50 || q%50!==0) && !busy){
-   showMessage("Quantity must be in multiples of 50 shares: 50, 100, 150…","warn");
+ var lot=a?Number(a.lot_size||1):50;
+ if(a && q && (q<lot || q%lot!==0) && !busy){
+   showMessage("Quantity must be in lots of "+lot+" shares.","warn");
  }
 }
 async function api(path,options,tries){
@@ -311,7 +318,9 @@ async function submitTrade(){
  var a=currentAsset(),q=Math.floor(Number($("qty").value||0)),rawPrice=Number($("price").value||0);
  var p=rawPrice;
  if(!a)return showMessage("Select a security.","error");
- if(!Number.isInteger(q)||q<=0||q<50||q%50!==0)return showMessage("Quantity must be in multiples of 50 shares: 50, 100, 150…","error");
+ var lot=Number(a.lot_size||1);
+ if(!Number.isFinite(lot)||lot<=0)lot=50;
+ if(!Number.isInteger(q)||q<=0||q<lot||q%lot!==0)return showMessage("Quantity must be in lots of "+lot+" shares.","error");
  if(!Number.isFinite(rawPrice)||!Number.isInteger(rawPrice)||rawPrice<=0)return showMessage("Share price must be a whole number greater than ₹0.","error");
  var key=makeKey();
  busy=true;$("submitBtn").disabled=true;$("refreshBtn").disabled=true;
@@ -335,6 +344,19 @@ async function submitTrade(){
   $("submitBtn").disabled=true;
   $("handoff").style.display="block";
   $("handoffText").textContent=code+" is now PENDING EXCHANGE.";
+  try{
+    var verified=false;
+    for(var vr=0;vr<3;vr++){
+      var td=await api("/tracking?q="+encodeURIComponent(code)+"&limit=5",{},1);
+      var found=(td.rows||[]).some(function(x){return String(x.order_code)===String(code)});
+      if(found){verified=true;break}
+      await wait(300);
+    }
+    if(verified) showMessage("Order "+code+" created and verified in Order Tracking. Exchange and Audit are linked to this transaction.","success");
+    else showMessage("Order "+code+" was created, but the tracking view has not refreshed yet. Use the handoff links below.","warn");
+  }catch(_verifyErr){
+    showMessage("Order "+code+" was created. Tracking verification is temporarily unavailable; the transaction remains queued for Exchange.","warn");
+  }
   $("handoffExchange").href="/exchange?order="+encodeURIComponent(code);
   $("handoffBank").href="/bank?order="+encodeURIComponent(code);
   $("handoffTracking").href="/orders?team="+encodeURIComponent($("team").value);
