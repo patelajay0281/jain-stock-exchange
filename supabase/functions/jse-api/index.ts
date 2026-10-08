@@ -14,6 +14,8 @@ const REALTIME_CACHE_MS = 900;
 // Temporary event mode: no login is required.
 // Set this to false later to restore normal role-based authentication.
 const OPEN_MODE = true;
+const CONTROL_PASSWORD = "ZEROGROWW";
+const PROTECTED_ADMIN_ACTIONS = new Set(["PAUSE","RESUME","CLOSE","FINALIZE","RESET"]);
 const openActorCache = new Map<string, any>();
 
 const CORS = {
@@ -137,7 +139,35 @@ async function realtimeSnapshot(){
   return realtimeCache;
 }
 
-async function orderList(user:any, page=1, limit=50, filters:any={}) {
+async function summarizeOrders(user:any, filters:any={}) {
+  const BATCH=5000, MAX_ROWS=50000;
+  const summary={total:0,pending:0,exchange_approved:0,settled:0,exchange_rejected:0,bank_rejected:0,trade_value:0,brokerage:0};
+  for(let offset=0;offset<MAX_ROWS;offset+=BATCH){
+    let q:any=db.from("orders").select("status,trade_value_paise,brokerage_paise").order("id",{ascending:true}).range(offset,offset+BATCH-1);
+    if(user.role==="PARTICIPANT" && !OPEN_MODE) q=q.eq("team_id",user.team_id);
+    if(filters.status) q=q.eq("status",filters.status);
+    if(filters.team_id) q=q.eq("team_id",filters.team_id);
+    if(filters.asset_id) q=q.eq("asset_id",filters.asset_id);
+    const {data,error}=await q;
+    if(error) throw error;
+    const batch=data||[];
+    for(const x of batch){
+      summary.total++;
+      const s=String(x.status||"");
+      if(s==="PENDING_EXCHANGE")summary.pending++;
+      else if(s==="EXCHANGE_APPROVED")summary.exchange_approved++;
+      else if(s==="SETTLED")summary.settled++;
+      else if(s==="EXCHANGE_REJECTED")summary.exchange_rejected++;
+      else if(s==="BANK_REJECTED")summary.bank_rejected++;
+      summary.trade_value+=Number(x.trade_value_paise||0)/100;
+      summary.brokerage+=Number(x.brokerage_paise||0)/100;
+    }
+    if(batch.length<BATCH)break;
+  }
+  return summary;
+}
+
+async function orderList(user:any, page=1, limit=50, filters:any={}){
   const safeLimit=Math.max(1,Math.min(100,Number(limit)||50)); const from=(Math.max(1,Number(page)||1)-1)*safeLimit;
   let q=db.from("orders").select("id,order_code,status,source,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,amount_paise,is_short_sale,created_at", {count:"exact"}).order("created_at",{ascending:false}).range(from,from+safeLimit-1);
   if(user.role==="PARTICIPANT" && !OPEN_MODE) q=q.eq("team_id",user.team_id);
@@ -155,13 +185,9 @@ async function orderList(user:any, page=1, limit=50, filters:any={}) {
     broker:brokers.get(String(x.broker_id))?.code||"",stock:assets.get(String(x.asset_id))?.name||"",symbol:assets.get(String(x.asset_id))?.symbol||"",
     side:x.side,quantity:x.quantity,price:Number(x.price_paise)/100,trade_value:Number(x.trade_value_paise)/100,
     brokerage:Number(x.brokerage_paise)/100,amount:Number(x.amount_paise)/100,short_selling:x.is_short_sale,created_at:x.created_at}));
-  const summaryRows = rows.length ? rows : [];
+  const summary=await summarizeOrders(user,filters);
   return {rows:out,pagination:{page:Math.max(1,Number(page)||1),limit:safeLimit,total:count||0,pages:Math.max(1,Math.ceil((count||0)/safeLimit))},
-    summary:{total:count||0,pending:summaryRows.filter((x:any)=>x.status==="PENDING_EXCHANGE").length,exchange_approved:summaryRows.filter((x:any)=>x.status==="EXCHANGE_APPROVED").length,
-      settled:summaryRows.filter((x:any)=>x.status==="SETTLED").length,exchange_rejected:summaryRows.filter((x:any)=>x.status==="EXCHANGE_REJECTED").length,
-      bank_rejected:summaryRows.filter((x:any)=>x.status==="BANK_REJECTED").length,
-      trade_value:summaryRows.reduce((s:any,x:any)=>s+Number(x.trade_value_paise||0)/100,0),
-      brokerage:summaryRows.reduce((s:any,x:any)=>s+Number(x.brokerage_paise||0)/100,0)},
+    summary,
     filters:{teams:(await db.from("teams").select("code").order("code").then(r=>(r.data||[]).map((x:any)=>x.code))),}};
 }
 
@@ -288,7 +314,7 @@ async function cashLedger(user:any,url:URL) {
   if(user.role==="PARTICIPANT")q=q.eq("team_id",user.team_id);
   if(url.searchParams.get("team")){const {data:t}=await db.from("teams").select("id").eq("code",url.searchParams.get("team")).single();if(t)q=q.eq("team_id",t.id);}
   if(url.searchParams.get("entry_type"))q=q.eq("entry_type",url.searchParams.get("entry_type"));
-  const {data:rows0,error}=await q.limit(10000);if(error)throw error;let rows=rows0||[];
+  const {data:rows0,error}=await q.limit(50000);if(error)throw error;let rows=rows0||[];
   const orderMap=await maps([...new Set(rows.map((x:any)=>x.order_id).filter(Boolean))],"orders","id","id,order_code");
   const search=(url.searchParams.get("q")||"").trim().toLowerCase();
   if(search)rows=rows.filter((x:any)=>String(x.note||"").toLowerCase().includes(search)||String(x.entry_type||"").toLowerCase().includes(search)||String(orderMap.get(String(x.order_id))||"").toLowerCase().includes(search));
@@ -336,7 +362,10 @@ async function adminState(){
       peak_own_capital_used:Number(t.peak_own_capital_used_paise)/100}))};
 }
 
-async function adminAction(user:any,action:string){
+async function adminAction(user:any,action:string,controlPassword=""){
+  if(PROTECTED_ADMIN_ACTIONS.has(action) && controlPassword!==CONTROL_PASSWORD){
+    return {error:"Invalid administrator control password",status:403};
+  }
   const actor=OPEN_MODE?await openActor("ADMIN"):user;
   if(action==="RESET"){const {data,rpcError}=await db.rpc("jse_reset_event",{p_user_id:actor.uid});if(rpcError)return {error:rpcError.message,status:400};return data;}
   if(action==="FINALIZE"){const {data,rpcError}=await db.rpc("jse_finalize_event",{p_user_id:actor.uid});if(rpcError)return {error:rpcError.message,status:400};return data;}
@@ -367,22 +396,23 @@ async function institutionalPortfolio(user:any,url:URL){
     if(ie)throw ie;
     institutionId=i.id;
   }
-  const [{data:inst,error:ie},{data:assets,error:ae},{data:holdings,error:he},{data:orders,error:oe},{data:teams,error:te}]=await Promise.all([
+  const [{data:inst,error:ie},{data:assets,error:ae},{data:holdings,error:he},{data:orders,error:oe},{data:orderStats,error:ose},{data:teams,error:te}]=await Promise.all([
     db.from("institutions").select("id,code,name,cash_paise,initial_cash_paise").eq("id",institutionId).single(),
     db.from("assets").select("id,name,symbol,type,current_price_paise").eq("is_active",true).order("display_order"),
     db.from("institutional_holdings").select("asset_id,quantity,average_price_paise,cost_basis_paise").eq("institution_id",institutionId),
     db.from("orders").select("id,order_code,team_id,asset_id,side,quantity,price_paise,trade_value_paise,status,created_at").eq("institution_id",institutionId).order("created_at",{ascending:false}).limit(100),
+    db.from("orders").select("side,trade_value_paise,status").eq("institution_id",institutionId).limit(50000),
     db.from("teams").select("code").order("code")
   ]);
-  if(ie||ae||he||oe||te)throw ie||ae||he||oe||te;
+  if(ie||ae||he||oe||ose||te)throw ie||ae||he||oe||ose||te;
   const amap=new Map((assets||[]).map((x:any)=>[String(x.id),x]));
   const tmap=new Map((teams||[]).map((x:any)=>[String((x as any).id),(x as any).code]));
   const h=(holdings||[]).map((x:any)=>{const a=amap.get(String(x.asset_id));const current=Number(x.quantity)*Number(a?.current_price_paise||0)/100;const invested=Number(x.cost_basis_paise||0)/100;return {stock:a?.name||"",symbol:a?.symbol||"",type:a?.type||"",quantity:Number(x.quantity),average_price:Number(x.average_price_paise||0)/100,current_price:Number(a?.current_price_paise||0)/100,market_value:current,pnl:current-invested};});
-  const ord=orders||[];
-  const stats={pending:ord.filter((x:any)=>["PENDING_EXCHANGE","EXCHANGE_APPROVED"].includes(x.status)).length,settled:ord.filter((x:any)=>x.status==="SETTLED").length,
-    buy_value:ord.filter((x:any)=>x.side==="BUY").reduce((n:number,x:any)=>n+Number(x.trade_value_paise)/100,0),
-    sell_value:ord.filter((x:any)=>x.side==="SELL").reduce((n:number,x:any)=>n+Number(x.trade_value_paise)/100,0),
-    total:ord.length,market_value:h.reduce((n:number,x:any)=>n+x.market_value,0),pnl:h.reduce((n:number,x:any)=>n+x.pnl,0)};
+  const ord=orders||[], allOrd=orderStats||[];
+  const stats={pending:allOrd.filter((x:any)=>["PENDING_EXCHANGE","EXCHANGE_APPROVED"].includes(x.status)).length,settled:allOrd.filter((x:any)=>x.status==="SETTLED").length,
+    buy_value:allOrd.filter((x:any)=>x.side==="BUY").reduce((n:number,x:any)=>n+Number(x.trade_value_paise||0)/100,0),
+    sell_value:allOrd.filter((x:any)=>x.side==="SELL").reduce((n:number,x:any)=>n+Number(x.trade_value_paise||0)/100,0),
+    total:allOrd.length,market_value:h.reduce((n:number,x:any)=>n+x.market_value,0),pnl:h.reduce((n:number,x:any)=>n+x.pnl,0)};
   return {investor:{id:inst.id,code:inst.code,name:inst.name,available_cash:Number(inst.cash_paise)/100},
     teams:(teams||[]).map((x:any)=>x.code),holdings:h,orders:ord.map((x:any)=>({order_code:x.order_code,team:tmap.get(String(x.team_id))||"",asset:amap.get(String(x.asset_id))?.name||"",side:x.side,quantity:x.quantity,price:Number(x.price_paise)/100,trade_value:Number(x.trade_value_paise)/100,status:x.status,created_at:x.created_at})),stats};
 }
@@ -403,16 +433,16 @@ async function exportEvent(){
     db.from("teams").select("id,code,broker_id,base_capital_paise,cash_paise,peak_own_capital_used_paise,minimum_cash_paise,realized_profit_paise,short_sale_count"),
     db.from("brokers").select("*"),
     db.from("assets").select("id,symbol,name,type,base_price_paise,current_price_paise,previous_price_paise,lot_size,display_order,is_active"),
-    db.from("orders").select("*").limit(10000),
-    db.from("settlements").select("*").limit(10000),
-    db.from("holdings").select("*").limit(10000),
-    db.from("institutional_holdings").select("*").limit(10000),
-    db.from("loans").select("*").limit(10000),
-    db.from("broker_commissions").select("*").limit(10000),
-    db.from("cash_ledger").select("*").limit(10000),
-    db.from("institution_cash_ledger").select("*").limit(10000),
-    db.from("audit_log").select("*").limit(20000),
-    db.from("settlement_rejections").select("*").limit(10000)
+    db.from("orders").select("*").limit(50000),
+    db.from("settlements").select("*").limit(50000),
+    db.from("holdings").select("*").limit(50000),
+    db.from("institutional_holdings").select("*").limit(50000),
+    db.from("loans").select("*").limit(50000),
+    db.from("broker_commissions").select("*").limit(50000),
+    db.from("cash_ledger").select("*").limit(50000),
+    db.from("institution_cash_ledger").select("*").limit(50000),
+    db.from("audit_log").select("*").limit(100000),
+    db.from("settlement_rejections").select("*").limit(50000)
   ]);
   return {
     event:{...event,name:"JAIN STOCK EXCHANGE"},
@@ -494,11 +524,11 @@ async function loanData(user:any,teamCode?:string){
 async function insights(){
   const [{data:assets},{data:orders},{data:teams},{data:loans},{data:state},{data:instOrders},{data:holdings}]=await Promise.all([
     db.from("assets").select("id,symbol,name,type,current_price_paise,previous_price_paise").eq("is_active",true),
-    db.from("orders").select("id,team_id,asset_id,side,quantity,trade_value_paise,source,status").eq("status","SETTLED").limit(10000),
+    db.from("orders").select("id,team_id,asset_id,side,quantity,trade_value_paise,source,status").eq("status","SETTLED").limit(50000),
     db.from("teams").select("id,code,cash_paise,base_capital_paise,realized_profit_paise,peak_own_capital_used_paise,minimum_cash_paise,short_sale_count,broker_id"),
     db.from("loans").select("team_id,principal_outstanding_paise,interest_due_paise,status"),
     db.from("event_state").select("status,topper_team_id,topper_realized_profit_paise,finalization_note").eq("id",1).single(),
-    db.from("orders").select("side,trade_value_paise,source").eq("status","SETTLED").eq("source","INSTITUTION").limit(10000),
+    db.from("orders").select("side,trade_value_paise,source").eq("status","SETTLED").eq("source","INSTITUTION").limit(50000),
     db.from("holdings").select("team_id,asset_id,quantity")
   ]);
   const aset=assets||[], ord=orders||[], tm=teams||[];
@@ -554,15 +584,17 @@ async function insights(){
 
   const flowMap=new Map<number,any>();
   for(const o of ord){
-    const row=flowMap.get(o.asset_id)||{asset_id:o.asset_id,net_qty:0,net_value:0};
-    const sign=o.side==="BUY"?1:-1;
-    row.net_qty+=sign*Number(o.quantity); row.net_value+=sign*Number(o.trade_value_paise)/100;
+    const row=flowMap.get(o.asset_id)||{asset_id:o.asset_id,net_qty:0,net_value:0,gross_value:0,buy_value:0,sell_value:0};
+    const tradeValue=Number(o.trade_value_paise||0)/100;
+    if(o.side==="BUY"){row.net_qty+=Number(o.quantity);row.net_value+=tradeValue;row.buy_value+=tradeValue;}
+    else {row.net_qty-=Number(o.quantity);row.net_value-=tradeValue;row.sell_value+=tradeValue;}
+    row.gross_value+=tradeValue;
     flowMap.set(o.asset_id,row);
   }
   const flows=[...flowMap.values()].map((x:any)=>{
     const a=aset.find((y:any)=>y.id===x.asset_id);
-    const gross=Math.max(1,Math.abs(x.net_value));
-    return {...x,asset:a?.name||"",pressure:Math.min(100,Math.abs(x.net_value)/gross*100)};
+    const pressure=x.gross_value?Math.min(100,Math.abs(x.net_value)/x.gross_value*100):0;
+    return {...x,asset:a?.name||"",pressure};
   });
   const strongestBuy=flows.filter((x:any)=>x.net_value>0).sort((a:any,b:any)=>b.net_value-a.net_value).slice(0,10);
   const strongestSell=flows.filter((x:any)=>x.net_value<0).sort((a:any,b:any)=>a.net_value-b.net_value).slice(0,10);
@@ -637,13 +669,14 @@ async function handle(req:Request){
       const b=await bodyJson(req);
       let action=String(b.action||"").toUpperCase();
       if(action==="SETTLEMENT_ONLY") action="PAUSE";
-      const result=await adminAction(user,action);
+      const result=await adminAction(user,action,String(b.control_password||""));
       if(result?.error) return error(result.error,Number(result.status||400));
       return response(result);
     }
     if(path==="/reset-event" && req.method==="POST") {
       if(!need(user,["ADMIN"])) return error("Administrator access required",403);
-      const result=await adminAction(user,"RESET");
+      const b=await bodyJson(req);
+      const result=await adminAction(user,"RESET",String(b.control_password||""));
       if(result?.error) return error(result.error,Number(result.status||400));
       return response(result);
     }
@@ -783,7 +816,7 @@ async function handle(req:Request){
     if(path==="/admin-action" && req.method==="POST") {
       if(!need(user,["ADMIN"]))return error("Administrator access required",403);
       const b=await bodyJson(req);
-      const result=await adminAction(user,String(b.action||""));
+      const result=await adminAction(user,String(b.action||"").toUpperCase(),String(b.control_password||""));
       if(result?.error) return error(result.error,Number(result.status||400));
       return response(result);
     }
