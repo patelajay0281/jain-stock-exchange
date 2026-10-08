@@ -39,33 +39,7 @@
       a.hidden = !loggedIn || !allowed.includes(role);
     });
 
-    let access = document.getElementById("jse-access-link");
-    if (!access) {
-      const nav = document.querySelector("nav");
-      if (!nav) return;
-      access = document.createElement("a");
-      access.id = "jse-access-link";
-      access.style.cssText = "font-weight:850";
-      nav.appendChild(access);
-    }
 
-    if (member) {
-      access.textContent = "LOG OUT";
-      access.href = "#";
-      access.onclick = e => {
-        e.preventDefault();
-        localStorage.removeItem("jse_token");
-        localStorage.removeItem("jse_member");
-        location.replace("/login");
-      };
-      access.title = "Sign out of JSE";
-    } else {
-      access.textContent = "STAFF LOGIN";
-      access.href = "/login?next=" + encodeURIComponent(location.pathname + location.search + location.hash);
-      access.onclick = null;
-      access.title = "Sign in to your JSE operating desk";
-    }
-  }
 
   window.addEventListener("jse-auth-ready", e => apply(e.detail || window.JSE_MEMBER));
   apply(window.JSE_MEMBER || null);
