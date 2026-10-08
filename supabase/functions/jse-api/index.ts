@@ -11,8 +11,6 @@ let realtimeCacheAt = 0;
 const MARKET_CACHE_MS = 1500;
 const REALTIME_CACHE_MS = 900;
 
-// Temporary event mode: no login is required.
-// Set this to false later to restore normal role-based authentication.
 const PROTECTED_ADMIN_ACTIONS = new Set(["PAUSE","RESUME","CLOSE","FINALIZE","RESET"]);
 
 const CORS = {
@@ -137,7 +135,7 @@ async function summarizeOrders(user:any, filters:any={}) {
   const status=String(filters.status||"");
   const query=String(filters.q||"");
   const assetId=filters.asset_id?Number(filters.asset_id):null;
-  if(user.role==="PARTICIPANT" && !OPEN_MODE) teamId=Number(user.team_id||0)||null;
+  if(user.role==="PARTICIPANT") teamId=Number(user.team_id||0)||null;
   const {data,error}=await db.rpc("jse_order_summary_v2",{
     p_team_id:teamId,
     p_status:status||null,
@@ -160,7 +158,7 @@ async function summarizeOrders(user:any, filters:any={}) {
 async function orderList(user:any, page=1, limit=50, filters:any={}){
   const safeLimit=Math.max(1,Math.min(100,Number(limit)||50)); const from=(Math.max(1,Number(page)||1)-1)*safeLimit;
   let q=db.from("orders").select("id,order_code,status,source,team_id,broker_id,asset_id,side,quantity,price_paise,trade_value_paise,brokerage_paise,amount_paise,is_short_sale,created_at", {count:"exact"}).order("created_at",{ascending:false}).order("id",{ascending:false}).range(from,from+safeLimit-1);
-  if(user.role==="PARTICIPANT" && !OPEN_MODE) q=q.eq("team_id",user.team_id);
+  if(user.role==="PARTICIPANT") q=q.eq("team_id",user.team_id);
   if(filters.status) q=q.eq("status",filters.status);
   if(filters.team_id) q=q.eq("team_id",filters.team_id);
   if(filters.asset_id) q=q.eq("asset_id",filters.asset_id);
@@ -667,7 +665,15 @@ async function handle(req:Request){
     }
 
     const user=await auth(req);
-    if(path==="/member-me") return user?response({member:{username:user.username,role:user.role,team_id:user.team_id,institution_id:user.institution_id}}):error("Authentication required",401);
+    if(path==="/member-me") return user?response({member:{username:user.username,role:user.role,team_id:user.team_id,institution_id:user.institution_id,needs_password_change:Boolean(user.needs_password_change)}}):error("Authentication required",401);
+    if(path==="/change-password" && req.method==="POST") {
+      if(!user) return error("Authentication required",401);
+      const b=await bodyJson(req);
+      const newPassword=String(b.new_password||"");
+      const {data,rpcError}=await db.rpc("jse_set_password",{p_user_id:Number(user.uid),p_new_password:newPassword});
+      if(rpcError) return error(rpcError.message||"Password update failed",400);
+      return response(data);
+    }
     if(path==="/member-logout") return response({ok:true});
     if(path==="/event" && req.method==="GET") {
       const adminUser=await auth(req);
@@ -713,6 +719,8 @@ async function handle(req:Request){
       return response(await adminState());
     }
     if(path==="/health" && req.method==="GET"){
+      const adminUser=await auth(req);
+      if(!needAdmin(adminUser)) return error("Administrator login required",401);
       const started=performance.now();
       const {data,rpcError}=await db.rpc("jse_health_probe");
       if(rpcError) return error("Database unavailable",503);
@@ -728,7 +736,7 @@ async function handle(req:Request){
     }
 
     if(path==="/orders" && req.method==="POST") {
-      if(!need(user,["PARTICIPANT"]))return error("Participant access required",403);
+      if(!need(user,["PIT_MANAGER","ADMIN"]))return error("Pit Manager access required",403);
       const b=await bodyJson(req); const idem=req.headers.get("idempotency-key")||crypto.randomUUID();
       const actor=user;
       let teamId=Number(b.team_id||0);
@@ -761,11 +769,11 @@ async function handle(req:Request){
       if(rpcError)return error(rpcError.message||"Bank action failed",400); if(data?.code==="NO_BALANCE")return response(data,200); return response(data);
     }
     if(path==="/loan" && req.method==="GET"){
-      if(!need(user,["PARTICIPANT","ADMIN","EXCHANGE","BANK"])) return error("Access required",403);
+      if(!need(user,["PIT_MANAGER","ADMIN","EXCHANGE","BANK"])) return error("Access required",403);
       return response(await loanData(user,url.searchParams.get("team")||undefined));
     }
     if(path==="/loan" && req.method==="POST"){
-      if(!need(user,["PARTICIPANT"])) return error("Participant access required",403);
+      if(!need(user,["PIT_MANAGER","ADMIN"])) return error("Pit Manager access required",403);
       const b=await bodyJson(req);
       const actor=user;
       let teamId=Number(b.team_id||0);
@@ -796,6 +804,7 @@ async function handle(req:Request){
       return response({ok:true,...data});
     }
     if(path==="/reports" && req.method==="GET"){
+      if(!need(user,["ADMIN","PIT_MANAGER","BANK","EXCHANGE"]))return error("Access required",403);
       return response(await brokerReports(String(url.searchParams.get("type")||"commission_summary")));
     }
     if(path==="/certificates" && req.method==="GET"){
@@ -804,13 +813,14 @@ async function handle(req:Request){
     if(path==="/export" && req.method==="GET"){
       const type=String(url.searchParams.get("type")||"");
       if(type==="commissions"){
+        if(!need(user,["ADMIN","PIT_MANAGER","BANK","EXCHANGE"]))return error("Access required",403);
         const d=await brokerReports("commissions");
         return csvResponse(d.rows||[],"JSE-broker-commissions.csv");
       }
       return error("Unknown export type",400);
     }
     if(path==="/tracking" && req.method==="GET") {
-      if(!need(user,["PARTICIPANT","EXCHANGE","BANK","ADMIN"])) return error("Access required",403);
+      if(!need(user,["PIT_MANAGER","EXCHANGE","BANK","ADMIN"])) return error("Access required",403);
       let trackingTeamId:any=undefined;
       const teamCode=String(url.searchParams.get("team")||"").trim();
       if(teamCode){
@@ -825,10 +835,10 @@ async function handle(req:Request){
         {status:url.searchParams.get("status")||"",team_id:trackingTeamId,q:url.searchParams.get("q")||""}
       ));
     }
-    if(path==="/portfolios" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await teamPortfolio(user));}
-    if(path==="/portfolio-details" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await teamPortfolio(user));}
-    if(path==="/cash" && req.method==="GET") {if(!user)return error("Authentication required",401);return response(await cashLedger(user,url));}
-    if(path==="/audit" && req.method==="GET") {if(!need(user,["ADMIN","EXCHANGE","BANK","PARTICIPANT"]))return error("Access required",403);return response(await audit(user,url));}
+    if(path==="/portfolios" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN"]))return error("Pit Manager access required",403);return response(await teamPortfolio(user));}
+    if(path==="/portfolio-details" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN"]))return error("Pit Manager access required",403);return response(await teamPortfolio(user));}
+    if(path==="/cash" && req.method==="GET") {if(!need(user,["PIT_MANAGER","ADMIN","BANK","EXCHANGE"]))return error("Access required",403);return response(await cashLedger(user,url));}
+    if(path==="/audit" && req.method==="GET") {if(!need(user,["ADMIN","EXCHANGE","BANK","PIT_MANAGER"]))return error("Access required",403);return response(await audit(user,url));}
     if(path==="/member-accounts" && req.method==="GET") {
       const adminUser=await auth(req);
       if(!needAdmin(adminUser))return error("Administrator login required",401);
