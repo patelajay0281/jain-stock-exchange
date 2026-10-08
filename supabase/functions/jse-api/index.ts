@@ -530,16 +530,16 @@ async function loanData(user:any,teamCode?:string){
     interest_rate:loan?Number(loan.interest_rate_bps)/10000:0,max_repayable:Math.max(0,cash-minCash)}};
 }
 async function insights(){
-  const [{data:assets},{data:orders},{data:teams},{data:loans},{data:state},{data:instOrders},{data:holdings}]=await Promise.all([
+  const [{data:assets},{data:orders},{data:teams},{data:loans},{data:state},{data:holdings}]=await Promise.all([
     db.from("assets").select("id,symbol,name,type,current_price_paise,previous_price_paise").eq("is_active",true),
     db.from("orders").select("id,team_id,asset_id,side,quantity,trade_value_paise,source,status").eq("status","SETTLED").limit(50000),
     db.from("teams").select("id,code,cash_paise,base_capital_paise,realized_profit_paise,peak_own_capital_used_paise,minimum_cash_paise,short_sale_count,broker_id"),
     db.from("loans").select("team_id,principal_outstanding_paise,interest_due_paise,status"),
     db.from("event_state").select("status,topper_team_id,topper_realized_profit_paise,finalization_note").eq("id",1).single(),
-    db.from("orders").select("side,trade_value_paise,source").eq("status","SETTLED").eq("source","INSTITUTION").limit(50000),
     db.from("holdings").select("team_id,asset_id,quantity")
   ]);
   const aset=assets||[], ord=orders||[], tm=teams||[];
+  const instOrd=ord.filter((x:any)=>x.source==="INSTITUTION");
   const ranked=aset.map((x:any)=>({...x,price:Number(x.current_price_paise)/100,
     change_pct:x.previous_price_paise?((Number(x.current_price_paise)-Number(x.previous_price_paise))*100/Number(x.previous_price_paise)):0}))
     .sort((a:any,b:any)=>b.change_pct-a.change_pct);
@@ -552,8 +552,8 @@ async function insights(){
     totalSell:ord.filter((x:any)=>x.side==="SELL").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
     participantBuy:ord.filter((x:any)=>x.side==="BUY"&&x.source==="PARTICIPANT").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
     participantSell:ord.filter((x:any)=>x.side==="SELL"&&x.source==="PARTICIPANT").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
-    institutionalBuy:(instOrders||[]).filter((x:any)=>x.side==="BUY").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
-    institutionalSell:(instOrders||[]).filter((x:any)=>x.side==="SELL").reduce((s:number,x:any)=>s+Number(x.trade_value_paise)/100,0),
+    institutionalBuy:instOrd.filter((x:any)=>x.side==="BUY").reduce((s:number,x:any)=>s+Number(x.trade_value_paise||0)/100,0),
+    institutionalSell:instOrd.filter((x:any)=>x.side==="SELL").reduce((s:number,x:any)=>s+Number(x.trade_value_paise||0)/100,0),
     settledOrders:ord.length,activeAssets:aset.length
   };
   summary.sentiment=summary.positive>summary.negative?"BULLISH":summary.negative>summary.positive?"BEARISH":"NEUTRAL";
