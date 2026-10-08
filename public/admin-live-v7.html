@@ -1,0 +1,375 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Event Admin · JAIN STOCK EXCHANGE</title>
+
+<link rel="stylesheet" href="/theme.css">
+<style>
+body.admin-page{background:#f3f5f8}
+body.admin-page .shell{max-width:1380px;padding:18px 24px 42px}
+body.admin-page .admin-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:18px 0 16px}
+body.admin-page .admin-head h1{margin:0;font-size:30px;letter-spacing:-.035em;color:#14213d}
+body.admin-page .admin-head p{margin:5px 0 0;color:#667085;font-size:12px}
+body.admin-page .admin-lock{display:inline-flex;align-items:center;gap:7px;border:1px solid #d6dee9;background:#fff;border-radius:999px;padding:8px 12px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#526071}
+body.admin-page .admin-lock:before{content:"";width:7px;height:7px;border-radius:50%;background:#16803c}
+body.admin-page .event-overview{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr;gap:10px;margin-bottom:14px}
+body.admin-page .overview-card{background:#fff;border:1px solid #dce2ea;border-radius:12px;padding:14px 16px;box-shadow:0 4px 15px rgba(20,33,61,.045)}
+body.admin-page .overview-card label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#7a8699;margin-bottom:7px}
+body.admin-page .overview-card strong{display:block;font-size:20px;color:#172033;letter-spacing:-.02em}
+body.admin-page .overview-card small{display:block;margin-top:3px;font-size:10px;color:#8490a0}
+body.admin-page #eventStatus.status-live{color:#16803c}
+body.admin-page #eventStatus.status-paused{color:#8a6500}
+body.admin-page #eventStatus.status-closed,body.admin-page #eventStatus.status-finalized{color:#c62828}
+body.admin-page .admin-panel{background:#fff;border:1px solid #d7dee8;border-radius:14px;padding:18px;box-shadow:0 6px 22px rgba(20,33,61,.05);margin-bottom:14px}
+body.admin-page .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+body.admin-page .panel-head h2{margin:0;font-size:15px;color:#172033}
+body.admin-page .panel-head p{margin:4px 0 0;font-size:10px;color:#8490a0}
+body.admin-page .admin-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:0}
+body.admin-page .admin-btn{min-height:52px;border-radius:9px;font-size:11px;letter-spacing:.035em}
+body.admin-page .admin-btn.start{background:#166534}
+body.admin-page .admin-btn.pause{background:#a16207}
+body.admin-page .admin-btn.close{background:#991b1b}
+body.admin-page .admin-btn.finalize{background:#4c1d95}
+body.admin-page .admin-btn.undo,body.admin-page .admin-btn.redo{background:#374151}
+body.admin-page .admin-btn.reset{background:#111827}
+body.admin-page .admin-btn:disabled{opacity:.42;cursor:not-allowed;transform:none}
+body.admin-page .admin-actions.secondary{grid-template-columns:repeat(4,1fr);margin-top:9px}
+body.admin-page .admin-actions.secondary .admin-btn{background:#fff;color:#172033;border:1px solid #cfd7e3;box-shadow:none}
+body.admin-page .admin-actions.secondary .admin-btn:hover{background:#f8fafc}
+body.admin-page .admin-links{display:flex;gap:9px;flex-wrap:wrap;margin:0}\nbody.admin-page .admin-nav-link{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 15px;border-radius:9px;background:#fff;color:#172033;border:1px solid #cfd7e3;font-size:11px;font-weight:800;letter-spacing:.035em;text-decoration:none;box-shadow:none}\nbody.admin-page .admin-nav-link:hover{background:#f8fafc}
+body.admin-page .admin-links a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 15px;border-radius:8px;background:#f8fafc;border:1px solid #dce2ea;font-size:10px;font-weight:800;letter-spacing:.035em;text-decoration:none;color:#344054}
+body.admin-page .admin-links a:hover{background:#eef4ff;border-color:#c7d7fe;color:#155eef}
+body.admin-page .safety-note{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fff8df;border:1px solid #ead58b;color:#765b00;font-size:10px;line-height:1.45}
+body.admin-page #stateMsg{min-height:18px;margin:0 0 12px;padding:9px 11px;border-radius:8px;background:#f8fafc;color:#667085;font-size:10px}
+body.admin-page #stateMsg.success{background:#f1f7f2;color:#476650}
+body.admin-page #stateMsg.error{background:#faf0f1;color:#8a4b53}
+body.admin-page #accessGate{position:fixed;inset:0;background:#f3f5f8;display:flex;align-items:center;justify-content:center;z-index:9999;font-size:12px;color:#667085}
+body.admin-page.ready #accessGate{display:none}#accessGate[hidden]{display:none!important}
+@media(max-width:900px){body.admin-page .event-overview{grid-template-columns:1fr 1fr}body.admin-page .admin-actions,body.admin-page .admin-actions.secondary{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){body.admin-page .shell{padding:14px}.admin-head{align-items:flex-start!important;flex-direction:column}.admin-lock{display:none}body.admin-page .event-overview{grid-template-columns:1fr}body.admin-page .admin-actions,body.admin-page .admin-actions.secondary{grid-template-columns:1fr}}
+</style>
+<style>
+body.admin-page{background:#eef2f6}
+body.admin-page .shell{max-width:1440px;padding:16px 24px 44px}
+body.admin-page .admin-head{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:20px 0 18px;padding:22px 24px;border-radius:16px;background:linear-gradient(135deg,#101b2f,#1c3154);color:#fff;box-shadow:0 10px 28px rgba(15,31,55,.16)}
+body.admin-page .admin-head h1{color:#fff}
+body.admin-page .admin-head p{color:#c7d2e3}
+body.admin-page .admin-lock{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e7edf7}
+body.admin-page .admin-lock:before{background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.12)}
+body.admin-page .event-overview{gap:11px}
+body.admin-page .overview-card{border-color:#d8e0e9;border-radius:13px;box-shadow:0 5px 18px rgba(20,33,61,.05)}
+body.admin-page .overview-card:first-child{background:linear-gradient(135deg,#fff,#f7faff)}
+body.admin-page #eventStatus{display:inline-block;padding:4px 10px;border-radius:999px;background:#f2f4f7}
+body.admin-page #eventStatus.status-live{color:#166534;background:#eaf7ee}
+body.admin-page #eventStatus.status-paused{color:#8a5a00;background:#fff5d7}
+body.admin-page #eventStatus.status-closed{color:#991b1b;background:#fff0f0}
+body.admin-page #eventStatus.status-finalized{color:#4c1d95;background:#f2edff}
+body.admin-page .admin-panel{border-color:#d8e0e9;border-radius:15px;box-shadow:0 7px 24px rgba(20,33,61,.055)}
+body.admin-page .panel-head{padding-bottom:12px;border-bottom:1px solid #edf0f4}
+body.admin-page .admin-btn{min-height:54px;border-radius:10px;font-weight:850}
+body.admin-page .admin-btn.start{background:#187a43}.admin-page .admin-btn.pause{background:#b77908}.admin-page .admin-btn.close{background:#a23a43}.admin-page .admin-btn.finalize{background:#5b36a8}
+body.admin-page .admin-actions.secondary .admin-btn{background:#f8fafc;border-color:#d5dde7}
+body.admin-page .admin-actions.secondary .admin-btn:hover{background:#eef4ff;color:#155eef;border-color:#c5d6fb}
+body.admin-page .admin-nav-link{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:10px;background:linear-gradient(135deg,#155eef,#304fc2)!important;color:#fff!important;border:0!important;font-size:10px;font-weight:850;letter-spacing:.045em;text-decoration:none;box-shadow:0 5px 13px rgba(21,94,239,.18)}
+body.admin-page .safety-note{border-radius:9px}
+
+.admin-login-card{width:min(420px,calc(100vw - 32px));padding:28px;background:#fff;border:1px solid #d8e0e9;border-radius:16px;box-shadow:0 18px 50px rgba(20,33,61,.12)}
+.admin-login-title{font-size:11px;letter-spacing:.12em;font-weight:900;color:#155eef;margin-bottom:12px}
+.admin-login-card h2{margin:0;color:#14213d;font-size:25px}.admin-login-card p{margin:7px 0 16px;color:#667085;font-size:12px}
+.admin-login-card input{width:100%;height:45px;margin-top:8px;margin-top:8px;border:1px solid #cbd5e1;border-radius:8px;padding:0 12px;font:inherit;box-sizing:border-box}
+.admin-login-card button{width:100%;height:45px;margin-top:10px;border:0;border-radius:8px;background:#172f4b;color:#fff;font-weight:850;font-size:11px;letter-spacing:.05em}
+#adminLoginMsg{min-height:18px;margin-top:10px;font-size:10px;color:#a23a43}
+</style><style>body.admin-page{background:#eef2f7!important}body.admin-page .shell{max-width:1480px!important}.admin-lock{background:#fff!important}.overview-card,.admin-panel{box-shadow:0 6px 20px rgba(20,33,61,.055)!important}.admin-panel{border-radius:12px!important}.admin-btn{box-shadow:0 2px 7px rgba(20,33,61,.08)}#stateMsg{border-radius:9px!important}</style><style>
+/* Accessibility/theme rule: white and light surfaces use black text */
+body.admin-page{color:#000}
+body.admin-page .brand,
+body.admin-page .overview-card,
+body.admin-page .overview-card label,
+body.admin-page .overview-card strong,
+body.admin-page .overview-card small,
+body.admin-page .admin-panel,
+body.admin-page .panel-head h2,
+body.admin-page .panel-head p,
+body.admin-page .admin-lock,
+body.admin-page #stateMsg,
+body.admin-page .admin-actions.secondary .admin-btn,
+body.admin-page .admin-login-card,
+body.admin-page .admin-login-card h2,
+body.admin-page .admin-login-card p,
+body.admin-page .admin-login-title,
+body.admin-page .admin-login-card input,
+body.admin-page .admin-nav-link,
+body.admin-page .admin-links a{color:#000!important}
+body.admin-page .admin-login-card input{background:#fff!important}
+body.admin-page .admin-actions.secondary .admin-btn{background:#fff!important}
+body.admin-page .admin-lock{background:#fff!important}
+body.admin-page #stateMsg{background:#fff!important}
+</style></head>
+<body class="admin-page">
+
+    <h2>Administrator Access</h2>
+    <p>Use the JSE administrator account to continue.</p>
+    <input id="adminUsername" autocomplete="username" placeholder="User ID" value="ADMINAP">
+    <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Password">
+    <button id="adminLoginBtn" type="button" onclick="loginAdmin()">ACCESS ADMIN PANEL</button>
+    <div id="adminLoginMsg"></div>
+  </div>
+</div>
+<div class="shell page">
+<header class="brand">JAIN STOCK EXCHANGE</header>
+<nav class="site-nav">
+<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a class="active" href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a>
+</nav>
+
+<header class="admin-head">
+<div><h1>Event Administration</h1><p>Control the JAIN STOCK EXCHANGE event, settlement lifecycle, recovery tools and final reports.</p></div>
+<div class="admin-lock">OPEN EVENT MODE</div>
+</header>
+
+<div id="stateMsg">Loading event control…</div>
+
+<section class="event-overview">
+<div class="overview-card"><label>Event status</label><strong id="eventStatus">—</strong><small id="eventUpdated">Current time: —</small></div>
+<div class="overview-card"><label>Minimum cash</label><strong>₹20,000</strong><small>Participant buffer</small></div>
+<div class="overview-card"><label>Brokerage</label><strong>0.5%</strong><small>Participant trades</small></div>
+<div class="overview-card"><label>Loan interest</label><strong>2%</strong><small>Participant loan</small></div>
+</section>
+
+<section class="admin-panel">
+<div class="panel-head"><div><h2>Event lifecycle</h2><p>Use these controls in the normal order: Start → Pause/Resume → Close → Finalize.</p></div></div>
+<div class="admin-actions">
+<button class="admin-btn start" onclick="act('START')">START EVENT</button>
+<button class="admin-btn pause" id="pauseBtn" onclick="pauseMarket()">PAUSE MARKET</button>
+<button class="admin-btn close" onclick="act('CLOSE')">CLOSE EVENT</button>
+<button class="admin-btn finalize" onclick="act('FINALIZE')">FINALIZE EVENT</button>
+</div>
+<div class="safety-note">Finalization closes the event and performs the configured outstanding-loan repayment sweep above the ₹20,000 minimum cash buffer. The final topper is selected only from teams that used at least ₹19,80,000 of their ₹20,00,000 own allocation at peak, fully repaid loan principal + interest, maintained at least ₹20,000 final cash, and had no settled short sale. Among eligible teams, highest realized profit wins; if none has realized profit, least loss wins. Use only after all settlement activity is complete.</div>
+</section>
+
+<section class="admin-panel">
+<div class="panel-head"><div><h2>Recovery & administration</h2><p>Restricted tools for correcting the event state. Use carefully.</p></div></div>
+<div class="admin-actions secondary">
+<button class="admin-btn undo" onclick="historyAction('UNDO')">UNDO LAST SETTLEMENT</button>
+<button class="admin-btn redo" onclick="historyAction('REDO')">REDO LAST SETTLEMENT</button>
+<button class="admin-btn reset" onclick="resetEvent()">RESET EVENT + BASE PRICES</button>
+<button class="admin-btn" onclick="downloadMemberAccounts()">DOWNLOAD MEMBER ACCOUNTS</button>
+<button class="admin-btn" id="downloadArchive" onclick="downloadArchive()" disabled>DOWNLOAD EXCEL REPORT</button>
+</div>
+<div class="admin-actions secondary">
+<button class="admin-btn" id="downloadJson" onclick="downloadJson()" disabled>DOWNLOAD JSON ARCHIVE</button>
+<a class="admin-nav-link" href="/member-accounts.html">MEMBER ACCOUNTS</a>
+<a class="admin-nav-link" href="/insights.html">MARKET INTELLIGENCE</a>
+</div>
+</section>
+
+<section class="admin-panel" id="loadTestPanel">
+<div class="panel-head"><div><h2>Capacity Testing</h2><p>Run the built-in 1,000-request market throughput test before the live event.</p></div></div>
+<div class="admin-links"><a class="admin-nav-link" href="/load-test.html">RUN 1,000 REQUEST TEST</a></div>
+</section>
+
+
+<section class="admin-panel" id="miAdminPanel">
+<div class="panel-head"><div><h2>Market Intelligence</h2><p>Hatchable-based Market Intelligence is available directly inside Event Admin.</p></div></div>
+<button class="admin-nav-link" type="button" id="openMiBtn" onclick="openMarketIntelligence()">OPEN LIVE MARKET INTELLIGENCE</button>
+<div id="miFrameWrap" style="display:none;margin-top:14px;border:1px solid #d8e0e9;border-radius:12px;overflow:hidden;background:#fff">
+<iframe id="miFrame" title="JSE Market Intelligence" style="display:block;width:100%;height:1100px;border:0" loading="lazy"></iframe>
+</div>
+</section>
+</div>
+
+<script>
+"use strict";
+const API="https://yxmztxtbgqkvardwgrak.supabase.co/functions/v1/jse-api";
+let currentStatus="NOT_STARTED";
+let busy=false;
+
+function headers(extra){
+  const h=new Headers(extra||{});
+  h.set("Accept","application/json");
+  const token=localStorage.getItem("jse_token");
+  if(token)h.set("Authorization","Bearer "+token);
+  return h;
+}
+async function api(path,opts){
+  opts=opts||{};
+  const h=headers(opts.headers);
+  if(opts.body&&!h.has("Content-Type"))h.set("Content-Type","application/json");
+  const res=await fetch(API+path,{method:opts.method||"GET",headers:h,body:opts.body,cache:"no-store"});
+  let data={};
+  const txt=await res.text();
+  try{data=txt?JSON.parse(txt):{}}catch(_){data={error:txt||("HTTP "+res.status)}}
+  if(!res.ok)throw new Error(data.error||data.message||("HTTP "+res.status));
+  return data;
+}
+function setMsg(message,type){
+  const el=document.querySelector("#stateMsg");
+  if(el){el.textContent=message||"";el.className=type||""}
+}
+function lockUI(flag){
+  busy=flag;
+  document.querySelectorAll(".admin-btn, #openMiBtn").forEach(b=>b.disabled=!!flag||b.disabled&&b.id!=="pauseBtn");
+}
+function updateClock(){
+  const el=document.querySelector("#eventUpdated");
+  if(el)el.textContent="Current time: "+new Date().toLocaleString("en-IN",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true});
+}
+function showAdmin(){
+  document.body.classList.add("ready");
+}
+async function createLoginGate(){
+  if(document.getElementById("accessGate"))return document.getElementById("accessGate");
+  const gate=document.createElement("div");gate.id="accessGate";gate.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#eef2f7";
+  gate.innerHTML='<div class="admin-login-card"><div class="admin-login-title">JAIN STOCK EXCHANGE</div><h2>Administrator Access</h2><p>Use the JSE administrator account to continue.</p><input id="adminUsername" autocomplete="username" placeholder="User ID" value="ADMINAP"><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Password"><button id="adminLoginBtn" type="button">ACCESS ADMIN PANEL</button><div id="adminLoginMsg"></div></div>';
+  document.body.appendChild(gate);gate.querySelector("#adminLoginBtn").onclick=loginAdmin;gate.querySelector("#adminUsername").onkeydown=e=>{if(e.key==="Enter")loginAdmin()};gate.querySelector("#adminPassword").onkeydown=e=>{if(e.key==="Enter")loginAdmin()};return gate;
+}
+async function checkAccess(){
+  const gate=document.querySelector("#accessGate");
+  if(gate)gate.hidden=true;
+  try{
+    const d=await api("/admin-state");
+    showAdmin();
+    applyState(d);
+  }catch(e){
+    const loginGate=createLoginGate();
+    loginGate.style.display="flex";
+    loginGate.querySelector("#adminLoginMsg").textContent="Administrator login required.";
+    loginGate.querySelector("#adminUsername")?.focus();
+  }
+}
+async function loginAdmin(){
+  const username=(document.querySelector("#adminUsername")?.value||"").trim().toUpperCase();
+  const password=document.querySelector("#adminPassword")?.value||"";
+  const btn=document.querySelector("#adminLoginBtn"),msg=document.querySelector("#adminLoginMsg");
+  if(!username||!password){msg.textContent="Enter the User ID and password.";return}
+  btn.disabled=true;msg.textContent="Signing in…";
+  try{
+    const res=await fetch(API+"/admin-login",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({username,password}),cache:"no-store"});
+    const txt=await res.text();let d={};try{d=txt?JSON.parse(txt):{}}catch(_){}
+    if(!res.ok)throw new Error(d.error||"Administrator login failed.");
+    if(d.token)localStorage.setItem("jse_token",d.token);
+    await checkAccess();
+    if(!document.body.classList.contains("ready"))throw new Error("Administrator access could not be established.");
+    const gate=document.querySelector("#accessGate");if(gate)gate.remove();
+  }catch(e){msg.textContent=e.message||"Administrator login failed."}
+  finally{btn.disabled=false}
+}
+async function load(){
+  try{applyState(await api("/event"));return true}
+  catch(e){setMsg(e.message||"Could not load event state","error");return false}
+}
+function applyState(d){
+  currentStatus=String(d?.event?.status||"NOT_STARTED").toUpperCase();
+  const statusEl=document.querySelector("#eventStatus");
+  if(statusEl){
+    statusEl.textContent=currentStatus;
+    statusEl.className="";
+    ({LIVE:"status-live",SETTLEMENT_ONLY:"status-paused",PAUSED:"status-paused",CLOSED:"status-closed",FINALIZED:"status-finalized"})[currentStatus]&&statusEl.classList.add(({LIVE:"status-live",SETTLEMENT_ONLY:"status-paused",PAUSED:"status-paused",CLOSED:"status-closed",FINALIZED:"status-finalized"})[currentStatus]);
+  }
+  const pause=document.querySelector("#pauseBtn");
+  if(pause)pause.textContent=(currentStatus==="SETTLEMENT_ONLY"||currentStatus==="PAUSED")?"RESUME MARKET":"PAUSE MARKET";
+  const final=currentStatus==="FINALIZED";
+  const excel=document.querySelector("#downloadArchive"),json=document.querySelector("#downloadJson");
+  if(excel){excel.disabled=!final&&!busy;excel.title=final?"Download final Excel report":"Available after FINALIZE EVENT"}
+  if(json){json.disabled=!final&&!busy;json.title=final?"Download raw JSON archive":"Available after FINALIZE EVENT"}
+  updateClock();
+  setMsg("Event state loaded. Administrator controls are active.","success");
+}
+async function act(action){
+  if(busy)return;
+  if((action==="FINALIZE")&&!confirm("Finalize the event? This should only be done after all settlements and loan obligations are complete."))return;
+  if((action==="CLOSE")&&!confirm("Close the market? New orders will stop and the event will move to CLOSED."))return;
+  busy=true;
+  try{
+    setMsg("Executing "+action+"…");
+    const d=await api("/event",{method:"POST",body:JSON.stringify({action})});
+    setMsg(d.message||("Event action completed: "+action),"success");
+    await load();
+  }catch(e){setMsg(e.message||("Action failed: "+action),"error")}
+  finally{busy=false;await load()}
+}
+async function pauseMarket(){
+  const action=(currentStatus==="SETTLEMENT_ONLY"||currentStatus==="PAUSED")?"RESUME":"PAUSE";
+  const q=action==="PAUSE"?"Pause the market? New orders will stop while settlement can continue.":"Resume the market and allow new orders again?";
+  if(!confirm(q))return;
+  await act(action);
+}
+async function historyAction(action){
+  if(busy)return;
+  if(!confirm(action==="UNDO"?"Undo the most recent settlement?":"Redo the most recently undone settlement?"))return;
+  busy=true;
+  try{
+    const d=await api("/undo-redo",{method:"POST",body:JSON.stringify({action})});
+    setMsg(d.message||("Recovery action completed: "+action),"success");
+  }catch(e){setMsg(e.message||"Recovery action failed","error")}
+  finally{busy=false;await load()}
+}
+async function resetEvent(){
+  if(busy)return;
+  if(!confirm("RESET EVENT will clear event transactions, holdings, ledgers, commissions and order history, restore starting balances, and restore every share to its permanent BASE PRICE. Continue?"))return;
+  busy=true;
+  try{
+    const d=await api("/reset-event",{method:"POST",body:"{}"});
+    setMsg(d.message||"Event reset successfully.","success");
+  }catch(e){setMsg(e.message||"Reset failed","error")}
+  finally{busy=false;await load()}
+}
+function csvEscape(v){return '"'+String(v==null?"":typeof v==="object"?JSON.stringify(v):v).replaceAll('"','""')+'"'}
+async function downloadMemberAccounts(){
+  if(busy)return;
+  try{
+    const d=await api("/member-accounts");
+    const rows=Array.isArray(d.accounts)?d.accounts:[];
+    const cols=["USERNAME","TEAM","DISPLAY NAME","ACCESS CODE","EMAIL","ACTIVE"];
+    const out=[cols.join(","),...rows.map(x=>[x.username,x.team,x.display_name,x.access_code,x.email||"",x.active?"YES":"NO"].map(csvEscape).join(","))].join("\n");
+    const url=URL.createObjectURL(new Blob([out],{type:"text/csv;charset=utf-8"}));
+    const a=document.createElement("a");a.href=url;a.download="JSE-member-accounts.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    setMsg("Member account sheet downloaded.","success");
+  }catch(e){setMsg(e.message||"Could not export member accounts","error")}
+}
+async function downloadJson(){
+  if(busy)return;
+  try{
+    if(currentStatus!=="FINALIZED")throw Error("The JSON archive is available only after FINALIZE EVENT.");
+    const d=await api("/export-event");
+    const out=JSON.stringify(d,null,2);
+    const url=URL.createObjectURL(new Blob([out],{type:"application/json;charset=utf-8"}));
+    const a=document.createElement("a");a.href=url;a.download="jain-stock-exchange-event-archive.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    setMsg("JSON archive downloaded.","success");
+  }catch(e){setMsg(e.message||"JSON archive export failed","error")}
+}
+function makeExcelLike(data){
+  const esc=v=>String(v==null?"":typeof v==="object"?JSON.stringify(v):v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  let html='<html><head><meta charset="utf-8"></head><body><h2>JAIN STOCK EXCHANGE FINAL EVENT REPORT</h2>';
+  for(const [name,raw] of Object.entries(data||{})){
+    const rows=Array.isArray(raw)?raw:[];
+    const cols=[...new Set(rows.flatMap(r=>Object.keys(r||{})))];
+    html+='<h3>'+esc(name)+'</h3><table border="1"><tr>'+cols.map(esc).map(x=>"<th>"+x+"</th>").join("")+"</tr>";
+    for(const row of rows)html+="<tr>"+cols.map(k=>"<td>"+esc(row?.[k])+"</td>").join("")+"</tr>";
+    html+="</table><br>";
+  }
+  return html+"</body></html>";
+}
+async function downloadArchive(){
+  if(busy)return;
+  try{
+    if(currentStatus!=="FINALIZED")throw Error("The Excel report is available only after FINALIZE EVENT.");
+    const d=await api("/export-event");
+    const url=URL.createObjectURL(new Blob([makeExcelLike(d.data||{})],{type:"application/vnd.ms-excel;charset=utf-8"}));
+    const a=document.createElement("a");a.href=url;a.download="jain-stock-exchange-final-report.xls";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    setMsg("Final Excel report downloaded.","success");
+  }catch(e){setMsg(e.message||"Excel report export failed","error")}
+}
+function openMarketIntelligence(){
+  const wrap=document.querySelector("#miFrameWrap"),frame=document.querySelector("#miFrame"),btn=document.querySelector("#openMiBtn");
+  if(!frame.src)frame.src="/insights.html?embedded=1";
+  wrap.style.display="block";
+  btn.textContent="REFRESH MARKET INTELLIGENCE";
+  try{frame.contentWindow?.location?.reload?.()}catch(_){}
+  wrap.scrollIntoView({behavior:"smooth",block:"start"});
+}
+setInterval(updateClock,1000);
+checkAccess();
+</script></body>
+</html>
