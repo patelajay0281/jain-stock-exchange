@@ -411,7 +411,7 @@ async function memberAccounts(user:any){
 
 
 async function institutionalPortfolio(user:any,url:URL){
-  const actor=OPEN_MODE?await openActor("INSTITUTION"):user;
+  const actor=user?.role==="INSTITUTION"?user:await openActor("INSTITUTION");
   let institutionId=actor.institution_id;
   if(!institutionId){
     const {data:i,error:ie}=await db.from("institutions").select("id,code,name,cash_paise").order("id").limit(1).single();
@@ -745,7 +745,7 @@ async function handle(req:Request){
     if(path==="/orders" && req.method==="POST") {
       if(!need(user,["PARTICIPANT"]))return error("Participant access required",403);
       const b=await bodyJson(req); const idem=req.headers.get("idempotency-key")||crypto.randomUUID();
-      const actor=OPEN_MODE?await openActor("PIT_MANAGER"):user;
+      const actor=user?.role==="PIT_MANAGER"?user:await openActor("PIT_MANAGER");
       let teamId=Number(b.team_id||0);
       if(!teamId && b.team){
         const {data:team,error:te}=await db.from("teams").select("id").eq("code",String(b.team)).single();
@@ -759,7 +759,7 @@ async function handle(req:Request){
     if(path==="/exchange" && req.method==="GET") {if(!need(user,["EXCHANGE","ADMIN"]))return error("Exchange access required",403);return response({transactions:await transactionQueue("exchange")});}
     if(path==="/exchange" && req.method==="POST") {
       if(!need(user,["EXCHANGE","ADMIN"]))return error("Exchange access required",403);
-      const b=await bodyJson(req); const actor=OPEN_MODE?await openActor("EXCHANGE"):user;
+      const b=await bodyJson(req); const actor=user?.role==="EXCHANGE"?user:await openActor("EXCHANGE");
       const {data,rpcError}=await db.rpc("jse_exchange_action",{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||"")});
       if(rpcError){
         const msg=rpcError.message||"Exchange action failed";
@@ -772,7 +772,7 @@ async function handle(req:Request){
     if(path==="/bank" && req.method==="GET") {if(!need(user,["BANK","ADMIN"]))return error("Bank access required",403);return response({transactions:await transactionQueue("bank"),interest_earned:0});}
     if(path==="/bank" && req.method==="POST") {
       if(!need(user,["BANK","ADMIN"]))return error("Bank access required",403);
-      const b=await bodyJson(req);const actor=OPEN_MODE?await openActor("BANK"):user;const {data:ord}=await db.from("orders").select("source").eq("id",Number(b.order_id)).single();const fn=ord?.source==="INSTITUTION"?"jse_bank_institutional_action":"jse_bank_action";const args=ord?.source==="INSTITUTION"?{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)}:{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)};const {data,rpcError}=await db.rpc(fn,args);
+      const b=await bodyJson(req);const actor=user?.role==="BANK"?user:await openActor("BANK");const {data:ord}=await db.from("orders").select("source").eq("id",Number(b.order_id)).single();const fn=ord?.source==="INSTITUTION"?"jse_bank_institutional_action":"jse_bank_action";const args=ord?.source==="INSTITUTION"?{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)}:{p_user_id:actor.uid,p_order_id:Number(b.order_id),p_action:String(b.action||""),p_warning_ack:Boolean(b.warning_ack||b.force||false)};const {data,rpcError}=await db.rpc(fn,args);
       if(rpcError)return error(rpcError.message||"Bank action failed",400); if(data?.code==="NO_BALANCE")return response(data,200); return response(data);
     }
     if(path==="/loan" && req.method==="GET"){
@@ -782,7 +782,7 @@ async function handle(req:Request){
     if(path==="/loan" && req.method==="POST"){
       if(!need(user,["PARTICIPANT"])) return error("Participant access required",403);
       const b=await bodyJson(req);
-      const actor=OPEN_MODE?await openActor("PIT_MANAGER"):user;
+      const actor=user?.role==="PIT_MANAGER"?user:await openActor("PIT_MANAGER");
       let teamId=Number(b.team_id||0);
       if(!teamId && b.team){const {data:team}=await db.from("teams").select("id").eq("code",String(b.team)).single();teamId=Number(team?.id||0);}
       if(!teamId)return error("Customer team is required",400);
@@ -797,7 +797,7 @@ async function handle(req:Request){
     if(path==="/institutional-order" && req.method==="POST"){
       if(!need(user,["INSTITUTION","ADMIN"])) return error("Institutional access required",403);
       const b=await bodyJson(req);
-      const actor=OPEN_MODE?await openActor("INSTITUTION"):user;
+      const actor=user?.role==="INSTITUTION"?user:await openActor("INSTITUTION");
       let teamId=Number(b.team_id||0);
       if(!teamId && b.team_code){const {data:team}=await db.from("teams").select("id").eq("code",String(b.team_code)).single();teamId=Number(team?.id||0);}
       if(!teamId)return error("Counterparty team is required",400);
