@@ -39,7 +39,7 @@ async function hmac(data: string): Promise<Uint8Array> {
 }
 async function issueToken(user: any): Promise<string> {
   const header = b64u(JSON.stringify({alg:"HS256",typ:"JSE"}));
-  const payload = b64u(JSON.stringify({uid:user.user_id,role:user.role,team_id:user.team_id||null,institution_id:user.institution_id||null,username:user.username,exp:Math.floor(Date.now()/1000)+12*60*60}));
+  const payload = b64u(JSON.stringify({uid:user.user_id,role:user.role,team_id:user.team_id||null,institution_id:user.institution_id||null,username:user.username,needs_password_change:Boolean(user.needs_password_change),exp:Math.floor(Date.now()/1000)+4*60*60}));
   const body = header+"."+payload;
   return body+"."+b64u(await hmac(body));
 }
@@ -656,7 +656,7 @@ async function handle(req:Request){
     if(path==="/member-login" && req.method==="POST") {
       const b=await bodyJson(req); const {data,rpcError}=await db.rpc("jse_login",{p_username:String(b.username||"ADMINAP"),p_password:String(b.access_code||b.password||"")});
       if(rpcError||!data)return error("Invalid credentials",401);
-      return response({ok:true,token:await issueToken(data),member:{username:data.username,display_name:data.display_name,role:data.role,team_id:data.team_id,institution_id:data.institution_id}});
+      return response({ok:true,token:await issueToken(data),member:{username:data.username,display_name:data.display_name,role:data.role,team_id:data.team_id,institution_id:data.institution_id,needs_password_change:Boolean(data.needs_password_change)}});
     }
     if(path==="/admin-login" && req.method==="POST") {
       const b=await bodyJson(req); const {data,rpcError}=await db.rpc("jse_login",{p_username:String(b.username||""),p_password:String(b.password||"")});
@@ -672,7 +672,8 @@ async function handle(req:Request){
       const newPassword=String(b.new_password||"");
       const {data,rpcError}=await db.rpc("jse_set_password",{p_user_id:Number(user.uid),p_new_password:newPassword});
       if(rpcError) return error(rpcError.message||"Password update failed",400);
-      return response(data);
+      const refreshedToken=await issueToken({user_id:currentUser.uid,role:currentUser.role,team_id:currentUser.team_id,institution_id:currentUser.institution_id,username:currentUser.username,needs_password_change:false});
+      return response({...data,token:refreshedToken});
     }
     if(path==="/member-logout") return response({ok:true});
     if(path==="/event" && req.method==="GET") {
