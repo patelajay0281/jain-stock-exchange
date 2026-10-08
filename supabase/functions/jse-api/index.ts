@@ -550,7 +550,7 @@ async function insights(){
     db.from("holdings").select("team_id,asset_id,quantity")
   ]);
   const aset=assets||[], ord=orders||[], tm=teams||[];
-  const instOrd=ord.filter((x:any)=>x.source==="INSTITUTION");
+  const assetMap=new Map(aset.map((x:any)=>[x.id,x]));
   const ranked=aset.map((x:any)=>({...x,price:Number(x.current_price_paise)/100,
     change_pct:x.previous_price_paise?((Number(x.current_price_paise)-Number(x.previous_price_paise))*100/Number(x.previous_price_paise)):0}))
     .sort((a:any,b:any)=>b.change_pct-a.change_pct);
