@@ -29,9 +29,11 @@ async function forward(req,url){
  }
  return new Response(r.body,{status:r.status,statusText:r.statusText,headers:cloneHeaders(r,{"x-jse-api":"supabase-edge-function","cache-control":"no-store"})});
 }
-async function rawPage(path){
+async function rawPage(env,req,path){
  const name=String(path||"").replace(/^\/+/, "");
  if(!name||name.includes("..")||name.includes("\\")||name.startsWith("."))return new Response("Not Found",{status:404,headers:NC});
+ const local=await env.ASSETS.fetch(new Request(new URL("/"+name,req.url),req));
+ if(local.status!==404)return local;
  const r=await fetch(RAW+name,{headers:{"accept":"text/html,*/*"}});
  if(!r.ok)return new Response("JSE page not found",{status:404,headers:NC});
  return r;
@@ -52,7 +54,7 @@ async function page(req,path){
  }});
  return rw.transform(new Response(r.body,{status:r.status,statusText:r.statusText,headers:h}));
 }
-export default{async fetch(req){
+export default{async fetch(req,env){
  const url=new URL(req.url);
  try{
    if(url.pathname==="/api"||url.pathname.startsWith("/api/"))return await forward(req,url);
