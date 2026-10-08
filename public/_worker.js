@@ -45,8 +45,8 @@ async function rawAsset(env,req,path){
  if(local.status!==404)return local;
  return fetch(RAW+name,{headers:{"accept":"*/*"}});
 }
-async function page(req,path){
- const r=await rawPage(path);
+async function page(req,env,path){
+ const r=await rawPage(env,req,path);
  if(r.status!==200)return r;
  const h=cloneHeaders(r,NC);h.set("content-type","text/html; charset=utf-8");
  const special=path==="/order-live-v8.html"?' on="head"':"";
@@ -61,7 +61,7 @@ export default{async fetch(req,env){
  try{
    if(url.pathname==="/api"||url.pathname.startsWith("/api/"))return await forward(req,url);
    const mapped=ALIASES[url.pathname];
-   if(mapped)return await page(req,mapped);
+   if(mapped)return await page(req,env,mapped);
    // Serve shared static files directly from the live branch.
    return await rawAsset(env,req,url.pathname);
  }catch(e){
