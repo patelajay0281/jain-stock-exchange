@@ -148,6 +148,19 @@ async function summarizeOrders(user:any, filters:any={}) {
     if(filters.status) q=q.eq("status",filters.status);
     if(filters.team_id) q=q.eq("team_id",filters.team_id);
     if(filters.asset_id) q=q.eq("asset_id",filters.asset_id);
+    const search=String(filters.q||"").trim();
+    if(search){
+      const like="%"+search.replace(/[\\%_,]/g,m=>"\\"+m)+"%";
+      const [{data:teamMatches,error:te},{data:assetMatches,error:ae}]=await Promise.all([
+        db.from("teams").select("id").ilike("code",like).limit(500),
+        db.from("assets").select("id").or("name.ilike."+like+",symbol.ilike."+like).limit(500)
+      ]);
+      if(te||ae)throw te||ae;
+      const clauses=["order_code.ilike."+like];
+      if((teamMatches||[]).length)clauses.push("team_id.in.("+(teamMatches||[]).map((x:any)=>x.id).join(",")+")");
+      if((assetMatches||[]).length)clauses.push("asset_id.in.("+(assetMatches||[]).map((x:any)=>x.id).join(",")+")");
+      q=q.or(clauses.join(","));
+    }
     const {data,error}=await q;
     if(error) throw error;
     const batch=data||[];
