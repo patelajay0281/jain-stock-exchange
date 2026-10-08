@@ -85,7 +85,7 @@ input,select{color:#000!important;background:#fff!important}
 <script>
 (function(){
 "use strict";
-var API="/api",rows=[],busy=new Set(),loading=false,activeId=null,activeMode="";
+var API="/api",rows=[],busy=new Set(),loading=false,activeId=null,activeMode="",focusOrder=new URLSearchParams(location.search).get("order")||"";
 var $=function(id){return document.getElementById(id)};
 var money=function(n){return "₹"+Math.round(Number(n||0)).toLocaleString("en-IN")};
 var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})};
@@ -166,7 +166,7 @@ async function rejectOrder(id){await postAction(id,"REJECT",false)}
 async function load(){
  if(loading)return;loading=true;
  try{
-  var d=await api("/bank",{},2);rows=Array.isArray(d.transactions)?d.transactions:[];$("pill").textContent="CMS BANK CONTROL";$("pill").className="pill";render();
+  var d=await api("/bank",{},2);rows=Array.isArray(d.transactions)?d.transactions:[];if(focusOrder)rows.sort(function(a,b){return String(a.order_code)===String(focusOrder)?-1:String(b.order_code)===String(focusOrder)?1:0});$("pill").textContent="CMS BANK CONTROL";$("pill").className="pill";render();
  }catch(e){
   rows=[];metrics();$("queue").innerHTML='<div class="empty">Bank queue unavailable.<br><br>'+esc(e.message||"Unknown error")+'</div>';
   $("pill").textContent="BANK ACCESS / CONNECTION ERROR";$("pill").className="pill bad";notice(e.message||"Bank connection error.","error");
