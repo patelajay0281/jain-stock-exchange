@@ -201,7 +201,7 @@ body.admin-page #stateMsg{background:#fff!important}
 
 <script>
 "use strict";
-const API="https://yxmztxtbgqkvardwgrak.supabase.co/functions/v1/jse-api";
+const API="/api";
 let currentStatus="NOT_STARTED";
 let busy=false;
 
@@ -290,7 +290,7 @@ function applyState(d){
   const pause=document.querySelector("#pauseBtn");
   if(pause)pause.textContent=(currentStatus==="SETTLEMENT_ONLY"||currentStatus==="PAUSED")?"RESUME MARKET":"PAUSE MARKET";
   const final=currentStatus==="FINALIZED";
-  const start=document.querySelector("#startBtn"),pause=document.querySelector("#pauseBtn"),close=document.querySelector("#closeBtn"),finalize=document.querySelector("#finalizeBtn"),reset=document.querySelector("#resetBtn"),undo=document.querySelector("#undoBtn"),redo=document.querySelector("#redoBtn");
+  const start=document.querySelector("#startBtn"),close=document.querySelector("#closeBtn"),finalize=document.querySelector("#finalizeBtn"),reset=document.querySelector("#resetBtn"),undo=document.querySelector("#undoBtn"),redo=document.querySelector("#redoBtn");
   if(start)start.disabled=!!busy||currentStatus!=="NOT_STARTED";
   if(pause)pause.disabled=!!busy||!["LIVE","PAUSED"].includes(currentStatus);
   if(close)close.disabled=!!busy||!["LIVE","PAUSED"].includes(currentStatus);
