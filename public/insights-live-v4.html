@@ -101,5 +101,8 @@ async function load(){
   $('updated').textContent='Retrying live intelligence…';
  }
 }
-load();setInterval(load,10000);try{hatchable.events.connect().channel('market').on('price_updated',load).on('order_approved',load)}catch(e){}
+load();
+let timer=setInterval(function(){if(document.visibilityState==='visible')load()},10000);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')load()});
+try{hatchable.events.connect().channel('market').on('price_updated',load).on('order_approved',load)}catch(e){}
 </script><script src="/admin-nav.js"></script></body></html>
