@@ -104,7 +104,7 @@ async function loadAudit(){
  if(auditLoading)return;
  auditLoading=true;
  try{
-   const r=await fetch(A+'/audit?page=1&limit=100',{cache:'no-store'});
+   const r=await jseFetch('/audit?page=1&limit=100',{cache:'no-store'});
    const d=await r.json().catch(()=>({}));
    if(!r.ok)throw new Error(d.error||'Audit log unavailable');
    rows=d.rows||[];render();$('#auditUser').textContent='OPEN EVENT MODE';
