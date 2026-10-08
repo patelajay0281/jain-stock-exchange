@@ -239,8 +239,9 @@ function calculate(){
 async function api(path,options,tries){
  options=options||{};
  tries=tries==null?2:tries;
- var last;
- for(var i=0;i<=tries;i++){
+ var last,method=String(options.method||"GET").toUpperCase();
+ var maxAttempts=(method==="GET"||method==="HEAD"||method==="OPTIONS")?tries+1:1;
+ for(var i=0;i<maxAttempts;i++){
   try{
    var headers=new Headers(options.headers||{});
    headers.set("Accept","application/json");
