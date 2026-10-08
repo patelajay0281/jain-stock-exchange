@@ -252,12 +252,12 @@ async function api(path,options,tries){
    try{data=text?JSON.parse(text):{}}catch(e){data={error:text||"Invalid server response"}}
    if(response.ok)return data;
    last=new Error(String(data.error||data.message||("HTTP "+response.status)));
-   if(![429,502,503,504].includes(response.status)||i===tries)throw last;
+   if(![429,502,503,504].includes(response.status)||i===maxAttempts-1)throw last;
   }catch(e){
    last=e;
-   if(i===tries)throw e;
+   if(i===maxAttempts-1)throw e;
   }
-  await wait([500,1200,2400][i]||2400);
+  if(maxAttempts>1)await wait([500,1200,2400][i]||2400);
  }
  throw last||new Error("Request failed");
 }
