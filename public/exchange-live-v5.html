@@ -103,8 +103,8 @@ tbody tr:hover td{background:#f8fafc!important;color:#000!important}
 <h2>Short Selling Not Possible</h2>
 <p id="modalText">This order cannot be approved because the participant is attempting to sell shares that are not available in the holding.</p>
 <div style="display:flex;gap:8px;justify-content:flex-end">
-<button class="secondary" type="button" onclick="closeModal()">CLOSE</button>
-<button class="danger" type="button" onclick="rejectModal()">REJECT ORDER</button>
+<button id="modalCloseBtn" class="secondary" type="button">CLOSE</button>
+<button id="modalRejectBtn" class="danger" type="button">REJECT ORDER</button>
 </div>
 </div>
 </div>
@@ -226,8 +226,8 @@ $("queue").addEventListener("click",function(ev){
  if(a==="APPROVE")doApprove(row.id);else if(a==="REJECT")doReject(row.id);else if(a==="SHORT")openShort(row.id);
 });
 $("modal").addEventListener("click",function(ev){if(ev.target===$("modal"))closeModal()});
-$("modal").querySelector(".secondary").addEventListener("click",closeModal);
-$("modal").querySelector(".danger").addEventListener("click",rejectModal);
+$("modalCloseBtn").addEventListener("click",closeModal);
+$("modalRejectBtn").addEventListener("click",rejectModal);
 load();
 setInterval(function(){if(document.visibilityState==="visible")load()},3000);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")load()});
