@@ -66,6 +66,11 @@ function response(body:any,status=200,headers:Record<string,string>={}) {
   return new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json; charset=utf-8",...CORS,...headers}});
 }
 function error(message:string,status=400,extra:any={}) { return response({error:message,...extra},status); }
+function wholeRupeePrice(value:any): number {
+  const n=Number(value);
+  if(!Number.isFinite(n) || !Number.isInteger(n) || n<=0) throw new Error("Share price must be a whole number greater than ₹0.");
+  return n;
+}
 function csvResponse(rows:any[],filename:string){
   const data=Array.isArray(rows)?rows:[];
   const cols=[...new Set(data.flatMap(r=>Object.keys(r||{})))];
@@ -748,7 +753,7 @@ async function handle(req:Request){
         teamId=Number(team.id);
       }
       if(!teamId)return error("Customer team is required",400);
-      const {data,rpcError}=await db.rpc("jse_create_order_for_team",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:Number(b.stock_id||b.asset_id),p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(Number(b.price||0)*100),p_idempotency_key:idem});
+      const {data,rpcError}=await db.rpc("jse_create_order_for_team",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:Number(b.stock_id||b.asset_id),p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(wholeRupeePrice(b.price)*100),p_idempotency_key:idem});
       if(rpcError){return error(rpcError.message||"Order creation failed",400);} return response({ok:true,...data});
     }
     if(path==="/exchange" && req.method==="GET") {if(!need(user,["EXCHANGE","ADMIN"]))return error("Exchange access required",403);return response({transactions:await transactionQueue("exchange")});}
@@ -801,7 +806,7 @@ async function handle(req:Request){
       if(!assetId && b.ipo_id)assetId=Number(b.ipo_id);
       if(!assetId)return error("Asset is required",400);
       const idem=req.headers.get("idempotency-key")||crypto.randomUUID();
-      const {data,rpcError}=await db.rpc("jse_create_institutional_order",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:assetId,p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(Number(b.price||0)*100),p_idempotency_key:idem});
+      const {data,rpcError}=await db.rpc("jse_create_institutional_order",{p_user_id:actor.uid,p_team_id:teamId,p_asset_id:assetId,p_side:String(b.side||"").toUpperCase(),p_quantity:Number(b.quantity||0),p_price_paise:Math.round(wholeRupeePrice(b.price)*100),p_idempotency_key:idem});
       if(rpcError)return error(rpcError.message||"Institutional order creation failed",400);
       return response({ok:true,...data});
     }
