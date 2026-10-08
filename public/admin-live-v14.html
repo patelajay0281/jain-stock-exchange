@@ -237,6 +237,17 @@ function updateClock(){
 }
 function showAdmin(){
   document.body.classList.add("ready");
+  const member=window.JSE_MEMBER||JSON.parse(localStorage.getItem("jse_member")||"{}");
+  if(member.role==="ASSOCIATE_ADMIN"){
+    document.querySelectorAll("#startBtn,#pauseBtn,#closeBtn,#finalizeBtn,#undoBtn,#redoBtn,#resetBtn,#downloadArchive,#downloadJson").forEach(b=>{if(b)b.style.display="none"});
+    const panel=document.querySelector(".admin-panel");
+    if(panel){
+      const note=document.createElement("div");
+      note.className="safety-note";
+      note.textContent="READ-ONLY ASSOCIATE ADMIN: event controls, recovery actions, resets, finalization and credential management are restricted to the primary Administrator.";
+      panel.parentNode.insertBefore(note,panel);
+    }
+  }
 }
 function createLoginGate(){
   if(document.getElementById("accessGate"))return document.getElementById("accessGate");
