@@ -38,7 +38,10 @@ function loadFilters(f){
  if(f.teams.includes(oldT))$('team').value=oldT;
  if(f.types.includes(oldY))$('type').value=oldY;
 }
+let loading=false;
 async function load(){
+ if(loading)return;
+ loading=true;
  const p=new URLSearchParams({page,limit:$('limit').value});
  if($('team').value)p.set('team',$('team').value);
  if($('type').value)p.set('entry_type',$('type').value);
@@ -52,6 +55,7 @@ async function load(){
   $('prev').onclick=()=>{if(page>1){page--;load()}};
   $('next').onclick=()=>{if(page<pg.pages){page++;load()}};
  }catch(e){$('app').innerHTML='<p class="notice">Admin access required.</p>'}
+ finally{loading=false}
 }
 let searchTimer;
 $('q').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{page=1;load()},300)});
