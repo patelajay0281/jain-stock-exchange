@@ -12,11 +12,11 @@
     { match: p => /^\/cash(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"] },
     { match: p => /^\/audit(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"] },
     { match: p => /^\/commissions(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","ADMIN","ASSOCIATE_ADMIN"] },
-    { match: p => /^\/certificates(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","INSTITUTION","ADMIN","ASSOCIATE_ADMIN"] },
+    { match: p => /^\/certificates(?:-(?:live[^/]*|v\\d+))?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","INSTITUTION","ADMIN","ASSOCIATE_ADMIN"] },
     { match: p => /^\/insights(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","INSTITUTION","ADMIN","ASSOCIATE_ADMIN"] },
-    { match: p => /^\/member-accounts(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["ADMIN"] },
+    { match: p => /^\/member-accounts(?:-(?:live[^/]*|v\\d+))?(?:\.html)?\/?$/.test(p), roles: ["ADMIN"] },
     { match: p => /^\/admin(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["ADMIN","ASSOCIATE_ADMIN"] },
-    { match: p => /^\/load-test(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["ADMIN"] },
+    { match: p => /^\/load-test(?:-(?:live[^/]*|v\\d+))?(?:\.html)?\/?$/.test(p), roles: ["ADMIN"] },
     { match: p => /^\/loan(?:-live[^/]*)?(?:\.html)?\/?$/.test(p), roles: ["PIT_MANAGER","BANK","EXCHANGE","ADMIN"] }
   ];
 
@@ -30,7 +30,11 @@
 
   window.JSE_AUTH = {
     getToken: () => localStorage.getItem("jse_token") || "",
-    logout: () => { localStorage.removeItem("jse_token"); localStorage.removeItem("jse_member"); location.replace("/login"); }
+    logout: () => {
+      localStorage.removeItem("jse_token");
+      localStorage.removeItem("jse_member");
+      location.replace("/login");
+    }
   };
 
   if (!rule) return;
@@ -61,6 +65,12 @@
     window.JSE_MEMBER = d.member;
     window.dispatchEvent(new CustomEvent("jse-auth-ready", { detail: d.member }));
   }).catch(() => {
-    // Let the page render its own retry/error state if the network is temporarily unavailable.
+    const existing = document.getElementById("jse-auth-error");
+    if (existing) return;
+    const b = document.createElement("div");
+    b.id = "jse-auth-error";
+    b.textContent = "Unable to verify your JSE session. Check the connection and refresh.";
+    b.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;padding:10px 14px;border-radius:8px;background:#fff0f1;color:#a23a43;border:1px solid #e6b8b8;font:700 12px Arial,sans-serif;text-align:center";
+    document.body.appendChild(b);
   });
 })();
