@@ -6,9 +6,10 @@ const entry = process.argv[2] || "backend/src/server.ts";
 const out = process.argv[3] || "backend/dist/app.mjs";
 await build({
   entryPoints: [entry], outfile: out, bundle: true, platform: "node", target: "node22", format: "esm",
-  minify: true, legalComments: "none", sourcemap: false,
+  minify: true, legalComments: "none", sourcemap: false, loader: { ".sql": "text" },
   banner: { js: "import{createRequire as __jseCR}from'module';const require=__jseCR(String(import.meta.url).startsWith('file:')?import.meta.url:'file:///tmp/jse.mjs');" },
   external: ["pg-native"],
+  logLevel: "warning",
 });
 const buf = readFileSync(out);
 console.log(JSON.stringify({ out, bytes: buf.length, sha256: createHash("sha256").update(buf).digest("hex") }));
