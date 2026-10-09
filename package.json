@@ -1,15 +1,22 @@
 {
   "name": "jain-stock-exchange",
-  "version": "1.0.0",
+  "version": "2.72.0",
   "private": true,
   "type": "module",
+  "description": "JAIN STOCK EXCHANGE (JSE) - Dalal Street trading simulation",
   "scripts": {
-    "build": "echo JSE build ready"
+    "build": "node backend/build.mjs",
+    "db:local": "bash scripts/local-db.sh",
+    "dev": "node scripts/dev-server.mjs",
+    "test": "node --test tests/"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.2"
+    "pg": "^8.13.1"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.6.3"
   }
 }
