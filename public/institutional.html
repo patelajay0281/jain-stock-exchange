@@ -1,57 +1,134 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Institutional Investor</title><link rel="stylesheet" href="/theme.css"><script src="/jse-api.js"></script><script src="/auth.js"></script></head>
-<body class="institutional-page"><div class="shell page">
-<header class="brand">JAIN STOCK EXCHANGE</header>
-<nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/insights.html">Market Intelligence</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a></nav>
-
-<div class="inst-heading"><div><h1>Institutional Investor</h1><p>Institutional desk with its actual available cash and settled holdings. Participant teams are the trading counterparties.</p></div><div class="inst-badge">INSTITUTIONAL DESK</div></div>
-
-<section class="inst-account">
-<div><span>Investor</span><strong id="investorName">—</strong></div>
-<div><span>Available Cash</span><strong id="availableCash">—</strong></div>
-<div><span>Portfolio Market Value</span><strong id="portfolioValue">—</strong></div>
-<div><span>Unrealised P/L</span><strong id="pnl">—</strong></div>
-<div><span>Settled Positions</span><strong id="holdingCount">—</strong></div>
-</section>
-
-<section class="grid" id="stats"></section>
-
-<section class="inst-trade card"><div class="section-head"><div><h2>Place Institutional Order</h2><p>Order → Exchange approval → Bank settlement.</p></div><div class="order-flow"><span>1 ORDER</span><i>→</i><span>2 EXCHANGE</span><i>→</i><span>3 BANK</span></div></div>
-<form id="trade">
-<label>Participant Team (Counterparty)<select id="team" aria-label="Participant Team"></select></label>
-<label>Asset Type<select id="type"><option value="stock">Listed Stock</option><option value="ipo">IPO</option></select></label>
-<label>Asset<select id="asset"></select></label>
-<label>Side<select id="side"><option>BUY</option><option>SELL</option></select></label>
-<label>Quantity (Shares)<input id="qty" type="number" min="50" step="50" value="50"><small id="qtyHint">Listed stocks: multiples of 50 shares.</small></label>
-<label>Price<input id="price" type="number" min="0.01" step="0.01" inputmode="decimal"></label>
-<div class="inst-trade-value"><span>TRADE VALUE</span><strong id="tradeValue">₹0</strong></div>
-<button id="submitOrder" type="submit">SUBMIT ORDER</button>
-<div id="counterpartyNote" class="inst-counterparty-note"></div><div id="msg"></div>
-</form></section>
-
-<section class="inst-section"><div class="section-title"><h2>Portfolio</h2><span>Settled positions only</span></div>
-<div class="table-wrap"><table><thead><tr><th>Asset</th><th>Quantity</th><th>Average Price</th><th>Current Price</th><th>Market Value</th><th>P/L</th></tr></thead><tbody id="holdings"></tbody></table></div></section>
-
-<section class="inst-section"><div class="section-title"><h2>Order Status</h2><span>Latest 100 institutional orders</span></div>
-<div class="table-wrap"><table><thead><tr><th>Order</th><th>Counterparty</th><th>Asset</th><th>Side</th><th>Qty</th><th>Price</th><th>Value</th><th>Status</th></tr></thead><tbody id="orders"></tbody></table></div></section>
-</div>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Institutional Investors · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
+<style>
+  .tape { display: flex; flex-direction: column; }
+  .tape-row { display: grid; grid-template-columns: 70px 1fr auto auto; gap: 8px; padding: 7px 14px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: center; }
+  .moods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .moods button { border: 1px solid var(--line-2); background: #fff; border-radius: 8px; padding: 7px 4px; font-size: 11px; font-weight: 800; cursor: pointer; }
+  .moods button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+</style>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Institutional desk · admin controlled</div><h1>Institutional Investors</h1><p>Institutional orders follow the same workflow (Exchange → Bank) against a selected participant team. Institutional cash is separate from team cash.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="split left">
+    <div class="stack">
+      <form class="card" id="ticket" autocomplete="off" novalidate>
+        <div class="card-h"><h2>Institutional order ticket</h2><span class="small muted" id="instName"></span></div>
+        <div class="card-b stack">
+          <div class="side-toggle" role="group" aria-label="Side"><button type="button" class="buy" data-side="BUY" aria-pressed="true">BUY from team</button><button type="button" class="sell" data-side="SELL" aria-pressed="false">SELL to team</button></div>
+          <div class="field"><label for="sec">Stock / IPO</label><select class="input" id="sec"></select></div>
+          <div class="form-grid">
+            <div class="field"><label for="qty">Quantity</label><input class="input" id="qty" type="number" min="50" step="50" value="50"></div>
+            <div class="field"><label for="price">Price (₹)</label><input class="input" id="price" type="number" min="1" step="1"><span class="hint" id="band"></span></div>
+          </div>
+          <div class="field"><label for="cp">Counterparty participant team</label><select class="input" id="cp"></select><span class="hint" id="cpHint">The team sells to the institution on a BUY and buys from it on a SELL.</span></div>
+          <div class="alert info" id="pv">Trade value —</div>
+          <button class="btn primary block" type="submit" id="go">Submit to Exchange</button>
+          <div id="result"></div>
+        </div>
+      </form>
+      <div class="card admin-only">
+        <div class="card-h"><h2>Market News control</h2><span class="small muted">Admin only</span></div>
+        <div class="card-b stack">
+          <select class="input" id="nSec"></select>
+          <div class="moods" id="moods"></div>
+          <button class="btn primary" type="button" id="nGo">Publish news</button>
+        </div>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="grid cols-2">
+        <div class="card"><div class="card-h"><h2>Institutional portfolio</h2></div><div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Security</th><th class="num">Qty</th><th class="num">Avg</th><th class="num">Price</th><th class="num">Value</th><th class="num">P/L</th></tr></thead><tbody id="hold"></tbody></table></div></div></div>
+        <div class="card"><div class="card-h"><h2>Live market tape</h2></div><div class="tape" id="tape" style="max-height:340px;overflow:auto"></div></div>
+      </div>
+      <div class="card"><div class="card-h"><h2>Recent institutional orders</h2></div><div class="card-b flush"><div class="table-wrap" style="max-height:420px"><table class="t">
+        <thead><tr><th>Order</th><th>Time</th><th>Side</th><th>Security</th><th>Counterparty</th><th class="num">Qty @ Price</th><th class="num">Value</th><th>Status</th></tr></thead><tbody id="orders"></tbody></table></div></div></div>
+    </div>
+  </div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
 <script>
-const A=window.JSE_API,$=id=>document.getElementById(id);let stocks=[],ipos=[],investorId=null;
-const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
-const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
-async function json(path,opts){const r=await fetch(A+path,opts);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
-function renderStats(s){$('stats').innerHTML='<div class="card"><b>Pending Exchange</b><h2>'+s.pending+'</h2></div><div class="card"><b>Settled Orders</b><h2>'+s.settled+'</h2></div><div class="card"><b>Institutional BUY Value</b><h2>'+money(s.buy_value)+'</h2></div><div class="card"><b>Institutional SELL Value</b><h2>'+money(s.sell_value)+'</h2></div><div class="card"><b>Net Institutional Flow</b><h2 class="'+(s.net_flow>=0?'up':'down')+'">'+money(s.net_flow)+'</h2></div><div class="card"><b>Total Orders</b><h2>'+s.total+'</h2></div>'}
-function renderAssets(){const isIpo=$('type').value==='ipo',list=isIpo?ipos:stocks;$('asset').innerHTML=list.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');$('qty').min=isIpo?'1':'50';$('qty').step=isIpo?'1':'50';$('qty').value=isIpo?'1':'50';$('qtyHint').textContent=isIpo?'IPO: any whole-share quantity.':'Listed stocks: quantity must be a multiple of 50 shares.';if(list[0]){$('price').value=Number(list[0].price||0);updateCalc()}}
-function updateCalc(){$('tradeValue').textContent=money(Number($('qty').value||0)*Number($('price').value||0))}
-function updateCounterparty(){$('counterpartyNote').textContent=$('side').value==='BUY'?'BUY = selected team sells to the institutional investor.':'SELL = selected team buys from the institutional investor.'}
-async function loadPortfolio(){
- const d=await json('/institutional-portfolio?investor_id='+investorId),h=d.holdings||[];
- $('investorName').textContent=d.investor.code+' — '+d.investor.name;$('availableCash').textContent=money(d.investor.available_cash);$('portfolioValue').textContent=money(d.stats.market_value);$('pnl').textContent=money(d.stats.pnl);$('pnl').className=Number(d.stats.pnl)>=0?'up':'down';$('holdingCount').textContent=h.length;renderStats(d.stats);
- const teamNow=$('team').value;$('team').innerHTML=d.teams.map(x=>'<option value="'+x+'">'+x+'</option>').join('');if(d.teams.includes(teamNow))$('team').value=teamNow;
- $('holdings').innerHTML=h.map(x=>'<tr><td><b>'+esc(x.stock||x.ipo)+'</b></td><td>'+x.quantity+'</td><td>'+money(x.average_price)+'</td><td>'+money(x.current_price)+'</td><td>'+money(x.market_value)+'</td><td class="'+(Number(x.pnl)>=0?'up':'down')+'">'+money(x.pnl)+'</td></tr>').join('')||'<tr><td colspan="6" class="empty-row">No settled holdings.</td></tr>';
- $('orders').innerHTML=(d.orders||[]).map(x=>'<tr><td><b>'+esc(x.order_code)+'</b></td><td>'+esc(x.team)+'</td><td>'+esc(x.asset)+'</td><td>'+x.side+'</td><td>'+x.quantity+'</td><td>'+money(x.price)+'</td><td>'+money(x.trade_value)+'</td><td><span class="status-pill">'+esc(x.status)+'</span></td></tr>').join('')||'<tr><td colspan="8" class="empty-row">No orders yet.</td></tr>';
-}
-async function init(){try{const m=await json('/market');stocks=m.stocks||[];ipos=m.ipos||[];const d=await json('/institutional-portfolio');if(!d.investor?.id)throw new Error('No institutional investor configured');investorId=Number(d.investor.id);const teamNow=$('team').value;$('team').innerHTML=(d.teams||[]).map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if((d.teams||[]).includes(teamNow))$('team').value=teamNow;renderAssets();updateCounterparty();await loadPortfolio()}catch(e){$('msg').textContent=e.message;$('msg').className='error'}}
-$('type').addEventListener('change',renderAssets);$('side').addEventListener('change',updateCounterparty);$('qty').addEventListener('input',updateCalc);$('price').addEventListener('input',updateCalc);$('asset').addEventListener('change',()=>{const list=$('type').value==='ipo'?ipos:stocks,x=list.find(x=>String(x.id)===$('asset').value);if(x)$('price').value=Number(x.price||0);updateCalc()});
-$('trade').addEventListener('submit',async e=>{e.preventDefault();const isIpo=$('type').value==='ipo',quantity=Number($('qty').value),price=Number($('price').value);if(!Number.isInteger(quantity)||quantity<=0||(!isIpo&&quantity%50!==0)){ $('msg').textContent=isIpo?'Enter a valid whole-share IPO quantity.':'Listed stocks must be traded in 50-share lots.';$('msg').className='error';return}if(!Number.isFinite(price)||price<=0){$('msg').textContent='Enter a valid price.';$('msg').className='error';return}const body={investor_id:investorId,team_code:$('team').value,side:$('side').value,quantity,price};body[isIpo?'ipo_id':'stock_id']=Number($('asset').value);const b=$('submitOrder');b.disabled=true;$('msg').textContent='Submitting order…';try{const d=await json('/institutional-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});$('msg').textContent='Order '+d.order_code+' created and sent to Exchange.';$('msg').className='success';await loadPortfolio()}catch(e){$('msg').textContent=e.message;$('msg').className='error'}finally{b.disabled=false}});
-init();setInterval(()=>{if(investorId)loadPortfolio().catch(()=>{})},10000);
-</script><script src="/admin-nav.js"></script></body></html>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { side: "BUY", secs: [], key: JSE.uuid(), mood: null, cfg: null, admin: false, canTrade: false };
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+  function sec() { var id = $("sec").value; return S.secs.filter(function (s) { return String(s.id) === id; })[0]; }
+  function pv() {
+    var s = sec(), q = N($("qty").value), p = N($("price").value), band = N((S.cfg || {}).max_price_move_pct || 10);
+    $("band").textContent = s ? "Market " + F.price(s.price) + " · allowed " + F.price(Math.ceil(N(s.price) * (1 - band / 100))) + "–" + F.price(Math.floor(N(s.price) * (1 + band / 100))) : "";
+    $("pv").innerHTML = q && p ? "Trade value <b>" + F.money(q * p) + "</b> · institution " + (S.side === "BUY" ? "pays" : "receives") + " the full value (no brokerage on institutional orders)" : "Trade value —";
+  }
+  async function load() {
+    var d = await JSE.api.get("/api/institutional-portfolio");
+    var a = d.account, st = d.stats;
+    $("instName").textContent = a.code + " · " + a.name;
+    $("kpis").innerHTML = kpi("Institutional cash", F.short(a.cash), "started with " + F.short(a.initial_cash), N(a.cash) < 0 ? "bad" : "accent") +
+      kpi("Holdings value", F.short(a.holdings_value), d.holdings.length + " positions", "info") + kpi("Net worth", F.short(a.net_worth), F.signedMoney(a.pnl) + " P/L", N(a.pnl) >= 0 ? "good" : "bad") +
+      kpi("Orders", F.num(st.orders), st.settled + " settled · " + st.pending + " pending", "accent") + kpi("Bought / Sold", F.short(st.bought_value) + " / " + F.short(st.sold_value), "settled value", "info");
+    $("hold").innerHTML = d.holdings.length ? d.holdings.map(function (h) { return "<tr><td><b>" + esc(h.symbol) + "</b> " + JSE.badge.kind(h.type) + '</td><td class="num">' + F.num(h.quantity) + '</td><td class="num">' + F.price(h.avg_price) + '</td><td class="num">' + F.price(h.current_price) + '</td><td class="num">' + F.money(h.market_value) + '</td><td class="num ' + F.dir(h.unrealized_pnl) + '">' + F.signedMoney(h.unrealized_pnl) + "</td></tr>"; }).join("")
+      : '<tr><td colspan="6" class="empty">No holdings yet.</td></tr>';
+    $("orders").innerHTML = d.orders.length ? d.orders.map(function (o) { return '<tr><td class="mono">' + esc(o.order_no) + "</td><td>" + F.time(o.created_at) + "</td><td>" + JSE.badge.side(o.side) + "</td><td>" + esc(o.symbol) + "</td><td>" + esc(o.team) + '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + '</td><td class="num">' + F.money(o.trade_value) + "</td><td>" + JSE.badge.status(o.status) + (o.reject_reason ? '<div class="tiny muted">' + esc(o.reject_reason) + "</div>" : "") + "</td></tr>"; }).join("")
+      : '<tr><td colspan="8" class="empty">No institutional orders yet.</td></tr>';
+    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+  }
+  async function loadMarket() {
+    var m = await JSE.api.get("/api/market"); S.secs = m.ipos.concat(m.stocks);
+    var g = function (t, l) { return '<optgroup label="' + t + '">' + l.map(function (s) { return '<option value="' + s.id + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("") + "</optgroup>"; };
+    ["sec", "nSec"].forEach(function (id) { var v = $(id).value; $(id).innerHTML = '<option value="">Select…</option>' + g("IPOs", m.ipos) + g("Stocks", m.stocks); if (v) $(id).value = v; });
+    $("go").disabled = m.status !== "LIVE" || !S.canTrade;
+    pv();
+  }
+  async function loadTape() {
+    var i = await JSE.api.get("/api/insights");
+    $("tape").innerHTML = i.tape.length ? i.tape.map(function (t) { return '<div class="tape-row"><span class="muted">' + F.time(t.at) + "</span><span><b>" + esc(t.symbol) + "</b> " + JSE.badge.side(t.side) + (t.account_type === "INSTITUTION" ? ' <span class="badge inst">INST</span>' : "") + '</span><span class="num">' + F.num(t.quantity) + " @ " + F.price(t.price) + '</span><span class="' + F.dir(N(t.price) - N(t.price_before)) + '">' + (N(t.price) > N(t.price_before) ? "▲" : N(t.price) < N(t.price_before) ? "▼" : "■") + "</span></div>"; }).join("")
+      : '<div class="empty">No trades yet.</div>';
+  }
+  document.querySelectorAll("[data-side]").forEach(function (b) { b.addEventListener("click", function () { S.side = b.getAttribute("data-side"); document.querySelectorAll("[data-side]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); pv(); }); });
+  $("sec").addEventListener("change", function () { var s = sec(); if (s) $("price").value = Math.round(N(s.price)); pv(); });
+  ["qty", "price"].forEach(function (id) { $(id).addEventListener("input", pv); });
+  $("cp").innerHTML = '<option value="">Select team…</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
+  $("ticket").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var s = sec(); if (!s || !$("cp").value) return JSE.toast("Choose the security and the counterparty team.", "warn");
+    var b = $("go"); b.disabled = true;
+    try {
+      var r = await JSE.api.post("/api/institutional-order", { side: S.side, security_id: s.id, quantity: N($("qty").value), price: N($("price").value), counterparty_team: $("cp").value, idempotency_key: S.key });
+      $("result").innerHTML = '<div class="alert good"><b>' + esc(r.order.order_no) + "</b> sent to the Exchange · " + JSE.badge.status(r.order.status) + (r.warnings || []).map(function (w) { return '<div class="small" style="margin-top:4px">⚠ ' + esc(w.message) + "</div>"; }).join("") + "</div>";
+      S.key = JSE.uuid(); load();
+    } catch (ex) { $("result").innerHTML = '<div class="alert bad">' + esc(ex.message) + "</div>"; if (ex.status && ex.status < 500) S.key = JSE.uuid(); }
+    b.disabled = false;
+  });
+  var MOODS = [["VERY_SEVERE", "V. severe"], ["SEVERE", "Severe"], ["NEGATIVE", "Negative"], ["NORMAL", "Normal"], ["POSITIVE", "Positive"], ["VERY_POSITIVE", "V. positive"], ["SUPER_POSITIVE", "Super +"]];
+  $("moods").innerHTML = MOODS.map(function (m) { return '<button type="button" data-mood="' + m[0] + '" aria-pressed="false">' + m[1] + "</button>"; }).join("");
+  $("moods").addEventListener("click", function (e) { var b = e.target.closest("[data-mood]"); if (!b) return; S.mood = b.getAttribute("data-mood"); document.querySelectorAll("[data-mood]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); });
+  $("nGo").addEventListener("click", async function () {
+    if (!$("nSec").value || !S.mood) return JSE.toast("Choose a company and a mood.", "warn");
+    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", text: "The price moves immediately.", confirmText: "Publish" }))) return;
+    try { var r = await JSE.api.post("/api/market-news", { security_id: Number($("nSec").value), mood: S.mood }); JSE.toast(r.symbol + ": " + F.price(r.previous_price) + " → " + F.price(r.new_price) + " (" + F.pct(r.applied_pct) + ")", "good", 8000); loadMarket(); } catch (ex) { JSE.toast(ex.message, "bad"); }
+  });
+  JSE.page({ id: "institutional" }).then(async function (user) {
+    if (!user) return;
+    S.admin = user.role === "ADMIN"; S.canTrade = user.role === "ADMIN" || user.role === "INSTITUTIONAL";
+    if (!S.admin) document.querySelectorAll(".admin-only").forEach(function (x) { x.classList.add("hidden"); });
+    if (!S.canTrade) $("ticket").classList.add("hidden");
+    try { S.cfg = (await JSE.api.get("/api/event-status")).config; } catch (e) {}
+    JSE.poll(load, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    JSE.poll(loadMarket, 5000); JSE.poll(loadTape, 5000);
+  });
+})();
+</script>
+</body>
+</html>

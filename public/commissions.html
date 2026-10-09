@@ -2,100 +2,43 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Broker Commission | JAIN STOCK EXCHANGE</title>
-<link rel="stylesheet" href="/theme.css">
-<style>
-:root{--navy:#14213d;--navy2:#203456;--ink:#1d2a40;--muted:#728096;--line:#dce3ec;--soft:#f5f7fa;--green:#167554}
-*{box-sizing:border-box}
-body{background:#eef2f7;color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif}
-.com-page{max-width:1450px;margin:auto;padding:12px 22px 24px}
-.brand{font-size:19px;font-weight:900;letter-spacing:1.7px;color:var(--navy);padding:0 0 7px}
-.site-nav{display:flex;gap:5px;flex-wrap:nowrap;margin:0 0 14px;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
-.site-nav a{padding:10px 12px;border-radius:8px;text-decoration:none;color:#17314f;background:#fff;font-size:10px;font-weight:800;white-space:nowrap;border:0}
-.site-nav a:hover{background:#fff}.site-nav a[href="/commissions.html"]{background:var(--navy);color:#fff}
-.page-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:12px}
-.page-head h1{margin:0;color:var(--navy);font-size:28px;letter-spacing:-.5px}
-.page-head p{margin:4px 0 0;color:var(--muted);font-size:11px}
-.export{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cfd8e4;color:var(--navy);padding:9px 12px;border-radius:8px;text-decoration:none;font-size:10px;font-weight:900}
-.export:hover{background:#f7f9fb}
-.dashboard{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 14px;box-shadow:0 6px 18px rgba(20,33,61,.045)}
-.kpi span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:900;color:#7a879a}
-.kpi b{display:block;margin-top:5px;font-size:20px;color:var(--navy)}
-.kpi small{display:block;margin-top:2px;font-size:8px;color:#8a95a5}
-.panel{background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 8px 22px rgba(20,33,61,.055);overflow:hidden;margin-bottom:12px}
-.panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #e5e9ef;background:#fbfcfd}
-.panel-head strong{font-size:11px;letter-spacing:.7px;color:var(--navy)}
-.panel-head span{font-size:9px;color:var(--muted)}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px}
-.summary-box{border:1px solid #e1e7ef;background:#f7f9fb;border-radius:9px;padding:9px 10px}
-.summary-box .broker{font-size:9px;font-weight:900;color:#56647a;text-transform:uppercase;letter-spacing:.5px}
-.summary-box .amount{font-size:16px;font-weight:900;color:var(--navy);margin-top:5px}
-.table-wrap{overflow:auto;max-height:calc(100vh - 330px)}
-table{width:100%;border-collapse:collapse;font-size:10px}
-th{position:sticky;top:0;background:#f3f6fa;color:#68758a;text-align:left;padding:9px 8px;border-bottom:1px solid #dce3ec;font-size:8px;letter-spacing:.7px;text-transform:uppercase;white-space:nowrap;z-index:2}
-td{padding:8px;border-bottom:1px solid #edf0f4;color:#334158;white-space:nowrap}
-tbody tr:hover td{background:#fafbfd}
-.money{font-weight:800;color:var(--navy)}
-.badge{display:inline-block;padding:3px 6px;border-radius:5px;font-size:7px;font-weight:900;background:#edf2f7;color:#526178}
-.empty{padding:38px;text-align:center;color:#7c8798;font-size:11px}
-@media(max-width:900px){.dashboard{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr 1fr}.page-head{align-items:start;gap:10px;flex-direction:column}.table-wrap{max-height:none}}
-@media(max-width:600px){.com-page{padding:10px}.site-nav{overflow-x:auto}.dashboard,.summary-grid{grid-template-columns:1fr}.page-head h1{font-size:24px}}
-</style>
-<script src="/jse-api.js"></script><script src="/auth.js"></script></head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Broker Commission · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
+</head>
 <body>
-<div class="com-page">
-<header class="brand">JAIN STOCK EXCHANGE</header>
-<nav class="site-nav">
-<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a>
-</nav>
-<div class="page-head">
-<div><h1>Broker Commission</h1><p>Monitor broker earnings generated from settled market transactions.</p></div>
-<a class="export" href="/api/export?type=commissions">↓ DOWNLOAD COMMISSION CSV</a>
-</div>
-<div id="dashboard" class="dashboard"></div>
-<section class="panel">
-<div class="panel-head"><strong>BROKER COMMISSION SUMMARY</strong><span>Settled transactions only</span></div>
-<div id="summary"></div>
-</section>
-<section class="panel">
-<div class="panel-head"><strong>COMMISSION TRANSACTION LEDGER</strong><span id="updated">Loading…</span></div>
-<div id="app"><div class="empty">Loading commission records…</div></div>
-</section>
-</div>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Brokerage 0.5% · earned only on Bank-settled orders</div><h1>Broker Commission</h1><p>Brokers ranked by commission generated. Each team's assigned broker earns the 0.5% brokerage on that team's settled orders.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
+    <thead><tr><th class="num">Rank</th><th>Broker</th><th class="num">Teams</th><th class="num">Orders</th><th class="num">Buy volume</th><th class="num">Sell volume</th><th class="num">Total trade value</th><th class="num">Brokerage earned</th><th style="width:22%">Share</th><th class="num">Open orders</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div></div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
 <script>
-(async()=>{
-const A=window.JSE_API;
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const money=v=>'₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-try{
-const [sr,rr]=await Promise.all([fetch(A+'/reports?type=commission_summary'),fetch(A+'/reports?type=commissions')]);
-if(!sr.ok||!rr.ok)throw new Error('access');
-const summary=await sr.json(),detail=await rr.json(),rows=detail.rows||[],ss=summary.rows||[];
-const total=ss.reduce((a,x)=>a+Number(x.commission_earned||0),0);
-const transactions=rows.length;
-const brokers=ss.length;
-const avg=transactions?total/transactions:0;
-document.querySelector('#dashboard').innerHTML=
-'<div class="kpi"><span>Total Commission</span><b>'+money(total)+'</b><small>Broker earnings recorded</small></div>'+
-'<div class="kpi"><span>Active Brokers</span><b>'+brokers+'</b><small>With commission records</small></div>'+
-'<div class="kpi"><span>Settled Transactions</span><b>'+transactions+'</b><small>Commission-bearing records</small></div>'+
-'<div class="kpi"><span>Average / Transaction</span><b>'+money(avg)+'</b><small>Average commission</small></div>';
-document.querySelector('#summary').innerHTML=ss.length?
-'<div class="summary-grid">'+ss.map(x=>'<div class="summary-box"><div class="broker">'+esc(x.broker)+'</div><div class="amount">'+money(x.commission_earned)+'</div></div>').join('')+'</div>':
-'<div class="empty">No broker commission summary is available yet.</div>';
-document.querySelector('#updated').textContent='Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-document.querySelector('#app').innerHTML=rows.length?
-'<div class="table-wrap"><table><thead><tr><th>Broker</th><th>Order</th><th>Team</th><th>Stock / IPO</th><th>Side</th><th>Quantity</th><th>Price</th><th>Trade Value</th><th>Rate</th><th>Commission</th><th>Status</th><th>Date / Time</th></tr></thead><tbody>'+
-rows.map(x=>'<tr><td><b>'+esc(x.broker)+'</b></td><td>'+esc(x.order_code)+'</td><td>'+esc(x.team)+'</td><td>'+esc(x.stock)+'</td><td><span class="badge">'+esc(x.side)+'</span></td><td>'+esc(x.quantity)+'</td><td class="money">'+money(x.price)+'</td><td class="money">'+money(x.trade_value)+'</td><td>'+((Number(x.commission_rate||0)*100).toFixed(2))+'%</td><td class="money">'+money(x.commission_amount)+'</td><td><span class="badge">'+esc(x.status)+'</span></td><td>'+esc(x.created_at)+'</td></tr>').join('')+
-'</tbody></table></div>':'<div class="empty">No broker commission records yet.</div>';
-}catch(e){
-document.querySelector('#dashboard').innerHTML='<div class="kpi"><span>Access</span><b style="font-size:15px">ADMIN</b><small>Authorization required</small></div>';
-document.querySelector('#summary').innerHTML='<div class="empty">Admin access required.</div>';
-document.querySelector('#app').innerHTML='<div class="empty">Admin access required to view commission records.</div>';
-}
+(function () {
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+  async function load() {
+    var d = await JSE.api.get("/api/commissions");
+    var top = d.brokers[0], max = Math.max.apply(null, d.brokers.map(function (b) { return N(b.brokerage_earned); }).concat([1]));
+    $("kpis").innerHTML = kpi("Brokers", F.num(d.brokers.length), "rate " + F.pct(N(d.rate) * 100, { sign: false }), "accent") +
+      kpi("Settled orders", F.num(d.totals.orders), "with commission", "info") + kpi("Trade value", F.short(d.totals.trade_value), "settled", "info") +
+      kpi("Brokerage earned", F.money(d.totals.brokerage), "all brokers", "good") + kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.broker) : "—", top ? F.money(top.brokerage_earned) : "", "good");
+    $("rows").innerHTML = d.brokers.map(function (b) {
+      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(b.broker) + "</b>" + (b.name && b.name !== b.broker ? '<div class="tiny muted">' + esc(b.name) + "</div>" : "") + '</td><td class="num">' + b.teams + '</td><td class="num">' + F.num(b.orders) +
+        '<div class="tiny muted">' + b.buy_orders + " buy · " + b.sell_orders + ' sell</div></td><td class="num">' + F.money(b.buy_volume) + '<div class="tiny muted">' + F.num(b.buy_quantity) + ' shares</div></td><td class="num">' + F.money(b.sell_volume) + '<div class="tiny muted">' + F.num(b.sell_quantity) + " shares</div></td>" +
+        '<td class="num">' + F.money(b.total_trade_value) + '</td><td class="num"><b>' + F.money(b.brokerage_earned) + '</b></td><td><div class="bar"><i style="width:' + (N(b.brokerage_earned) / max * 100).toFixed(1) + '%"></i></div></td><td class="num">' + b.pending_orders + "</td></tr>";
+    }).join("");
+    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+  }
+  JSE.page({ id: "commissions" }).then(function (u) { if (u) JSE.poll(load, 6000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } }); });
 })();
 </script>
-<script src="/admin-nav.js"></script></body>
+</body>
 </html>

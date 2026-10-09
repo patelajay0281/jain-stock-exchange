@@ -2,129 +2,276 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Create Order | JAIN STOCK EXCHANGE</title>
-<link rel="stylesheet" href="/theme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create Order · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
 <style>
-/* Create Order page is intentionally isolated from the global form-grid styles. */
-body.order-page{background:#f4f6f9}
-body.order-page .order-shell{max-width:1500px;margin:0 auto;padding:18px 24px 34px}
-body.order-page .brand{font-size:19px;font-weight:800;letter-spacing:1.5px;color:#14213d;margin-bottom:11px}
-body.order-page .site-nav{display:flex;flex-wrap:nowrap;gap:6px;margin:0 0 16px;height:40px;align-items:stretch;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none}
-body.order-page .site-nav::-webkit-scrollbar{display:none}
-body.order-page .site-nav a{flex:0 0 auto;height:40px;display:flex;align-items:center;padding:0 12px;border:1px solid transparent;border-radius:7px;text-decoration:none;font-size:12px;font-weight:650;line-height:1;color:#344054;background:#fff;white-space:nowrap}
-body.order-page .site-nav a[href="/order.html"]{background:#172b4d;color:#fff}
-body.order-page .order-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-body.order-page .order-heading h1{margin:0;color:#14213d;font-size:28px;letter-spacing:-.03em}
-body.order-page .live{font-size:10px;font-weight:800;letter-spacing:.06em;color:#176b48;background:#e9f5ef;border:1px solid #c6e3d3;border-radius:5px;padding:8px 11px}
-body.order-page .order-card{background:#fff;border:1px solid #d8dfe8;border-radius:10px;box-shadow:0 4px 16px rgba(20,33,61,.05);overflow:hidden}
-body.order-page .order-card-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #e7ebf0}
-body.order-page .order-card-head strong{font-size:13px;color:#172033}
-body.order-page .order-card-head span{font-size:10px;color:#8a94a3}
-body.order-page form#orderForm{padding:20px}
-body.order-page .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px}
-body.order-page .field{min-width:0}
-body.order-page .field label{display:block!important;margin:0 0 6px!important;color:#566274!important;font-size:10px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.06em!important}
-body.order-page .field select,
-body.order-page .field input{display:block!important;width:100%!important;height:44px!important;margin:0!important;padding:0 11px!important;border:1px solid #cbd3de!important;border-radius:6px!important;background:#fff!important;color:#172033!important;font-size:14px!important;font-weight:600!important;box-shadow:none!important;outline:none!important}
-body.order-page .field select:focus,
-body.order-page .field input:focus{border-color:#6d7e94!important;box-shadow:0 0 0 2px rgba(52,73,98,.08)!important}
-body.order-page .section-title{margin:20px 0 11px;padding-top:17px;border-top:1px solid #e5e9ee;font-size:11px;font-weight:800;color:#4d5a6c;letter-spacing:.05em;text-transform:uppercase}
-body.order-page .summary{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;margin:0!important;padding:0!important;border:0!important}
-body.order-page .summary .metric{display:block!important;border:1px solid #e0e5eb!important;border-radius:6px!important;background:#f8fafc!important;padding:10px 11px!important}
-body.order-page .summary .metric span{display:block!important;margin:0!important;padding:0!important;border:0!important;color:#788394!important;font-size:9px!important;text-transform:uppercase!important;letter-spacing:.05em!important}
-body.order-page .summary .metric b{display:block!important;margin-top:4px!important;color:#172033!important;font-size:16px!important}
-body.order-page .actions{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:15px;border-top:1px solid #e5e9ee}
-body.order-page #submitBtn{height:43px;min-width:165px;padding:0 20px;border:0;border-radius:6px;background:#172b4d;color:#fff;font-size:11px;font-weight:800;letter-spacing:.04em;cursor:pointer;box-shadow:none}
-body.order-page #submitBtn:hover{background:#243a5b}
-body.order-page #submitBtn:disabled{opacity:.55;cursor:wait}
-body.order-page #msg{margin:0;min-height:20px;padding:10px 12px;border-radius:6px;background:#f8fafc;color:#667085;font-size:11px;font-weight:700}
-body.order-page #msg.error{background:#faf0f1;color:#a23a43}
-body.order-page #msg.success{background:#eef8f2;color:#23734f}
-body.order-page #loanFields{display:none}
-body.order-page .loan-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
-body.order-page .loan-box{border:1px solid #e0e5eb;border-radius:6px;background:#f8fafc;padding:10px 11px}
-body.order-page .loan-box span{display:block;color:#788394;font-size:9px;text-transform:uppercase}
-body.order-page .loan-box b{display:block;margin-top:4px;color:#172033;font-size:15px}
-body.order-page .popup{display:none;position:fixed;inset:0;background:rgba(16,25,37,.48);z-index:9999;align-items:center;justify-content:center}
-body.order-page .popup-box{width:390px;max-width:92%;background:#fff;border-radius:8px;padding:24px;text-align:center;box-shadow:0 18px 60px rgba(0,0,0,.25)}
-body.order-page .popup-box h3{margin:0 0 8px;color:#a23a43;font-size:19px}
-body.order-page .popup-box p{margin:0 0 18px;font-size:13px;line-height:1.45;color:#667085}
-body.order-page .popup-box button{border:0;border-radius:5px;background:#172b4d;color:#fff;padding:10px 28px;font-weight:800;cursor:pointer}
-@media(min-width:701px){body.order-page{height:100vh;overflow:hidden}body.order-page .order-shell{height:100vh;overflow:hidden;padding:14px 24px 18px}body.order-page .site-nav{margin-bottom:10px;padding-bottom:0}body.order-page .order-heading{margin-bottom:10px}body.order-page .order-heading h1{font-size:26px}body.order-page .order-card-head{padding:11px 16px}body.order-page form#orderForm{padding:14px 16px}body.order-page .field-grid{gap:10px 14px}body.order-page .field label{margin-bottom:4px!important}body.order-page .field select,body.order-page .field input{height:38px!important;font-size:13px!important}.body.order-page .section-title{margin:12px 0 8px;padding-top:11px;font-size:10px}body.order-page .section-title{margin:12px 0 8px;padding-top:11px;font-size:10px}body.order-page .summary{gap:7px!important}body.order-page .summary .metric{padding:8px 10px!important}body.order-page .summary .metric b{font-size:14px!important}body.order-page .actions{margin-top:11px;padding-top:10px}body.order-page #submitBtn{height:38px}body.order-page #msg{min-height:38px;padding:9px 11px}}\n@media(max-width:700px){
- body.order-page .order-shell{padding:16px 14px 28px}
- body.order-page .order-heading{align-items:flex-start;gap:10px;flex-direction:column}
- body.order-page .field-grid{grid-template-columns:1fr}
- body.order-page .summary,.loan-summary{grid-template-columns:1fr 1fr!important}
-}
-@media(max-width:480px){
- body.order-page .summary,.loan-summary{grid-template-columns:1fr!important}
- body.order-page .actions{align-items:stretch;flex-direction:column}
- body.order-page #submitBtn{width:100%}
-}
+  .ticket .card-b { display: grid; gap: 14px; }
+  .preview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .preview .kpi { box-shadow: none; background: var(--surface-2); }
+  .preview .kpi .v { font-size: 19px; }
+  .band { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .qty-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: stretch; }
+  .qty-row .btn { min-width: 52px; }
+  .team-info { font-size: 13px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .team-info .dl { grid-template-columns: auto 1fr; }
+  .done { border: 2px solid #c4e6cf; background: var(--green-soft); border-radius: 10px; padding: 12px 14px; }
+  .done b { color: var(--green-2); }
+  .mode { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .pair-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .preview { grid-template-columns: 1fr 1fr; } .pair-grid { grid-template-columns: 1fr; } }
 </style>
-<script src="/jse-api.js"></script><script src="/auth.js"></script></head>
-<body class="order-page">
-<div class="order-shell">
-<header class="brand">JAIN STOCK EXCHANGE</header>
-<nav class="site-nav">
-<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a>
-</nav>
+</head>
+<body>
+<main id="main" class="wrap">
+  <div class="page-head">
+    <div><div class="eyebrow">Broker desk</div><h1>Create Order</h1><p>Orders go to the Exchange for review, then to the Bank for settlement. Prices, cash and holdings change only after Bank settlement.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+  <div class="split">
+    <form class="card ticket" id="ticket" novalidate autocomplete="off">
+      <div class="card-h">
+        <h2>Order ticket</h2>
+        <div class="seg" role="group" aria-label="Ticket mode">
+          <button type="button" data-mode="single" aria-pressed="true">Single team</button>
+          <button type="button" data-mode="pair" aria-pressed="false">Buyer + Seller</button>
+        </div>
+      </div>
+      <div class="card-b">
+        <div class="alert warn hidden" id="notLive"></div>
+        <div id="singleTeam" class="form-grid">
+          <div class="field span-2"><label for="team">Participant team</label><select class="input lg" id="team" required></select></div>
+          <div class="span-2"><div class="side-toggle" role="group" aria-label="Side">
+            <button type="button" class="buy" data-side="BUY" aria-pressed="true">BUY</button>
+            <button type="button" class="sell" data-side="SELL" aria-pressed="false">SELL</button>
+          </div></div>
+        </div>
+        <div id="pairTeams" class="pair-grid hidden">
+          <div class="field"><label for="buyer">Buyer team (BUY)</label><select class="input lg" id="buyer"></select></div>
+          <div class="field"><label for="seller">Seller team (SELL)</label><select class="input lg" id="seller"></select></div>
+          <div class="span-2 small muted" style="grid-column:1/-1">Creates two linked orders at the agreed price: a BUY for the buyer and a SELL for the seller. Each is checked by the Exchange and the Bank.</div>
+        </div>
+        <div class="form-grid">
+          <div class="field span-2"><label for="sec">Stock / IPO</label><select class="input lg" id="sec" required></select></div>
+          <div class="field">
+            <label for="qty">Quantity (shares)</label>
+            <div class="qty-row"><button class="btn" type="button" id="qMinus" aria-label="Decrease by one lot">−</button>
+              <input class="input lg" id="qty" type="number" inputmode="numeric" min="50" step="50" value="50" required>
+              <button class="btn" type="button" id="qPlus" aria-label="Increase by one lot">+</button></div>
+            <span class="hint" id="lotHint">Multiples of 50 shares</span>
+          </div>
+          <div class="field">
+            <label for="price">Agreed price (₹ per share)</label>
+            <input class="input lg" id="price" type="number" inputmode="numeric" min="1" step="1" required>
+            <span class="band" id="band">&nbsp;</span>
+          </div>
+          <div class="field span-2"><label for="notes">Slip / note (optional)</label><input class="input" id="notes" maxlength="200" placeholder="Slip number or remarks"></div>
+        </div>
+        <div class="preview">
+          <div class="kpi"><div class="k">Trade value</div><div class="v" id="pvTv">—</div><div class="s">quantity × price</div></div>
+          <div class="kpi"><div class="k">Brokerage 0.5%</div><div class="v" id="pvBrk">—</div><div class="s" id="pvBrkS">charged at settlement</div></div>
+          <div class="kpi"><div class="k" id="pvAmtK">Total payable</div><div class="v" id="pvAmt">—</div><div class="s" id="pvAmtS">trade value + brokerage</div></div>
+        </div>
+        <div id="checks"></div>
+        <button class="btn primary lg block" type="submit" id="submit">Submit order to Exchange</button>
+        <div id="result" aria-live="polite"></div>
+      </div>
+    </form>
+    <aside class="stack">
+      <div class="card"><div class="card-h"><h3 id="infoTitle">Team position</h3></div><div class="card-b" id="teamInfo"><span class="muted">Choose a team to see its cash and holdings.</span></div></div>
+      <div class="card"><div class="card-h"><h3>Recent orders</h3><a class="small" href="/orders.html">Order tracking →</a></div>
+        <div class="card-b flush"><div class="table-wrap" style="max-height:520px"><table class="t"><thead><tr><th>Order</th><th>Trade</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div></div></div>
+    </aside>
+  </div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum;
+  var S = { mode: "single", side: "BUY", market: null, secs: [], teams: [], status: null, cfg: null, info: null, infoFor: null, key: JSE.uuid(), busy: false, user: null };
+  var $ = function (id) { return document.getElementById(id); };
 
-<div class="order-heading">
-<h1>Create Order</h1>
-<div id="eventState" class="live">CHECKING MARKET…</div>
-</div>
+  function sec() { var id = $("sec").value; return S.secs.filter(function (s) { return String(s.id) === id; })[0]; }
+  function lot() { var s = sec(); return s ? s.lot_size : 50; }
 
-<section class="order-card">
-<div class="order-card-head"><strong>Order Entry</strong><span>Pit Manager order entry</span></div>
-<form id="orderForm" novalidate>
-<div class="field-grid">
-<div class="field"><label for="transactionType">Transaction Type</label><select id="transactionType"><option value="trade">Trade Order</option><option value="loan_repay">Loan Repayment</option></select></div>
-<div class="field"><label for="team">Customer Team</label><select id="team"></select></div>
-</div>
+  function fillTeams() {
+    var opts = S.teams.map(function (t) {
+      return '<option value="' + esc(t.code) + '">' + esc(t.code) + (t.name && t.name !== "Team " + t.code.slice(5) ? " · " + esc(t.name) : "") + (t.broker ? " · " + esc(t.broker) : "") + "</option>";
+    }).join("");
+    ["team", "buyer", "seller"].forEach(function (id) { var el = $(id), v = el.value; el.innerHTML = '<option value="">Select team…</option>' + opts; if (v) el.value = v; });
+  }
+  function fillSecs() {
+    var el = $("sec"), v = el.value;
+    var g = function (title, list) { return '<optgroup label="' + title + '">' + list.map(function (s) { return '<option value="' + s.id + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("") + "</optgroup>"; };
+    el.innerHTML = '<option value="">Select stock or IPO…</option>' + g("IPOs", S.market.ipos) + g("Stocks", S.market.stocks);
+    if (v) el.value = v;
+  }
 
-<div id="tradeFields">
-<div class="section-title">Security &amp; Order</div>
-<div class="field-grid">
-<div class="field"><label for="assetType">Asset Type</label><select id="assetType"><option value="stock">Listed Stock</option><option value="ipo">IPO</option></select></div>
-<div class="field"><label for="stock">Stock / IPO</label><select id="stock"></select></div>
-<div class="field"><label for="side">Transaction Side</label><select id="side"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
-<div class="field"><label for="qty">Quantity</label><input id="qty" type="number" min="50" step="50" value="50"></div>
-<div class="field"><label for="price">Price Per Share</label><input id="price" type="number" min="1" step="1" value="0"></div>
-</div>
+  function preview() {
+    var s = sec(), q = N($("qty").value), p = N($("price").value), cfg = S.cfg || {};
+    var rate = N(cfg.brokerage_rate || 0.005), band = N(cfg.max_price_move_pct || 10);
+    if (s) {
+      var lo = Math.ceil(N(s.price) * (1 - band / 100)), hi = Math.floor(N(s.price) * (1 + band / 100));
+      $("band").innerHTML = "Market " + F.price(s.price) + " · allowed " + F.price(lo) + " – " + F.price(hi) + " (±" + band + "%)";
+      $("lotHint").textContent = "Multiples of " + s.lot_size + " shares · " + (q && q % s.lot_size === 0 ? (q / s.lot_size) + " lot(s)" : "not a whole lot");
+    } else { $("band").innerHTML = "&nbsp;"; }
+    var tv = q > 0 && p > 0 ? q * p : 0, brk = Math.round(tv * rate * 100) / 100;
+    var sell = S.mode === "single" && S.side === "SELL";
+    $("pvTv").textContent = tv ? F.money(tv) : "—";
+    $("pvBrk").textContent = tv ? F.money(brk) : "—";
+    $("pvAmtK").textContent = S.mode === "pair" ? "Buyer pays / seller gets" : sell ? "Net receivable" : "Total payable";
+    $("pvAmt").textContent = tv ? (S.mode === "pair" ? F.money(tv + brk) + " / " + F.money(tv - brk) : F.money(sell ? tv - brk : tv + brk)) : "—";
+    $("pvAmtS").textContent = S.mode === "pair" ? "each side pays 0.5% brokerage" : sell ? "trade value − brokerage" : "trade value + brokerage";
+    checks(s, q, p, tv, brk);
+  }
 
-<div class="section-title">Settlement Preview</div>
-<div class="summary">
-<div class="metric"><span>Total Shares</span><b id="shares">50</b></div>
-<div class="metric"><span>Trade Value</span><b id="tv">₹0</b></div>
-<div class="metric"><span>Brokerage</span><b id="bc">₹0</b></div>
-<div class="metric"><span id="finalLabel">Total Required</span><b id="tr">₹0</b></div>
-</div>
-</div>
+  function checks(s, q, p, tv, brk) {
+    var out = [], cfg = S.cfg || {};
+    if (s && q && q % s.lot_size !== 0) out.push(["bad", s.symbol + " trades in multiples of " + s.lot_size + " shares."]);
+    if (s && p) {
+      var band = N(cfg.max_price_move_pct || 10), mp = N(s.price);
+      if (Math.abs(p - mp) > mp * band / 100) out.push(["bad", "Price is outside the ±" + band + "% band around " + F.price(mp) + "."]);
+      if (p % 1 !== 0) out.push(["bad", "Use whole rupees."]);
+    }
+    if (tv && (tv < N(cfg.min_order_value || 1) || tv > N(cfg.max_order_value || 5000000))) out.push(["bad", "Order value must be between " + F.money(cfg.min_order_value || 1) + " and " + F.money(cfg.max_order_value || 5000000) + "."]);
+    var info = S.info;
+    if (S.mode === "single" && info && s && tv) {
+      var held = (info.holdings.filter(function (h) { return h.symbol === s.symbol; })[0] || {}).quantity || 0;
+      if (S.side === "SELL" && q > held) out.push(["warn", "Short-selling warning: " + info.team.code + " holds " + held + " " + s.symbol + " shares. The attempt will be recorded and the Bank will reject it."]);
+      if (S.side === "BUY") {
+        var need = tv + brk, cash = N(info.team.cash), buf = N(info.min_cash_buffer), room = N(info.loan && info.loan.remaining_limit);
+        if (need > cash) out.push(["warn", "Cash shortfall: needs " + F.money(need) + ", team has " + F.money(cash) + ". The attempt will be recorded."]);
+        else if (cash - need < buf) out.push(["info", "Settlement would leave less than " + F.money(buf) + "; the Bank will draw up to " + F.money(room) + " of loan (2% interest) to keep the minimum cash."]);
+      }
+    }
+    $("checks").innerHTML = out.map(function (x) { return '<div class="alert ' + x[0] + '" style="margin-bottom:8px">' + esc(x[1]) + "</div>"; }).join("");
+  }
 
-<div id="loanFields">
-<div class="section-title">Loan Repayment</div>
-<div id="loanSummary" class="loan-summary"></div>
-<div class="field" style="margin-top:14px"><label for="repayAmount">Repayment Amount — Principal + Interest</label><input id="repayAmount" type="number" min="1" step="1" value="1"></div>
-</div>
+  async function loadTeamInfo(code) {
+    S.infoFor = code;
+    if (!code) { S.info = null; $("teamInfo").innerHTML = '<span class="muted">Choose a team to see its cash and holdings.</span>'; preview(); return; }
+    try {
+      var d = await JSE.api.get("/api/portfolio-details", { team: code });
+      if (S.infoFor !== code) return;
+      S.info = d;
+      var t = d.team, h = d.holdings;
+      $("infoTitle").textContent = t.code + " position";
+      $("teamInfo").innerHTML = '<dl class="dl">' +
+        "<dt>Liquid cash</dt><dd>" + F.money(t.cash) + "</dd><dt>Holdings value</dt><dd>" + F.money(t.holdings_value) + "</dd>" +
+        "<dt>Net worth</dt><dd>" + F.money(t.net_worth) + "</dd><dt>Broker</dt><dd>" + esc(t.broker || "—") + "</dd>" +
+        "<dt>Loan room</dt><dd>" + F.money(d.loan ? d.loan.remaining_limit : 0) + "</dd></dl>" +
+        (h.length ? '<div class="table-wrap" style="margin-top:10px"><table class="t"><thead><tr><th>Holding</th><th class="num">Qty</th><th class="num">Price</th></tr></thead><tbody>' +
+          h.map(function (x) { return "<tr><td>" + esc(x.symbol) + " " + JSE.badge.kind(x.type) + '</td><td class="num">' + F.num(x.quantity) + '</td><td class="num">' + F.price(x.current_price) + "</td></tr>"; }).join("") +
+          "</tbody></table></div>" : '<p class="muted small" style="margin:10px 0 0">No holdings yet.</p>');
+    } catch (e) { $("teamInfo").innerHTML = '<div class="alert bad">' + esc(e.message) + "</div>"; }
+    preview();
+  }
 
-<div class="actions">
-<button id="submitBtn" type="submit">SUBMIT ORDER</button>
-<p id="msg" role="status" aria-live="polite"></p>
-<div id="handoff" style="display:none;margin-top:10px;padding:11px 12px;border:1px solid #d8e7df;border-radius:7px;background:#f1f8f4;color:#275846;font-size:11px;font-weight:700">
-  <span id="handoffText"></span>
-  <span style="display:inline-flex;gap:8px;margin-left:8px;flex-wrap:wrap">
-    <a id="handoffExchange" href="/exchange.html" style="color:#173b31">Open Exchange</a>
-    <a id="handoffBank" href="/bank.html" style="color:#173b31">Open Bank</a>
-    <a id="handoffTracking" href="/orders.html" style="color:#173b31">Open Tracking</a>
-  </span>
-</div>
-</div>
-</form>
-</section>
-</div>
+  function setMode(m) {
+    S.mode = m;
+    document.querySelectorAll("[data-mode]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === m)); });
+    $("singleTeam").classList.toggle("hidden", m !== "single");
+    $("pairTeams").classList.toggle("hidden", m !== "pair");
+    $("submit").textContent = m === "pair" ? "Submit BUY + SELL orders to Exchange" : "Submit order to Exchange";
+    preview();
+  }
+  function setSide(side) {
+    S.side = side;
+    document.querySelectorAll("[data-side]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-side") === side)); });
+    preview();
+  }
 
-<script src="/order.js?v=300"></script>
-<script src="/admin-nav.js"></script></body>
+  async function submit(e) {
+    e.preventDefault();
+    if (S.busy) return;
+    var s = sec(), q = N($("qty").value), p = N($("price").value);
+    var res = $("result"); res.innerHTML = "";
+    var base = { security_id: s && s.id, quantity: q, price: p, notes: $("notes").value.trim() || undefined };
+    var body;
+    if (S.mode === "single") {
+      if (!$("team").value) return JSE.toast("Choose the participant team.", "warn");
+      body = Object.assign({ team: $("team").value, side: S.side, idempotency_key: S.key }, base);
+    } else {
+      var b = $("buyer").value, sl = $("seller").value;
+      if (!b || !sl) return JSE.toast("Choose both the buyer and the seller team.", "warn");
+      if (b === sl) return JSE.toast("Buyer and seller must be different teams.", "warn");
+      body = { idempotency_key: S.key, legs: [Object.assign({ team: b, side: "BUY" }, base), Object.assign({ team: sl, side: "SELL" }, base)] };
+    }
+    if (!s) return JSE.toast("Choose a stock or IPO.", "warn");
+    S.busy = true; var btn = $("submit"); btn.disabled = true; var label = btn.textContent; btn.innerHTML = '<span class="spinner"></span> Submitting…';
+    try {
+      var r = await JSE.api.post("/api/orders", body);
+      var legs = r.legs || [r];
+      res.innerHTML = '<div class="done">' + legs.map(function (x) {
+        var o = x.order;
+        return "<div><b>" + esc(o.order_no) + "</b> " + JSE.badge.side(o.side) + " " + esc(o.team) + " · " + F.num(o.quantity) + " " + esc(o.symbol) + " @ " + F.price(o.price) +
+          " · " + JSE.badge.status(o.status) + (x.replayed ? ' <span class="badge prov">already submitted</span>' : "") + "</div>" +
+          (x.warnings || []).map(function (w) { return '<div class="small" style="color:var(--amber);margin-top:3px">⚠ ' + esc(w.message) + "</div>"; }).join("");
+      }).join("") + '<div class="small muted" style="margin-top:6px">Sent to the Exchange. Track it on <a href="/orders.html">Order Tracking</a>.</div></div>';
+      JSE.toast((legs.length > 1 ? "Orders " : "Order ") + legs.map(function (x) { return x.order.order_no; }).join(" + ") + " submitted", "good");
+      S.key = JSE.uuid();
+      $("notes").value = "";
+      recent.now();
+      if (S.infoFor) loadTeamInfo(S.infoFor);
+    } catch (ex) {
+      res.innerHTML = '<div class="alert bad"><b>Not submitted.</b> ' + esc(ex.message) + "</div>";
+      if (ex.status && ex.status < 500) S.key = JSE.uuid();
+    } finally { S.busy = false; btn.disabled = false; btn.textContent = label; }
+  }
+
+  async function loadMarket() {
+    var m = await JSE.api.get("/api/market");
+    var first = !S.market;
+    S.market = m; S.secs = m.ipos.concat(m.stocks);
+    fillSecs();
+    var live = m.status === "LIVE";
+    var nl = $("notLive");
+    nl.classList.toggle("hidden", live);
+    nl.innerHTML = live ? "" : "<b>Market is " + esc(F.statusText(m.status)) + ".</b> New orders are accepted only while the market is LIVE.";
+    $("submit").disabled = !live;
+    if (first) { var c = $("conn"); c.className = "conn"; $("connText").textContent = "Connected"; }
+    preview();
+  }
+  var recent;
+  async function loadRecent() {
+    var r = await JSE.api.get("/api/tracking", { page_size: 15 });
+    $("recent").innerHTML = r.rows.length ? r.rows.map(function (o) {
+      return '<tr><td><span class="mono">' + esc(o.order_no) + '</span><div class="tiny muted">' + esc(o.team) + " · " + F.time(o.created_at) + "</div></td><td>" + JSE.badge.side(o.side) + " " + F.num(o.quantity) + " <b>" + esc(o.symbol) +
+        "</b> @ " + F.price(o.price) + "</td><td>" + JSE.badge.status(o.status) + "</td></tr>";
+    }).join("") : '<tr><td colspan="3" class="empty">No orders yet.</td></tr>';
+  }
+
+  document.querySelectorAll("[data-mode]").forEach(function (b) { b.addEventListener("click", function () { setMode(b.getAttribute("data-mode")); }); });
+  document.querySelectorAll("[data-side]").forEach(function (b) { b.addEventListener("click", function () { setSide(b.getAttribute("data-side")); }); });
+  $("team").addEventListener("change", function () { loadTeamInfo($("team").value); });
+  $("sec").addEventListener("change", function () { var s = sec(); if (s) { $("price").value = Math.round(N(s.price)); $("qty").step = s.lot_size; $("qty").min = s.lot_size; } preview(); });
+  ["qty", "price"].forEach(function (id) { $(id).addEventListener("input", preview); });
+  $("qPlus").addEventListener("click", function () { $("qty").value = Math.max(0, N($("qty").value) + lot()); preview(); });
+  $("qMinus").addEventListener("click", function () { $("qty").value = Math.max(lot(), N($("qty").value) - lot()); preview(); });
+  $("ticket").addEventListener("submit", submit);
+
+  JSE.page({ id: "order", roles: ["ADMIN", "BROKER", "PARTICIPANT"] }).then(async function (user) {
+    if (!user) return;
+    S.user = user;
+    try {
+      var st = await JSE.api.get("/api/event-status"); S.cfg = st.config;
+      if (user.role === "PARTICIPANT") {
+        S.teams = [{ code: user.team, name: "" }];
+        if (!st.config.participant_order_entry) $("notLive").outerHTML = '<div class="alert info">Orders are entered by the broker desk. Hand your signed slip to your broker.</div>';
+      } else {
+        var p = await JSE.api.get("/api/portfolios");
+        S.teams = p.teams.map(function (t) { return { code: t.code, name: t.name, broker: t.broker }; }).sort(function (a, b) { return JSE.teamSort(a.code, b.code); });
+      }
+      fillTeams();
+      if (user.role === "PARTICIPANT") { $("team").value = user.team; $("team").disabled = true; loadTeamInfo(user.team); document.querySelector('[data-mode="pair"]').classList.add("hidden"); }
+    } catch (e) { JSE.toast(e.message, "bad"); }
+    JSE.poll(loadMarket, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    recent = JSE.poll(loadRecent, 5000);
+  });
+})();
+</script>
+</body>
 </html>

@@ -1,1 +1,0 @@
-CREATE INDEX IF NOT EXISTS idx_participant_loans_team_status ON participant_loans(team_id,status);

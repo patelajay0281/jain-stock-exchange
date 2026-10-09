@@ -1,1 +1,0 @@
-INSERT INTO event_config(id,max_price_move_pct,min_order_value,max_order_value,brokerage_rate) VALUES(1,10,1,5000000,0.001) ON CONFLICT(id) DO NOTHING

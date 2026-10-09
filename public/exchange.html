@@ -1,89 +1,160 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Exchange Settlement | JAIN STOCK EXCHANGE</title><link rel="stylesheet" href="/theme.css">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exchange Settlement · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
 <style>
-body{background:#f4f6f9;color:#17233b;font-family:Inter,Segoe UI,Arial,sans-serif}
-.settle-page{max-width:1500px;margin:auto;padding:18px 24px}
-.settle-page .brand{font-size:20px;margin-bottom:10px}
-.settle-page .site-nav{margin-bottom:16px}
-.settle-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:14px}
-.settle-head h1{margin:0;font-size:30px;color:#14213d}
-.settle-head p{margin:5px 0 0;color:#718096;font-size:12px}
-.live-pill{background:#e8f4ef;color:#13704f;border:1px solid #cfe7dd;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:900;letter-spacing:.8px}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
-.metric{background:#fff;border:1px solid #dfe5ee;border-radius:12px;padding:12px 14px}
-.metric span{display:block;color:#7a8495;font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase}
-.metric b{display:block;color:#14213d;font-size:20px;margin-top:4px}
-.settle-card{background:#fff;border:1px solid #dfe5ee;border-radius:15px;box-shadow:0 8px 24px rgba(20,33,61,.06);overflow:hidden}
-.card-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e7ebf1}
-.card-head strong{font-size:12px;letter-spacing:.7px;color:#14213d}
-.card-head span{font-size:10px;color:#7a8495}
-.table-wrap{overflow:auto;max-height:calc(100vh - 255px)}
-.settle-table{width:100%;border-collapse:collapse;font-size:11px}
-.settle-table th{position:sticky;top:0;background:#f6f8fb;color:#68748a;font-size:9px;letter-spacing:.7px;text-transform:uppercase;text-align:left;padding:10px 9px;border-bottom:1px solid #dfe5ee;z-index:1}
-.settle-table td{padding:9px;border-bottom:1px solid #eef1f5;color:#26344d;white-space:nowrap}
-.settle-table tr:hover td{background:#fafbfd}
-.order-code{font-weight:900;color:#14213d}.money{font-weight:800}
-.kind{display:inline-block;padding:4px 6px;border-radius:5px;background:#eef2f7;color:#536078;font-size:8px;font-weight:900}
-.actions{display:flex;gap:5px}.warning-ribbon{display:inline-block;padding:5px 8px;border-radius:6px;font-size:8px;font-weight:900;letter-spacing:.05em;white-space:nowrap}.warning-ribbon.short{background:#f9e7e9;color:#a23a43;border:1px solid #e5c0c5}.warning-ribbon.balance{background:#fff1dc;color:#9a5a00;border:1px solid #ead0a3}.ok-ribbon{display:inline-block;padding:5px 8px;border-radius:6px;font-size:8px;font-weight:900;letter-spacing:.05em;color:#23734f;background:#eef8f2;border:1px solid #cbe5d5}
-.approve,.reject{border:0;border-radius:6px;padding:7px 10px;font-size:9px;font-weight:900;cursor:pointer}
-.approve{background:#173b31;color:#fff}.reject{background:#f7e9ea;color:#a6323a}
-.empty{padding:50px;text-align:center;color:#7b8697;font-size:12px}.approval-popup{display:none;position:fixed;inset:0;z-index:9999;background:rgba(16,25,37,.5);align-items:center;justify-content:center}.approval-box{width:410px;max-width:92vw;background:#fff;border-radius:12px;padding:28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.28);border:1px solid #dfe5ee}.approval-icon{width:42px;height:42px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff1dc;color:#9a5a00;font-size:23px;font-weight:900}.approval-kicker{font-size:10px;font-weight:900;letter-spacing:1.2px;color:#a23a43}.approval-box h2{margin:7px 0;color:#14213d;font-size:21px}.approval-box p{margin:0 0 19px;color:#667085;font-size:12px;line-height:1.5}.approval-box button{border:0;border-radius:6px;background:#172b4d;color:#fff;padding:11px 18px;font-size:10px;font-weight:900;cursor:pointer}.danger-btn{background:#a23a43!important}
-@media(max-width:900px){.settle-page{padding:12px}.metrics{grid-template-columns:1fr 1fr}.settle-head{align-items:start}.table-wrap{max-height:none}}
+  .risk { display: flex; flex-direction: column; gap: 3px; }
+  .risk .badge { align-self: flex-start; }
+  tr.flagged td { background: #fffaf2; }
+  .diff { font-size: 11.5px; font-weight: 700; }
 </style>
-<style>
-body.settle-exchange{background:#eef2f6}
-body.settle-exchange .settle-page{max-width:1500px;padding:14px 22px 34px}
-body.settle-exchange .settle-head{margin:18px 0 14px;padding:20px 22px;border-radius:15px;background:linear-gradient(135deg,#0f1b2d,#1d3b56);box-shadow:0 10px 25px rgba(15,31,55,.14)}
-body.settle-exchange .settle-head h1{color:#fff;font-size:28px}.settle-exchange .settle-head p{color:#c9d5e5}
-body.settle-exchange .live-pill{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);color:#dff8ea}
-body.settle-exchange .metrics{gap:11px}
-body.settle-exchange .metric{border:1px solid #d8e0e9;border-radius:12px;box-shadow:0 5px 16px rgba(20,33,61,.045);padding:13px 15px}
-body.settle-exchange .metric b{font-size:22px}
-body.settle-exchange .settle-card{border-color:#d8e0e9;border-radius:15px;box-shadow:0 8px 24px rgba(20,33,61,.055)}
-body.settle-exchange .card-head{padding:18px 20px;background:#fff;min-height:58px}
-body.settle-exchange .card-head strong{font-size:14px;letter-spacing:.8px}
-body.settle-exchange .card-head span{font-size:11px}
-body.settle-exchange .table-wrap{max-height:calc(100vh - 285px)}
-body.settle-exchange .settle-table{font-size:13px}
-body.settle-exchange .settle-table th{font-size:10px;padding:13px 12px;height:42px}
-body.settle-exchange .settle-table td{padding:15px 12px;height:64px;font-size:13px}
-body.settle-exchange .order-code{font-size:14px}
-body.settle-exchange .kind{padding:6px 8px;font-size:9px}
-body.settle-exchange .warning-ribbon,body.settle-exchange .ok-ribbon{padding:6px 9px;font-size:9px}
-body.settle-exchange .approve,body.settle-exchange .reject{padding:10px 14px;font-size:10px;border-radius:7px}
-body.settle-exchange .actions{gap:7px}
-body.settle-exchange .settlement-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 14px 16px;background:#f8fafc}
-body.settle-exchange .settlement-order-card{min-width:0;background:#fff;border:1px solid #d9e2ec;border-left:4px solid #155eef;border-radius:10px;padding:12px;box-shadow:0 4px 12px rgba(20,33,61,.045);transition:.15s ease}
-body.settle-exchange .settlement-order-card:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(20,33,61,.08);border-color:#bfd0e5}
-body.settle-exchange .settlement-order-card.has-warning{border-left-color:#c43d4b}
-body.settle-exchange .order-card-top{display:flex;justify-content:space-between;align-items:center;gap:6px;padding-bottom:9px;border-bottom:1px solid #edf1f5}
-body.settle-exchange .order-card-top>div:first-child{display:flex;align-items:center;gap:5px;min-width:0}
-body.settle-exchange .order-card-top .order-code{font-size:13px}
-body.settle-exchange .kind{padding:4px 5px;font-size:7px}
-body.settle-exchange .order-card-main{display:block;padding:9px 0 7px}
-body.settle-exchange .order-party{padding:5px 0}
-body.settle-exchange .order-party span,body.settle-exchange .order-card-stats span{display:block;font-size:7px;letter-spacing:.7px;font-weight:900;color:#8190a5;margin-bottom:2px}
-body.settle-exchange .order-party b{font-size:11px;color:#1d3557;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-body.settle-exchange .stock-party b{font-size:12px;color:#14213d}
-body.settle-exchange .order-card-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:#f5f8fc;border:1px solid #e4eaf1;border-radius:7px;padding:7px 6px}
-body.settle-exchange .order-card-stats>div{min-width:0}
-body.settle-exchange .order-card-stats strong{font-size:11px;color:#14213d}
-body.settle-exchange .order-card-stats .buy-side{color:#18794e}.settle-exchange .order-card-stats .sell-side{color:#b23843}
-body.settle-exchange .order-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding-top:8px}
-body.settle-exchange .order-card-actions button{min-width:0;width:100%;padding:8px 4px;font-size:8px}
-body.settle-exchange .warning-ribbon,body.settle-exchange .ok-ribbon{padding:4px 5px;font-size:7px}
-@media(max-width:1200px){body.settle-exchange .settlement-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){body.settle-exchange .settlement-cards{grid-template-columns:1fr}}
-body.settle-exchange .card-head strong:before{content:"";display:inline-block;width:4px;height:14px;border-radius:3px;background:#155eef;margin-right:8px;vertical-align:-2px}
-body.settle-exchange .settle-table th{background:#f5f8fc;padding:11px 10px}
-body.settle-exchange .settle-table td{padding:10px}
-body.settle-exchange .settle-table tbody tr:hover td{background:#f7fbff}
-body.settle-exchange .approve{background:#176b48;padding:8px 11px}.settle-exchange .reject{padding:8px 11px}
-body.settle-exchange .empty{padding:70px}
-body.settle-exchange .approval-box{border-radius:16px}
-</style><script src="/jse-api.js"></script><script src="/auth.js"></script></head>
-<body class="settle-exchange"><div class="settle-page">
-<nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav>
-<div class="settle-head"><div><h1>JAIN STOCK EXCHANGE</h1><p>Review submitted orders before they move into bank settlement.</p></div><span class="live-pill">EXCHANGE CONTROL</span></div>
-<div id="metrics" class="metrics"></div>
-<section class="settle-card"><div class="card-head"><strong>PENDING EXCHANGE TRANSACTIONS</strong><span id="updated">Loading…</span></div><div id="app"></div></section><div id="shortPopup" class="approval-popup" aria-hidden="true"><div class="approval-box"><div class="approval-icon warning-icon">!</div><div class="approval-kicker warning-kicker">EXCHANGE — NOT POSSIBLE</div><h2>Short Selling Not Possible</h2><p id="shortText">This SELL order exceeds the participant holdings.</p><div style="display:flex;gap:8px;justify-content:center"><button type="button" onclick="closeShortPopup()">CLOSE</button><button type="button" class="danger-btn" onclick="confirmShortApproval()">REJECT ORDER</button></div></div></div><script src="/exchange.js?v=300"></script></div><script src="/admin-nav.js"></script></body></html>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Exchange desk</div><h1>Exchange Settlement</h1><p>Approve or reject orders. Exchange approval never changes cash, holdings or prices — the Bank settles approved orders.</p></div>
+    <div class="row"><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+      <button class="btn good" type="button" id="bulk" title="Approve every pending order that has no warnings">Approve all clean orders</button></div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="alert warn hidden" id="closedNote" style="margin-bottom:14px"></div>
+  <div class="card">
+    <div class="card-h"><h2>Pending at Exchange <span class="muted" id="pendCount"></span></h2>
+      <input class="input" id="q" type="search" placeholder="Filter by order, team, symbol" style="max-width:260px;min-height:34px"></div>
+    <div class="card-b flush"><div class="table-wrap" style="max-height:62vh"><table class="t">
+      <thead><tr><th>Order</th><th>Age</th><th>Team</th><th>Broker</th><th>Security</th><th>Side</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Trade value</th><th class="num">Brokerage</th><th>Checks</th><th class="actions">Decision</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody></table></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-h"><h2>Recent Exchange decisions</h2></div>
+    <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
+      <thead><tr><th>Time</th><th>Order</th><th>Team</th><th>Security</th><th>Side</th><th class="num">Qty @ Price</th><th>Status</th><th>By</th><th>Note</th></tr></thead>
+      <tbody id="recent"></tbody></table></div></div>
+  </div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { data: null, canAct: false, busy: {}, q: "" };
+
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+
+  function risk(o) {
+    var r = [];
+    if (o.short_sell_risk) r.push('<span class="badge warn" title="Holding ' + o.holding + ', other open sells ' + o.open_sell_other + '">Short sell: holds ' + F.num(o.holding) + "</span>");
+    if (o.cash_risk) r.push('<span class="badge warn" title="Free cash ' + F.money(o.free_cash) + '">Cash short: free ' + F.short(o.free_cash) + "</span>");
+    if (o.account_type === "INSTITUTION") r.push('<span class="badge inst">Institutional · ' + esc(o.team) + "</span>");
+    if (o.pair_ref) r.push('<span class="badge prov">' + esc(o.pair_ref) + "</span>");
+    if (!r.length) r.push('<span class="badge ok">Clean</span>');
+    return '<div class="risk">' + r.join("") + "</div>";
+  }
+
+  function render() {
+    var d = S.data; if (!d) return;
+    var pend = d.pending.filter(function (o) {
+      if (!S.q) return true; var q = S.q.toLowerCase();
+      return (o.order_no + " " + o.team + " " + o.symbol + " " + (o.broker || "")).toLowerCase().indexOf(q) >= 0;
+    });
+    var flagged = d.pending.filter(function (o) { return o.short_sell_risk || o.cash_risk; }).length;
+    $("kpis").innerHTML = kpi("Pending at Exchange", F.num(d.counts.pending), "oldest first", "accent") +
+      kpi("Flagged for review", F.num(flagged), "short sell / cash warnings", flagged ? "warn" : "") +
+      kpi("Forwarded to Bank", F.num(d.counts.approved_today), "approved by Exchange", "good") +
+      kpi("Rejected", F.num(d.counts.rejected), "by Exchange", "bad");
+    $("pendCount").textContent = "(" + d.pending.length + ")";
+    $("rows").innerHTML = pend.length ? pend.map(function (o) {
+      var diff = N(o.price_diff_pct);
+      return '<tr class="' + (o.short_sell_risk || o.cash_risk ? "flagged" : "") + '" data-id="' + o.id + '">' +
+        '<td class="mono"><b>' + esc(o.order_no) + "</b></td><td>" + F.age(o.age_seconds) + "</td><td><b>" + esc(o.team) + "</b></td><td>" + esc(o.broker || (o.account_type === "INSTITUTION" ? esc(o.institution) : "—")) + "</td>" +
+        "<td>" + esc(o.symbol) + " " + JSE.badge.kind(o.kind) + "</td><td>" + JSE.badge.side(o.side) + '</td><td class="num">' + F.num(o.quantity) + "</td>" +
+        '<td class="num">' + F.price(o.price) + '<div class="diff ' + F.dir(diff) + '">mkt ' + F.price(o.market_price) + " · " + F.pct(diff) + "</div></td>" +
+        '<td class="num">' + F.money(o.trade_value) + '</td><td class="num">' + F.money(o.brokerage) + "</td><td>" + risk(o) + "</td>" +
+        '<td class="actions">' + (S.canAct ? '<button class="btn good sm" data-a="APPROVE">Approve</button> <button class="btn bad sm" data-a="REJECT">Reject</button>' : '<span class="muted small">view only</span>') + "</td></tr>";
+    }).join("") : '<tr><td colspan="12" class="empty"><b>No orders waiting.</b>New orders appear here automatically.</td></tr>';
+    $("recent").innerHTML = d.recent.length ? d.recent.map(function (o) {
+      return "<tr><td>" + F.time(o.exchange_at) + '</td><td class="mono">' + esc(o.order_no) + "</td><td>" + esc(o.team) + "</td><td>" + esc(o.symbol) + "</td><td>" + JSE.badge.side(o.side) +
+        '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + "</td><td>" + JSE.badge.status(o.status) + "</td><td>" + esc(o.exchange_by || "—") + '</td><td class="small">' + esc(o.reject_reason || "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="9" class="empty">No decisions yet.</td></tr>';
+  }
+
+  async function load() {
+    S.data = await JSE.api.get("/api/exchange");
+    render();
+    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+  }
+
+  async function decide(id, action) {
+    if (S.busy[id]) return; S.busy[id] = true;
+    var o = S.data.pending.filter(function (x) { return x.id === id; })[0];
+    try {
+      var body = { order_id: id, action: action };
+      if (action === "REJECT") {
+        var reason = await JSE.dialog({ title: "Reject " + (o ? o.order_no : "order"), text: "The order will not reach the Bank.", confirmText: "Reject order", danger: true,
+          input: { label: "Reason (shown to the broker)", placeholder: "e.g. Slip incomplete / price not agreed" } });
+        if (!reason) return;
+        body.reason = reason === true ? "" : reason;
+      }
+      if (action === "APPROVE" && o && o.short_sell_risk) {
+        var ok = await JSE.dialog({ title: "Short-selling warning", danger: true, confirmText: "Forward anyway",
+          html: "<p><b>" + esc(o.team) + "</b> can sell only <b>" + F.num(Math.max(0, o.available_qty)) + "</b> " + esc(o.symbol) + " shares (holding " + F.num(o.holding) + ", other open sell orders " + F.num(o.open_sell_other) + ") but this order sells <b>" + F.num(o.quantity) + "</b>.</p><p>Short selling is not allowed: the attempt is already recorded and the Bank will reject the order unless holdings are sufficient at settlement.</p>" });
+        if (!ok) return;
+        body.confirm_short_sell = true;
+      }
+      var r;
+      try { r = await JSE.api.post("/api/exchange", body); }
+      catch (e) {
+        if (e.code !== "SHORT_SELL_CONFIRM_REQUIRED") throw e;
+        var ok2 = await JSE.dialog({ title: "Short-selling warning", text: e.message, danger: true, confirmText: "Forward anyway" });
+        if (!ok2) return;
+        body.confirm_short_sell = true;
+        r = await JSE.api.post("/api/exchange", body);
+      }
+      JSE.toast((o ? o.order_no : "Order") + " → " + F.statusText(r.status), r.status === "EXCHANGE_APPROVED" ? "good" : "warn");
+      S.data.pending = S.data.pending.filter(function (x) { return x.id !== id; }); render();
+    } catch (e) {
+      JSE.toast(e.message, "bad");
+    } finally { S.busy[id] = false; if (poller) poller.now(); }
+  }
+
+  async function bulk() {
+    var clean = (S.data ? S.data.pending : []).filter(function (o) { return !o.short_sell_risk && !o.cash_risk && o.account_type === "TEAM"; });
+    if (!clean.length) return JSE.toast("No clean orders to approve.", "warn");
+    var ok = await JSE.dialog({ title: "Approve " + clean.length + " clean order(s)?", text: "Orders with short-selling or cash warnings and institutional orders are skipped. Each order is still re-checked by the Bank.", confirmText: "Approve " + clean.length });
+    if (!ok) return;
+    var done = 0, failed = 0;
+    for (var i = 0; i < clean.length; i++) {
+      try { await JSE.api.post("/api/exchange", { order_id: clean[i].id, action: "APPROVE" }); done++; } catch (e) { failed++; }
+    }
+    JSE.toast("Approved " + done + (failed ? ", " + failed + " skipped (already handled)" : ""), failed ? "warn" : "good");
+    poller.now();
+  }
+
+  $("rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-a]"); if (!b) return;
+    var tr = b.closest("tr"); decide(Number(tr.getAttribute("data-id")), b.getAttribute("data-a"));
+  });
+  $("q").addEventListener("input", JSE.debounce(function (e) { S.q = e.target.value.trim(); render(); }, 150));
+  $("bulk").addEventListener("click", bulk);
+
+  var poller;
+  JSE.page({ id: "exchange" }).then(function (user) {
+    if (!user) return;
+    S.canAct = user.role === "ADMIN" || user.role === "EXCHANGE";
+    if (!S.canAct) $("bulk").classList.add("hidden");
+    JSE.onStatus(function (s) {
+      var open = s === "LIVE" || s === "SETTLEMENT_ONLY", n = $("closedNote");
+      n.classList.toggle("hidden", open);
+      n.innerHTML = open ? "" : "<b>Market is " + esc(F.statusText(s)) + ".</b> Exchange decisions are possible only while the market is LIVE or SETTLEMENT ONLY.";
+    });
+    poller = JSE.poll(load, 2500, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+  });
+})();
+</script>
+</body>
+</html>

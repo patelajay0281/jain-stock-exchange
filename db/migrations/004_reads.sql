@@ -89,6 +89,9 @@ $$;
 
 CREATE OR REPLACE FUNCTION jse_event_status() RETURNS jsonb LANGUAGE sql STABLE AS $$
   SELECT jsonb_build_object('success', true, 'status', ev.status, 'status_changed_at', ev.status_changed_at, 'started_at', ev.started_at,
+    'index', (SELECT jsonb_build_object('value', sum(price), 'base_value', sum(base_price),
+              'change_pct', CASE WHEN sum(base_price) = 0 THEN 0 ELSE round((sum(price) - sum(base_price)) * 100 / sum(base_price), 2) END)
+              FROM securities WHERE active),
     'closed_at', ev.closed_at, 'finalized_at', ev.finalized_at, 'reset_count', ev.reset_count, 'server_time', now(),
     'event_name', cfg.event_name,
     'config', jsonb_build_object('initial_capital', cfg.initial_capital, 'institutional_cash', cfg.institutional_cash,

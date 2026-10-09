@@ -808,6 +808,9 @@ BEGIN
     PERFORM jse_audit(a, 'PASSWORD_RESET', 'user', u.username, u.team_id, NULL, NULL, NULL, NULL);
     RETURN jsonb_build_object('success', true, 'username', u.username, 'password', v_pw);
   ELSIF v_action = 'SET_ACTIVE' THEN
+    IF lower(trim(coalesce(p->>'username', ''))) = lower(coalesce(a->>'username', '')) THEN
+      PERFORM jse_fail('SELF', 'You cannot disable your own account.', 409);
+    END IF;
     UPDATE app_users SET active = coalesce((p->>'active')::boolean, active), updated_at = now()
     WHERE lower(username) = lower(trim(coalesce(p->>'username', ''))) RETURNING * INTO u;
     IF NOT FOUND THEN PERFORM jse_fail('USER_NOT_FOUND', 'User not found.', 404); END IF;
@@ -816,7 +819,8 @@ BEGIN
     RETURN jsonb_build_object('success', true, 'username', u.username, 'active', u.active);
   ELSIF v_action = 'RESET_ROLE_PASSWORDS' THEN
     -- issue fresh passwords for every account of one role (returned once, never stored in clear)
-    FOR r IN SELECT id, username FROM app_users WHERE role = upper(coalesce(p->>'role', '')) ORDER BY username FOR UPDATE LOOP
+    FOR r IN SELECT id, username FROM app_users WHERE role = upper(coalesce(p->>'role', '')) AND id IS DISTINCT FROM nullif(a->>'id', '')::integer
+             ORDER BY username FOR UPDATE LOOP
       v_pw := jse_random_password();
       UPDATE app_users SET password_hash = crypt(v_pw, gen_salt('bf', 8)), failed_logins = 0, locked_until = NULL, updated_at = now() WHERE id = r.id;
       UPDATE sessions SET revoked_at = now() WHERE user_id = r.id AND revoked_at IS NULL;

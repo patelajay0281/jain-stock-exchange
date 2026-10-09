@@ -1,387 +1,375 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="/theme.css"><script src="/jse-api.js"></script>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
 <style>
-body.admin-page{background:#f3f5f8}
-body.admin-page .shell{max-width:1380px;padding:18px 24px 42px}
-body.admin-page .admin-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:18px 0 16px}
-body.admin-page .admin-head h1{margin:0;font-size:30px;letter-spacing:-.035em;color:#14213d}
-body.admin-page .admin-head p{margin:5px 0 0;color:#667085;font-size:12px}
-body.admin-page .admin-lock{display:inline-flex;align-items:center;gap:7px;border:1px solid #d6dee9;background:#fff;border-radius:999px;padding:8px 12px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#526071}
-body.admin-page .admin-lock:before{content:"";width:7px;height:7px;border-radius:50%;background:#16803c}
-body.admin-page .event-overview{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr;gap:10px;margin-bottom:14px}
-body.admin-page .overview-card{background:#fff;border:1px solid #dce2ea;border-radius:12px;padding:14px 16px;box-shadow:0 4px 15px rgba(20,33,61,.045)}
-body.admin-page .overview-card label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#7a8699;margin-bottom:7px}
-body.admin-page .overview-card strong{display:block;font-size:20px;color:#172033;letter-spacing:-.02em}
-body.admin-page .overview-card small{display:block;margin-top:3px;font-size:10px;color:#8490a0}
-body.admin-page #eventStatus.status-live{color:#16803c}
-body.admin-page #eventStatus.status-paused{color:#8a6500}
-body.admin-page #eventStatus.status-closed,body.admin-page #eventStatus.status-finalized{color:#c62828}
-body.admin-page .admin-panel{background:#fff;border:1px solid #d7dee8;border-radius:14px;padding:18px;box-shadow:0 6px 22px rgba(20,33,61,.05);margin-bottom:14px}
-body.admin-page .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
-body.admin-page .panel-head h2{margin:0;font-size:15px;color:#172033}
-body.admin-page .panel-head p{margin:4px 0 0;font-size:10px;color:#8490a0}
-body.admin-page .admin-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:0}
-body.admin-page .admin-btn{min-height:52px;border-radius:9px;font-size:11px;letter-spacing:.035em}
-body.admin-page .admin-btn.start{background:#166534}
-body.admin-page .admin-btn.pause{background:#a16207}
-body.admin-page .admin-btn.close{background:#991b1b}
-body.admin-page .admin-btn.finalize{background:#4c1d95}
-body.admin-page .admin-btn.undo,body.admin-page .admin-btn.redo{background:#374151}
-body.admin-page .admin-btn.reset{background:#111827}
-body.admin-page .admin-btn:disabled{opacity:.42;cursor:not-allowed;transform:none}
-body.admin-page .admin-actions.secondary{grid-template-columns:repeat(4,1fr);margin-top:9px}
-body.admin-page .admin-actions.secondary .admin-btn{background:#fff;color:#172033;border:1px solid #cfd7e3;box-shadow:none}
-body.admin-page .admin-actions.secondary .admin-btn:hover{background:#f8fafc}
-body.admin-page .admin-links{display:flex;gap:9px;flex-wrap:wrap;margin:0}\nbody.admin-page .admin-nav-link{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 15px;border-radius:9px;background:#fff;color:#172033;border:1px solid #cfd7e3;font-size:11px;font-weight:800;letter-spacing:.035em;text-decoration:none;box-shadow:none}\nbody.admin-page .admin-nav-link:hover{background:#f8fafc}
-body.admin-page .admin-links a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 15px;border-radius:8px;background:#f8fafc;border:1px solid #dce2ea;font-size:10px;font-weight:800;letter-spacing:.035em;text-decoration:none;color:#344054}
-body.admin-page .admin-links a:hover{background:#eef4ff;border-color:#c7d7fe;color:#155eef}
-body.admin-page .safety-note{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fff8df;border:1px solid #ead58b;color:#765b00;font-size:10px;line-height:1.45}
-body.admin-page #stateMsg{min-height:18px;margin:0 0 12px;padding:9px 11px;border-radius:8px;background:#f8fafc;color:#667085;font-size:10px}
-body.admin-page #stateMsg.success{background:#f1f7f2;color:#476650}
-body.admin-page #stateMsg.error{background:#faf0f1;color:#8a4b53}
-body.admin-page #accessGate{position:fixed;inset:0;background:#f3f5f8;display:flex;align-items:center;justify-content:center;z-index:9999;font-size:12px;color:#667085}
-body.admin-page.ready #accessGate{display:none}
-@media(max-width:900px){body.admin-page .event-overview{grid-template-columns:1fr 1fr}body.admin-page .admin-actions,body.admin-page .admin-actions.secondary{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){body.admin-page .shell{padding:14px}.admin-head{align-items:flex-start!important;flex-direction:column}.admin-lock{display:none}body.admin-page .event-overview{grid-template-columns:1fr}body.admin-page .admin-actions,body.admin-page .admin-actions.secondary{grid-template-columns:1fr}}
+  .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .controls .btn { padding: 12px 10px; font-size: 14px; }
+  .status-big { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .status-big .pill { font-size: 15px; padding: 8px 16px; }
+  .danger { border: 1px solid #f3c6cc; background: #fffafa; border-radius: 10px; padding: 12px 14px; margin-top: 14px; }
+  .moods { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .moods button { border: 1px solid var(--line-2); background: #fff; border-radius: 8px; padding: 8px 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; line-height: 1.25; color: var(--ink-2); }
+  .moods button small { display: block; font-weight: 600; color: var(--muted); font-size: 10.5px; }
+  .moods button[aria-pressed="true"] { outline: 3px solid var(--navy); outline-offset: -1px; }
+  .moods .neg { border-color: #f3c6cc; } .moods .pos { border-color: #c4e6cf; }
+  @media (max-width: 900px) { .moods { grid-template-columns: repeat(4, minmax(0, 1fr)); } .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .j-undone td { color: var(--muted); text-decoration: line-through; }
+  .cfg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 14px; }
+  @media (max-width: 900px) { .cfg-grid { grid-template-columns: 1fr 1fr; } }
+  details > summary { cursor: pointer; font-weight: 700; color: var(--navy); }
 </style>
-<style>
-body.admin-page{background:#eef2f6}
-body.admin-page .shell{max-width:1440px;padding:16px 24px 44px}
-body.admin-page .admin-head{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:20px 0 18px;padding:22px 24px;border-radius:16px;background:linear-gradient(135deg,#101b2f,#1c3154);color:#fff;box-shadow:0 10px 28px rgba(15,31,55,.16)}
-body.admin-page .admin-head h1{color:#fff}
-body.admin-page .admin-head p{color:#c7d2e3}
-body.admin-page .admin-lock{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e7edf7}
-body.admin-page .admin-lock:before{background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.12)}
-body.admin-page .event-overview{gap:11px}
-body.admin-page .overview-card{border-color:#d8e0e9;border-radius:13px;box-shadow:0 5px 18px rgba(20,33,61,.05)}
-body.admin-page .overview-card:first-child{background:linear-gradient(135deg,#fff,#f7faff)}
-body.admin-page #eventStatus{display:inline-block;padding:4px 10px;border-radius:999px;background:#f2f4f7}
-body.admin-page #eventStatus.status-live{color:#166534;background:#eaf7ee}
-body.admin-page #eventStatus.status-paused{color:#8a5a00;background:#fff5d7}
-body.admin-page #eventStatus.status-closed{color:#991b1b;background:#fff0f0}
-body.admin-page #eventStatus.status-finalized{color:#4c1d95;background:#f2edff}
-body.admin-page .admin-panel{border-color:#d8e0e9;border-radius:15px;box-shadow:0 7px 24px rgba(20,33,61,.055)}
-body.admin-page .panel-head{padding-bottom:12px;border-bottom:1px solid #edf0f4}
-body.admin-page .admin-btn{min-height:54px;border-radius:10px;font-weight:850}
-body.admin-page .admin-btn.start{background:#187a43}.admin-page .admin-btn.pause{background:#b77908}.admin-page .admin-btn.close{background:#a23a43}.admin-page .admin-btn.finalize{background:#5b36a8}
-body.admin-page .admin-actions.secondary .admin-btn{background:#f8fafc;border-color:#d5dde7}
-body.admin-page .admin-actions.secondary .admin-btn:hover{background:#eef4ff;color:#155eef;border-color:#c5d6fb}
-body.admin-page .admin-nav-link{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:10px;background:linear-gradient(135deg,#155eef,#304fc2)!important;color:#fff!important;border:0!important;font-size:10px;font-weight:850;letter-spacing:.045em;text-decoration:none;box-shadow:0 5px 13px rgba(21,94,239,.18)}
-body.admin-page .safety-note{border-radius:9px}
-
-.admin-login-card{width:min(420px,calc(100vw - 32px));padding:28px;background:#fff;border:1px solid #d8e0e9;border-radius:16px;box-shadow:0 18px 50px rgba(20,33,61,.12)}
-.admin-login-title{font-size:11px;letter-spacing:.12em;font-weight:900;color:#155eef;margin-bottom:12px}
-.admin-login-card h2{margin:0;color:#14213d;font-size:25px}.admin-login-card p{margin:7px 0 16px;color:#667085;font-size:12px}
-.admin-login-card input{width:100%;height:45px;margin-top:8px;margin-top:8px;border:1px solid #cbd5e1;border-radius:8px;padding:0 12px;font:inherit;box-sizing:border-box}
-.admin-login-card button{width:100%;height:45px;margin-top:10px;border:0;border-radius:8px;background:#172f4b;color:#fff;font-weight:850;font-size:11px;letter-spacing:.05em}
-#adminLoginMsg{min-height:18px;margin-top:10px;font-size:10px;color:#a23a43}
-</style></head>
-<body class="admin-page">
-<div id="accessGate">
-  <div class="admin-login-card">
-    <div class="admin-login-title">JAIN STOCK EXCHANGE</div>
-    <h2>Administrator Access</h2>
-    <p>Use the JSE administrator account to continue.</p>
-    <input id="adminUsername" autocomplete="username" placeholder="User ID" value="ADMINAP">
-    <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Password">
-    <button id="adminLoginBtn" type="button" onclick="loginAdmin()">ACCESS ADMIN PANEL</button>
-    <div id="adminLoginMsg"></div>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Chief Stock Exchange Controller</div><h1>Event Admin</h1><p>Start, pause, close and finalize the market, publish Market News, load IPO allotments, manage accounts and export the final report.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
-</div>
-<div class="shell page">
-<header class="brand">JAIN STOCK EXCHANGE</header>
-<nav class="site-nav">
-<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a class="active" href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a>
-</nav>
+  <div class="kpis k5" id="kpis"></div>
 
-<header class="admin-head">
-<div><h1>Event Administration</h1><p>Control the JAIN STOCK EXCHANGE event, settlement lifecycle, recovery tools and final reports.</p></div>
-<div class="admin-lock">OPEN EVENT MODE</div>
-</header>
+  <div class="grid cols-2">
+    <section class="card">
+      <div class="card-h"><h2>Event control</h2><span class="small muted" id="stChanged"></span></div>
+      <div class="card-b">
+        <div class="status-big"><span class="pill closed" id="stPill"><span class="dot"></span><span id="stText">—</span></span><span class="muted small" id="stInfo"></span></div>
+        <div class="controls admin-only">
+          <button class="btn good" data-ev="START">START EVENT</button>
+          <button class="btn" data-ev="PAUSE">PAUSE · SETTLEMENT ONLY</button>
+          <button class="btn good" data-ev="RESUME">RESUME TRADING</button>
+          <button class="btn bad" data-ev="CLOSE">CLOSE EVENT</button>
+          <button class="btn" data-ev="REOPEN">REOPEN MARKET</button>
+          <button class="btn primary" data-ev="FINALIZE">FINALIZE EVENT</button>
+        </div>
+        <div class="row admin-only" style="margin-top:10px">
+          <button class="btn sm" id="undoLast" type="button">↶ Undo last action</button>
+          <button class="btn sm" id="redoLast" type="button">↷ Redo</button>
+          <button class="btn sm bad" id="rejectOpen" type="button">Reject all open orders</button>
+        </div>
+        <div class="danger admin-only">
+          <div class="row between"><div><b>Reset event</b><div class="small muted">Restores ₹20,00,000 per team, ₹2,00,00,000 institutional cash and base prices (IPOs ₹890 / ₹780 / ₹620 / ₹710). Clears orders, settlements, holdings, ledgers, commissions, news, price history, loans and attempt counters. Audit history is archived. Allowed when the market is not LIVE.</div></div></div>
+          <div class="row" style="margin-top:8px"><label class="check"><input type="checkbox" id="keepAllot" checked> Keep loaded IPO allotments</label><button class="btn bad sm" id="resetBtn" type="button">RESET EVENT…</button></div>
+        </div>
+      </div>
+    </section>
 
-<div id="stateMsg">Loading event control…</div>
+    <section class="card">
+      <div class="card-h"><h2>Market News</h2><span class="small muted">Admin only · source MARKET_NEWS</span></div>
+      <div class="card-b">
+        <div class="form-grid">
+          <div class="field span-2"><label for="nSec">Company</label><select class="input" id="nSec"></select></div>
+        </div>
+        <div class="label" style="margin:12px 0 6px">Market mood</div>
+        <div class="moods" id="moods"></div>
+        <div class="row between" style="margin-top:12px"><span class="small muted">Headline: <b id="nHead">Automatic … market impact</b> · a random % inside the band, capped at ±10%.</span>
+          <button class="btn primary admin-only" id="nGo" type="button">Publish news</button></div>
+      </div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Time</th><th>Security</th><th>Mood</th><th class="num">Move</th><th class="num">Price</th></tr></thead><tbody id="news"></tbody></table></div></div>
+    </section>
 
-<section class="event-overview">
-<div class="overview-card"><label>Event status</label><strong id="eventStatus">—</strong><small id="eventUpdated">Current time: —</small></div>
-<div class="overview-card"><label>Minimum cash</label><strong>₹20,000</strong><small>Participant buffer</small></div>
-<div class="overview-card"><label>Brokerage</label><strong>0.5%</strong><small>Participant trades</small></div>
-<div class="overview-card"><label>Loan interest</label><strong>2%</strong><small>Participant loan</small></div>
-</section>
+    <section class="card">
+      <div class="card-h"><h2>Undo / Redo journal</h2><span class="small muted">Undo is allowed only when it is safe (latest change on that security, cash still available)</span></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:380px"><table class="t"><thead><tr><th>Time</th><th>Action</th><th>By</th><th>State</th><th class="actions"></th></tr></thead><tbody id="journal"></tbody></table></div></div>
+    </section>
 
-<section class="admin-panel">
-<div class="panel-head"><div><h2>Event lifecycle</h2><p>Use these controls in the normal order: Start → Pause/Resume → Close → Finalize.</p></div></div>
-<div class="admin-actions">
-<button class="admin-btn start" onclick="act('START')">START EVENT</button>
-<button class="admin-btn pause" id="pauseBtn" onclick="pauseMarket()">PAUSE MARKET</button>
-<button class="admin-btn close" onclick="act('CLOSE')">CLOSE EVENT</button>
-<button class="admin-btn finalize" onclick="act('FINALIZE')">FINALIZE EVENT</button>
-</div>
-<div class="safety-note">Finalization closes the event and performs the configured outstanding-loan repayment sweep above the ₹20,000 minimum cash buffer. The final topper is selected only from teams that used at least ₹19,80,000 of their ₹20,00,000 own allocation at peak, fully repaid loan principal + interest, maintained at least ₹20,000 final cash, and had no settled short sale. Among eligible teams, highest realized profit wins; if none has realized profit, least loss wins. Use only after all settlement activity is complete.</div>
-</section>
+    <section class="card">
+      <div class="card-h"><h2>IPO allotments</h2><span class="small muted" id="allotSum"></span></div>
+      <div class="card-b">
+        <p class="small muted" style="margin-top:0">Paste or upload the final lucky-draw allotment (CSV columns: <span class="mono">team, ipo, lots</span>; 1 lot = 50 shares at the IPO price, no brokerage). Allowed before START only. Nothing is loaded unless every row is valid.</p>
+        <textarea class="input" id="allotCsv" placeholder="team,ipo,lots&#10;TEAM-001,VOLTRA,2&#10;TEAM-001,BLUEAI,1&#10;TEAM-002,AAROGYA,4"></textarea>
+        <div class="row" style="margin-top:8px">
+          <input type="file" id="allotFile" accept=".csv,text/csv" class="small">
+          <label class="check"><input type="checkbox" id="allotReplace"> Replace existing allotments for these teams</label>
+        </div>
+        <div class="row admin-only" style="margin-top:10px"><button class="btn primary" id="allotGo" type="button">Validate &amp; load allotments</button><button class="btn sm bad" id="allotClear" type="button">Remove all allotments</button></div>
+        <div id="allotResult" style="margin-top:10px"></div>
+      </div>
+      <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO</th><th class="num">Teams</th><th class="num">Lots</th><th class="num">Shares</th><th class="num">Amount</th></tr></thead><tbody id="allotTable"></tbody></table></div></div>
+    </section>
 
-<section class="admin-panel">
-<div class="panel-head"><div><h2>Recovery & administration</h2><p>Restricted tools for correcting the event state. Use carefully.</p></div></div>
-<div class="admin-actions secondary">
-<button class="admin-btn undo" onclick="historyAction('UNDO')">UNDO LAST SETTLEMENT</button>
-<button class="admin-btn redo" onclick="historyAction('REDO')">REDO LAST SETTLEMENT</button>
-<button class="admin-btn reset" onclick="resetEvent()">RESET EVENT + BASE PRICES</button>
-<button class="admin-btn" onclick="downloadMemberAccounts()">DOWNLOAD MEMBER ACCOUNTS</button>
-<button class="admin-btn" id="downloadArchive" onclick="downloadArchive()" disabled>DOWNLOAD EXCEL REPORT</button>
-</div>
-<div class="admin-actions secondary">
-<button class="admin-btn" id="downloadJson" onclick="downloadJson()" disabled>DOWNLOAD JSON ARCHIVE</button>
-<a class="admin-nav-link" href="/member-accounts.html">MEMBER ACCOUNTS</a>
-<a class="admin-nav-link" href="/insights.html">MARKET INTELLIGENCE</a>
-</div>
-</section>
+    <section class="card">
+      <div class="card-h"><h2>Teams &amp; brokers</h2></div>
+      <div class="card-b">
+        <p class="small muted" style="margin-top:0">Update team names, sections, members and broker assignment (CSV columns: <span class="mono">team, name, section, broker, members</span>). Broker names: <span class="mono">broker, name</span>.</p>
+        <textarea class="input" id="teamCsv" placeholder="team,name,section,broker,members&#10;TEAM-001,Bull Runners,BBA A,BROKER-01,Asha; Rahul; Meera"></textarea>
+        <div class="row admin-only" style="margin-top:8px"><button class="btn primary sm" id="teamGo" type="button">Update teams</button><button class="btn sm" id="brokerGo" type="button">Update broker names (same box)</button></div>
+        <div id="teamResult" style="margin-top:8px"></div>
+      </div>
+    </section>
 
-<section class="admin-panel" id="loadTestPanel">
-<div class="panel-head"><div><h2>Capacity Testing</h2><p>Run the built-in 1,000-request market throughput test before the live event.</p></div></div>
-<div class="admin-links"><a class="admin-nav-link" href="/load-test.html">RUN 1,000 REQUEST TEST</a></div>
-</section>
+    <section class="card">
+      <div class="card-h"><h2>Rules &amp; configuration</h2><span class="small muted" id="cfgUpd"></span></div>
+      <div class="card-b">
+        <div class="cfg-grid" id="cfg"></div>
+        <div class="row admin-only" style="margin-top:12px"><button class="btn primary sm" id="cfgSave" type="button">Save configuration</button></div>
+      </div>
+    </section>
 
+    <section class="card">
+      <div class="card-h"><h2>Accounts &amp; passwords</h2><span class="small muted" id="userSum"></span></div>
+      <div class="card-b admin-only">
+        <div class="row">
+          <select class="input" id="roleSel" style="max-width:220px"><option value="BROKER">Brokers / Pit managers</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
+            <option value="INSTITUTIONAL">Institutional desk</option><option value="VIEWER">Faculty viewers</option><option value="PARTICIPANT">Participant teams (100)</option><option value="ADMIN">Administrators</option></select>
+          <button class="btn sm" id="issueBtn" type="button">Issue new passwords for this role…</button>
+        </div>
+        <p class="small muted">New passwords are shown once and downloaded as a CSV. Old sessions for those accounts are signed out.</p>
+      </div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Username</th><th>Role</th><th>Team</th><th>Last sign-in</th><th>Status</th><th class="actions"></th></tr></thead><tbody id="users"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
+    </section>
 
-<section class="admin-panel" id="miAdminPanel">
-<div class="panel-head"><div><h2>Market Intelligence</h2><p>Hatchable-based Market Intelligence is available directly inside Event Admin.</p></div></div>
-<button class="admin-nav-link" type="button" id="openMiBtn" onclick="openMarketIntelligence()">OPEN LIVE MARKET INTELLIGENCE</button>
-<div id="miFrameWrap" style="display:none;margin-top:14px;border:1px solid #d8e0e9;border-radius:12px;overflow:hidden;background:#fff">
-<iframe id="miFrame" title="JSE Market Intelligence" style="display:block;width:100%;height:1100px;border:0" loading="lazy"></iframe>
-</div>
-</section>
-</div>
-
+    <section class="card">
+      <div class="card-h"><h2>Reports &amp; exports</h2></div>
+      <div class="card-b stack">
+        <div><button class="btn primary" id="xlsx" type="button">Download final event report (Excel)</button>
+          <div class="small muted" style="margin-top:6px">Winner, team & participant details, brokers, cash, holdings, sold stocks/IPOs, net worth & P/L, loans & interest, cash rule, risk attempts, order tracking, rejected orders, trade history, cash ledger, broker commission, institutional, market news, price history and audit logs.</div></div>
+        <div class="row"><select class="input" id="sheetSel" style="max-width:280px"></select><button class="btn sm" id="csvBtn" type="button">Download CSV</button></div>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
 <script>
-const A=window.JSE_API;
-let currentStatus='NOT_STARTED';
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { st: null, admin: false, mood: null, users: null };
+  var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
+    ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
+  var SHEETS = [["winner", "Winner"], ["networth", "Net Worth & P/L"], ["teams", "Team Details"], ["participants", "Participant Details"], ["brokers", "Broker Details"], ["cash", "Cash"], ["holdings", "Holdings"],
+    ["sold_stocks", "Sold Stocks"], ["sold_ipos", "Sold IPOs"], ["loans", "Loans & Interest"], ["cash_rule", "Cash Rule"], ["short_sell", "Short Selling Attempts"], ["cash_shortfall", "Cash Shortfall Attempts"],
+    ["insufficient_balance", "Insufficient Balance Rejections"], ["orders", "Order Tracking"], ["rejected", "Rejected Orders"], ["trades", "Trade History"], ["ledger", "Cash Ledger"], ["commission", "Broker Commission"],
+    ["institutional", "Institutional Investors"], ["news", "Market News"], ["prices", "Price History"], ["audit", "Audit Logs"]];
+  var CFG_FIELDS = [["event_name", "Event name", "text"], ["max_price_move_pct", "Max price move per order (%)", "number"], ["brokerage_rate", "Brokerage rate (0.005 = 0.5%)", "number"],
+    ["min_order_value", "Minimum order value (₹)", "number"], ["max_order_value", "Maximum order value (₹)", "number"], ["min_cash_buffer", "Minimum cash buffer (₹)", "number"],
+    ["cash_rule_limit", "Closing cash limit (₹)", "number"], ["loan_max_principal", "Max loan principal (₹)", "number"], ["loan_interest_rate", "Loan interest (0.02 = 2%)", "number"],
+    ["initial_capital", "Starting capital per team (₹)", "number"], ["institutional_cash", "Institutional starting cash (₹)", "number"],
+    ["loans_enabled", "Borrowing permitted", "bool"], ["auto_loan_on_settlement", "Auto loan at Bank settlement", "bool"], ["participant_order_entry", "Participants may enter their own orders", "bool"], ["institution_overdraft", "Institution may exceed its cash", "bool"]];
 
-async function checkAccess(){
- try{
-  const r=await fetch(A+'/admin-state',{cache:'no-store'});
-  if(!r.ok){ document.querySelector('#adminUsername')?.focus(); return; }
-  document.body.classList.add('ready');
-  await load();
- }catch(e){
-  document.querySelector('#adminLoginMsg').textContent='Unable to check administrator access right now.';
- }
-}
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
 
-async function loginAdmin(){
- const userInput=document.querySelector('#adminUsername');
- const input=document.querySelector('#adminPassword');
- const btn=document.querySelector('#adminLoginBtn');
- const msg=document.querySelector('#adminLoginMsg');
- const username=(userInput?.value||'').trim().toUpperCase();
- const password=input?.value||'';
- if(!username||!password){msg.textContent='Enter the User ID and password.';return;}
- btn.disabled=true; msg.textContent='Signing in…';
- try{
-   const r=await fetch(A+'/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
-   const d=await r.json().catch(()=>({}));
-   if(!r.ok) throw new Error(d.error||'Administrator login failed.');
-   window.location.reload();
- }catch(e){msg.textContent=e.message||'Administrator login failed.';btn.disabled=false;}
-}
-
-document.querySelector('#adminUsername')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginAdmin();});
-document.querySelector('#adminPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')loginAdmin();});
-
-function setMsg(message,type=''){
- const el=document.querySelector('#stateMsg');
- el.textContent=message;
- el.className=type;
-}
-
-function updateLiveClock(){
- const el=document.querySelector('#eventUpdated');
- if(!el)return;
- const now=new Date();
- el.textContent='Current time: '+now.toLocaleString('en-IN',{
-   day:'2-digit',month:'2-digit',year:'numeric',
-   hour:'2-digit',minute:'2-digit',second:'2-digit',
-   hour12:true
- });
-}
-setInterval(updateLiveClock,1000);
-updateLiveClock();
-
-function openMarketIntelligence(){
- const wrap=document.querySelector('#miFrameWrap'),frame=document.querySelector('#miFrame'),btn=document.querySelector('#openMiBtn');
- if(!frame.src)frame.src='/insights.html';
- wrap.style.display='block';btn.textContent='REFRESH MARKET INTELLIGENCE';frame.contentWindow?.location?.reload?.();
- wrap.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-async function load(){
- try{
-  const r=await fetch(A+'/event',{cache:'no-store'});
-  if(!r.ok) throw new Error('Could not load event state');
-  const d=await r.json();
-  currentStatus=d.event?.status||'NOT_STARTED';
-  const statusEl=document.querySelector('#eventStatus');
-  statusEl.textContent=currentStatus;
-  statusEl.className='';
-  const map={LIVE:'status-live',SETTLEMENT_ONLY:'status-paused',CLOSED:'status-closed',FINALIZED:'status-finalized'};
-  if(map[currentStatus]) statusEl.classList.add(map[currentStatus]);
-  updateLiveClock();
-  const excel=document.querySelector('#downloadArchive'),json=document.querySelector('#downloadJson');
-  const ready=currentStatus==='FINALIZED';
-  excel.disabled=!ready; json.disabled=!ready;
-  excel.title=ready?'Download the final Excel report':'Available after FINALIZE EVENT';
-  json.title=ready?'Download the raw JSON archive':'Available after FINALIZE EVENT';
-  document.querySelector('#pauseBtn').textContent=currentStatus==='SETTLEMENT_ONLY'?'RESUME MARKET':'PAUSE MARKET';
-  setMsg('Event state loaded. Administrator controls are active.','success');
- }catch(e){setMsg(e.message||'Could not load event state','error')}
-}
-
-async function pauseMarket(){
- const action=currentStatus==='SETTLEMENT_ONLY'?'START':'PAUSE';
- const question=action==='PAUSE'?'Pause the market? New orders will stop while settlement can continue.':'Resume the market and allow new orders again?';
- if(!confirm(question))return;
- await act(action);
-}
-
-async function act(action){
- try{
-  const r=await fetch(A+'/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok){setMsg(d.error||'Action failed','error');return}
-  setMsg('Event action completed: '+action,'success');
-  await load();
- }catch(e){setMsg(e.message||'Action failed','error')}
-}
-
-async function historyAction(action){
- if(!confirm(action==='UNDO'?'Undo the most recent settlement?':'Redo the most recently undone settlement?'))return;
- try{
-  const r=await fetch(A+'/undo-redo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok){setMsg(d.error||'Recovery action failed','error');return}
-  setMsg(d.message||('Recovery action completed: '+action),'success');
-  await load();
- }catch(e){setMsg(e.message||'Recovery action failed','error')}
-}
-
-async function resetEvent(){
- if(!confirm('RESET EVENT will clear event transactions, holdings, ledgers, commissions and order history, restore starting balances, and restore every share to its permanent BASE PRICE. IPO prices also return to their base prices. Continue?'))return;
- try{
-  const r=await fetch(A+'/reset-event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok){setMsg(d.error||'Reset failed','error');return}
-  setMsg('Event reset successfully.','success');
-  await load();
- }catch(e){setMsg(e.message||'Reset failed','error')}
-}
-
-function excelSafeSheetName(name,used){
- let base=String(name||'Sheet').replace(/[\\/:?*\[\]]/g,'_').replace(/[\u0000-\u001F]/g,'').trim().slice(0,31)||'Sheet';
- let out=base, n=1;
- while(used.has(out.toLowerCase())){
-   const suffix=' ('+(++n)+')';
-   out=base.slice(0,31-suffix.length)+suffix;
- }
- used.add(out.toLowerCase());
- return out;
-}
-function excelSafeValue(v){
- if(v===null||v===undefined)return '';
- if(typeof v==='bigint')return Number(v);
- if(v instanceof Date)return v.toISOString();
- if(typeof v==='object'){
-   try{return JSON.stringify(v)}catch(_){return String(v)}
- }
- if(typeof v==='number'){
-   return Number.isFinite(v)?v:String(v);
- }
- if(typeof v==='boolean')return v;
- return String(v);
-}
-function excelSafeRows(rows){
- return (Array.isArray(rows)?rows:[]).map(row=>{
-   const out={};
-   if(row&&typeof row==='object'){
-     for(const [k,v] of Object.entries(row))out[String(k)]=excelSafeValue(v);
-   }
-   return out;
- });
-}
-async function downloadMemberAccounts(){
- try{
-  const r=await fetch(A+'/member-accounts',{cache:'no-store'});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(d.error||'Could not load member accounts');
-  const rows=d.accounts||[];
-  const lines=[['USERNAME','TEAM','DISPLAY NAME','ACCESS CODE','EMAIL','ACTIVE'].join(',')];
-  for(const x of rows){
-   const vals=[x.username,x.team,x.display_name,x.access_code,x.email||'',x.active?'YES':'NO'];
-   lines.push(vals.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(','));
+  function render() {
+    var d = S.st; if (!d) return;
+    var c = d.counts, st = d.stats, m = d.market || {};
+    $("kpis").innerHTML = kpi("Teams", F.num(c.teams), "brokers " + F.num(c.brokers), "accent") + kpi("Stocks · IPOs", F.num(c.stocks) + " · " + F.num(c.ipos), "listed", "info") +
+      kpi("Pending orders", F.num(st.pending_orders), F.num(c.exchange_pending) + " Exchange · " + F.num(c.bank_pending) + " Bank", "warn") +
+      kpi("Settled orders", F.num(st.settled_orders), F.num(st.institutional_orders) + " institutional", "good") + kpi("Rejected orders", F.num(st.rejected_orders), "Exchange + Bank", "bad") +
+      kpi("Total trade value", F.short(st.total_trade_value), "settled", "info") + kpi("Total brokerage", F.money(st.total_brokerage), "0.5% of settled value", "info") +
+      kpi("CMS Index", m.index ? new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(N(m.index.value)) : "—", m.index ? F.pct(m.index.change_pct) + " · ▲" + m.breadth.advances + " ▼" + m.breadth.declines : "", "accent") +
+      kpi("Risk events", F.num(N(st.risk.short_sell) + N(st.risk.cash_shortfall) + N(st.risk.insufficient_balance)), st.risk.short_sell + " short · " + st.risk.cash_shortfall + " cash · " + st.risk.insufficient_balance + " insufficient", "bad") +
+      kpi("Loans outstanding", F.short(st.loans_outstanding), "incl. interest", "warn");
+    var meta = JSE.STATUS[d.status] || { cls: "closed", text: d.status };
+    $("stPill").className = "pill " + meta.cls; $("stText").textContent = meta.text;
+    $("stInfo").textContent = (d.started_at ? "Started " + F.datetime(d.started_at) : "Not started") + (d.closed_at ? " · closed " + F.datetime(d.closed_at) : "") + (d.finalized_at ? " · finalized " + F.datetime(d.finalized_at) : "") + " · resets: " + d.reset_count;
+    $("stChanged").textContent = "Changed " + F.datetime(d.status_changed_at);
+    var allowed = { START: d.status === "NOT_STARTED", PAUSE: d.status === "LIVE", RESUME: d.status === "SETTLEMENT_ONLY", CLOSE: d.status === "LIVE" || d.status === "SETTLEMENT_ONLY", REOPEN: d.status === "CLOSED", FINALIZE: d.status === "CLOSED" };
+    document.querySelectorAll("[data-ev]").forEach(function (b) { b.disabled = !allowed[b.getAttribute("data-ev")] || !S.admin; });
+    $("resetBtn").disabled = d.status === "LIVE" || d.status === "SETTLEMENT_ONLY" || !S.admin;
+    $("allotGo").disabled = d.status !== "NOT_STARTED" || !S.admin; $("allotClear").disabled = d.status !== "NOT_STARTED" || !S.admin;
+    // journal
+    $("journal").innerHTML = d.journal.length ? d.journal.map(function (j) {
+      var btn = !S.admin ? "" : j.state === "ACTIVE" ? '<button class="btn sm" data-undo="' + j.id + '">Undo</button>' : j.state === "UNDONE" ? '<button class="btn sm" data-redo="' + j.id + '">Redo</button>' : "";
+      return '<tr class="' + (j.state === "UNDONE" ? "j-undone" : "") + '"><td>' + F.time(j.at) + "</td><td>" + esc(j.summary) + "</td><td>" + esc(j.actor || "") + "</td><td>" +
+        (j.state === "ACTIVE" ? '<span class="badge ok">Active</span>' : j.state === "UNDONE" ? '<span class="badge warn">Undone</span>' : '<span class="badge prov">Redone</span>') + '</td><td class="actions">' + btn + "</td></tr>";
+    }).join("") : '<tr><td colspan="5" class="empty">No actions yet.</td></tr>';
+    // allotments
+    var a = d.allotments || { by_ipo: [] };
+    $("allotSum").textContent = F.num(a.rows) + " rows · " + F.num(a.teams) + " teams · " + F.short(a.amount);
+    $("allotTable").innerHTML = a.by_ipo.length ? a.by_ipo.map(function (x) { return "<tr><td><b>" + esc(x.symbol) + '</b> <span class="muted small">' + esc(x.name) + '</span></td><td class="num">' + x.teams + '</td><td class="num">' + x.lots + '</td><td class="num">' + F.num(x.shares) + '</td><td class="num">' + F.money(x.amount) + "</td></tr>"; }).join("")
+      : '<tr><td colspan="5" class="empty">No allotments loaded.</td></tr>';
+    // config (render once)
+    if (!$("cfg").children.length) {
+      var cfg = d.config_full || {};
+      $("cfg").innerHTML = CFG_FIELDS.map(function (f) {
+        if (f[2] === "bool") return '<label class="check field"><span><input type="checkbox" data-cfg="' + f[0] + '"' + (cfg[f[0]] ? " checked" : "") + "> " + esc(f[1]) + "</span></label>";
+        return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + f[0] + '" type="' + (f[2] === "number" ? "number" : "text") + '" step="any" value="' + esc(cfg[f[0]]) + '"></div>';
+      }).join("");
+      $("cfgUpd").textContent = cfg.updated_by ? "last changed by " + cfg.updated_by + " " + F.datetime(cfg.updated_at) : "";
+      if (!S.admin) $("cfg").querySelectorAll("input").forEach(function (i) { i.disabled = true; });
+    }
   }
-  const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='JSE-member-accounts.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  setMsg('Member account sheet downloaded.','success');
- }catch(e){setMsg(e.message||'Could not export member accounts','error')}
-}
-async function downloadArchive(){
- const b=document.querySelector('#downloadArchive'); b.disabled=true;
- try{
-  if(currentStatus!=='FINALIZED')throw new Error('The Excel report is available only after FINALIZE EVENT.');
-  if(typeof XLSX==='undefined')throw new Error('Excel generator could not be loaded. Refresh the page and try again.');
-  const r=await fetch(A+'/export-event',{cache:'no-store',headers:{'Accept':'application/json'}});
-  if(!r.ok){
-   const d=await r.json().catch(()=>({}));
-   throw new Error(d.error||'Final Excel archive could not be generated.');
+
+  async function load() {
+    S.st = await JSE.api.get("/api/admin-state");
+    render();
+    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
-  const archive=await r.json();
-  if(!archive||archive.event?.status!=='FINALIZED')throw new Error('The event archive is not finalized. Please refresh and try again.');
-  const data=archive.data&&typeof archive.data==='object'?archive.data:{};
-  const wb=XLSX.utils.book_new();
-  const used=new Set();
-  const entries=Object.entries(data);
-  for(const [table,rows] of entries){
-    const list=excelSafeRows(rows);
-    const ws=list.length
-      ?XLSX.utils.json_to_sheet(list,{cellDates:false})
-      :XLSX.utils.aoa_to_sheet([['No records']]);
-    const name=excelSafeSheetName(table,used);
-    XLSX.utils.book_append_sheet(wb,ws,name);
+  async function loadNews() {
+    var n = await JSE.api.get("/api/market-news", { limit: 15 });
+    $("news").innerHTML = n.news.length ? n.news.map(function (x) {
+      return "<tr" + (x.reversed ? ' class="j-undone"' : "") + "><td>" + F.time(x.created_at) + "</td><td><b>" + esc(x.symbol) + "</b></td><td>" + esc(x.mood) + '</td><td class="num ' + F.dir(x.applied_pct) + '">' + F.pct(x.applied_pct) + '</td><td class="num">' + F.price(x.previous_price) + " → " + F.price(x.new_price) + "</td></tr>";
+    }).join("") : '<tr><td colspan="5" class="empty">No news published.</td></tr>';
   }
-  const summaryRows=[{
-    'Event Name':String(archive.event?.name||''),
-    'Status':String(archive.event?.status||''),
-    'Generated At':String(archive.generated_at||''),
-    'Finalized At':String(archive.event?.updated_at||''),
-    'Sheets':entries.length
-  }];
-  const summary=XLSX.utils.json_to_sheet(summaryRows,{cellDates:false});
-  XLSX.utils.book_append_sheet(wb,summary,excelSafeSheetName('Report Summary',used));
-  wb.Props={Title:'JAIN STOCK EXCHANGE Final Event Report',Subject:'Finalized event archive',Author:'JAIN STOCK EXCHANGE',CreatedDate:new Date()};
-  XLSX.writeFile(wb,'jain-stock-exchange-final-report.xlsx',{
-    bookType:'xlsx',
-    compression:true,
-    cellDates:false,
-    bookSST:false,
-    WTF:false
+  async function loadSecs() {
+    var m = await JSE.api.get("/api/market");
+    var g = function (t, l) { return '<optgroup label="' + t + '">' + l.map(function (s) { return '<option value="' + s.id + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("") + "</optgroup>"; };
+    var v = $("nSec").value;
+    $("nSec").innerHTML = '<option value="">Select company…</option>' + g("IPOs", m.ipos) + g("Stocks", m.stocks);
+    if (v) $("nSec").value = v;
+  }
+  async function loadUsers() {
+    if (!S.admin) { $("users").innerHTML = '<tr><td colspan="6" class="empty">Administrators only.</td></tr>'; return; }
+    var u = await JSE.api.get("/api/users");
+    S.users = u.users;
+    var counts = {}; u.users.forEach(function (x) { counts[x.role] = (counts[x.role] || 0) + 1; });
+    $("userSum").textContent = Object.keys(counts).map(function (k) { return k + " " + counts[k]; }).join(" · ");
+    var staff = u.users.filter(function (x) { return x.role !== "PARTICIPANT"; });
+    $("users").innerHTML = staff.map(function (x) {
+      return "<tr><td><b>" + esc(x.username) + "</b></td><td>" + esc(JSE.ROLE_LABEL[x.role] || x.role) + "</td><td>" + esc(x.team || "") + "</td><td>" + (x.last_login_at ? F.datetime(x.last_login_at) : '<span class="muted">never</span>') + "</td><td>" +
+        (x.active ? '<span class="badge ok">Active</span>' : '<span class="badge no">Disabled</span>') + '</td><td class="actions"><button class="btn sm" data-pw="' + esc(x.username) + '">New password</button> <button class="btn sm" data-act="' + esc(x.username) + '" data-on="' + (x.active ? "0" : "1") + '">' + (x.active ? "Disable" : "Enable") + "</button></td></tr>";
+    }).join("") + '<tr><td colspan="6" class="small muted">100 participant team accounts (TEAM-001 … TEAM-100) are managed with "Issue new passwords" above.</td></tr>';
+  }
+
+  async function eventAction(action) {
+    var text = { START: "Start the market? Orders will be accepted immediately and IPO allotments are locked.", PAUSE: "Pause trading? New orders stop; the Exchange and Bank can still process pending orders.",
+      RESUME: "Resume LIVE trading?", CLOSE: "Close the market? New orders stop, the ₹50K cash rule becomes active and the winner pool narrows to eligible teams.",
+      REOPEN: "Reopen the market for trading?", FINALIZE: "Finalize the event? Results are frozen. All open orders must be settled or rejected first." }[action];
+    if (!(await JSE.dialog({ title: action.charAt(0) + action.slice(1).toLowerCase() + " event", text: text, confirmText: action, danger: action === "CLOSE" || action === "FINALIZE" }))) return;
+    try { var r = await JSE.api.post("/api/event", { action: action }); JSE.toast("Event status: " + F.statusText(r.status), "good"); } catch (e) { JSE.toast(e.message, "bad", 9000); }
+    poller.now();
+  }
+  async function undoRedo(action, id) {
+    try {
+      var r = await JSE.api.post("/api/undo-redo", id ? { action: action, journal_id: id } : { action: action });
+      JSE.toast((action === "UNDO" ? "Undone: " : "Redone: ") + r.summary + (r.message ? " — " + r.message : ""), r.message ? "warn" : "good", 8000);
+    } catch (e) { JSE.toast(e.message, "bad", 9000); }
+    poller.now(); loadNews();
+  }
+
+  function parseCsv(text) {
+    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    if (!lines.length) return [];
+    var split = function (l) { var out = [], cur = "", q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') q = !q; else if ((ch === "," || ch === "\t" || ch === ";") && !q) { out.push(cur.trim()); cur = ""; } else cur += ch; } out.push(cur.trim()); return out; };
+    var head = split(lines[0]).map(function (h) { return h.toLowerCase().replace(/[^a-z]/g, ""); });
+    var hasHead = head.indexOf("team") >= 0 || head.indexOf("broker") >= 0;
+    var keys = hasHead ? head : null;
+    return lines.slice(hasHead ? 1 : 0).map(function (l) { var c = split(l), o = {}; (keys || ["team", "ipo", "lots"]).forEach(function (k, i) { o[k] = c[i]; }); return o; });
+  }
+
+  // ---- wiring ----
+  $("moods").innerHTML = MOODS.map(function (m) { return '<button type="button" class="' + m[3] + '" data-mood="' + m[0] + '" aria-pressed="false">' + m[1] + "<small>" + m[2] + "</small></button>"; }).join("");
+  $("moods").addEventListener("click", function (e) { var b = e.target.closest("[data-mood]"); if (!b) return; S.mood = b.getAttribute("data-mood");
+    document.querySelectorAll("[data-mood]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); $("nHead").textContent = "Automatic " + S.mood.replace(/_/g, " ") + " market impact"; });
+  $("nGo").addEventListener("click", async function () {
+    var sec = $("nSec").value; if (!sec || !S.mood) return JSE.toast("Choose a company and a market mood.", "warn");
+    var name = $("nSec").selectedOptions[0].textContent.split(" · ")[0];
+    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", text: "The price of " + name + " moves immediately by a random amount inside the band.", confirmText: "Publish" }))) return;
+    try { var r = await JSE.api.post("/api/market-news", { security_id: Number(sec), mood: S.mood });
+      JSE.toast(r.symbol + ": " + F.price(r.previous_price) + " → " + F.price(r.new_price) + " (" + F.pct(r.applied_pct) + ")", N(r.applied_pct) >= 0 ? "good" : "warn", 8000);
+      loadNews(); loadSecs(); poller.now();
+    } catch (e) { JSE.toast(e.message, "bad"); }
   });
-  setMsg('Final Excel report downloaded successfully.','success');
- }catch(e){setMsg(e.message||'Excel report export failed','error')}finally{b.disabled=currentStatus!=='FINALIZED'}
-}
+  document.querySelectorAll("[data-ev]").forEach(function (b) { b.addEventListener("click", function () { eventAction(b.getAttribute("data-ev")); }); });
+  $("undoLast").onclick = function () { undoRedo("UNDO"); };
+  $("redoLast").onclick = function () { undoRedo("REDO"); };
+  $("journal").addEventListener("click", function (e) { var u = e.target.getAttribute("data-undo"), r = e.target.getAttribute("data-redo"); if (u) undoRedo("UNDO", Number(u)); if (r) undoRedo("REDO", Number(r)); });
+  $("rejectOpen").onclick = async function () {
+    var reason = await JSE.dialog({ title: "Reject all open orders?", text: "Every order still waiting at the Exchange or Bank is rejected (no cash, holdings or prices change). Use this before FINALIZE.", danger: true, confirmText: "Reject all", input: { label: "Reason", placeholder: "Market closed before settlement" } });
+    if (!reason) return;
+    try { var r = await JSE.api.post("/api/reject-open-orders", { reason: reason === true ? "" : reason }); JSE.toast(r.rejected + " order(s) rejected.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
+    poller.now();
+  };
+  $("resetBtn").onclick = async function () {
+    var keep = $("keepAllot").checked;
+    var v = await JSE.dialog({ title: "RESET EVENT", danger: true, confirmText: "Reset now",
+      html: "<p>This restores the clean starting state for all 100 teams" + (keep ? " and re-applies the loaded IPO allotments" : " <b>and removes IPO allotments</b>") + ". It cannot be undone.</p>",
+      input: { label: "Type RESET to confirm", match: "RESET", required: true } });
+    if (!v) return;
+    try { var r = await JSE.api.post("/api/reset-event", { confirm: "RESET", keep_allotments: keep }); JSE.toast("Event reset (#" + r.reset_no + "). " + r.kept_ipo_allotments + " IPO allotment rows kept.", "good", 8000); }
+    catch (e) { JSE.toast(e.message, "bad", 9000); }
+    $("cfg").innerHTML = ""; poller.now(); loadNews(); loadSecs();
+  };
+  $("allotFile").addEventListener("change", function (e) { var f = e.target.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { $("allotCsv").value = String(r.result); }; r.readAsText(f); });
+  $("allotGo").onclick = async function () {
+    var rows = parseCsv($("allotCsv").value).filter(function (r) { return r.team; });
+    if (!rows.length) return JSE.toast("Paste the allotment CSV first.", "warn");
+    var total = 0; rows.forEach(function (r) { total += N(r.lots); });
+    if (!(await JSE.dialog({ title: "Load " + rows.length + " allotment rows?", text: total + " lots in total. Cash is deducted at the IPO price with no brokerage.", confirmText: "Load allotments" }))) return;
+    try {
+      var r = await JSE.api.post("/api/ipo-allotments", { rows: rows.map(function (x) { return { team: x.team, ipo: x.ipo || x.symbol, lots: x.lots }; }), replace: $("allotReplace").checked });
+      $("allotResult").innerHTML = '<div class="alert good">Loaded ' + r.rows + " rows · " + F.money(r.total_amount) + " (batch " + esc(r.batch_id) + ").</div>";
+    } catch (e) {
+      var errs = (e.data && e.data.errors) || [];
+      $("allotResult").innerHTML = '<div class="alert bad"><b>' + esc(e.message) + "</b>" + (errs.length ? "<ul>" + errs.slice(0, 40).map(function (x) { return "<li>" + (x.row ? "Row " + x.row + ": " : "") + esc(x.error) + "</li>"; }).join("") + "</ul>" : "") + "</div>";
+    }
+    poller.now();
+  };
+  $("allotClear").onclick = async function () {
+    var v = await JSE.dialog({ title: "Remove all IPO allotments?", text: "Cash is returned and the allotted shares are removed for every team.", danger: true, confirmText: "Remove all", input: { label: "Type REMOVE to confirm", match: "REMOVE", required: true } });
+    if (!v) return;
+    try { var r = await JSE.api.post("/api/ipo-allotments", { clear: true }); JSE.toast(r.removed + " allotment rows removed.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
+    poller.now();
+  };
+  $("teamGo").onclick = async function () {
+    var rows = parseCsv($("teamCsv").value).filter(function (r) { return r.team; });
+    if (!rows.length) return JSE.toast("Paste team rows with a header line (team,name,section,broker,members).", "warn");
+    try { var r = await JSE.api.post("/api/teams", { rows: rows }); $("teamResult").innerHTML = '<div class="alert ' + (r.errors.length ? "warn" : "good") + '">Updated ' + r.updated + " teams." + r.errors.map(function (x) { return "<br>Row " + x.row + ": " + esc(x.error); }).join("") + "</div>"; }
+    catch (e) { JSE.toast(e.message, "bad"); }
+  };
+  $("brokerGo").onclick = async function () {
+    var rows = parseCsv($("teamCsv").value).filter(function (r) { return r.broker && r.name; });
+    if (!rows.length) return JSE.toast("Paste broker rows with a header line (broker,name).", "warn");
+    try { var r = await JSE.api.post("/api/brokers", { rows: rows }); $("teamResult").innerHTML = '<div class="alert good">Updated ' + r.updated + " brokers.</div>"; } catch (e) { JSE.toast(e.message, "bad"); }
+  };
+  $("cfgSave").onclick = async function () {
+    var body = {};
+    $("cfg").querySelectorAll("[data-cfg]").forEach(function (i) { var k = i.getAttribute("data-cfg"); body[k] = i.type === "checkbox" ? i.checked : i.value; });
+    var cur = (S.st && S.st.config_full) || {};
+    Object.keys(body).forEach(function (k) { if (String(body[k]) === String(cur[k])) delete body[k]; });
+    if (!Object.keys(body).length) return JSE.toast("Nothing changed.", "warn");
+    if (!(await JSE.dialog({ title: "Save configuration?", html: "<ul>" + Object.keys(body).map(function (k) { return "<li><b>" + esc(k) + "</b>: " + esc(cur[k]) + " → " + esc(body[k]) + "</li>"; }).join("") + "</ul>", confirmText: "Save" }))) return;
+    try { await JSE.api.post("/api/config", body); JSE.toast("Configuration saved.", "good"); $("cfg").innerHTML = ""; } catch (e) { JSE.toast(e.message, "bad", 9000); }
+    poller.now();
+  };
+  $("users").addEventListener("click", async function (e) {
+    var pw = e.target.getAttribute("data-pw"), act = e.target.getAttribute("data-act");
+    if (pw) {
+      if (!(await JSE.dialog({ title: "Issue a new password for " + pw + "?", text: "The current password stops working and the account is signed out.", confirmText: "Issue password" }))) return;
+      try { var r = await JSE.api.post("/api/users", { action: "RESET_PASSWORD", username: pw });
+        await JSE.dialog({ title: "New password for " + r.username, html: '<p>Give this to the desk operator. It is shown only once.</p><p class="mono" style="font-size:20px;font-weight:800">' + esc(r.password) + "</p>", confirmText: "Done", cancel: false });
+      } catch (ex) { JSE.toast(ex.message, "bad"); }
+    }
+    if (act) {
+      var on = e.target.getAttribute("data-on") === "1";
+      try { await JSE.api.post("/api/users", { action: "SET_ACTIVE", username: act, active: on }); JSE.toast(act + (on ? " enabled" : " disabled"), "good"); loadUsers(); } catch (ex) { JSE.toast(ex.message, "bad"); }
+    }
+  });
+  $("issueBtn").onclick = async function () {
+    var role = $("roleSel").value, label = $("roleSel").selectedOptions[0].textContent;
+    var v = await JSE.dialog({ title: "Issue new passwords: " + label, danger: true, confirmText: "Issue passwords",
+      html: "<p>Every account with this role gets a new random password. Existing passwords stop working immediately and the CSV downloads once.</p>", input: { label: "Type ISSUE to confirm", match: "ISSUE", required: true } });
+    if (!v) return;
+    try {
+      var r = await JSE.api.post("/api/users", { action: "RESET_ROLE_PASSWORDS", role: role });
+      var csv = "﻿username,password,role,site\r\n" + r.credentials.map(function (c) { return c.username + "," + c.password + "," + role + "," + location.origin; }).join("\r\n") + "\r\n";
+      var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "JSE_credentials_" + role + ".csv"; a.click();
+      JSE.toast(r.credentials.length + " passwords issued and downloaded.", "good", 8000); loadUsers();
+    } catch (e) { JSE.toast(e.message, "bad"); }
+  };
+  $("sheetSel").innerHTML = SHEETS.map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + "</option>"; }).join("");
+  $("csvBtn").onclick = function () { JSE.download("/api/export?sheet=" + $("sheetSel").value, "JSE_" + $("sheetSel").value + ".csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
+  $("xlsx").onclick = async function () {
+    var b = $("xlsx"); b.disabled = true; var t = b.textContent; b.innerHTML = '<span class="spinner"></span> Preparing report…';
+    try { await JSE.download("/api/export-event-excel", "JSE_Final_Event_Report.xlsx"); JSE.toast("Report downloaded.", "good"); } catch (e) { JSE.toast(e.message, "bad"); }
+    b.disabled = false; b.textContent = t;
+  };
 
-async function downloadJson(){
- const b=document.querySelector('#downloadJson'); b.disabled=true;
- try{
-  const r=await fetch(A+'/export-event',{cache:'no-store'});
-  if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error||'JSON archive export failed')}
-  const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download='jain-stock-exchange-event-archive.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
- }catch(e){setMsg(e.message||'JSON archive export failed','error')}finally{b.disabled=currentStatus!=='FINALIZED'}
-}
-
-checkAccess();
+  var poller;
+  JSE.page({ id: "admin" }).then(function (user) {
+    if (!user) return;
+    S.admin = user.role === "ADMIN";
+    if (!S.admin) document.querySelectorAll(".admin-only").forEach(function (x) { x.classList.add("hidden"); });
+    poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    JSE.poll(loadNews, 10000);
+    JSE.poll(loadSecs, 15000);
+    loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
+  });
+})();
 </script>
-<script src="/admin-nav.js"></script></body>
+</body>
 </html>

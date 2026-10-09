@@ -218,9 +218,12 @@ get("/api/cms50", async (ctx) => {
 
 // ---- authentication ----
 post("/api/login", async (ctx) => {
-  if (!rateLimit("login:" + ctx.ip, 0.5, 10)) throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Too many sign-in attempts. Wait a minute and try again.");
   const username = String(ctx.body?.username || "").trim();
   const password = String(ctx.body?.password || "");
+  // many desks share one venue IP, so the per-IP allowance is generous; per-account attempts are tighter
+  if (!rateLimit("login-ip:" + ctx.ip, 5, 150) || !rateLimit("login-user:" + username.toLowerCase(), 0.2, 12)) {
+    throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Too many sign-in attempts. Wait a minute and try again.");
+  }
   if (!username || !password) throw new ApiError(400, "MISSING_CREDENTIALS", "Enter your username and password.");
   const out = await call("jse_login", null, { username, password, ip: ctx.ip, ua: ctx.ua }, { noActor: true });
   return json(ctx, out);
@@ -278,17 +281,9 @@ get("/api/order", async (ctx) => {
 post("/api/orders", async (ctx) => {
   need(ctx, "ADMIN", "BROKER", "PARTICIPANT");
   const b = ctx.body || {};
-  const legs = Array.isArray(b.legs) ? b.legs : null;
-  if (legs) {
-    // paired buyer/seller ticket: two independent orders that share a pair reference
-    if (legs.length !== 2) throw new ApiError(400, "INVALID_PAIR", "A paired trade needs exactly one BUY leg and one SELL leg.");
-    const pair = "PAIR-" + randomUUID().slice(0, 8).toUpperCase();
-    const results = [];
-    for (const [i, leg] of legs.entries()) {
-      results.push(await call("jse_place_order", actor(ctx), { ...leg, pair_ref: pair, idempotency_key: String(b.idempotency_key || "") + ":" + i }));
-    }
-    invalidate(["trk:", "staff:", "pd:", "q:"]);
-    return json(ctx, { success: true, pair_ref: pair, legs: results });
+  if (Array.isArray(b.legs)) {
+    // paired buyer/seller ticket: two linked orders created in one transaction
+    return mutate(ctx, "jse_place_pair", b, ["trk:", "staff:", "pd:", "q:"]);
   }
   return mutate(ctx, "jse_place_order", b, ["trk:", "staff:", "pd:", "q:"]);
 });

@@ -1,1 +1,0 @@
-CREATE TABLE IF NOT EXISTS institutional_holdings (id BIGSERIAL PRIMARY KEY, investor_id BIGINT NOT NULL REFERENCES institutional_investors(id), stock_id BIGINT NULL REFERENCES stocks(id), ipo_id BIGINT NULL REFERENCES ipo_offerings(id), quantity INTEGER NOT NULL DEFAULT 0, average_price NUMERIC(14,2) NOT NULL DEFAULT 0, UNIQUE(investor_id,stock_id,ipo_id));

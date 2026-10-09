@@ -1,29 +1,150 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Order Tracking</title><link rel="stylesheet" href="/theme.css">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order Tracking · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
 <style>
-.tracking-page{max-width:1440px;margin:auto}
-.page-head{display:flex;justify-content:space-between;align-items:end;margin:22px 0 16px}
-.page-head h1{margin:0;font-size:30px;letter-spacing:-.4px}.page-head p{margin:6px 0 0;color:#64748b;font-size:14px}
-.tracking-card{background:#fff;border:1px solid #d8e0e9;border-radius:10px;overflow:hidden}
-.card-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid #e2e7ed;background:#fbfcfe}
-.card-head strong{font-size:16px;color:#183451}.card-head span{font-size:12px;color:#718297}
-.table-wrap{overflow:auto}.tracking-table{width:100%;border-collapse:collapse;min-width:1180px;font-size:13px}
-.tracking-table th{background:#f4f7fa;color:#52677d;text-transform:uppercase;font-size:11px;letter-spacing:.35px;text-align:left;padding:11px 12px;border-bottom:1px solid #dce3ea;white-space:nowrap}
-.tracking-table td{padding:11px 12px;border-bottom:1px solid #edf1f5;white-space:nowrap;color:#24384d}
-.tracking-table tbody tr:hover{background:#fafcff}.tracking-table tbody tr:last-child td{border-bottom:0}
-.order-code{font-weight:700;color:#193d65}.side-buy{color:#16834b;font-weight:800}.side-sell{color:#c83d3d;font-weight:800}
-.status{display:inline-block;padding:5px 8px;border-radius:5px;background:#eef3f8;color:#52677d;font-size:11px;font-weight:700}
-.value{font-variant-numeric:tabular-nums}.brokerage{font-weight:700;color:#6a4b1c}
-.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 18px;border-bottom:1px solid #e2e7ed}
-.summary-box{border:1px solid #dce3ea;border-radius:8px;background:#fff;padding:11px 13px}
-.summary-box span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.35px;color:#6b7d90;margin-bottom:5px}
-.summary-box b{font-size:19px;color:#193451}
-.empty-state{padding:45px 20px;text-align:center;color:#718297}
-@media(max-width:700px){.summary-grid{grid-template-columns:1fr}}
-</style><script src="/jse-api.js"></script><script src="/auth.js"></script></head>
-<body><div class="shell page tracking-page">
-<header class="brand">JAIN STOCK EXCHANGE</header>
-<nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav>
-<div class="page-head"><div><h1>Order Tracking</h1><p>Complete participant order history with trade value, brokerage and settlement status.</p></div></div>
-<section class="tracking-card"><div class="card-head"><strong>JSE Order Tracking</strong><span>Live status counts · Brokerage rate: 0.5%</span></div><div id="summary" class="summary-grid"></div><div class="card-head" style="border-top:1px solid #e2e7ed"><div style="display:flex;gap:10px;flex-wrap:wrap;width:100%;align-items:center"><input id="search" placeholder="Search order, team or asset" style="min-width:230px"><select id="team"><option value="">All teams</option></select><select id="status"><option value="">All statuses</option><option value="PENDING_EXCHANGE">Exchange Pending</option><option value="EXCHANGE_APPROVED">Exchange Approved</option><option value="SETTLED">Settled</option><option value="EXCHANGE_REJECTED">Exchange Rejected</option><option value="BANK_REJECTED">Bank Rejected</option></select><select id="limit"><option value="50">50 rows</option><option value="100">100 rows</option><option value="25">25 rows</option></select><button id="refresh">Refresh</button></div></div><div id="app"><div class="empty-state">Loading orders...</div></div><div id="pager" class="card-head" style="justify-content:center;gap:14px;border-top:1px solid #e2e7ed"></div></section>
-</div><script src="/orders.js?v=300"></script><script src="/admin-nav.js"></script></body></html>
+  .filters { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 1100px) { .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  tr.row-main { cursor: pointer; }
+  tr.row-main td:first-child::before { content: "▸"; color: var(--faint); margin-right: 6px; }
+  tr.row-main.open td:first-child::before { content: "▾"; }
+  .pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 14px; }
+</style>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Order workflow</div><h1>Order Tracking</h1><p>Order Created → Exchange Review → Bank Settlement → Market/Cash Updated. Latest activity first.</p></div>
+    <div class="row"><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+      <button class="btn sm" type="button" id="csv">Export CSV</button></div>
+  </div>
+  <div class="card" style="margin-bottom:14px"><div class="card-b">
+    <div class="filters">
+      <div class="field"><label for="fTeam">Team</label><select class="input" id="fTeam"></select></div>
+      <div class="field"><label for="fStatus">Status</label><select class="input" id="fStatus">
+        <option value="">All statuses</option><option value="PENDING">Open (not final)</option><option value="EXCHANGE_PENDING">Exchange pending</option>
+        <option value="EXCHANGE_APPROVED">Exchange approved</option><option value="BANK_PENDING">Bank pending</option><option value="BANK_SETTLED">Bank settled</option>
+        <option value="REJECTED">All rejected</option><option value="EXCHANGE_REJECTED">Exchange rejected</option><option value="BANK_REJECTED">Bank rejected</option></select></div>
+      <div class="field"><label for="fSide">Buy / Sell</label><select class="input" id="fSide"><option value="">Buy and sell</option><option>BUY</option><option>SELL</option></select></div>
+      <div class="field"><label for="fKind">Stocks / IPO</label><select class="input" id="fKind"><option value="">Stocks and IPOs</option><option value="EQUITY">Stocks</option><option value="IPO">IPOs</option></select></div>
+      <div class="field"><label for="fAcct">Account</label><select class="input" id="fAcct"><option value="">All accounts</option><option value="TEAM">Participant teams</option><option value="INSTITUTION">Institutional</option></select></div>
+      <div class="field"><label for="fQ">Search</label><input class="input" id="fQ" type="search" placeholder="Order, team, symbol, broker"></div>
+    </div>
+  </div></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="card">
+    <div class="card-b flush"><div class="table-wrap"><table class="t">
+      <thead><tr><th>Order ID</th><th>Team</th><th>Broker</th><th>Security</th><th>Side</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Trade value</th><th class="num">Brokerage</th><th class="num">Settlement</th><th>Created</th><th>Status</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody></table></div>
+      <div class="pager"><span class="small muted" id="pageInfo"></span><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div>
+    </div>
+  </div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { page: 1, size: 50, open: {}, details: {}, data: null, user: null, status: null };
+  var params = new URLSearchParams(location.search);
+
+  function filters() {
+    return { team: $("fTeam").value, status: $("fStatus").value, side: $("fSide").value, kind: $("fKind").value, account: $("fAcct").value, q: $("fQ").value.trim(), page: S.page, page_size: S.size };
+  }
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+
+  function step(n, title, cls, st, meta) { return '<div class="step ' + cls + '"><div class="n">' + n + " · " + title + '</div><div class="st">' + st + '</div><div class="meta">' + meta + "</div></div>"; }
+  function flow(d) {
+    var o = d.order, ev = d.events, st = d.settlement;
+    var find = function (name) { return ev.filter(function (e) { return e.event === name; }).slice(-1)[0]; };
+    var created = find("ORDER_CREATED");
+    var ex = o.exchange_at ? (o.status === "EXCHANGE_REJECTED" ? ["fail", "Rejected"] : ["done", "Approved"]) : ["wait", "Waiting"];
+    var bk = o.status === "BANK_SETTLED" ? ["done", "Settled"] : o.status === "BANK_REJECTED" ? ["fail", "Rejected"] : o.status === "EXCHANGE_REJECTED" ? ["", "Not reached"] : o.status === "BANK_PENDING" ? ["wait", "Verifying"] : ["wait", "Waiting"];
+    var mk = st ? ["done", "Updated"] : ["", o.status === "BANK_SETTLED" ? "Updated" : "No change"];
+    return '<div class="flow">' +
+      step(1, "Order created", "done", F.datetime(o.created_at), "by " + esc(o.created_by || "—") + (created && created.data ? " · ref price " + F.price(created.data.reference_price) : "")) +
+      step(2, "Exchange review", ex[0], ex[1], o.exchange_at ? F.datetime(o.exchange_at) + " · " + esc(o.exchange_by || "") : "pending") +
+      step(3, "Bank settlement", bk[0], bk[1], o.bank_at ? F.datetime(o.bank_at) + " · " + esc(o.bank_by || "") + (o.reject_reason && o.status === "BANK_REJECTED" ? "<br>" + esc(o.reject_reason) : "") : "pending") +
+      step(4, "Market / cash updated", mk[0], mk[1], st ? "Price " + F.price(st.price_before) + " → " + F.price(st.price_after) + "<br>Cash " + F.money(st.team_cash_before) + " → " + F.money(st.team_cash_after) + (N(st.loan_drawn) ? "<br>Loan drawn " + F.money(st.loan_drawn) : "") : "—") +
+      '</div><ul class="events">' + ev.map(function (e) { return "<li><b>" + F.time(e.at) + "</b> · " + esc(F.statusText(e.event)) + " · " + esc(e.actor || "") + " (" + esc(e.role || "") + ")" + (e.note ? " — " + esc(e.note) : "") + "</li>"; }).join("") +
+      (d.risk.length ? d.risk.map(function (r) { return '<li class="down"><b>Risk</b> · ' + esc(F.statusText(r.kind)) + " at " + esc(r.stage) + (r.shortage ? " · shortage " + F.money(r.shortage) : "") + (r.holding_before !== null && r.holding_before !== undefined ? " · holding " + r.holding_before : "") + "</li>"; }).join("") : "") +
+      "</ul>";
+  }
+
+  function render() {
+    var d = S.data; if (!d) return;
+    var k = d.kpis;
+    $("kpis").innerHTML = kpi("Orders", F.num(k.orders), F.num(k.buy) + " buy · " + F.num(k.sell) + " sell", "accent") +
+      kpi("Exchange pending", F.num(k.exchange_pending), "awaiting review", "info") +
+      kpi("Awaiting Bank", F.num(N(k.exchange_approved) + N(k.bank_pending)), "approved by Exchange", "warn") +
+      kpi("Bank settled", F.num(k.settled), F.short(k.settled_value) + " value", "good") +
+      kpi("Rejected", F.num(N(k.exchange_rejected) + N(k.bank_rejected)), F.num(k.exchange_rejected) + " Exchange · " + F.num(k.bank_rejected) + " Bank", "bad") +
+      kpi("Brokerage", F.money(k.brokerage), "on settled orders", "info");
+    $("rows").innerHTML = d.rows.length ? d.rows.map(function (o) {
+      var open = S.open[o.id];
+      var main = '<tr class="row-main' + (open ? " open" : "") + '" data-id="' + o.id + '" tabindex="0" aria-expanded="' + !!open + '"><td class="mono"><b>' + esc(o.order_no) + "</b></td><td><b>" + esc(o.team) + "</b>" +
+        (o.account_type === "INSTITUTION" ? '<div class="tiny muted">' + esc(o.institution) + " counterparty</div>" : "") + "</td><td>" + esc(o.broker || "—") + "</td><td>" + esc(o.symbol) + " " + JSE.badge.kind(o.kind) + "</td>" +
+        "<td>" + JSE.badge.side(o.side) + '</td><td class="num">' + F.num(o.quantity) + '</td><td class="num">' + F.price(o.price) + '</td><td class="num">' + F.money(o.trade_value) + '</td><td class="num">' + F.money(o.brokerage) +
+        '</td><td class="num">' + F.money(o.settlement_amount) + "</td><td>" + F.datetime(o.created_at) + "</td><td>" + JSE.badge.status(o.status) +
+        (o.short_sell_flag ? ' <span class="badge warn" title="Short-sell attempt recorded">SS</span>' : "") + (o.cash_shortfall_flag ? ' <span class="badge warn" title="Cash-shortfall attempt recorded">CS</span>' : "") + "</td></tr>";
+      var exp = open ? '<tr class="expand"><td colspan="12">' + (S.details[o.id] ? flow(S.details[o.id]) : '<div class="empty"><span class="spinner"></span> Loading workflow…</div>') + "</td></tr>" : "";
+      return main + exp;
+    }).join("") : '<tr><td colspan="12" class="empty"><b>No orders match these filters.</b>Change the filters or wait for new orders.</td></tr>';
+    var from = (S.page - 1) * S.size + 1, to = (S.page - 1) * S.size + d.rows.length;
+    $("pageInfo").textContent = d.rows.length ? "Showing " + from + "–" + to + " of " + F.num(k.orders) : "";
+    $("prev").disabled = S.page <= 1; $("next").disabled = to >= N(k.orders);
+  }
+
+  async function detail(id) {
+    try { S.details[id] = await JSE.api.get("/api/order", { id: id }); } catch (e) { S.details[id] = null; JSE.toast(e.message, "bad"); }
+    render();
+  }
+  async function load() {
+    // live market: every 5 s; otherwise every 15 s unless the user changed something
+    if (!S.force && S.status && S.status !== "LIVE" && Date.now() - (S.lastLoad || 0) < 14000) return;
+    S.force = false; S.lastLoad = Date.now();
+    S.data = await JSE.api.get("/api/tracking", filters());
+    Object.keys(S.open).forEach(function (id) { if (S.open[id]) detail(id); });
+    render();
+    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date()) + " · every " + (S.status === "LIVE" ? 5 : 15) + "s";
+  }
+
+  $("rows").addEventListener("click", function (e) {
+    var tr = e.target.closest("tr.row-main"); if (!tr) return;
+    var id = tr.getAttribute("data-id"); S.open[id] = !S.open[id];
+    if (S.open[id]) detail(id); render();
+  });
+  $("rows").addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr.row-main")) { e.preventDefault(); e.target.click(); } });
+  ["fTeam", "fStatus", "fSide", "fKind", "fAcct"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; S.force = true; poller.now(); }); });
+  $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; S.force = true; poller.now(); }, 300));
+  $("prev").onclick = function () { if (S.page > 1) { S.page--; S.force = true; poller.now(); } };
+  $("next").onclick = function () { S.page++; S.force = true; poller.now(); };
+  $("csv").onclick = function () {
+    var d = S.data; if (!d) return;
+    var cols = ["Order ID", "Account", "Team", "Broker", "Security", "Type", "Side", "Quantity", "Price", "Trade Value", "Brokerage", "Settlement Amount", "Status", "Created At", "Exchange By", "Bank By", "Reject Reason"];
+    var rows = d.rows.map(function (o) { return [o.order_no, o.account_type, o.team, o.broker || "", o.symbol, o.kind, o.side, o.quantity, o.price, o.trade_value, o.brokerage, o.settlement_amount, o.status, F.datetime(o.created_at), o.exchange_by || "", o.bank_by || "", o.reject_reason || ""]; });
+    var csv = "﻿" + [cols].concat(rows).map(function (r) { return r.map(function (v) { v = String(v === null || v === undefined ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(","); }).join("\r\n");
+    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "JSE_order_tracking_page" + S.page + ".csv"; a.click();
+  };
+
+  var poller;
+  JSE.page({ id: "orders" }).then(function (user) {
+    if (!user) return;
+    S.user = user;
+    $("fTeam").innerHTML = '<option value="">All teams</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
+    if (user.role === "PARTICIPANT") { $("fTeam").innerHTML = "<option>" + esc(user.team) + "</option>"; $("fTeam").disabled = true; }
+    ["team", "status", "side", "kind", "account", "q"].forEach(function (k) { var v = params.get(k); var map = { team: "fTeam", status: "fStatus", side: "fSide", kind: "fKind", account: "fAcct", q: "fQ" }; if (v && $(map[k])) $(map[k]).value = v; });
+    var interval = 5000;
+    poller = JSE.poll(load, interval, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    JSE.onStatus(function (s) { S.status = s; });
+  });
+})();
+</script>
+</body>
+</html>

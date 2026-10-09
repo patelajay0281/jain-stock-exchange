@@ -1,97 +1,192 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CMS BANK LTD | JAIN STOCK EXCHANGE</title><link rel="stylesheet" href="/theme.css">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Settlement · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
 <style>
-body{background:#f4f6f9;color:#17233b;font-family:Inter,Segoe UI,Arial,sans-serif}
-.settle-page{max-width:1500px;margin:auto;padding:18px 24px}
-.settle-page .brand{font-size:20px;margin-bottom:10px}
-.settle-page .site-nav{margin-bottom:16px}
-.settle-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:14px}
-.settle-head h1{margin:0;font-size:30px;color:#14213d}
-.settle-head p{margin:5px 0 0;color:#718096;font-size:12px}
-.live-pill{background:#e8f4ef;color:#13704f;border:1px solid #cfe7dd;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:900;letter-spacing:.8px}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
-.metric{background:#fff;border:1px solid #dfe5ee;border-radius:12px;padding:12px 14px}
-.metric span{display:block;color:#7a8495;font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase}
-.metric b{display:block;color:#14213d;font-size:20px;margin-top:4px}
-.settle-card{background:#fff;border:1px solid #dfe5ee;border-radius:15px;box-shadow:0 8px 24px rgba(20,33,61,.06);overflow:hidden}
-.card-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e7ebf1}
-.card-head strong{font-size:12px;letter-spacing:.7px;color:#14213d}
-.card-head span{font-size:10px;color:#7a8495}
-.table-wrap{overflow:auto;max-height:calc(100vh - 255px)}
-.settle-table{width:100%;border-collapse:collapse;font-size:11px}
-.settle-table th{position:sticky;top:0;background:#f6f8fb;color:#68748a;font-size:9px;letter-spacing:.7px;text-transform:uppercase;text-align:left;padding:10px 9px;border-bottom:1px solid #dfe5ee;z-index:1}
-.settle-table td{padding:9px;border-bottom:1px solid #eef1f5;color:#26344d;white-space:nowrap}
-.settle-table tr:hover td{background:#fafbfd}
-.order-code{font-weight:900;color:#14213d}.money{font-weight:800}
-.kind{display:inline-block;padding:4px 6px;border-radius:5px;background:#eef2f7;color:#536078;font-size:8px;font-weight:900}
-.actions{display:flex;gap:5px}.warning-ribbon{display:inline-block;padding:5px 8px;border-radius:6px;font-size:8px;font-weight:900;letter-spacing:.05em;white-space:nowrap}.warning-ribbon.short{background:#f9e7e9;color:#a23a43;border:1px solid #e5c0c5}.warning-ribbon.balance{background:#fff1dc;color:#9a5a00;border:1px solid #ead0a3}.ok-ribbon{display:inline-block;padding:5px 8px;border-radius:6px;font-size:8px;font-weight:900;letter-spacing:.05em;color:#23734f;background:#eef8f2;border:1px solid #cbe5d5}
-.approve,.reject{border:0;border-radius:6px;padding:7px 10px;font-size:9px;font-weight:900;cursor:pointer}
-.approve{background:#173b31;color:#fff}.reject{background:#f7e9ea;color:#a6323a}
-.empty{padding:50px;text-align:center;color:#7b8697;font-size:12px}.approval-popup{display:none;position:fixed;inset:0;z-index:9999;background:rgba(16,25,37,.5);align-items:center;justify-content:center}.approval-box{width:410px;max-width:92vw;background:#fff;border-radius:12px;padding:28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.28);border:1px solid #dfe5ee}.approval-icon{width:42px;height:42px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e9f5ef;color:#176b48;font-size:23px;font-weight:900}.approval-kicker{font-size:10px;font-weight:900;letter-spacing:1.2px;color:#176b48}.approval-box h2{margin:7px 0;color:#14213d;font-size:21px}.approval-box p{margin:0 0 19px;color:#667085;font-size:12px;line-height:1.5}.approval-box button{border:0;border-radius:6px;background:#172b4d;color:#fff;padding:11px 18px;font-size:10px;font-weight:900;cursor:pointer}.warning-icon{background:#fff1dc;color:#9a5a00}.warning-kicker{color:#a23a43}.danger-btn{background:#a23a43!important}
-@media(max-width:900px){.settle-page{padding:12px}.metrics{grid-template-columns:1fr 1fr}.settle-head{align-items:start}.table-wrap{max-height:none}}
-@media(max-width:600px){body.settle-bank .metrics{grid-template-columns:1fr 1fr}}
+  .chk { display: flex; flex-direction: column; gap: 3px; } .chk .badge { align-self: flex-start; }
+  tr.bad-row td { background: #fff7f8; } tr.loan-row td { background: #fffaf2; } tr.claimed td { box-shadow: inset 3px 0 0 var(--amber); }
+  .loans .t td, .loans .t th { padding: 7px 8px; }
 </style>
-<style>
-body.settle-bank{background:#eef2f6}
-body.settle-bank .settle-page{max-width:1500px;padding:14px 22px 34px}
-body.settle-bank .settle-head{margin:18px 0 14px;padding:20px 22px;border-radius:15px;background:linear-gradient(135deg,#102a25,#17604c);box-shadow:0 10px 25px rgba(15,31,55,.14)}
-body.settle-bank .settle-head h1{color:#fff;font-size:28px}.settle-bank .settle-head p{color:#cbe4da}
-body.settle-bank .live-pill{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);color:#e2f7ed}
-body.settle-bank .metrics{gap:10px;grid-template-columns:repeat(5,1fr)}
-body.settle-bank .metric{border:1px solid #d8e0e9;border-radius:12px;box-shadow:0 5px 16px rgba(20,33,61,.045);padding:13px 15px}
-body.settle-bank .metric b{font-size:22px}
-body.settle-bank .settle-card{border-color:#d8e0e9;border-radius:15px;box-shadow:0 8px 24px rgba(20,33,61,.055)}
-body.settle-bank .card-head{padding:18px 20px;background:#fff;min-height:58px}
-body.settle-bank .card-head strong{font-size:14px;letter-spacing:.8px}
-body.settle-bank .card-head span{font-size:11px}
-body.settle-bank .table-wrap{max-height:calc(100vh - 285px)}
-body.settle-bank .settle-table{font-size:13px}
-body.settle-bank .settle-table th{font-size:10px;padding:13px 12px;height:42px}
-body.settle-bank .settle-table td{padding:15px 12px;height:64px;font-size:13px}
-body.settle-bank .order-code{font-size:14px}
-body.settle-bank .kind{padding:6px 8px;font-size:9px}
-body.settle-bank .warning-ribbon,body.settle-bank .ok-ribbon{padding:6px 9px;font-size:9px}
-body.settle-bank .approve,body.settle-bank .reject{padding:10px 14px;font-size:10px;border-radius:7px}
-body.settle-bank .actions{gap:7px}
-body.settle-bank .settlement-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 14px 16px;background:#edf5f1}
-body.settle-bank .settlement-order-card{min-width:0;background:#fff;border:1px solid #cddfd6;border-radius:9px;padding:0;box-shadow:0 4px 12px rgba(18,64,48,.06);overflow:hidden;transition:.15s ease}
-body.settle-bank .settlement-order-card:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(18,64,48,.1)}
-body.settle-bank .settlement-order-card.has-warning{border-color:#e2b9be}
-body.settle-bank .order-card-top{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:10px 11px;background:#f4f9f6;border-bottom:1px solid #dceae3}
-body.settle-bank .order-card-top>div:first-child{display:flex;align-items:center;gap:5px;min-width:0}
-body.settle-bank .order-card-top .order-code{font-size:13px}
-body.settle-bank .kind{padding:4px 5px;font-size:7px}
-body.settle-bank .order-card-main{display:block;padding:5px 0}
-body.settle-bank .order-party{padding:7px 11px;border-bottom:1px solid #edf2ef}
-body.settle-bank .order-party:nth-child(odd){border-right:0}
-body.settle-bank .order-party span,body.settle-bank .order-card-stats span{display:block;font-size:7px;letter-spacing:.7px;font-weight:900;color:#71877c;margin-bottom:2px}
-body.settle-bank .order-party b{font-size:11px;color:#1d493a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-body.settle-bank .stock-party{background:#fbfdfc}
-body.settle-bank .stock-party b{font-size:12px;color:#123c2d}
-body.settle-bank .order-card-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:#123c2d;border:0;border-radius:0;padding:0}
-body.settle-bank .order-card-stats>div{padding:8px 7px;border-right:1px solid rgba(255,255,255,.12);min-width:0}
-body.settle-bank .order-card-stats>div:last-child{border-right:0}
-body.settle-bank .order-card-stats span{color:#b8d4c8;margin-bottom:2px}
-body.settle-bank .order-card-stats strong{font-size:10px;color:#fff;white-space:nowrap}
-body.settle-bank .order-card-stats .buy-side{color:#8de0b6}.settle-bank .order-card-stats .sell-side{color:#ff9ca6}
-body.settle-bank .order-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px 9px;background:#f7faf8}
-body.settle-bank .order-card-actions:before{display:none}
-body.settle-bank .order-card-actions button{min-width:0;width:100%;padding:8px 4px;font-size:8px}
-body.settle-bank .warning-ribbon,body.settle-bank .ok-ribbon{padding:4px 5px;font-size:7px}
-@media(max-width:1200px){body.settle-bank .settlement-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){body.settle-bank .settlement-cards{grid-template-columns:1fr}}
-body.settle-bank .card-head strong:before{content:"";display:inline-block;width:4px;height:14px;border-radius:3px;background:#16803c;margin-right:8px;vertical-align:-2px}
-body.settle-bank .settle-table th{background:#f5f8fc;padding:11px 10px}
-body.settle-bank .settle-table td{padding:10px}
-body.settle-bank .settle-table tbody tr:hover td{background:#f7fcf9}
-body.settle-bank .approve{background:#176b48;padding:8px 11px}.settle-bank .reject{padding:8px 11px}
-body.settle-bank .empty{padding:70px}
-body.settle-bank .approval-box{border-radius:16px}
-</style><script src="/jse-api.js"></script><script src="/auth.js"></script></head>
-<body class="settle-bank"><div class="settle-page">
-<nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav>
-<div class="settle-head"><div><h1>CMS BANK LTD</h1><p>Approve or reject exchange-approved transactions based on available participant cash and settlement requirements.</p></div><span class="live-pill">CMS BANK LTD • BANK CONTROL</span></div>
-<div id="metrics" class="metrics"></div>
-<section class="settle-card"><div class="card-head"><strong>PENDING BANK TRANSACTIONS</strong><span id="updated">Loading…</span></div><div id="app"></div></section>
-<div id="approvalPopup" class="approval-popup" aria-hidden="true"><div class="approval-box"><div class="approval-icon">✓</div><div class="approval-kicker">EXCHANGE APPROVED</div><h2>New Bank Settlement</h2><p id="approvalText">An approved transaction is ready for bank settlement.</p><button type="button" onclick="closeApprovalPopup()">OPEN BANK SETTLEMENT</button></div></div><div id="warningPopup" class="approval-popup" aria-hidden="true"><div class="approval-box"><div class="approval-icon warning-icon">!</div><div class="approval-kicker warning-kicker">BANK REVIEW REQUIRED</div><h2 id="warningTitle">Insufficient Funds</h2><p id="warningText">This transaction has a settlement warning.</p><div style="display:flex;gap:8px;justify-content:center"><button type="button" onclick="closeWarningPopup()">CLOSE</button><button id="warningConfirmBtn" type="button" class="danger-btn" onclick="confirmWarningApproval()">APPROVE WITH WARNING</button></div></div></div>
-<script src="/bank.js?v=300"></script></div><script src="/admin-nav.js"></script></body></html>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">CMS Bank · settlement desk</div><h1>Bank Settlement</h1><p>The Bank is the final authority. Every order is re-checked here (status, cash, holdings, brokerage, price band, loans) before cash, holdings and the market price change.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="alert warn hidden" id="closedNote" style="margin-bottom:14px"></div>
+  <div class="split">
+    <div class="stack">
+      <div class="card">
+        <div class="card-h"><h2>Approved by Exchange — awaiting Bank <span class="muted" id="pendCount"></span></h2>
+          <input class="input" id="q" type="search" placeholder="Filter by order, team, symbol" style="max-width:240px;min-height:34px"></div>
+        <div class="card-b flush"><div class="table-wrap" style="max-height:64vh"><table class="t">
+          <thead><tr><th>Order</th><th>Age</th><th>Team</th><th>Security</th><th>Team side</th><th class="num">Qty @ Price</th><th class="num">Amount</th><th class="num">Team cash</th><th>Bank checks</th><th class="actions">Settlement</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>Recent Bank actions</h2></div>
+        <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
+          <thead><tr><th>Time</th><th>Order</th><th>Team</th><th>Security</th><th>Side</th><th class="num">Qty @ Price</th><th class="num">Brokerage</th><th class="num">Loan drawn</th><th>Status</th><th>Reason</th></tr></thead>
+          <tbody id="recent"></tbody></table></div></div>
+      </div>
+    </div>
+    <aside class="stack">
+      <div class="card loans">
+        <div class="card-h"><h2>Loans</h2><span class="small muted" id="loanRule"></span></div>
+        <div class="card-b">
+          <form id="loanForm" class="form-grid" autocomplete="off">
+            <div class="field span-2"><label for="lTeam">Team</label><select class="input" id="lTeam"></select></div>
+            <div class="field"><label for="lAction">Action</label><select class="input" id="lAction"><option value="DRAW">Draw loan</option><option value="REPAY">Repay (interest first)</option></select></div>
+            <div class="field"><label for="lAmt">Amount (₹)</label><input class="input" id="lAmt" type="number" min="1" step="1"></div>
+            <div class="span-2"><button class="btn primary block" type="submit" id="lGo">Submit</button></div>
+          </form>
+          <div class="small muted" style="margin-top:10px">A loan can be drawn only when the team's cash is at or below the minimum cash buffer. Interest is charged once per draw. Repayment cannot take cash below the buffer. Loans are never deducted from Net Worth.</div>
+        </div>
+        <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
+          <thead><tr><th>Team</th><th class="num">Cash</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Room</th></tr></thead>
+          <tbody id="loans"></tbody></table></div></div>
+      </div>
+    </aside>
+  </div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { data: null, loans: null, canAct: false, busy: {}, q: "", me: null };
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+
+  function checks(o, d) {
+    var r = [], cls = "";
+    var band = o.price_ok ? '<span class="badge ok">Price within band</span>' : '<span class="badge no">Price out of band (mkt ' + F.price(o.market_price) + ")</span>";
+    if (!o.price_ok) cls = "bad-row";
+    if (o.team_side === "BUY") {
+      var after = N(o.cash) - N(o.required), buf = N(d.min_cash_buffer);
+      if (after >= buf) r.push('<span class="badge ok">Cash OK · leaves ' + F.short(after) + "</span>");
+      else {
+        var need = N(o.required) + buf - N(o.cash);
+        if (need <= N(o.loan_room)) { r.push('<span class="badge warn">Auto loan ' + F.money(need) + "</span>"); cls = cls || "loan-row"; }
+        else { r.push('<span class="badge no">Insufficient balance</span>'); cls = "bad-row"; }
+      }
+      if (o.account_type === "INSTITUTION") r.push(N(o.institution_holding) >= o.quantity ? '<span class="badge ok">Institution holds ' + F.num(o.institution_holding) + "</span>" : '<span class="badge no">Institution holds ' + F.num(o.institution_holding) + "</span>");
+    } else {
+      if (N(o.holding) >= o.quantity) r.push('<span class="badge ok">Holds ' + F.num(o.holding) + "</span>");
+      else { r.push('<span class="badge no">Short: holds ' + F.num(o.holding) + "</span>"); cls = "bad-row"; }
+    }
+    r.push(band);
+    if (o.account_type === "INSTITUTION") r.push('<span class="badge inst">Institutional ' + esc(o.side) + "</span>");
+    if (o.claimed_by) r.push('<span class="badge s-bank">Verifying: ' + esc(o.claimed_by) + "</span>");
+    if (o.pair_ref) r.push('<span class="badge prov" title="Linked buyer/seller ticket">' + esc(o.pair_ref) + "</span>");
+    return { html: '<div class="chk">' + r.join("") + "</div>", cls: cls };
+  }
+
+  function render() {
+    var d = S.data; if (!d) return;
+    var st = d.stats;
+    $("kpis").innerHTML = kpi("Awaiting Bank", F.num(d.pending.length), "approved by Exchange", "accent") +
+      kpi("Settled", F.num(st.settled), F.short(st.settled_value) + " traded", "good") +
+      kpi("Bank rejected", F.num(st.rejected), F.num(st.insufficient_balance) + " insufficient balance", "bad") +
+      kpi("Brokerage collected", F.money(st.brokerage), "0.5% per settled order", "info") +
+      kpi("Loans outstanding", F.short(st.loans_outstanding), "interest due " + F.money(st.interest_outstanding), "warn");
+    $("loanRule").textContent = "Buffer " + F.money(d.min_cash_buffer) + " · limit " + F.short(d.loan_limit);
+    var list = d.pending.filter(function (o) { if (!S.q) return true; return (o.order_no + " " + o.team + " " + o.symbol).toLowerCase().indexOf(S.q.toLowerCase()) >= 0; });
+    $("pendCount").textContent = "(" + d.pending.length + ")";
+    $("rows").innerHTML = list.length ? list.map(function (o) {
+      var c = checks(o, d);
+      var amt = o.team_side === "BUY" ? '<b class="down">−' + F.money(o.required) + '</b><div class="tiny muted">pays incl. brokerage</div>'
+                                      : '<b class="up">+' + F.money(N(o.settlement_amount)) + '</b><div class="tiny muted">receives after brokerage</div>';
+      return '<tr class="' + c.cls + (o.claimed_by ? " claimed" : "") + '" data-id="' + o.id + '"><td class="mono"><b>' + esc(o.order_no) + "</b></td><td>" + F.age(o.age_seconds) + "</td>" +
+        "<td><b>" + esc(o.team) + "</b>" + (o.account_type === "INSTITUTION" ? '<div class="tiny muted">counterparty</div>' : "") + "</td><td>" + esc(o.symbol) + " " + JSE.badge.kind(o.kind) + "</td>" +
+        "<td>" + JSE.badge.side(o.team_side) + '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + '</td><td class="num">' + amt + '</td><td class="num">' + F.money(o.cash) + "</td>" +
+        "<td>" + c.html + '</td><td class="actions">' + (S.canAct ? '<button class="btn good sm" data-a="SETTLE">Settle</button> <button class="btn bad sm" data-a="REJECT">Reject</button>' : '<span class="muted small">view only</span>') + "</td></tr>";
+    }).join("") : '<tr><td colspan="10" class="empty"><b>Nothing waiting for the Bank.</b>Exchange-approved orders appear here automatically.</td></tr>';
+    $("recent").innerHTML = d.recent.length ? d.recent.map(function (o) {
+      return "<tr><td>" + F.time(o.bank_at) + '</td><td class="mono">' + esc(o.order_no) + "</td><td>" + esc(o.team) + "</td><td>" + esc(o.symbol) + "</td><td>" + JSE.badge.side(o.side) +
+        '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + '</td><td class="num">' + F.money(o.brokerage) + '</td><td class="num">' + (N(o.loan_drawn) ? F.money(o.loan_drawn) : "—") +
+        "</td><td>" + JSE.badge.status(o.status) + '</td><td class="small">' + esc(o.reject_reason || "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="10" class="empty">No settlements yet.</td></tr>';
+  }
+
+  function renderLoans() {
+    var l = S.loans; if (!l) return;
+    $("loans").innerHTML = l.loans.length ? l.loans.map(function (x) {
+      return "<tr><td><b>" + esc(x.team) + "</b>" + (x.can_draw ? ' <span class="badge warn">can draw</span>' : "") + '</td><td class="num">' + F.money(x.cash) + '</td><td class="num">' + F.money(x.principal) +
+        '</td><td class="num">' + F.money(x.interest) + '</td><td class="num">' + F.short(x.remaining_limit) + "</td></tr>";
+    }).join("") : '<tr><td colspan="5" class="empty">No loans yet.</td></tr>';
+  }
+
+  async function load() {
+    S.data = await JSE.api.get("/api/bank");
+    render();
+    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+  }
+  async function loadLoans() { S.loans = await JSE.api.get("/api/loan"); renderLoans(); }
+
+  async function act(id, action) {
+    if (S.busy[id]) return; S.busy[id] = true;
+    var o = S.data.pending.filter(function (x) { return x.id === id; })[0];
+    try {
+      var body = { order_id: id, action: action };
+      if (action === "REJECT") {
+        var reason = await JSE.dialog({ title: "Reject " + (o ? o.order_no : "order") + " at the Bank", text: "No cash, holdings or prices will change.", danger: true, confirmText: "Reject",
+          input: { label: "Reason", placeholder: "e.g. Insufficient funds / documents missing" } });
+        if (!reason) return;
+        body.reason = reason === true ? "" : reason;
+      }
+      var r = await JSE.api.post("/api/bank", body);
+      if (r.status === "BANK_SETTLED") {
+        JSE.toast((o ? o.order_no : "Order") + " settled · cash " + F.money(r.cash_before) + " → " + F.money(r.cash_after) + (N(r.loan_drawn) ? " · loan " + F.money(r.loan_drawn) : "") + " · price " + F.price(r.price_after), "good", 7000);
+      } else {
+        JSE.toast((o ? o.order_no : "Order") + " rejected: " + (r.reason || r.code), "warn", 9000);
+      }
+      S.data.pending = S.data.pending.filter(function (x) { return x.id !== id; }); render();
+    } catch (e) { JSE.toast(e.message, "bad"); }
+    finally { S.busy[id] = false; if (poller) poller.now(); if (loanPoll) loanPoll.now(); }
+  }
+
+  $("rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-a]"); if (!b) return;
+    act(Number(b.closest("tr").getAttribute("data-id")), b.getAttribute("data-a"));
+  });
+  $("q").addEventListener("input", JSE.debounce(function (e) { S.q = e.target.value.trim(); render(); }, 150));
+  $("lTeam").innerHTML = '<option value="">Select team…</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
+  $("loanForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var team = $("lTeam").value, action = $("lAction").value, amount = N($("lAmt").value);
+    if (!team || !amount) return JSE.toast("Choose a team and enter an amount.", "warn");
+    var ok = await JSE.dialog({ title: (action === "DRAW" ? "Draw a loan of " : "Repay ") + F.money(amount) + (action === "DRAW" ? " for " : " from ") + team + "?",
+      text: action === "DRAW" ? "2% interest is charged once on this draw." : "Interest is repaid first, then principal.", confirmText: action === "DRAW" ? "Draw loan" : "Repay" });
+    if (!ok) return;
+    try {
+      var r = await JSE.api.post("/api/loan", { team: team, action: action, amount: amount });
+      JSE.toast(action === "DRAW" ? team + ": drew " + F.money(r.amount) + " (interest " + F.money(r.interest_charged) + ") · cash " + F.money(r.cash)
+        : team + ": repaid " + F.money(r.amount) + " (interest " + F.money(r.interest_paid) + ", principal " + F.money(r.principal_paid) + ") · cash " + F.money(r.cash), "good", 8000);
+      $("lAmt").value = ""; loanPoll.now();
+    } catch (ex) { JSE.toast(ex.message, "bad", 9000); }
+  });
+
+  var poller, loanPoll;
+  JSE.page({ id: "bank" }).then(function (user) {
+    if (!user) return;
+    S.canAct = user.role === "ADMIN" || user.role === "BANK";
+    if (!S.canAct) $("loanForm").classList.add("hidden");
+    JSE.onStatus(function (s) {
+      var open = s === "LIVE" || s === "SETTLEMENT_ONLY", n = $("closedNote");
+      n.classList.toggle("hidden", open);
+      n.innerHTML = open ? "" : "<b>Market is " + esc(F.statusText(s)) + ".</b> Bank settlement and loans are possible only while the market is LIVE or SETTLEMENT ONLY.";
+    });
+    poller = JSE.poll(load, 2500, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    loanPoll = JSE.poll(loadLoans, 6000);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,103 +1,77 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Audit Log</title>
-<link rel="stylesheet" href="/theme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit Log · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
 <style>
-.audit-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px}
-.audit-sub{margin:0;color:#5d6b7d}
-.audit-tools{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
-.audit-tools button{border:1px solid #d7dee8;background:#fff;color:#17314f;border-radius:8px;padding:8px 13px;font-weight:700;cursor:pointer}
-.audit-tools button.active{background:#17314f;color:#fff;border-color:#17314f}
-.audit-search{margin-left:auto;min-width:250px;border:1px solid #d7dee8;border-radius:8px;padding:9px 12px;font:inherit}
-.audit-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
-.audit-stat{background:#fff;border:1px solid #e1e7ef;border-radius:10px;padding:14px 16px}
-.audit-stat .n{font-size:24px;font-weight:800;color:#17314f}
-.audit-stat .l{font-size:12px;color:#68778a;margin-top:3px}
-.audit-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff}
-.audit-table th{background:#f5f7fa;color:#566477;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:11px 10px;border-bottom:1px solid #dfe5ed;white-space:nowrap}
-.audit-table td{padding:11px 10px;border-bottom:1px solid #edf0f4;vertical-align:top;font-size:13px}
-.audit-table tr:hover td{background:#fafbfd}
-.time{white-space:nowrap;color:#667487;font-size:12px}
-.order-ref{font-weight:800;color:#17314f}
-.team-ref{font-weight:700}
-.asset-name{font-weight:800}
-.asset-symbol{font-size:11px;color:#718096;margin-top:2px}
-.trade{font-weight:800}
-.buy{color:#18864b}.sell{color:#c0392b}
-.value{white-space:nowrap}
-.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
-.badge-order{background:#eef4ff;color:#2459a6}.badge-approve{background:#eaf8f0;color:#187345}.badge-reject{background:#fff0f0;color:#b52f2f}.badge-event{background:#f1f3f6;color:#5c6877}
-.detail{color:#566477;line-height:1.4}
-.risk{display:inline-block;padding:6px 9px;border-radius:7px;font-size:10px;font-weight:900;line-height:1.25;white-space:nowrap}
-.risk-danger{background:#fff0f0;color:#b42318;border:1px solid #f4c7c3}
-.risk-warning{background:#fff7e6;color:#9a6700;border:1px solid #f0d59a}
-.risk-clear{color:#718096;font-size:11px;font-weight:700}
-.empty{padding:28px;text-align:center;color:#667487}
-@media(max-width:900px){.audit-stats{grid-template-columns:repeat(2,1fr)}.audit-search{margin-left:0;width:100%}.audit-table{min-width:980px}.table-wrap{overflow:auto}}
+  .filters { display: grid; grid-template-columns: 260px 180px minmax(0, 1fr); gap: 10px; }
+  @media (max-width: 760px) { .filters { grid-template-columns: 1fr; } }
+  pre.js { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); max-height: 140px; overflow: auto; }
+  tr.row-main { cursor: pointer; }
 </style>
-<script src="/jse-api.js"></script><script src="/auth.js"></script></head>
+</head>
 <body>
-<div class="shell page">
-<header class="brand">JAIN STOCK EXCHANGE</header>
-<nav class="site-nav">
-<a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a><span id="auditUser" style="margin-left:auto;font-size:10px;color:#667085"></span>
-</nav>
-
-<div class="audit-head">
-  <div>
-    <h1 style="margin-bottom:6px">Audit Log</h1>
-    <p class="audit-sub">A clear record of what happened in the exchange, who did it, and which order or team was affected.</p>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Append-only</div><h1>Audit Log</h1><p>Every order, Exchange and Bank decision, settlement, risk event, loan, Market News move and event-control action, with user, role, time and before/after state.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
-</div>
-
-<div id="stats" class="audit-stats"></div>
-<div class="audit-tools">
-  <button class="active" data-filter="ALL">All Activity</button>
-  <button data-filter="ORDER">Orders</button>
-  <button data-filter="EXCHANGE">Exchange</button>
-  <button data-filter="EVENT">Event</button>
-  <input id="search" class="audit-search" placeholder="Search order, team, stock, or action…">
-</div>
-<div id="app"><p>Loading…</p></div>
-</div>
-
+  <div class="card" style="margin-bottom:14px"><div class="card-b"><div class="filters">
+    <div class="field"><label for="fAction">Action</label><select class="input" id="fAction"><option value="">All actions</option></select></div>
+    <div class="field"><label for="fTeam">Team</label><select class="input" id="fTeam"></select></div>
+    <div class="field"><label for="fQ">Search</label><input class="input" id="fQ" type="search" placeholder="Order number, user, symbol, details"></div>
+  </div></div></div>
+  <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
+    <thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Entity</th><th>Team</th><th>Order</th><th>Details</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody></table></div>
+    <div class="row between" style="padding:10px 14px"><span class="small muted" id="info"></span><div class="row"><button class="btn sm" id="prev">← Newer</button><button class="btn sm" id="next">Older →</button></div></div></div></div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
 <script>
-const A=window.JSE_API;
-const $=s=>document.querySelector(s);
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
-let rows=[],filter='ALL',query='';
-function category(a){if(String(a).startsWith('ORDER_')||a==='INSTITUTIONAL_ORDER_CREATED'||a==='INSTITUTIONAL_ORDER_SETTLED')return 'ORDER';if(String(a).startsWith('EXCHANGE_')||a==='SHORT_SELLING_BLOCKED')return 'EXCHANGE';if(String(a).startsWith('EVENT_'))return 'EVENT';return 'OTHER'}
-function label(a){const m={ORDER_CREATED:'Order Created',ORDER_SETTLED:'Order Settled',EXCHANGE_APPROVED:'Exchange Approved',EXCHANGE_REJECTED:'Exchange Rejected',SHORT_SELLING_BLOCKED:'Short Selling Blocked',BANK_REJECTED:'Bank Rejected',BANK_NO_BALANCE:'No Balance — Blocked',BANK_MINIMUM_CASH_WARNING:'Minimum Cash Warning',EVENT_START:'Event Started',EVENT_PAUSE:'Event Paused',EVENT_RESUME:'Event Resumed',EVENT_CLOSE:'Event Closed',EVENT_FINALIZE:'Event Finalized',EVENT_RESET:'Event Reset',LOAN_DRAW:'Loan Draw',LOAN_REPAYMENT:'Loan Repayment',SETTLEMENT_UNDO:'Settlement Undo',SETTLEMENT_REDO:'Settlement Redo',INSTITUTIONAL_ORDER_CREATED:'Institutional Order Created',INSTITUTIONAL_ORDER_SETTLED:'Institutional Order Settled'};return m[a]||a}
-function time(v){const d=new Date(v);return Number.isNaN(d.getTime())?esc(v):d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}
-function visible(){const q=query.trim().toLowerCase();return rows.filter(x=>(filter==='ALL'||category(x.action)===filter)&&(!q||[x.action,x.action_label,x.order_code,x.team_code,x.asset_name,x.asset_symbol,x.actor_name,x.actor_username,x.actor_role,JSON.stringify(x.details||{}),x.what_happened].join(' ').toLowerCase().includes(q)))}
-function render(){
- const v=visible();
- $('#stats').innerHTML=[['Total Entries',rows.length],['Orders',rows.filter(x=>category(x.action)==='ORDER').length],['Exchange',rows.filter(x=>category(x.action)==='EXCHANGE').length],['Event',rows.filter(x=>category(x.action)==='EVENT').length]].map(s=>'<div class="audit-stat"><div class="n">'+s[1]+'</div><div class="l">'+s[0]+'</div></div>').join('');
- if(!v.length){$('#app').innerHTML='<div class="empty">No audit activity matches the selected filter.</div>';return}
- $('#app').innerHTML='<div class="table-wrap"><table class="audit-table"><thead><tr><th>Date / Time</th><th>Account</th><th>Activity</th><th>Order</th><th>Team</th><th>Asset</th><th>Trade</th><th>Value</th><th>Risk</th><th>What Happened</th></tr></thead><tbody>'+
- v.map(x=>{
-   const side=String(x.side||'').toUpperCase(),qty=Number(x.quantity||0);
-   const risk=x.risk_label?'<span class="risk '+(x.risk_level==='danger'?'risk-danger':'risk-warning')+'">⚠ '+esc(x.risk_label)+'</span>':'<span class="risk-clear">CLEAR</span>';
-   const trade=side?(esc(side)+' · '+qty.toLocaleString('en-IN')+' shares'):'—';
-   return '<tr><td class="time">'+time(x.created_at)+'</td><td><strong>'+esc(x.actor_name||'SYSTEM')+'</strong><br><span style="font-size:10px;color:#98a2b3">'+esc(x.actor_username||x.actor_role||'')+'</span></td><td><span class="badge">'+esc(label(x.action))+'</span></td><td class="order-ref">'+(x.order_code?'#'+esc(x.order_code):'—')+'</td><td class="team-ref">'+esc(x.team_code||'—')+'</td><td>'+esc(x.asset_name||'—')+'<br><span style="font-size:9px;color:#98a2b3">'+esc(x.asset_symbol||'')+'</span></td><td class="trade">'+trade+'</td><td class="value">'+(x.trade_value?money(x.trade_value):'—')+'</td><td>'+risk+'</td><td>'+esc(x.what_happened||'')+'</td></tr>';
- }).join('')+'</tbody></table></div>';
-}
-async function loadAudit(){
- try{
-   const r=await fetch(A+'/audit?page=1&limit=100',{cache:'no-store'});
-   const d=await r.json().catch(()=>({}));
-   if(!r.ok)throw new Error(d.error||'Audit log unavailable');
-   rows=d.rows||[];render();$('#auditUser').textContent='OPEN EVENT MODE';
- }catch(e){if(!rows.length)$('#app').innerHTML='<div class="empty">'+esc(e.message||'Audit log unavailable')+'</div>'}
-}
-document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(z=>z.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()}));
-$('#search').addEventListener('input',e=>{query=e.target.value;render()});
-loadAudit();setInterval(loadAudit,5000);
-try{hatchable.events.connect().channel('market').on('order_created',loadAudit).on('order_approved',loadAudit).on('price_updated',loadAudit)}catch(_){}
+(function () {
+  var F = JSE.fmt, esc = JSE.esc, $ = function (id) { return document.getElementById(id); };
+  var S = { page: 1, size: 100, open: {}, data: null, force: true };
+  function summary(r) {
+    var d = r.details || {}, parts = [];
+    ["side", "symbol", "quantity", "price", "trade_value", "brokerage", "amount", "interest", "mood", "applied_pct", "code", "reason", "required", "cash", "holding", "loan_drawn", "status"].forEach(function (k) {
+      if (d[k] !== undefined && d[k] !== null && d[k] !== "") parts.push(k.replace(/_/g, " ") + ": " + (typeof d[k] === "object" ? JSON.stringify(d[k]) : d[k]));
+    });
+    if (r.after && r.after.status) parts.push("→ " + r.after.status);
+    return parts.slice(0, 6).join(" · ");
+  }
+  function render() {
+    var d = S.data; if (!d) return;
+    var sel = $("fAction"), v = sel.value;
+    if (sel.options.length <= 1 && d.actions.length) { sel.innerHTML = '<option value="">All actions</option>' + d.actions.sort().map(function (a) { return "<option>" + esc(a) + "</option>"; }).join(""); sel.value = v; }
+    $("rows").innerHTML = d.rows.length ? d.rows.map(function (r) {
+      var main = '<tr class="row-main" data-id="' + r.id + '"><td class="nowrap">' + F.datetime(r.created_at) + "</td><td><b>" + esc(r.actor || "") + "</b>" + (r.email ? '<div class="tiny muted">' + esc(r.email) + "</div>" : "") + "</td><td>" + esc(r.role || "") +
+        '</td><td><span class="badge ' + (/REJECT|SHORT|SHORTFALL|INSUFFICIENT|FAILED/.test(r.action) ? "no" : /SETTLED|APPROVED|LOGIN$|START/.test(r.action) ? "ok" : "prov") + '">' + esc(r.action) + "</span></td><td>" + esc((r.entity || "") + (r.entity_id ? " " + r.entity_id : "")) +
+        "</td><td>" + esc(r.team || "") + '</td><td class="mono">' + esc(r.order_no || "") + '</td><td class="small">' + esc(summary(r)) + "</td></tr>";
+      var exp = S.open[r.id] ? '<tr class="expand"><td colspan="8"><div class="grid cols-3" style="padding:12px 14px"><div><div class="label">Before</div><pre class="js">' + esc(JSON.stringify(r.before, null, 1) || "—") +
+        '</pre></div><div><div class="label">After</div><pre class="js">' + esc(JSON.stringify(r.after, null, 1) || "—") + '</pre></div><div><div class="label">Details · IP ' + esc(r.ip || "—") + '</div><pre class="js">' + esc(JSON.stringify(r.details, null, 1) || "—") + "</pre></div></div></td></tr>" : "";
+      return main + exp;
+    }).join("") : '<tr><td colspan="8" class="empty">No audit entries match.</td></tr>';
+    var from = (S.page - 1) * S.size + 1, to = from + d.rows.length - 1;
+    $("info").textContent = d.rows.length ? from + "–" + to + " of " + F.num(d.total) : "";
+    $("prev").disabled = S.page <= 1; $("next").disabled = to >= d.total;
+  }
+  async function load() {
+    S.data = await JSE.api.get("/api/audit", { action: $("fAction").value, team: $("fTeam").value, q: $("fQ").value.trim(), page: S.page, page_size: S.size });
+    render(); $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+  }
+  $("rows").addEventListener("click", function (e) { var tr = e.target.closest("tr.row-main"); if (!tr) return; var id = tr.getAttribute("data-id"); S.open[id] = !S.open[id]; render(); });
+  ["fAction", "fTeam"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; poller.now(); }); });
+  $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; poller.now(); }, 350));
+  $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
+  $("next").onclick = function () { S.page++; poller.now(); };
+  $("fTeam").innerHTML = '<option value="">All teams</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
+  var poller;
+  JSE.page({ id: "audit" }).then(function (u) { if (u) poller = JSE.poll(load, 8000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } }); });
+})();
 </script>
-<script src="/admin-nav.js"></script></body>
+</body>
 </html>

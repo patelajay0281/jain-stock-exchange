@@ -1,1 +1,212 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JAIN STOCK EXCHANGE</title><link rel="stylesheet" href="/theme.css"></head><body><div class="shell"><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav><main><section class="cms50-card"><div class="cms-brand"><span>JAIN STOCK EXCHANGE</span></div><div class="cms50-value"><div class="cms-index-inline"><b>CMS INDEX</b><div class="market-status-wrap"><span class="market-status-label">MARKET STATUS</span><span id="marketStatus" class="market-status status-not-started">NOT STARTED</span></div><strong id="cms50Value">—</strong><span id="cms50Change">—</span></div></div></section><div class="market-wall-head"><div><span>MARKET WALL</span><b>Stocks & IPOs</b></div><div class="wall-legend"><i class="legend-up"></i> GAINERS <i class="legend-down"></i> LOSERS</div></div><div id="stocks" class="grid"></div></main></div><script src="/jse-api.js"></script><script src="/market.js"></script><script src="/admin-nav.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market · JAIN STOCK EXCHANGE</title>
+<meta name="description" content="Live market for the Dalal Street 2026 trading simulation: CMS Index, market status, stocks and IPOs.">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
+<style>
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px 28px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 22px; box-shadow: var(--shadow); }
+  .hero h1 { margin: 0; font-size: 28px; letter-spacing: 3px; font-weight: 900; color: var(--navy); line-height: 1.1; }
+  .hero .sub { color: var(--muted); font-size: 13px; margin-top: 4px; letter-spacing: .4px; }
+  .idx { text-align: right; }
+  .idx .lbl { font-size: 12px; font-weight: 900; letter-spacing: 2px; color: var(--ink-2); }
+  .idx .val { font-size: 34px; font-weight: 900; color: var(--navy); line-height: 1.05; letter-spacing: .5px; }
+  .idx .chg { font-size: 15px; font-weight: 800; }
+  .stat { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+  .stat .pill { font-size: 14px; padding: 7px 15px; }
+  .breadth { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .breadth .up, .breadth .down, .breadth .flat { margin-left: 8px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 12px 2px 10px; }
+  .toolbar .meta { font-size: 12.5px; color: var(--muted); }
+  .toolbar .tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .toolbar .input { min-height: 34px; padding: 6px 10px; font-size: 13px; width: 200px; }
+  .toolbar select.input { width: auto; }
+  .mgrid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 1199px) { .mgrid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  @media (max-width: 991px)  { .mgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .hero { grid-template-columns: minmax(0, 1fr) auto; } .stat { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; } }
+  @media (max-width: 680px)  { .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .hero { grid-template-columns: minmax(0, 1fr); } .idx { text-align: left; } .hero h1 { font-size: 22px; letter-spacing: 2px; } .idx .val { font-size: 28px; } .toolbar .input { width: 100%; } .toolbar .tools { width: 100%; } }
+  @media (max-width: 460px)  { .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .tile { background: #fff; border: 1px solid var(--line); border-left: 5px solid var(--blue); border-radius: 10px; padding: 8px 10px 9px; box-shadow: var(--shadow); min-width: 0; display: flex; flex-direction: column; gap: 3px; position: relative; transition: background-color .6s; }
+  .tile.up { border-left-color: var(--green); } .tile.down { border-left-color: var(--red); }
+  .tile-name { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile-meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); font-weight: 700; letter-spacing: .4px; min-width: 0; }
+  .tile-meta .sym { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tile-meta .badge { padding: 1px 6px; font-size: 10px; }
+  .tile-price { font-size: 23px; font-weight: 900; color: var(--navy); letter-spacing: .2px; white-space: nowrap; line-height: 1.15; margin-top: auto; }
+  .tile-chg { align-self: flex-start; font-size: 13px; font-weight: 800; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  .tile.up .tile-chg { background: var(--green-soft); color: var(--green); }
+  .tile.down .tile-chg { background: var(--red-soft); color: var(--red); }
+  .tile.flat .tile-chg { background: var(--blue-soft); color: var(--blue); }
+  .tile.flash-up { background: #dff3e6; } .tile.flash-down { background: #fbe1e4; }
+  .grid-msg { grid-column: 1 / -1; }
+  body.tv .nav, body.tv .toolbar .tools { display: none; }
+  body.tv .wrap { max-width: none; padding: 14px 18px; }
+  body.tv .tile-name { font-size: 16px; } body.tv .tile-price { font-size: 26px; } body.tv .toolbar { margin: 8px 2px; } body.tv .footer { display: none; }
+</style>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <section class="hero" aria-label="Market summary">
+    <div>
+      <h1>JAIN STOCK EXCHANGE</h1>
+      <div class="sub" id="evName">Dalal Street 2026 · Educational trading simulation</div>
+    </div>
+    <div class="idx" aria-live="polite">
+      <div class="lbl">CMS INDEX</div>
+      <div class="val" id="idxVal">—</div>
+      <div class="chg flat" id="idxChg">—</div>
+    </div>
+    <div class="stat">
+      <span class="pill closed" id="mPill"><span class="dot"></span><span id="mPillText">Connecting…</span></span>
+      <div class="breadth" id="breadth">&nbsp;</div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="meta"><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading market…</span></span></div>
+    <div class="tools" role="search">
+      <label class="sr-only" for="q">Search</label>
+      <input class="input" id="q" type="search" placeholder="Search company or symbol" autocomplete="off">
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="EQUITY" aria-pressed="false">Stocks</button>
+        <button type="button" data-f="IPO" aria-pressed="false">IPOs</button>
+      </div>
+      <label class="sr-only" for="sort">Sort</label>
+      <select class="input" id="sort">
+        <option value="default">Default order</option>
+        <option value="gainers">Biggest gainers</option>
+        <option value="losers">Biggest losers</option>
+        <option value="price">Highest price</option>
+        <option value="name">Name A–Z</option>
+      </select>
+      <button class="btn sm" type="button" id="tvBtn" title="Projector view (full screen)">Projector view</button>
+    </div>
+  </div>
+
+  <section class="mgrid" id="grid" aria-live="off" aria-label="Stocks and IPOs"></section>
+</main>
+<footer class="footer">Educational simulation for DALAL STREET 2026 · JAIN (Deemed-to-be University), CMS Business School · Prices move only on Bank settlement or Market News.</footer>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc;
+  var REFRESH_MS = 2500;
+  var state = { data: null, filter: "all", sort: "default", q: "", last: {}, lastOk: null };
+  try { var saved = JSON.parse(localStorage.getItem("jse-market-view") || "{}"); state.filter = saved.filter || "all"; state.sort = saved.sort || "default"; } catch (e) {}
+  var grid = document.getElementById("grid");
+
+  function save() { try { localStorage.setItem("jse-market-view", JSON.stringify({ filter: state.filter, sort: state.sort })); } catch (e) {} }
+
+  function items() {
+    var d = state.data; if (!d) return [];
+    var list = d.ipos.concat(d.stocks);
+    if (state.filter !== "all") list = list.filter(function (s) { return s.type === state.filter; });
+    if (state.q) { var q = state.q.toLowerCase(); list = list.filter(function (s) { return s.name.toLowerCase().indexOf(q) >= 0 || s.symbol.toLowerCase().indexOf(q) >= 0; }); }
+    var n = function (v) { return JSE.toNum(v); };
+    if (state.sort === "gainers") list = list.slice().sort(function (a, b) { return n(b.change_pct) - n(a.change_pct); });
+    else if (state.sort === "losers") list = list.slice().sort(function (a, b) { return n(a.change_pct) - n(b.change_pct); });
+    else if (state.sort === "price") list = list.slice().sort(function (a, b) { return n(b.price) - n(a.price); });
+    else if (state.sort === "name") list = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    return list;
+  }
+
+  function tileHtml(s, flash) {
+    var dir = F.dir(s.change_pct);
+    return '<article class="tile ' + dir + (flash ? " flash-" + flash : "") + '" data-sym="' + esc(s.symbol) + '" title="' +
+      esc(s.name + " · " + s.symbol + " · Opening ₹" + s.base_price + " · Day " + F.pct(s.day_change_pct)) + '">' +
+      '<div class="tile-name">' + esc(s.name) + "</div>" +
+      '<div class="tile-meta">' + (s.type === "IPO" ? '<span class="badge ipo">IPO</span>' : '<span class="badge equity">EQUITY</span>') + '<span class="sym">' + esc(s.symbol) + "</span></div>" +
+      '<div class="tile-price">' + F.price(s.price) + "</div>" +
+      '<div class="tile-chg">' + F.arrowPct(s.change_pct) + "</div></article>";
+  }
+
+  function render() {
+    var list = items(), html = "";
+    var flashes = {};
+    list.forEach(function (s) {
+      var prev = state.last[s.symbol];
+      if (prev !== undefined && prev !== JSE.toNum(s.price)) flashes[s.symbol] = JSE.toNum(s.price) > prev ? "up" : "down";
+    });
+    if (!list.length) html = '<div class="grid-msg card"><div class="empty"><b>No securities match.</b>Clear the search or filter to see the full market.</div></div>';
+    else html = list.map(function (s) { return tileHtml(s, flashes[s.symbol]); }).join("");
+    grid.innerHTML = html;
+    if (Object.keys(flashes).length) setTimeout(function () { grid.querySelectorAll(".flash-up,.flash-down").forEach(function (t) { t.classList.remove("flash-up", "flash-down"); }); }, 1300);
+    state.data.ipos.concat(state.data.stocks).forEach(function (s) { state.last[s.symbol] = JSE.toNum(s.price); });
+  }
+
+  function renderHead(d) {
+    document.getElementById("idxVal").textContent = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(JSE.toNum(d.index.value));
+    var c = document.getElementById("idxChg");
+    c.textContent = F.arrowPct(d.index.change_pct) + "  (" + (JSE.toNum(d.index.change) >= 0 ? "+" : "−") + new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(JSE.toNum(d.index.change))) + ")";
+    c.className = "chg " + F.dir(d.index.change_pct);
+    var meta = JSE.STATUS[d.status] || { cls: "closed", text: d.status };
+    document.getElementById("mPill").className = "pill " + meta.cls;
+    document.getElementById("mPillText").textContent = meta.text;
+    var b = d.breadth || {};
+    document.getElementById("breadth").innerHTML = (d.ipos.length + d.stocks.length) + " securities" +
+      '<span class="up">▲ ' + (b.advances || 0) + '</span><span class="down">▼ ' + (b.declines || 0) + '</span><span class="flat">■ ' + (b.unchanged || 0) + "</span>";
+    if (d.event_name) document.getElementById("evName").textContent = d.event_name + " · Educational trading simulation";
+    JSE.applyStatus(d.status, d.index);
+  }
+
+  function setConn(kind, text) {
+    var c = document.getElementById("conn");
+    c.className = "conn" + (kind === "ok" ? "" : kind === "stale" ? " stale" : " down");
+    document.getElementById("connText").textContent = text;
+  }
+
+  async function load() {
+    var d = await JSE.api.get("/api/market", null, { timeout: 9000, retries: 1 });
+    state.data = d; state.lastOk = new Date();
+    renderHead(d); render();
+    setConn("ok", "Live · refreshes every " + (REFRESH_MS / 1000) + "s · updated " + F.time(d.server_time) + " IST");
+  }
+
+  function onError(e) {
+    if (!state.data) {
+      grid.innerHTML = '<div class="grid-msg card"><div class="empty"><b>The market feed can’t be loaded right now.</b>' + esc(e.message) +
+        '<div style="margin-top:12px"><button class="btn primary" type="button" id="retry">Try again now</button></div></div></div>';
+      var r = document.getElementById("retry"); if (r) r.onclick = function () { poller.now(); };
+      setConn("down", "Feed unavailable — retrying automatically");
+      JSE.offline();
+    } else {
+      setConn("stale", "Connection lost · showing prices from " + F.time(state.lastOk) + " IST · retrying");
+      JSE.offline();
+    }
+  }
+
+  // controls
+  document.querySelectorAll(".seg [data-f]").forEach(function (b) {
+    b.setAttribute("aria-pressed", String(b.getAttribute("data-f") === state.filter));
+    b.addEventListener("click", function () {
+      state.filter = b.getAttribute("data-f"); save();
+      document.querySelectorAll(".seg [data-f]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      if (state.data) render();
+    });
+  });
+  var sortSel = document.getElementById("sort"); sortSel.value = state.sort;
+  sortSel.addEventListener("change", function () { state.sort = sortSel.value; save(); if (state.data) render(); });
+  document.getElementById("q").addEventListener("input", JSE.debounce(function (e) { state.q = e.target.value.trim(); if (state.data) render(); }, 150));
+  document.getElementById("tvBtn").addEventListener("click", function () {
+    document.body.classList.toggle("tv");
+    var el = document.documentElement;
+    if (document.body.classList.contains("tv") && el.requestFullscreen) el.requestFullscreen().catch(function () {});
+    else if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+  });
+  document.addEventListener("fullscreenchange", function () { if (!document.fullscreenElement) document.body.classList.remove("tv"); });
+  if (/[?&]tv=1/.test(location.search)) document.body.classList.add("tv");
+
+  var poller;
+  JSE.page({ id: "market", statusFromPage: true }).then(function () {
+    poller = JSE.poll(load, REFRESH_MS, { onError: onError });
+  });
+})();
+</script>
+</body>
+</html>

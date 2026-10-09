@@ -1,52 +1,69 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cash Ledger</title><link rel="stylesheet" href="/theme.css"><script src="/jse-api.js"></script><script src="/auth.js"></script></head><body><div class="shell page"><header class="brand">JAIN STOCK EXCHANGE</header><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav><h1>Cash Ledger</h1><p>Complete cash movement audit trail. Current cash is shown separately from ledger movement.</p>
-
-<div id="summary" class="grid"></div>
-<div class="card" style="margin:16px 0"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-<input id="q" placeholder="Search team, order or note" style="min-width:240px">
-<select id="team"><option value="">All teams</option></select>
-<select id="type"><option value="">All entry types</option></select>
-<select id="limit"><option value="50">50 rows</option><option value="100">100 rows</option><option value="25">25 rows</option></select>
-<button id="refresh">Refresh</button>
-</div></div>
-<div id="app"><p>Loading…</p></div>
-<div id="pager" style="display:flex;gap:8px;align-items:center;justify-content:center;margin:18px 0"></div>
-</div>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cash Ledger · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=272">
+<style>.filters { display: grid; grid-template-columns: 200px 220px minmax(0, 1fr); gap: 10px; } @media (max-width: 760px) { .filters { grid-template-columns: 1fr; } }</style>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Append-only · reconciles with every team's cash</div><h1>Cash Ledger</h1><p>Every cash movement: initial capital, IPO allotments, buys, sells, brokerage, loan draws, interest and repayments.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+  <div id="recon" style="margin-bottom:14px"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="card" style="margin-bottom:14px"><div class="card-b"><div class="filters">
+    <div class="field"><label for="fTeam">Team</label><select class="input" id="fTeam"></select></div>
+    <div class="field"><label for="fType">Type</label><select class="input" id="fType"><option value="">All types</option><option>INITIAL_CAPITAL</option><option>IPO_ALLOTMENT</option><option>BUY</option><option>SELL</option><option>BROKERAGE</option><option>LOAN_DRAW</option><option>INTEREST</option><option>LOAN_REPAYMENT</option><option>REVERSAL</option><option>ADJUSTMENT</option></select></div>
+    <div class="field"><label for="fQ">Search notes</label><input class="input" id="fQ" type="search" placeholder="Symbol, order, note"></div>
+  </div></div></div>
+  <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
+    <thead><tr><th>Timestamp</th><th>Team</th><th>Order ID</th><th>Type</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance after</th><th>Notes</th><th>Actor</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody></table></div>
+    <div class="row between" style="padding:10px 14px"><span class="small muted" id="info"></span><div class="row"><button class="btn sm" id="prev">← Newer</button><button class="btn sm" id="next">Older →</button></div></div></div></div>
+</main>
+<script src="/assets/config.js?v=272"></script>
+<script src="/assets/jse.js?v=272"></script>
 <script>
-const A=window.JSE_API;
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
-const money=v=>'₹'+Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-let page=1, timer=null;
-function summary(s){
- $('summary').innerHTML='<div class="card"><b>Total Debits</b><h2 class="down">'+money(s.total_debit)+'</h2></div><div class="card"><b>Total Credits</b><h2 class="up">'+money(s.total_credit)+'</h2></div><div class="card"><b>Net Ledger Movement</b><h2>'+money(s.net_movement)+'</h2></div><div class="card"><b>Current Cash</b><h2>'+money(s.current_cash)+'</h2></div><div class="card"><b>Ledger Entries</b><h2>'+Number(s.entries).toLocaleString('en-IN')+'</h2></div>';
-}
-function loadFilters(f){
- const oldT=$('team').value,oldY=$('type').value;
- $('team').innerHTML='<option value="">All teams</option>'+f.teams.map(x=>'<option>'+esc(x)+'</option>').join('');
- $('type').innerHTML='<option value="">All entry types</option>'+f.types.map(x=>'<option>'+esc(x)+'</option>').join('');
- if(f.teams.includes(oldT))$('team').value=oldT;
- if(f.types.includes(oldY))$('type').value=oldY;
-}
-async function load(){
- const p=new URLSearchParams({page,limit:$('limit').value});
- if($('team').value)p.set('team',$('team').value);
- if($('type').value)p.set('entry_type',$('type').value);
- if($('q').value.trim())p.set('q',$('q').value.trim());
- try{
-  const r=await fetch(A+'/cash?'+p.toString(),{cache:'no-store'}); if(!r.ok)throw 0;
-  const d=await r.json(); summary(d.summary); loadFilters(d.filters);
-  const rows=d.rows||[];
-  $('app').innerHTML=rows.length?'<div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Team</th><th>Order</th><th>Entry Type</th><th>Debit</th><th>Credit</th><th>Balance After</th><th>Note</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(new Date(x.created_at).toLocaleString('en-IN'))+'</td><td><b>'+esc(x.team)+'</b></td><td>'+esc(x.order_code)+'</td><td>'+esc(x.entry_type)+'</td><td class="down">'+money(x.debit)+'</td><td class="up">'+money(x.credit)+'</td><td>'+money(x.balance_after)+'</td><td>'+esc(x.note)+'</td></tr>').join('')+'</tbody></table></div>':'<p class="notice">No cash ledger entries match the selected filters.</p>';
-  const pg=d.pagination; $('pager').innerHTML='<button '+(pg.page<=1?'disabled':'')+' id="prev">← Previous</button><span>Page '+pg.page+' of '+pg.pages+' · '+pg.total.toLocaleString('en-IN')+' matching entries</span><button '+(pg.page>=pg.pages?'disabled':'')+' id="next">Next →</button>';
-  $('prev').onclick=()=>{if(page>1){page--;load()}};
-  $('next').onclick=()=>{if(page<pg.pages){page++;load()}};
- }catch(e){$('app').innerHTML='<p class="notice">Admin access required.</p>'}
-}
-let searchTimer;
-$('q').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{page=1;load()},300)});
-$('team').addEventListener('change',()=>{page=1;load()});
-$('type').addEventListener('change',()=>{page=1;load()});
-$('limit').addEventListener('change',()=>{page=1;load()});
-$('refresh').onclick=()=>load();
-load(); timer=setInterval(load,10000);
-</script><script src="/admin-nav.js"></script></body></html>
+(function () {
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { page: 1, size: 100 };
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+  async function load() {
+    var d = await JSE.api.get("/api/cash", { team: $("fTeam").value, type: $("fType").value, q: $("fQ").value.trim(), page: S.page, page_size: S.size });
+    var r = d.reconciliation, sm = d.summary, bt = sm.by_type || {};
+    $("recon").innerHTML = r.ok ? '<div class="alert good"><b>Reconciled.</b> The ledger matches the cash balance of all ' + r.teams_checked + " team(s) checked (sum of credits − debits and the last running balance).</div>"
+      : '<div class="alert bad"><b>Mismatch in ' + r.mismatches + " team(s):</b> " + esc((r.mismatched_teams || []).join(", ")) + ". Contact the administrator.</div>";
+    var g = function (k) { return bt[k] || { count: 0, debit: 0, credit: 0 }; };
+    $("kpis").innerHTML = kpi("Entries", F.num(sm.entries), "matching filter", "accent") + kpi("Credits", F.short(sm.credits), "money in", "good") + kpi("Debits", F.short(sm.debits), "money out", "bad") +
+      kpi("Brokerage", F.money(g("BROKERAGE").debit), g("BROKERAGE").count + " entries", "info") + kpi("Loan draws", F.short(g("LOAN_DRAW").credit), g("LOAN_DRAW").count + " draws", "warn") +
+      kpi("Interest paid", F.money(g("INTEREST").debit), "repayments " + F.short(g("LOAN_REPAYMENT").debit), "warn");
+    $("rows").innerHTML = d.rows.length ? d.rows.map(function (x) {
+      return '<tr><td class="nowrap">' + F.datetime(x.created_at) + "</td><td><b>" + esc(x.team) + '</b></td><td class="mono">' + esc(x.order_no || "") + '</td><td><span class="badge ' + (N(x.credit) > 0 ? "ok" : "prov") + '">' + esc(x.type.replace(/_/g, " ")) +
+        '</span></td><td class="num down">' + (N(x.debit) ? F.money(x.debit) : "") + '</td><td class="num up">' + (N(x.credit) ? F.money(x.credit) : "") + '</td><td class="num"><b>' + F.money(x.balance_after) + '</b></td><td class="small">' + esc(x.note || "") + '</td><td class="small">' + esc(x.actor || "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="9" class="empty">No ledger entries match.</td></tr>';
+    var from = (S.page - 1) * S.size + 1, to = from + d.rows.length - 1;
+    $("info").textContent = d.rows.length ? from + "–" + to + " of " + F.num(sm.entries) : "";
+    $("prev").disabled = S.page <= 1; $("next").disabled = to >= N(sm.entries);
+    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+  }
+  ["fTeam", "fType"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; poller.now(); }); });
+  $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; poller.now(); }, 350));
+  $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
+  $("next").onclick = function () { S.page++; poller.now(); };
+  var poller;
+  JSE.page({ id: "cash" }).then(function (u) {
+    if (!u) return;
+    $("fTeam").innerHTML = u.role === "PARTICIPANT" ? "<option>" + esc(u.team) + "</option>" : '<option value="">All teams</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
+    if (u.role === "PARTICIPANT") $("fTeam").disabled = true;
+    var t = new URLSearchParams(location.search).get("team"); if (t && u.role !== "PARTICIPANT") $("fTeam").value = t.toUpperCase();
+    poller = JSE.poll(load, 8000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+  });
+})();
+</script>
+</body>
+</html>

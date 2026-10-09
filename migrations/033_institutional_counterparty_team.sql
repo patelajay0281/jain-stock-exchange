@@ -1,1 +1,0 @@
-ALTER TABLE institutional_orders ADD COLUMN IF NOT EXISTS team_id bigint REFERENCES teams(id);

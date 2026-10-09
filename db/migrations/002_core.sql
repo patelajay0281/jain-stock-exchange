@@ -759,4 +759,28 @@ BEGIN
   RETURN jse__settle(a, nullif(p->>'order_id', '')::bigint, 'BANK');
 END $$;
 
+-- Paired buyer/seller ticket: two linked orders created atomically (both or neither)
+CREATE OR REPLACE FUNCTION jse_place_pair(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  legs jsonb := p->'legs';
+  v_key text := nullif(trim(coalesce(p->>'idempotency_key', '')), '');
+  v_pair text; r1 jsonb; r2 jsonb;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER');
+  IF v_key IS NULL THEN PERFORM jse_fail('IDEMPOTENCY_KEY_REQUIRED', 'Order submission is missing its request key. Reload the page and try again.', 400); END IF;
+  IF jsonb_typeof(legs) IS DISTINCT FROM 'array' OR jsonb_array_length(legs) <> 2 THEN
+    PERFORM jse_fail('INVALID_PAIR', 'A paired trade needs exactly one BUY leg and one SELL leg.', 400);
+  END IF;
+  IF upper(coalesce(legs->0->>'side', '')) = upper(coalesce(legs->1->>'side', '')) THEN
+    PERFORM jse_fail('INVALID_PAIR', 'A paired trade needs one BUY leg and one SELL leg.', 400);
+  END IF;
+  IF upper(trim(coalesce(legs->0->>'team', ''))) = upper(trim(coalesce(legs->1->>'team', ''))) THEN
+    PERFORM jse_fail('INVALID_PAIR', 'Buyer and seller must be different teams.', 400);
+  END IF;
+  v_pair := 'PAIR-' || upper(substr(md5(v_key), 1, 8));
+  r1 := jse_place_order(a, (legs->0) || jsonb_build_object('pair_ref', v_pair, 'idempotency_key', v_key || ':0'));
+  r2 := jse_place_order(a, (legs->1) || jsonb_build_object('pair_ref', v_pair, 'idempotency_key', v_key || ':1'));
+  RETURN jsonb_build_object('success', true, 'pair_ref', v_pair, 'legs', jsonb_build_array(r1, r2));
+END $$;
+
 INSERT INTO schema_migrations(version) VALUES ('002_core');
