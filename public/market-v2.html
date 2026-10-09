@@ -1,7 +1,720 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JAIN STOCK EXCHANGE</title><link rel="stylesheet" href="/theme.css"><style>
-/* Rule: white/light surfaces use black text */
-.site-nav a:not(.active):not([aria-current="page"]){color:#000!important;background:#fff!important}
-.cms50-card{color:#000!important;background:#fff!important}
-.cms50-card *{color:#000!important}
-.heat-stock{color:#fff!important}
-</style></head><body><div class="shell"><nav class="site-nav"><a href="/">Market</a><a href="/order.html">Create Order</a><a href="/exchange.html">Exchange Settlement</a><a href="/bank.html">Bank Settlement</a><a href="/orders.html">Order Tracking</a><a href="/institutional.html">Institutional Investors</a><a href="/commissions.html">Broker Commission</a><a href="/portfolios.html">Participant Portfolios</a><a href="/admin.html">Event Admin</a><a href="/audit.html">Audit Log</a><a href="/cash.html">Cash Ledger</a><a href="/insights.html">Market Intelligence</a></nav><main><section class="cms50-card"><div class="cms-brand"><span>JAIN STOCK EXCHANGE</span></div><div class="cms50-value"><div class="cms-index-inline"><b>CMS INDEX</b><div class="market-status-wrap"><span class="market-status-label">MARKET STATUS</span><span id="marketStatus" class="market-status status-not-started">NOT STARTED</span></div><strong id="cms50Value">—</strong><span id="cms50Change">—</span></div></div></section><div class="market-wall-head"><div><span>MARKET WALL</span><b>Stocks & IPOs</b></div><div class="wall-legend"><i class="legend-up"></i> GAINERS <i class="legend-down"></i> LOSERS</div></div><div id="stocks" class="grid"></div></main></div><script src="/jse-api.js"></script><script src="/market.js"></script><script src="/admin-nav.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market | JAIN STOCK EXCHANGE</title>
+<meta name="description" content="Live prices for every listed stock and IPO on JAIN STOCK EXCHANGE, with the CMS index.">
+<style>
+  :root {
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface-soft: #fbfcfe;
+    --line: #dae3ed;
+    --line-soft: #e8edf3;
+    --field: #d3dce5;
+
+    --ink: #14213d;
+    --text: #344054;
+    --muted: #64748b;
+    --label: #7a8495;
+    --faint: #8190a5;
+
+    --navy: #172b4d;
+    --navy-btn: #173d61;
+    --blue: #155eef;
+
+    --up: #157347;
+    --up-dot: #16803c;
+    --up-bg: #eaf6ed;
+    --up-line: #c2dec9;
+
+    --down: #b42332;
+    --down-dot: #c62828;
+    --down-bg: #fcebed;
+    --down-line: #efc6cb;
+
+    --amber: #9a6700;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .page { max-width: 1880px; margin: 0 auto; padding: 22px 40px 40px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  :focus-visible { outline: 3px solid rgba(21, 94, 239, .45); outline-offset: 2px; }
+
+  /* Navigation */
+  .nav { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nav a {
+    display: inline-flex; align-items: center;
+    padding: 11px 14px; border-radius: 10px;
+    background: var(--surface); border: 1px solid #e6ebf1;
+    color: var(--text); font-weight: 700; font-size: 15px;
+    text-decoration: none; white-space: nowrap;
+  }
+  .nav a:hover { border-color: #c9d3df; color: var(--ink); }
+  .nav a[aria-current="page"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+  /* Hero */
+  .hero {
+    margin-top: 22px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px 28px;
+    padding: 34px 28px;
+    border-radius: 18px;
+    background: linear-gradient(100deg, #0f1c2e 0%, #162a41 52%, #1d3a54 100%);
+    color: #fff;
+  }
+  .hero h1 { margin: 0; font-size: 36px; line-height: 1.1; font-weight: 800; letter-spacing: .005em; }
+  .hero p { margin: 10px 0 0; color: #c9d5e5; font-size: 15.5px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    background: rgba(255, 255, 255, .08);
+    font-weight: 900; font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .pill .dot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 4px rgba(148, 163, 184, .2); }
+  .pill.tone-up .dot { background: #34d399; box-shadow: 0 0 0 4px rgba(52, 211, 153, .22); }
+  .pill.tone-amber .dot { background: #fbbf24; box-shadow: 0 0 0 4px rgba(251, 191, 36, .22); }
+  .pill.tone-down .dot { background: #f87171; box-shadow: 0 0 0 4px rgba(248, 113, 113, .22); }
+
+  /* Summary cards */
+  .stats {
+    margin-top: 18px;
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px;
+  }
+  .stat { background: var(--surface); border: 1px solid #e4e9f0; border-radius: 16px; padding: 20px 20px 18px; min-width: 0; }
+  .stat-label { margin: 0; font-size: 11.5px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--label); }
+  .stat-value {
+    margin: 10px 0 0; font-size: 27px; line-height: 1.15; font-weight: 700; color: var(--ink);
+    font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stat-sub { margin: 6px 0 0; font-size: 13px; color: #8092a4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .stat-value.mover { font-size: 24px; line-height: 1.2; padding-top: 2px; }
+  .is-up { color: var(--up); }
+  .is-down { color: var(--down); }
+  .is-amber { color: var(--amber); }
+
+  /* Market wall */
+  .wall { margin-top: 20px; background: var(--surface); border: 1px solid #e4e9f0; border-radius: 18px; overflow: hidden; }
+  .wall-head {
+    display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px 24px;
+    padding: 22px 24px 16px;
+  }
+  .eyebrow { margin: 0; font-size: 11.5px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; color: #718096; }
+  .wall-head h2 { margin: 5px 0 0; font-size: 21px; line-height: 1.2; font-weight: 700; color: var(--ink); }
+  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 16px; }
+  .legend li {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11.5px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #7a8699;
+  }
+  .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .sw-up { background: var(--up-dot); }
+  .sw-down { background: var(--down-dot); }
+  .sw-flat { background: #fff; border: 1.5px solid #b8c4d2; }
+
+  .filters {
+    display: grid; grid-template-columns: minmax(220px, 2.2fr) repeat(3, minmax(150px, 1fr)) auto; gap: 12px;
+    padding: 0 24px 18px;
+  }
+  .field {
+    width: 100%; height: 46px; padding: 0 14px;
+    border: 1px solid var(--field); border-radius: 10px;
+    background: var(--surface); color: var(--ink);
+    font: inherit; font-size: 15px;
+  }
+  .field::placeholder { color: #8a94a3; }
+  select.field {
+    appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23344054' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 15px center;
+  }
+  .field:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(21, 94, 239, .16); }
+  .btn {
+    height: 46px; padding: 0 24px; border: 0; border-radius: 10px;
+    background: var(--navy-btn); color: #fff;
+    font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { background: #12304d; }
+  .btn[disabled] { opacity: .72; cursor: progress; }
+  .btn-light { height: 38px; padding: 0 16px; background: #eef2f7; color: var(--ink); font-size: 14px; }
+  .btn-light:hover { background: #e2e8f0; }
+
+  .wall-meta {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px;
+    padding: 12px 24px;
+    border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+    background: var(--surface-soft);
+    font-size: 14px; color: var(--muted);
+  }
+  .wall-meta p { margin: 0; }
+  .wall-meta b { color: var(--ink); }
+  .live { display: inline-flex; align-items: center; gap: 8px; }
+  .live-dot { width: 9px; height: 9px; border-radius: 50%; background: #15945a; flex: none; }
+  .live.warn .live-dot { background: #d97706; }
+  .live.err .live-dot { background: var(--down-dot); }
+  .live.wait .live-dot { background: #94a3b8; }
+
+  .grid {
+    list-style: none; margin: 0; padding: 20px 24px 24px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); gap: 14px;
+  }
+  .tile { position: relative; min-width: 0; padding: 14px 14px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .tile.up { background: var(--up-bg); border-color: var(--up-line); }
+  .tile.down { background: var(--down-bg); border-color: var(--down-line); }
+  .tile-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tile-name { font-size: 15px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge-ipo {
+    flex: none; padding: 2px 6px; border-radius: 6px;
+    background: #e6eeff; color: var(--blue);
+    font-size: 10px; font-weight: 900; letter-spacing: .08em; line-height: 1.4;
+  }
+  .tile-sym { margin-top: 3px; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; color: var(--faint); }
+  .tile-sym span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile-price { margin-top: 10px; font-size: 23px; line-height: 1.15; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .tile-chg { margin-top: 4px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .tile-chg.up { color: var(--up); }
+  .tile-chg.down { color: var(--down); }
+  .tile-chg.flat { color: var(--muted); }
+  .tile-chg .amt { font-weight: 600; }
+  .tile-foot {
+    margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(20, 33, 61, .08);
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px;
+    font-size: 12px; color: #7a8699; font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .flash-up { animation: flash-up 1.8s ease-out; }
+  .flash-down { animation: flash-down 1.8s ease-out; }
+  @keyframes flash-up { from { box-shadow: 0 0 0 3px rgba(22, 128, 60, .55); } to { box-shadow: 0 0 0 3px rgba(22, 128, 60, 0); } }
+  @keyframes flash-down { from { box-shadow: 0 0 0 3px rgba(198, 40, 40, .5); } to { box-shadow: 0 0 0 3px rgba(198, 40, 40, 0); } }
+  @media (prefers-reduced-motion: reduce) { .flash-up, .flash-down { animation: none; } }
+
+  .empty { grid-column: 1 / -1; padding: 40px 16px; text-align: center; color: var(--muted); }
+  .empty strong { display: block; margin-bottom: 6px; color: var(--ink); font-size: 16px; }
+  .empty .btn-light { margin-top: 14px; }
+  .skeleton { height: 128px; border-radius: 14px; background: linear-gradient(90deg, #eef2f7 0%, #f6f8fb 50%, #eef2f7 100%); }
+
+  .foot { margin: 18px 0 0; text-align: center; font-size: 13px; color: #8a94a3; }
+
+  @media (max-width: 1280px) {
+    .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .filters .search { grid-column: 1 / -1; }
+  }
+  @media (max-width: 900px) {
+    .page { padding: 16px 16px 28px; }
+    .nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 4px; }
+    .nav::-webkit-scrollbar { display: none; }
+    .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .hero { margin-top: 16px; padding: 24px 18px; }
+    .hero h1 { font-size: 26px; }
+    .hero p { font-size: 14.5px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .stat { padding: 14px 14px 13px; border-radius: 14px; }
+    .stat-value { font-size: 22px; }
+    .stat-sub { white-space: normal; }
+    .stat-value.mover {
+      font-size: 17px; white-space: normal;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .wall { margin-top: 16px; border-radius: 16px; }
+    .wall-head, .filters, .wall-meta { padding-left: 14px; padding-right: 14px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px; }
+    .tile { padding: 12px 11px 10px; border-radius: 12px; }
+    .tile-price { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="nav" aria-label="Exchange pages">
+    <a href="/" aria-current="page">Market</a>
+    <a href="/order.html">Create Order</a>
+    <a href="/exchange.html">Exchange Settlement</a>
+    <a href="/bank.html">Bank Settlement</a>
+    <a href="/orders.html">Order Tracking</a>
+    <a href="/institutional.html">Institutional Investors</a>
+    <a href="/commissions.html">Broker Commission</a>
+    <a href="/portfolios.html">Participant Portfolios</a>
+    <a href="/admin.html">Event Admin</a>
+    <a href="/audit.html">Audit Log</a>
+    <a href="/cash.html">Cash Ledger</a>
+    <a href="/insights.html">Market Intelligence</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <h1>JAIN STOCK EXCHANGE</h1>
+      <p>Live prices for every listed stock and IPO, with the CMS index.</p>
+    </div>
+    <div class="pill" id="heroPill" role="status" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span><span id="heroPillText">Connecting</span>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Market summary">
+    <article class="stat">
+      <p class="stat-label">CMS Index</p>
+      <p class="stat-value" id="idxValue">—</p>
+      <p class="stat-sub" id="idxSub">Waiting for market data</p>
+    </article>
+    <article class="stat">
+      <p class="stat-label">Market Status</p>
+      <p class="stat-value" id="stValue">—</p>
+      <p class="stat-sub" id="stSub">Waiting for market data</p>
+    </article>
+    <article class="stat">
+      <p class="stat-label">Gainers</p>
+      <p class="stat-value is-up" id="upValue">—</p>
+      <p class="stat-sub" id="upSub">Securities trading higher</p>
+    </article>
+    <article class="stat">
+      <p class="stat-label">Losers</p>
+      <p class="stat-value is-down" id="downValue">—</p>
+      <p class="stat-sub" id="downSub">Securities trading lower</p>
+    </article>
+    <article class="stat">
+      <p class="stat-label">Top Gainer</p>
+      <p class="stat-value mover" id="topUpValue">—</p>
+      <p class="stat-sub" id="topUpSub">No gainers yet</p>
+    </article>
+    <article class="stat">
+      <p class="stat-label">Top Loser</p>
+      <p class="stat-value mover" id="topDownValue">—</p>
+      <p class="stat-sub" id="topDownSub">No losers yet</p>
+    </article>
+  </section>
+
+  <section class="wall" aria-labelledby="wallTitle">
+    <div class="wall-head">
+      <div>
+        <p class="eyebrow">Market Wall</p>
+        <h2 id="wallTitle">Stocks &amp; IPOs</h2>
+      </div>
+      <ul class="legend" aria-label="Colour key">
+        <li><span class="sw sw-up" aria-hidden="true"></span>Gainers</li>
+        <li><span class="sw sw-down" aria-hidden="true"></span>Losers</li>
+        <li><span class="sw sw-flat" aria-hidden="true"></span>Unchanged</li>
+      </ul>
+    </div>
+
+    <form class="filters" role="search" id="filters">
+      <div class="search">
+        <label class="sr-only" for="q">Search the market</label>
+        <input class="field" id="q" type="search" placeholder="Search stock, symbol or IPO" autocomplete="off" spellcheck="false">
+      </div>
+      <div>
+        <label class="sr-only" for="fType">Show</label>
+        <select class="field" id="fType">
+          <option value="all">Stocks + IPOs</option>
+          <option value="stock">Stocks only</option>
+          <option value="ipo">IPOs only</option>
+        </select>
+      </div>
+      <div>
+        <label class="sr-only" for="fMove">Movement</label>
+        <select class="field" id="fMove">
+          <option value="all">All movements</option>
+          <option value="up">Gainers</option>
+          <option value="down">Losers</option>
+          <option value="flat">Unchanged</option>
+        </select>
+      </div>
+      <div>
+        <label class="sr-only" for="fSort">Sort</label>
+        <select class="field" id="fSort">
+          <option value="default">IPOs first</option>
+          <option value="gainers">Biggest gainers first</option>
+          <option value="losers">Biggest losers first</option>
+          <option value="price">Price: high to low</option>
+          <option value="name">Name: A to Z</option>
+        </select>
+      </div>
+      <button class="btn" type="button" id="refreshBtn">Refresh</button>
+    </form>
+
+    <div class="wall-meta">
+      <p id="countLine">Loading market data…</p>
+      <p class="live wait" id="liveLine"><span class="live-dot" aria-hidden="true"></span><span id="liveText">Connecting to the market feed</span></p>
+    </div>
+
+    <ul class="grid" id="grid" aria-label="Stocks and IPOs" aria-busy="true"></ul>
+  </section>
+
+  <p class="foot">Educational simulation. All prices are virtual; no real securities or money are involved.</p>
+</div>
+
+<script src="/jse-api.js"></script>
+<script src="/auth.js"></script>
+<script src="/admin-nav.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const API_PATH = '/market';
+  // Same load rule as market.js: signed-in desks refresh every 5s, open viewers every 10s.
+  const REFRESH_MS = (() => { try { return localStorage.getItem('jse_token') ? 5000 : 10000; } catch (_) { return 10000; } })();
+  const REFRESH_TEXT = 'refreshing every ' + REFRESH_MS / 1000 + 's';
+  const TIMEOUT_MS = 8000;
+  const STORE_KEY = 'jse-market-wall-v1';
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    heroPill: $('heroPill'), heroPillText: $('heroPillText'),
+    idxValue: $('idxValue'), idxSub: $('idxSub'),
+    stValue: $('stValue'), stSub: $('stSub'),
+    upValue: $('upValue'), upSub: $('upSub'),
+    downValue: $('downValue'), downSub: $('downSub'),
+    topUpValue: $('topUpValue'), topUpSub: $('topUpSub'),
+    topDownValue: $('topDownValue'), topDownSub: $('topDownSub'),
+    q: $('q'), fType: $('fType'), fMove: $('fMove'), fSort: $('fSort'),
+    refreshBtn: $('refreshBtn'), filters: $('filters'),
+    countLine: $('countLine'), liveLine: $('liveLine'), liveText: $('liveText'),
+    grid: $('grid'),
+  };
+
+  /* ---------- formatting ---------- */
+  const nf0 = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+  const nf2 = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const clockFmt = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+  const round2 = (n) => Math.round(n * 100) / 100;
+  const toNum = (v) => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const rupees = (n) => {
+    if (n === null || n === undefined) return '—';
+    const r = round2(n);
+    return '₹' + (Number.isInteger(r) ? nf0.format(r) : nf2.format(r));
+  };
+  const signed = (n, fmt) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+  const arrow = (dir) => (dir === 'up' ? '▲ ' : dir === 'down' ? '▼ ' : '');
+  const dirOf = (p) => (p > 0 ? 'up' : p < 0 ? 'down' : 'flat');
+  // Direction is shown by the arrow, so the percentage itself is unsigned: "▲ 2.35%", "▼ 1.20%", "0.00%".
+  const move = (p) => arrow(dirOf(p)) + Math.abs(p).toFixed(2) + '%';
+  const clock = (d) => clockFmt.format(d).toLowerCase();
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* ---------- market status ---------- */
+  const STATUS = {
+    LIVE:            { pill: 'Market live',     word: 'Live',            tone: 'up',      sub: 'Trading is open' },
+    OPEN:            { pill: 'Market live',     word: 'Live',            tone: 'up',      sub: 'Trading is open' },
+    PAUSED:          { pill: 'Market paused',   word: 'Paused',          tone: 'amber',   sub: 'Trading is paused' },
+    SETTLEMENT_ONLY: { pill: 'Settlement only', word: 'Settlement only', tone: 'amber',   sub: 'No new trades; settlement continues' },
+    CLOSED:          { pill: 'Market closed',   word: 'Closed',          tone: 'down',    sub: 'Trading is closed' },
+    NOT_STARTED:     { pill: 'Not started',     word: 'Not started',     tone: 'neutral', sub: 'Trading opens at the bell' },
+    FINALIZED:       { pill: 'Event finalized', word: 'Finalized',       tone: 'neutral', sub: 'Final results are being prepared' },
+  };
+  const statusInfo = (raw) => {
+    const key = String(raw ?? '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+    if (STATUS[key]) return STATUS[key];
+    if (!key) return { pill: 'Status unknown', word: '—', tone: 'neutral', sub: 'No status from the exchange' };
+    const words = key.replace(/_/g, ' ').toLowerCase();
+    const title = words.charAt(0).toUpperCase() + words.slice(1);
+    return { pill: words, word: title, tone: 'neutral', sub: 'Status from the exchange' };
+  };
+  const toneClass = (tone) => (tone === 'up' ? 'is-up' : tone === 'down' ? 'is-down' : tone === 'amber' ? 'is-amber' : '');
+
+  /* ---------- state ---------- */
+  const state = {
+    items: [], index: null, status: null,
+    lastOk: null, error: null, inflight: false, timer: null,
+    prices: new Map(), flashes: new Map(), loaded: false,
+  };
+
+  const ALLOWED = {
+    type: ['all', 'stock', 'ipo'],
+    move: ['all', 'up', 'down', 'flat'],
+    sort: ['default', 'gainers', 'losers', 'price', 'name'],
+  };
+  const filters = { q: '', type: 'all', move: 'all', sort: 'default' };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+    for (const k of Object.keys(ALLOWED)) if (ALLOWED[k].includes(saved[k])) filters[k] = saved[k];
+  } catch (_) { /* storage unavailable: use defaults */ }
+  const saveFilters = () => {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ type: filters.type, move: filters.move, sort: filters.sort })); } catch (_) { /* ignore */ }
+  };
+
+  /* ---------- data ---------- */
+  function normalise(raw, type, order) {
+    const price = toNum(raw.price ?? (raw.current_price_paise != null ? raw.current_price_paise / 100 : null));
+    const prev = toNum(raw.previous_price ?? (raw.previous_price_paise != null ? raw.previous_price_paise / 100 : null));
+    let change = toNum(raw.change_pct);
+    if (change === null && price !== null && prev) change = ((price - prev) / prev) * 100;
+    change = change === null ? 0 : round2(change);
+    const diff = price !== null && prev !== null ? round2(price - prev) : null;
+    return {
+      key: type + ':' + (raw.id ?? raw.symbol ?? order),
+      type,
+      order,
+      name: String(raw.name || raw.symbol || '—'),
+      symbol: String(raw.symbol || '').toUpperCase(),
+      price, prev, change, diff,
+      dir: change > 0 ? 'up' : change < 0 ? 'down' : 'flat',
+      lot: toNum(raw.lot_size),
+    };
+  }
+
+  function apply(json) {
+    const ipos = Array.isArray(json.ipos) ? json.ipos : [];
+    const stocks = Array.isArray(json.stocks) ? json.stocks : [];
+    const items = [
+      ...ipos.map((r, i) => normalise(r, 'ipo', i)),
+      ...stocks.map((r, i) => normalise(r, 'stock', ipos.length + i)),
+    ];
+    const flashes = new Map();
+    if (state.loaded) {
+      for (const it of items) {
+        const before = state.prices.get(it.key);
+        if (before != null && it.price != null && before !== it.price) flashes.set(it.key, it.price > before ? 'up' : 'down');
+      }
+    }
+    state.prices = new Map(items.map((it) => [it.key, it.price]));
+    state.flashes = flashes;
+    state.items = items;
+    state.index = json.index && typeof json.index === 'object' ? json.index : null;
+    state.status = json.status ?? null;
+    state.loaded = true;
+  }
+
+  async function load(manual = false) {
+    if (state.inflight) return;
+    state.inflight = true;
+    clearTimeout(state.timer);
+    if (manual) { el.refreshBtn.disabled = true; el.refreshBtn.textContent = 'Refreshing…'; }
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    try {
+      const res = typeof window.jseFetch === 'function'
+        ? await window.jseFetch(API_PATH, { cache: 'no-store', signal: ctrl.signal })
+        : await fetch((window.JSE_API || '/api') + API_PATH, { cache: 'no-store', signal: ctrl.signal, headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error('the feed returned error ' + res.status);
+      const json = await res.json();
+      if (!json || (!Array.isArray(json.stocks) && !Array.isArray(json.ipos))) throw new Error('the feed sent no prices');
+      apply(json);
+      state.lastOk = new Date();
+      state.error = null;
+    } catch (err) {
+      state.error = { at: new Date(), message: err && err.name === 'AbortError' ? 'the feed timed out' : (err && err.message) || 'the feed could not be reached' };
+      state.flashes = new Map();
+    } finally {
+      clearTimeout(timeout);
+      state.inflight = false;
+      if (manual) { el.refreshBtn.disabled = false; el.refreshBtn.textContent = 'Refresh'; }
+      render();
+      schedule();
+    }
+  }
+
+  function schedule() {
+    clearTimeout(state.timer);
+    if (document.visibilityState === 'visible') state.timer = setTimeout(() => load(false), REFRESH_MS);
+  }
+
+  /* ---------- rendering ---------- */
+  function renderHero() {
+    let info;
+    if (!state.loaded) info = state.error ? { pill: 'Feed unavailable', tone: 'down' } : { pill: 'Connecting', tone: 'neutral' };
+    else info = statusInfo(state.status);
+    el.heroPill.className = 'pill tone-' + info.tone;
+    el.heroPillText.textContent = info.pill;
+  }
+
+  function setStat(valueEl, subEl, value, sub, cls) {
+    valueEl.textContent = value;
+    valueEl.title = value;
+    if (cls !== undefined) valueEl.className = 'stat-value ' + cls;
+    subEl.textContent = sub;
+    subEl.title = sub;
+  }
+
+  function renderStats() {
+    if (!state.loaded) return;
+    const items = state.items;
+    const total = items.length;
+
+    const idx = state.index;
+    const idxVal = idx ? toNum(idx.value) : null;
+    if (idxVal === null) {
+      setStat(el.idxValue, el.idxSub, '—', 'Index not available');
+    } else {
+      const ch = round2(toNum(idx.change_pct) ?? 0);
+      const base = toNum(idx.base_value);
+      const dir = dirOf(ch);
+      const baseText = base !== null ? ' from base ' + nf2.format(base) : '';
+      const sub = ch === 0 ? 'Unchanged' + baseText : move(ch) + baseText;
+      setStat(el.idxValue, el.idxSub, nf2.format(idxVal), sub);
+      el.idxSub.className = 'stat-sub ' + (dir === 'up' ? 'is-up' : dir === 'down' ? 'is-down' : '');
+    }
+
+    const st = statusInfo(state.status);
+    setStat(el.stValue, el.stSub, st.word, st.sub, toneClass(st.tone));
+
+    const ups = items.filter((i) => i.dir === 'up').sort((a, b) => b.change - a.change || a.order - b.order);
+    const downs = items.filter((i) => i.dir === 'down').sort((a, b) => a.change - b.change || a.order - b.order);
+    setStat(el.upValue, el.upSub, nf0.format(ups.length), 'of ' + total + ' securities', 'is-up');
+    setStat(el.downValue, el.downSub, nf0.format(downs.length), 'of ' + total + ' securities', 'is-down');
+
+    if (ups.length) setStat(el.topUpValue, el.topUpSub, ups[0].name, move(ups[0].change) + ' · ' + rupees(ups[0].price), 'mover');
+    else setStat(el.topUpValue, el.topUpSub, '—', 'No gainers yet', 'mover');
+    el.topUpSub.className = 'stat-sub' + (ups.length ? ' is-up' : '');
+
+    if (downs.length) setStat(el.topDownValue, el.topDownSub, downs[0].name, move(downs[0].change) + ' · ' + rupees(downs[0].price), 'mover');
+    else setStat(el.topDownValue, el.topDownSub, '—', 'No losers yet', 'mover');
+    el.topDownSub.className = 'stat-sub' + (downs.length ? ' is-down' : '');
+  }
+
+  const SORTERS = {
+    default: (a, b) => a.order - b.order,
+    gainers: (a, b) => b.change - a.change || a.order - b.order,
+    losers: (a, b) => a.change - b.change || a.order - b.order,
+    price: (a, b) => (b.price ?? -1) - (a.price ?? -1) || a.order - b.order,
+    name: (a, b) => a.name.localeCompare(b.name, 'en-IN'),
+  };
+  const SORT_WORDS = {
+    default: 'IPOs first, then stocks',
+    gainers: 'biggest gainers first',
+    losers: 'biggest losers first',
+    price: 'price high to low',
+    name: 'name A to Z',
+  };
+
+  function visibleItems() {
+    const q = filters.q.trim().toLowerCase();
+    return state.items
+      .filter((it) =>
+        (filters.type === 'all' || it.type === filters.type) &&
+        (filters.move === 'all' || it.dir === filters.move) &&
+        (!q || it.name.toLowerCase().includes(q) || it.symbol.toLowerCase().includes(q)))
+      .sort(SORTERS[filters.sort] || SORTERS.default);
+  }
+
+  function tileHTML(it) {
+    const flash = state.flashes.get(it.key);
+    const cls = 'tile ' + it.dir + (flash ? ' flash-' + flash : '');
+    const amount = it.diff ? '<span class="amt">' + signed(it.diff, rupees) + '</span>' : '';
+    const label = it.name + ', ' + rupees(it.price) + ', ' + (it.dir === 'flat' ? 'unchanged' : (it.dir === 'up' ? 'up ' : 'down ') + Math.abs(it.change).toFixed(2) + ' percent');
+    return (
+      '<li class="' + cls + '" aria-label="' + esc(label) + '">' +
+        '<div class="tile-top"><span class="tile-name" title="' + esc(it.name) + '">' + esc(it.name) + '</span></div>' +
+        '<div class="tile-sym"><span>' + esc(it.symbol) + '</span>' + (it.type === 'ipo' ? '<span class="badge-ipo">IPO</span>' : '') + '</div>' +
+        '<div class="tile-price">' + rupees(it.price) + '</div>' +
+        '<div class="tile-chg ' + it.dir + '"><span>' + move(it.change) + '</span>' + amount + '</div>' +
+        '<div class="tile-foot"><span>Prev ' + rupees(it.prev) + '</span>' + (it.lot ? '<span>Lot ' + nf0.format(it.lot) + '</span>' : '') + '</div>' +
+      '</li>'
+    );
+  }
+
+  function renderWall() {
+    el.grid.setAttribute('aria-busy', state.loaded || state.error ? 'false' : 'true');
+
+    if (!state.loaded) {
+      if (state.error) {
+        el.countLine.textContent = 'No market data yet';
+        el.grid.innerHTML =
+          '<li class="empty"><strong>Market prices can’t be loaded</strong>' +
+          esc(capitalise(state.error.message)) + '. The page tries again every ' + REFRESH_MS / 1000 + ' seconds.' +
+          '<br><button class="btn btn-light" type="button" data-action="retry">Try again now</button></li>';
+      } else {
+        el.countLine.textContent = 'Loading market data…';
+        el.grid.innerHTML = Array.from({ length: 12 }, () => '<li class="skeleton" aria-hidden="true"></li>').join('');
+      }
+      return;
+    }
+
+    const total = state.items.length;
+    const list = visibleItems();
+    const filtered = list.length !== total;
+    el.countLine.innerHTML = '<b>' + list.length + '</b>' + (filtered ? ' of ' + total : '') + ' securities · ' + SORT_WORDS[filters.sort];
+
+    if (!list.length) {
+      el.grid.innerHTML =
+        '<li class="empty"><strong>No securities match these filters</strong>Change the search or the filters to see more of the market.' +
+        '<br><button class="btn btn-light" type="button" data-action="clear">Clear filters</button></li>';
+      return;
+    }
+    el.grid.innerHTML = list.map(tileHTML).join('');
+  }
+
+  function renderLive() {
+    const line = el.liveLine;
+    if (!state.loaded && !state.error) {
+      line.className = 'live wait';
+      el.liveText.textContent = 'Connecting to the market feed';
+    } else if (state.error && state.lastOk) {
+      line.className = 'live warn';
+      el.liveText.textContent = 'Connection lost · showing prices from ' + clock(state.lastOk) + ' · retrying';
+    } else if (state.error) {
+      line.className = 'live err';
+      el.liveText.textContent = 'Market feed unavailable · retrying every ' + REFRESH_MS / 1000 + 's';
+    } else {
+      line.className = 'live';
+      el.liveText.textContent = 'Live · ' + REFRESH_TEXT + ' · updated ' + clock(state.lastOk);
+    }
+  }
+
+  function render() {
+    renderHero();
+    renderStats();
+    renderWall();
+    renderLive();
+  }
+
+  const capitalise = (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+
+  /* ---------- controls ---------- */
+  el.fType.value = filters.type;
+  el.fMove.value = filters.move;
+  el.fSort.value = filters.sort;
+
+  let searchTimer = null;
+  el.q.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { filters.q = el.q.value; state.flashes = new Map(); renderWall(); }, 120);
+  });
+  for (const [key, node] of [['type', el.fType], ['move', el.fMove], ['sort', el.fSort]]) {
+    node.addEventListener('change', () => { filters[key] = node.value; saveFilters(); state.flashes = new Map(); renderWall(); });
+  }
+  el.filters.addEventListener('submit', (e) => e.preventDefault());
+  el.refreshBtn.addEventListener('click', () => load(true));
+  el.grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    if (btn.dataset.action === 'retry') load(true);
+    if (btn.dataset.action === 'clear') {
+      filters.q = ''; filters.type = 'all'; filters.move = 'all';
+      el.q.value = ''; el.fType.value = 'all'; el.fMove.value = 'all';
+      saveFilters(); renderWall(); el.q.focus();
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') load(false);
+    else clearTimeout(state.timer);
+  });
+
+  render();
+  load(false);
+})();
+</script>
+</body>
+</html>
