@@ -69,7 +69,7 @@ for (const s of cfg.suites) {
       const out = join(tmpdir(), "jse-load.json");
       const L = cfg.load || {};
       await run("load", "node", ["tests/load.mjs"], { RPS: String(L.rps || 850), DURATION: String(L.duration || 90), WRITE_RPS: String(L.write_rps ?? 1),
-        VIEWERS: String(L.viewers || 600), AUDIT: "1", OUT: out }, Math.ceil((L.duration || 90) / 60) + 20);
+        VIEWERS: String(L.viewers || 600), RAMP: String(L.ramp || 0), AUDIT: "1", OUT: out }, Math.ceil((L.duration || 90) / 60) + 20);
       if (existsSync(out)) results.suites.load.report = JSON.parse(readFileSync(out, "utf8"));
     }
   } catch (e) {

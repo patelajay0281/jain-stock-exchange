@@ -1,7 +1,6 @@
 {
   "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
-  "suites": ["health", "api", "listing", "stress", "load", "cleanup"],
-  "stress": { "orders": 1500, "workers": 16 },
-  "load": { "rps": 850, "duration": 90, "write_rps": 1, "viewers": 600 },
-  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 1: functional + 1,500-order stress + 90 s at 850 req/s."
+  "suites": ["health", "listing", "load", "cleanup"],
+  "load": { "rps": 850, "duration": 150, "ramp": 45, "write_rps": 1, "viewers": 600 },
+  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 2: listing suite + 850 req/s with a 45 s ramp, browser-like retry of platform 429s."
 }

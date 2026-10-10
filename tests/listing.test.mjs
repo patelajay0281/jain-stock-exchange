@@ -168,9 +168,13 @@ test("console bootstrap forces a password change at next sign-in", { skip: !PGUR
   assert.ok(audit.length >= 1 && audit[0].actor === "DATABASE CONSOLE");
 });
 
-test("CI sign-in is not available without staging configuration", async () => {
-  const r = await POST("/api/ci-login", { token: "x.y.z", username: "ADMIN" });
-  assert.equal(r.status, 404);
+test("CI sign-in: absent locally, rejects forged tokens on staging", async () => {
+  const forged = Buffer.from(JSON.stringify({ alg: "RS256", kid: "x" })).toString("base64url") + "." +
+    Buffer.from(JSON.stringify({ iss: "https://token.actions.githubusercontent.com", aud: "jse-staging", repository: "patelajay0281/jain-stock-exchange",
+      ref: "refs/heads/v272", exp: Math.floor(Date.now() / 1000) + 300 })).toString("base64url") + ".c2lnbmF0dXJl";
+  const r = await POST("/api/ci-login", { token: forged, username: "ADMIN" });
+  if (CI) { assert.equal(r.status, 401); assert.equal(r.data.code, "INVALID_CI_TOKEN"); }
+  else assert.equal(r.status, 404);
 });
 
 test("cleanup: closed, reset and no saved listing prices", async () => {

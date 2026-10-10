@@ -6,7 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { BASE, signIn, Stats, call } from "./lib/client.mjs";
+import { BASE, signIn, Stats, call, counters } from "./lib/client.mjs";
 
 const RPS = Number(process.env.RPS || 850);
 const DURATION = Number(process.env.DURATION || 60);
@@ -15,7 +15,10 @@ const VIEWERS = Number(process.env.VIEWERS || 600);
 const MAX_INFLIGHT = Number(process.env.MAX_INFLIGHT || 3000);
 const OUT = process.env.OUT || "";
 const RESET = process.env.RESET !== "0";
+const RAMP = Number(process.env.RAMP || 0);          // seconds to ramp linearly from 0 to RPS (arrivals spread like a real crowd)
 const stats = new Stats();
+const steady = new Stats();                          // only requests started after the ramp
+let inSteady = RAMP === 0;
 const N = Number;
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const tok = {};
@@ -46,7 +49,7 @@ async function fireRead() {
   const [path, token, viewer] = build();
   inflight++; sent++;
   try {
-    const r = await call(stats, name, "GET", path, { token, etag: viewer !== undefined ? viewerTags[viewer] : undefined });
+    const r = await call(stats, name, "GET", path, { token, etag: viewer !== undefined ? viewerTags[viewer] : undefined, extra: inSteady ? steady : null });
     if (viewer !== undefined && r.etag) viewerTags[viewer] = r.etag;
     if (name === "GET market" && r.status === 200 && r.data?.stocks) { const all = [...r.data.ipos, ...r.data.stocks]; prices = new Map(all.map((s) => [s.symbol, N(s.price)])); symbols = all.map((s) => s.symbol); }
   } finally { inflight--; }
@@ -62,11 +65,12 @@ async function firePipeline() {
   const body = { team, symbol: sym, side, quantity: qty, price: Math.max(1, Math.round(p * (1 + (Math.random() - 0.5) * 0.08))), idempotency_key: randomUUID() };
   inflight++;
   try {
-    const o = await call(stats, "POST orders", "POST", "/api/orders", { token: tok[pick(brokers)], body });
+    const x = inSteady ? steady : null;
+    const o = await call(stats, "POST orders", "POST", "/api/orders", { token: tok[pick(brokers)], body, extra: x });
     if (o.status !== 200) { if (o.status >= 500 || o.status === 0) flow.failed++; return; }
-    const a = await call(stats, "POST exchange", "POST", "/api/exchange", { token: tok[pick(exchanges)], body: { order_id: o.data.order.id, action: "APPROVE", confirm_short_sell: true } });
+    const a = await call(stats, "POST exchange", "POST", "/api/exchange", { token: tok[pick(exchanges)], body: { order_id: o.data.order.id, action: "APPROVE", confirm_short_sell: true }, extra: x });
     if (a.status !== 200) { if (a.status >= 500 || a.status === 0) flow.failed++; return; }
-    const b = await call(stats, "POST bank", "POST", "/api/bank", { token: tok[pick(banks)], body: { order_id: o.data.order.id, action: "SETTLE" } });
+    const b = await call(stats, "POST bank", "POST", "/api/bank", { token: tok[pick(banks)], body: { order_id: o.data.order.id, action: "SETTLE" }, extra: x });
     if (b.status === 200 && b.data.status === "BANK_SETTLED") flow.settled++; else if (b.status === 200) flow.rejected++; else flow.failed++;
   } finally { inflight--; }
 }
@@ -83,7 +87,7 @@ async function main() {
     await adm("/api/event", { action: "START" });
   }
   await fireRead();
-  console.log(`[load] ${BASE} · target ${RPS} req/s for ${DURATION}s · ${WRITE_RPS} order pipelines/s · ${VIEWERS} market screens`);
+  console.log(`[load] ${BASE} · target ${RPS} req/s for ${DURATION}s (ramp ${RAMP}s) · ${WRITE_RPS} order pipelines/s · ${VIEWERS} market screens`);
   const t0 = performance.now();
   let lastLog = t0, lastTotal = 0, writesDue = 0;
   const minute = [];
@@ -91,13 +95,15 @@ async function main() {
     const timer = setInterval(() => {
       const now = performance.now(), el = (now - t0) / 1000;
       if (el >= DURATION) { clearInterval(timer); resolve(); return; }
-      const due = Math.floor(el * RPS) - sent;
+      if (!inSteady && el >= RAMP) inSteady = true;
+      const target = el < RAMP ? RPS * el * el / (2 * RAMP) : RPS * (el - RAMP / 2);   // integral of a linear ramp
+      const due = Math.floor(target) - sent;
       for (let i = 0; i < due; i++) { if (inflight >= MAX_INFLIGHT) { skipped++; sent++; continue; } fireRead(); }
-      writesDue += WRITE_RPS * 0.005;
+      writesDue += WRITE_RPS * 0.005 * (el < RAMP ? el / RAMP : 1);
       while (writesDue >= 1) { writesDue -= 1; firePipeline(); }
       if (now - lastLog >= 60_000) {
         const done = stats.total - lastTotal;
-        const line = { t_min: Math.round(el / 60), rps: +(done / ((now - lastLog) / 1000)).toFixed(1), inflight, failed_total: stats.failed, skipped, settled: flow.settled };
+        const line = { t_min: Math.round(el / 60), rps: +(done / ((now - lastLog) / 1000)).toFixed(1), inflight, failed_total: stats.failed, platform_429_retries: counters.platform429, skipped, settled: flow.settled };
         minute.push(line); console.log("[load] " + JSON.stringify(line));
         lastLog = now; lastTotal = stats.total;
       }
@@ -111,8 +117,13 @@ async function main() {
     audit = c.data?.reconciliation;
   }
   const h = stats.summary();
-  const out = { tool: "tests/load.mjs", base: BASE, at: new Date().toISOString(), target_rps: RPS, duration_s: +secs.toFixed(1),
-    achieved_rps: +(h.requests / secs).toFixed(1), requests: h.requests, failed: h.failed, skipped_at_cap: skipped,
+  const sh = steady.summary();
+  const steadySecs = Math.max(1, secs - RAMP);
+  const out = { tool: "tests/load.mjs", base: BASE, at: new Date().toISOString(), target_rps: RPS, ramp_s: RAMP, duration_s: +secs.toFixed(1),
+    achieved_rps: +(h.requests / (RAMP ? secs - RAMP / 2 : secs)).toFixed(1), requests: h.requests, failed: h.failed, skipped_at_cap: skipped,
+    platform_429_retries: counters.platform429,
+    steady_state: { duration_s: +steadySecs.toFixed(1), requests: sh.requests, achieved_rps: +(sh.requests / steadySecs).toFixed(1), failed: sh.failed,
+      success_rate_pct: +(100 * (sh.requests - sh.failed) / Math.max(1, sh.requests)).toFixed(3), p50_ms: sh.p50_ms, p95_ms: sh.p95_ms, p99_ms: sh.p99_ms, status_codes: sh.status_codes },
     success_rate_pct: +(100 * (h.requests - h.failed) / Math.max(1, h.requests)).toFixed(3), p50_ms: h.p50_ms, p95_ms: h.p95_ms, p99_ms: h.p99_ms,
     status_codes: h.status_codes, errors: h.errors, order_flow: flow, ledger_reconciliation: audit, per_minute: minute, endpoints: h.endpoints };
   console.log(JSON.stringify({ ...out, per_minute: undefined, endpoints: undefined }, null, 2));

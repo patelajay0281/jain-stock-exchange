@@ -56,25 +56,49 @@ export class Stats {
   }
 }
 
-/** One API call with timing. Returns { status, data, ms, etag }. */
-export async function call(stats, name, method, path, { token, body, etag, timeout = 20_000 } = {}) {
+const PLATFORM_RETRIES = Number(process.env.RETRY_429 ?? 4);
+export const counters = { platform429: 0 };
+
+/**
+ * One API call with timing. Returns { status, data, ms, etag }.
+ * Like the browser client, a plain-text 429 from the hosting platform's concurrency limiter (the API never ran)
+ * is retried after Retry-After; the recorded latency includes those waits. RETRY_429=0 disables this.
+ */
+export async function call(stats, name, method, path, { token, body, etag, timeout = 20_000, extra } = {}) {
   const headers = { accept: "application/json", "accept-encoding": "gzip" };
   if (token) headers.authorization = "Bearer " + token;
   if (body !== undefined) headers["content-type"] = "application/json";
   if (etag) headers["if-none-match"] = etag;
   const t0 = performance.now();
   let status = 0, data = null, tag = null;
-  try {
-    const r = await fetch(BASE + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(timeout) });
-    status = r.status; tag = r.headers.get("etag");
-    if (status !== 304) { const txt = await r.text(); try { data = JSON.parse(txt); } catch { data = { raw: txt.slice(0, 200) }; } }
-  } catch (e) {
-    data = { error: String(e?.cause?.code || e?.name || e) };
+  for (let attempt = 0; ; attempt++) {
+    status = 0; data = null; tag = null;
+    let platform = false, retryAfter = 0;
+    try {
+      const r = await fetch(BASE + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(timeout) });
+      status = r.status; tag = r.headers.get("etag");
+      const ct = r.headers.get("content-type") || "";
+      platform = status === 429 && !ct.includes("json");
+      retryAfter = parseFloat(r.headers.get("retry-after") || "0");
+      if (status !== 304) { const txt = await r.text(); try { data = JSON.parse(txt); } catch { data = { raw: txt.slice(0, 200) }; } }
+    } catch (e) {
+      data = { error: String(e?.cause?.code || e?.name || e) };
+    }
+    if (platform && attempt < PLATFORM_RETRIES) {
+      counters.platform429++;
+      if (stats) stats.err("platform 429 (retried)");
+      await sleep(Math.min(3000, (retryAfter > 0 ? retryAfter * 1000 : 400) * (0.6 + Math.random() * 0.8) + 250 * attempt));
+      continue;
+    }
+    break;
   }
   const ms = performance.now() - t0;
   const ok = status === 200 || status === 304;
-  if (stats) stats.add(name, ms, status, ok || (status >= 400 && status < 500 && status !== 429));
-  if (stats && status === 0) stats.err(name + ": " + data.error);
+  for (const st of [stats, extra]) {
+    if (!st) continue;
+    st.add(name, ms, status, ok || (status >= 400 && status < 500 && status !== 429));
+    if (status === 0) st.err(name + ": " + data.error);
+  }
   return { status, data, ms, etag: tag };
 }
 
