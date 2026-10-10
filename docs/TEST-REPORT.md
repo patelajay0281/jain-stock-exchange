@@ -14,6 +14,8 @@ Date: 10–11 October 2026. Code: branch `v272`. API bundle SHA-256 `8fab060c…
 | Stress: 1,500 orders | staging | **13/13 integrity checks, 0 server errors** |
 | Load: 850 requests/s for 60 s | local | 852 req/s achieved, **0 failures**, p95 12 ms |
 | Soak: 900 requests/s for 4 hours (≈ 13 million requests) | local | see [Soak test](#soak-test-4-hours) |
+| **In-region load** (generator in the same Neon region as the API): 850 requests/s for 60 s | staging | **50,995 requests, 100% success, 0 throttled**, p50 33 ms, p95 98 ms |
+| In-region load: 1,200 requests/s for 30 s | staging | 67% success — above the capacity of the current Free-plan setup |
 | Load from a US cloud runner: 300 / 500 / 850 requests/s | staging (Singapore) | 100% / 99.63% / 92.65% success — every failure was the hosting platform's concurrency limiter (HTTP 429), none from the application |
 
 Environments: **local** = 2 vCPU / 7 GB sandbox, Node.js 22, PostgreSQL 16, API and database on the same machine as the load generator.
@@ -81,6 +83,21 @@ Integrity checks (all passed in both runs): cash ledger reconciles with every te
 
 _Results are added when the run finishes._
 
+### Staging, in-region (Neon Function `jseprobe` → API, both in AWS Singapore)
+
+The probe function (`backend/probe/index.mjs`) generates public market, status, insights and news reads with per-screen ETags from inside the
+API's region, so the numbers reflect the API and platform rather than a trans-Pacific round trip — closer to what screens at the venue see.
+
+| Run | Rate | Requests | Success | Throttled (429) | p50 / p95 / p99 |
+|---|---|---|---|---|---|
+| 6 | 200 req/s, 15 s (warm-up) | 2,999 | 100% | 0 | 7 / 34 / 3,493 ms (instances starting) |
+| 6 | **850 req/s, 60 s** | **50,995** | **100%** | **0** | **33 / 98 / 173 ms** |
+| 6 | 1,200 req/s, 30 s | 35,995 | 67.1% | 8,868 | 251 / 10,011 / 10,380 ms |
+
+So the deployed system meets the 800+ requests/second target with no errors, and its ceiling on the current plan lies between 850 and
+1,200 requests/second (the account's concurrency limit and the 2-CU database cap). The probe accepts calls only with this repository's
+GitHub OIDC token and only targets the JSE API hosts.
+
 ### Staging (from GitHub Actions, US → Singapore)
 
 | Run | Rate | Requests | Success | HTTP 429 (platform) | p50 / p95 / p99 | Ledger |
@@ -112,8 +129,8 @@ Run 2 (850 req/s with the test client retrying every 429 up to four times) showe
 Neon **Free** plan (current): 1 million function invocations and 5 GB data transfer per month, 100 CU-hours of database compute, about 100 concurrent function invocations per account.
 
 - Event estimate: ~500 screens polling the market every 2.5 s for ~3 h ≈ 2–3 million requests (plus desks) — above the Free allowance. A 4-hour test at 800+ requests/second ≈ 11.5 million requests.
-- **Recommendation:** move the Neon organisation to the **Launch** plan before the event (pay as you go: $0.60 per million invocations, $0.10 per active capacity-hour, $0.106 per database CU-hour, 500 GB transfer included), optionally ask Neon support to raise the concurrency limit, then run the 4-hour hosted test with `tests/ci/run.json` (`"loads": [{ "rps": 850, "duration": 14400, "ramp": 120 }]`).
-- The tests in this report used roughly 0.25 million of the monthly Free invocations.
+- **Recommendation:** move the Neon organisation to the **Launch** plan before the event (pay as you go: $0.60 per million invocations, $0.10 per active capacity-hour, $0.106 per database CU-hour, 500 GB transfer included), optionally ask Neon support to raise the concurrency limit (more headroom above ~1,000 req/s), then run the 4-hour hosted test in-region by setting `"suites": ["probe"]` and 48 entries of `{ "rps": 850, "seconds": 300 }` in `tests/ci/run.json` (≈ 12 million requests, about US$7–10).
+- The tests in this report used roughly 0.33 million of the monthly Free invocations.
 
 ## How to reproduce
 

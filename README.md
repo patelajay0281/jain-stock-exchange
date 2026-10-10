@@ -127,7 +127,8 @@ The master prompt lists both 50 and 70 stocks; this build follows the revised he
 
 ## Capacity and hosting plan
 
-The engine sustained 900 requests/second locally with zero errors (see `docs/TEST-REPORT.md`). On Neon the binding limits are the plan's
+The engine sustained 900 requests/second locally with zero errors, and the deployed staging API served 850 requests/second from inside its
+region for 60 s with 100% success (p95 98 ms; ceiling between 850 and 1,200 on the current plan) — see `docs/TEST-REPORT.md`. On Neon the binding limits are the plan's
 quotas, not the code: the **Free** plan includes 1 million function invocations and 5 GB of data transfer per month, while 500 screens polling
 the market every 2.5 s for a 3-hour event make about 2–3 million requests (a 4-hour test at 800 requests/second is about 11.5 million).
 Run the event and the full-length load test on the **Launch** plan (pay as you go). Neon also limits an account to about 100 concurrent
