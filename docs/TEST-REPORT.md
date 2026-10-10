@@ -13,7 +13,7 @@ Date: 10–11 October 2026. Code: branch `v272`. API bundle SHA-256 `8fab060c…
 | Stress: 8,000 orders through Exchange and Bank, 32 concurrent desks, duplicate-settlement and replay attacks, integrity audit | local | **13/13 integrity checks, 0 server errors** |
 | Stress: 1,500 orders | staging | **13/13 integrity checks, 0 server errors** |
 | Load: 850 requests/s for 60 s | local | 852 req/s achieved, **0 failures**, p95 12 ms |
-| Soak: 900 requests/s for 4 hours (≈ 13 million requests) | local | see [Soak test](#soak-test-4-hours) |
+| Soak: 900 requests/s for 4 hours (≈ 13 million requests) | local | **0 failed requests, 13/13 integrity checks after the run**, memory flat |
 | **In-region load** (generator in the same Neon region as the API): 850 requests/s for 60 s | staging | **50,995 requests, 100% success, 0 throttled**, p50 33 ms, p95 98 ms |
 | In-region load: 1,200 requests/s for 30 s | staging | 67% success — above the capacity of the current Free-plan setup |
 | Load from a US cloud runner: 300 / 500 / 850 requests/s | staging (Singapore) | 100% / 99.63% / 92.65% success — every failure was the hosting platform's concurrency limiter (HTTP 429), none from the application |
@@ -81,7 +81,25 @@ Integrity checks (all passed in both runs): cash ledger reconciles with every te
 
 900 requests/second for 14,400 seconds against a fresh database (`jse_soak`), with orders flowing through Exchange and Bank every second, server memory and database size sampled every 5 minutes (`.local/soak-mon.log`).
 
-_Results are added when the run finishes._
+| | Result |
+|---|---|
+| Duration | 240 minutes (14,400 s) without restarts |
+| Request rate | 900.0 – 905.6 req/s every minute (average 902.7) |
+| Requests | ≈ 13.0 million (12.94 million in the 239 recorded minutes) |
+| Failed or skipped requests | **0** in all 239 recorded minutes |
+| Requests in flight | median 6 (≈ 7 ms average response time), momentary peak 172 |
+| Orders through Exchange and Bank | 12,723 orders, 4,608 settlements (the rest correctly rejected: short sells, cash, price band) |
+| API server memory | 118 MB after 30 min, peak 195 MB, 177 MB at the end — no growth trend |
+| Database | 82 MB at the end |
+| Integrity audit after the run (`tests/audit.mjs`) | **13/13 checks passed** — ledger reconciles for all 100 teams, one settlement per settled order, holdings = trades, no negative cash or holdings, no lost price updates |
+
+The load tool's end-of-run summary crashed (a stack overflow while taking the maximum of 400,000 latency samples — fixed in `tests/lib/client.mjs`),
+so the overall percentiles and the counters of the final minute were not written; the per-minute log (`.local/soak.log` on the test machine)
+and the integrity audit above cover the run. A follow-up 9-minute run at 900 req/s on the same late-event database (12,700 orders) recorded the percentiles:
+
+| Rate | Duration | Requests | Achieved | Failures | p50 / p95 / p99 | Ledger |
+|---|---|---|---|---|---|---|
+| 900 req/s (late-event database) | 540 s | 487,373 | 902.4 req/s | **0** | 4.0 / 109 / 273 ms | reconciles |
 
 ### Staging, in-region (Neon Function `jseprobe` → API, both in AWS Singapore)
 

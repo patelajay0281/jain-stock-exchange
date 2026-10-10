@@ -47,9 +47,9 @@ export class Stats {
     const endpoints = {};
     const all = [];
     for (const [k, e] of this.by) {
-      all.push(...e.lat.slice(0, 50_000));
+      for (let i = 0; i < e.lat.length && i < 50_000; i++) all.push(e.lat[i]);
       endpoints[k] = { requests: e.n, failed: e.fail, p50_ms: +Stats.pct(e.lat, 0.5).toFixed(1), p95_ms: +Stats.pct(e.lat, 0.95).toFixed(1),
-        p99_ms: +Stats.pct(e.lat, 0.99).toFixed(1), max_ms: +Math.max(0, ...e.lat.slice(0, 200_000)).toFixed(1) };
+        p99_ms: +Stats.pct(e.lat, 0.99).toFixed(1), max_ms: +e.lat.reduce((m, x) => (x > m ? x : m), 0).toFixed(1) };
     }
     return { requests: this.total, failed: this.failed, status_codes: Object.fromEntries([...this.codes].sort()), errors: Object.fromEntries(this.errors),
       p50_ms: +Stats.pct(all, 0.5).toFixed(1), p95_ms: +Stats.pct(all, 0.95).toFixed(1), p99_ms: +Stats.pct(all, 0.99).toFixed(1), endpoints };

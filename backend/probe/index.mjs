@@ -57,7 +57,7 @@ async function run(target, rps, seconds, viewers) {
   const secs = (performance.now() - t0) / 1000, ok = (codes[200] || 0) + (codes[304] || 0);
   return { target, target_rps: rps, seconds: +secs.toFixed(1), requests: sent, achieved_rps: +(sent / secs).toFixed(1), success: ok,
     success_rate_pct: +(100 * ok / Math.max(1, sent)).toFixed(3), status_codes: codes, errors, max_inflight: maxInflight,
-    p50_ms: pct(lat, 0.5), p95_ms: pct(lat, 0.95), p99_ms: pct(lat, 0.99), max_ms: +Math.max(0, ...lat.slice(0, 100000)).toFixed(1) };
+    p50_ms: pct(lat, 0.5), p95_ms: pct(lat, 0.95), p99_ms: pct(lat, 0.99), max_ms: +lat.reduce((m, x) => (x > m ? x : m), 0).toFixed(1) };
 }
 
 export default {
