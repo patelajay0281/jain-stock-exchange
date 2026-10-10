@@ -56,13 +56,13 @@ export class Stats {
   }
 }
 
-const PLATFORM_RETRIES = Number(process.env.RETRY_429 ?? 4);
+const PLATFORM_RETRIES = Number(process.env.RETRY_429 ?? 2);   // POST only, like the browser; GET polls are not retried
 export const counters = { platform429: 0 };
 
 /**
  * One API call with timing. Returns { status, data, ms, etag }.
  * Like the browser client, a plain-text 429 from the hosting platform's concurrency limiter (the API never ran)
- * is retried after Retry-After; the recorded latency includes those waits. RETRY_429=0 disables this.
+ * is retried for POST desk actions only (up to RETRY_429 times, default 2); the recorded latency includes the waits.
  */
 export async function call(stats, name, method, path, { token, body, etag, timeout = 20_000, extra } = {}) {
   const headers = { accept: "application/json", "accept-encoding": "gzip" };
@@ -84,10 +84,10 @@ export async function call(stats, name, method, path, { token, body, etag, timeo
     } catch (e) {
       data = { error: String(e?.cause?.code || e?.name || e) };
     }
-    if (platform && attempt < PLATFORM_RETRIES) {
+    if (platform && method !== "GET" && attempt < PLATFORM_RETRIES) {
       counters.platform429++;
       if (stats) stats.err("platform 429 (retried)");
-      await sleep(Math.min(3000, (retryAfter > 0 ? retryAfter * 1000 : 400) * (0.6 + Math.random() * 0.8) + 250 * attempt));
+      await sleep(Math.min(2500, (retryAfter > 0 ? retryAfter * 1000 : 500) * (0.5 + Math.random())));
       continue;
     }
     break;

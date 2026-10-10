@@ -90,13 +90,15 @@
       clearTimeout(timer);
       if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt < tries) { await sleep(700 * (attempt + 1)); continue; }
       var ct = res.headers.get("content-type") || "";
-      // The hosting platform's concurrency limiter answers 429 with a plain-text body before the API runs,
-      // so the request had no effect and is safe to send again (any method), after Retry-After.
-      if (res.status === 429 && ct.indexOf("json") < 0 && attempt < 4) {
+      // The hosting platform's concurrency limiter answers 429 with a plain-text body before the API runs, so the
+      // request had no effect. A desk action (POST) is sent again after a short random pause; polling reads are
+      // not retried here — the next poll comes soon and poll() backs off, which keeps load low when the platform is busy.
+      if (res.status === 429 && ct.indexOf("json") < 0 && method !== "GET" && attempt < 2) {
         var ra = parseFloat(res.headers.get("retry-after") || "0");
-        await sleep(Math.min(3000, (ra > 0 ? ra * 1000 : 400) * (0.6 + Math.random() * 0.8) + 250 * attempt));
+        await sleep(Math.min(2500, (ra > 0 ? ra * 1000 : 500) * (0.5 + Math.random())));
         continue;
       }
+      if (res.status === 429 && ct.indexOf("json") < 0) { setConn(false); throw ApiError("The trading service is busy. Please retry in a moment.", 429, "SERVICE_BUSY"); }
       if (opts.raw) {
         if (!res.ok) { try { data = await res.json(); } catch (e) { data = {}; } throw ApiError(data.error || "Download failed", res.status, data.code, data); }
         setConn(true); return res;

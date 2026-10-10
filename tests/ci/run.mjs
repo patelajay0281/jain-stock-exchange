@@ -58,6 +58,13 @@ async function health() {
 for (const s of cfg.suites) {
   try {
     if (s === "health") await health();
+    else if (s === "prod_warm") {
+      // first request to the production API: applies migrations + seed on a fresh database (read-only call)
+      const t0 = Date.now();
+      const r = await fetch(cfg.prod_base.replace(/\/$/, "") + "/api/event-status");
+      const d = await r.json().catch(() => ({}));
+      results.suites.prod_warm = { status: r.status, ms: Date.now() - t0, event_status: d.status, counts: d.counts, version: r.headers.get("x-jse-version") };
+    }
     else if (s === "cleanup") await cleanup();
     else if (s === "ui") {
       const { signIn } = await import("../lib/client.mjs");
@@ -72,11 +79,17 @@ for (const s of cfg.suites) {
       await run("stress", "node", ["tests/stress.mjs"], { ORDERS: String(cfg.stress?.orders || 1500), WORKERS: String(cfg.stress?.workers || 16), OUT: out }, 40);
       if (existsSync(out)) { const d = JSON.parse(readFileSync(out, "utf8")); delete d.http?.endpoints; results.suites.stress.report = d; }
     } else if (s === "load") {
-      const out = join(tmpdir(), "jse-load.json");
-      const L = cfg.load || {};
-      await run("load", "node", ["tests/load.mjs"], { RPS: String(L.rps || 850), DURATION: String(L.duration || 90), WRITE_RPS: String(L.write_rps ?? 1),
-        VIEWERS: String(L.viewers || 600), RAMP: String(L.ramp || 0), AUDIT: "1", OUT: out }, Math.ceil((L.duration || 90) / 60) + 20);
-      if (existsSync(out)) results.suites.load.report = JSON.parse(readFileSync(out, "utf8"));
+      results.suites.load = { runs: [] };
+      for (const [i, L] of (cfg.loads || [cfg.load || {}]).entries()) {
+        const out = join(tmpdir(), "jse-load-" + i + ".json");
+        await run("load_" + i, "node", ["tests/load.mjs"], { RPS: String(L.rps || 850), DURATION: String(L.duration || 90), WRITE_RPS: String(L.write_rps ?? 1),
+          VIEWERS: String(L.viewers || 600), RAMP: String(L.ramp || 0), RETRY_429: String(L.retry_429 ?? 2), AUDIT: "1", OUT: out }, Math.ceil((L.duration || 90) / 60) + 20);
+        const entry = { config: L, exit_code: results.suites["load_" + i].exit_code };
+        if (existsSync(out)) entry.report = JSON.parse(readFileSync(out, "utf8"));
+        results.suites.load.runs.push(entry);
+        delete results.suites["load_" + i];
+        if (L.pause_s) await new Promise((r) => setTimeout(r, L.pause_s * 1000));
+      }
     }
   } catch (e) {
     results.suites[s] = { ...(results.suites[s] || {}), error: String(e?.stack || e) };
