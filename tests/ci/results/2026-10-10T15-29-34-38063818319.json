@@ -1,0 +1,338 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-10T15:29:34.840Z",
+  "run_id": "38063818319",
+  "commit": "459330cddaf4cf79af0d615062e03623e314b81d",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "suites": [
+      "health",
+      "api",
+      "listing",
+      "stress",
+      "load",
+      "cleanup"
+    ],
+    "stress": {
+      "orders": 1500,
+      "workers": 16
+    },
+    "load": {
+      "rps": 850,
+      "duration": 90,
+      "write_rps": 1,
+      "viewers": 600
+    },
+    "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 1: functional + 1,500-order stress + 90 s at 850 req/s."
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "2.72.0",
+        "db": "ok",
+        "db_ms": 2,
+        "uptime_s": 119,
+        "node": "v24.16.0",
+        "time": "2026-10-10T15:29:36.065Z"
+      },
+      "ms": 1329
+    },
+    "api": {
+      "exit_code": 0,
+      "duration_s": 44,
+      "pass": 22,
+      "fail": 0,
+      "tail": "# Subtest: concurrent settlements for one team never break the balance\nok 18 - concurrent settlements for one team never break the balance\n  ---\n  duration_ms: 5721.080957\n  type: 'test'\n  ...\n# Subtest: cash ledger reconciles for every team\nok 19 - cash ledger reconciles for every team\n  ---\n  duration_ms: 210.476161\n  type: 'test'\n  ...\n# Subtest: ₹50K closing cash rule and winner pool\nok 20 - ₹50K closing cash rule and winner pool\n  ---\n  duration_ms: 2356.649884\n  type: 'test'\n  ...\n# Subtest: finalize blocks while orders are open, then exports work\nok 21 - finalize blocks while orders are open, then exports work\n  ---\n  duration_ms: 1147.870066\n  type: 'test'\n  ...\n# Subtest: reset restores the clean starting state and keeps IPO allotments\nok 22 - reset restores the clean starting state and keeps IPO allotments\n  ---\n  duration_ms: 1191.646498\n  type: 'test'\n  ...\n1..22\n# tests 22\n# suites 0\n# pass 22\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 44142.517593\n"
+    },
+    "listing": {
+      "exit_code": 1,
+      "duration_s": 17,
+      "pass": 9,
+      "fail": 1,
+      "failures": [
+        "CI sign-in is not available without staging configuration"
+      ],
+      "tail": "  ...\n# Subtest: CI sign-in is not available without staging configuration\nnot ok 10 - CI sign-in is not available without staging configuration\n  ---\n  duration_ms: 212.001389\n  type: 'test'\n  location: '/home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/listing.test.mjs:171:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    401 !== 404\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 404\n  actual: 401\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/listing.test.mjs:173:10)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...\n# Subtest: cleanup: closed, reset and no saved listing prices\nok 11 - cleanup: closed, reset and no saved listing prices\n  ---\n  duration_ms: 1376.933271\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 9\n# fail 1\n# cancelled 0\n# skipped 1\n# todo 0\n# duration_ms 16754.045595\n"
+    },
+    "stress": {
+      "exit_code": 0,
+      "duration_s": 74,
+      "tail": "      \"name\": \"loan principal never above ₹5,00,000\",\n      \"pass\": true,\n      \"detail\": \"\"\n    },\n    {\n      \"name\": \"loan interest is 2% of each draw\",\n      \"pass\": true,\n      \"detail\": \"\"\n    }\n  ],\n  \"all_checks_passed\": true,\n  \"http\": {\n    \"requests\": 4737,\n    \"failed\": 0,\n    \"status_codes\": {\n      \"200\": 4576,\n      \"400\": 11,\n      \"409\": 150\n    },\n    \"errors\": {},\n    \"p50_ms\": 209.4,\n    \"p95_ms\": 239.4,\n    \"p99_ms\": 685.3\n  },\n  \"total_runtime_s\": 73.6\n}\nPASS cash ledger reconciles with every team balance\nPASS one settlement per settled order\nPASS no order settled twice\nPASS one broker commission per settlement\nPASS brokerage is exactly 0.5% of trade value on every trade\nPASS trade value = quantity × price on every trade\nPASS holdings match settled trades exactly\nPASS no negative holdings\nPASS no negative cash\nPASS market price follows every settlement in order (no lost updates)\nPASS market price equals the last settled trade price\nPASS loan principal never above ₹5,00,000\nPASS loan interest is 2% of each draw\n",
+      "report": {
+        "tool": "tests/stress.mjs",
+        "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+        "at": "2026-10-10T15:31:50.698Z",
+        "orders_requested": 1500,
+        "workers": 16,
+        "duration_s": 65,
+        "calls": 4737,
+        "calls_per_s": 72.8,
+        "orders_per_s": 22.9,
+        "settlements_per_s": 21.6,
+        "tally": {
+          "rate_limited": 0,
+          "created": 1489,
+          "replays_checked": 75,
+          "replay_mismatch": 0,
+          "approved": 1489,
+          "exch_rejected": 0,
+          "settled": 1405,
+          "bank_rejected": {
+            "SHORT_SELLING_NOT_ALLOWED": 60,
+            "PRICE_LIMIT": 22,
+            "INSUFFICIENT_BALANCE": 2
+          },
+          "dup_attempts": 75,
+          "dup_extra_success": 0,
+          "create_rejected": {
+            "PRICE_LIMIT": 11
+          },
+          "http_errors": 0
+        },
+        "integrity": [
+          {
+            "name": "cash ledger reconciles with every team balance",
+            "pass": true,
+            "detail": "{\"ok\":true,\"mismatches\":0,\"teams_checked\":100,\"mismatched_teams\":[]}"
+          },
+          {
+            "name": "one settlement per settled order",
+            "pass": true,
+            "detail": "1405 settled orders, 1405 settlements"
+          },
+          {
+            "name": "no order settled twice",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "one broker commission per settlement",
+            "pass": true,
+            "detail": "1405 commission rows"
+          },
+          {
+            "name": "brokerage is exactly 0.5% of trade value on every trade",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "trade value = quantity × price on every trade",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "holdings match settled trades exactly",
+            "pass": true,
+            "detail": "0 mismatches "
+          },
+          {
+            "name": "no negative holdings",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "no negative cash",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "market price follows every settlement in order (no lost updates)",
+            "pass": true,
+            "detail": "0 breaks "
+          },
+          {
+            "name": "market price equals the last settled trade price",
+            "pass": true,
+            "detail": "0 securities differ"
+          },
+          {
+            "name": "loan principal never above ₹5,00,000",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "loan interest is 2% of each draw",
+            "pass": true,
+            "detail": ""
+          }
+        ],
+        "all_checks_passed": true,
+        "http": {
+          "requests": 4737,
+          "failed": 0,
+          "status_codes": {
+            "200": 4576,
+            "400": 11,
+            "409": 150
+          },
+          "errors": {},
+          "p50_ms": 209.4,
+          "p95_ms": 239.4,
+          "p99_ms": 685.3
+        },
+        "total_runtime_s": 73.6
+      }
+    },
+    "load": {
+      "exit_code": 1,
+      "duration_s": 102,
+      "tail": "[load] https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech · target 850 req/s for 90s · 1 order pipelines/s · 600 market screens\n[load] {\"t_min\":1,\"rps\":848.9,\"inflight\":228,\"failed_total\":5308,\"skipped\":0,\"settled\":36}\n{\n  \"tool\": \"tests/load.mjs\",\n  \"base\": \"https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech\",\n  \"at\": \"2026-10-10T15:33:32.505Z\",\n  \"target_rps\": 850,\n  \"duration_s\": 90.3,\n  \"achieved_rps\": 849.8,\n  \"requests\": 76745,\n  \"failed\": 5640,\n  \"skipped_at_cap\": 0,\n  \"success_rate_pct\": 92.651,\n  \"p50_ms\": 227.8,\n  \"p95_ms\": 755.4,\n  \"p99_ms\": 1860.4,\n  \"status_codes\": {\n    \"200\": 69421,\n    \"304\": 1684,\n    \"429\": 5640\n  },\n  \"errors\": {},\n  \"order_flow\": {\n    \"pipelines\": 86,\n    \"settled\": 49,\n    \"rejected\": 28,\n    \"failed\": 0\n  },\n  \"ledger_reconciliation\": {\n    \"ok\": true,\n    \"mismatches\": 0,\n    \"teams_checked\": 100,\n    \"mismatched_teams\": []\n  }\n}\n",
+      "report": {
+        "tool": "tests/load.mjs",
+        "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+        "at": "2026-10-10T15:33:32.505Z",
+        "target_rps": 850,
+        "duration_s": 90.3,
+        "achieved_rps": 849.8,
+        "requests": 76745,
+        "failed": 5640,
+        "skipped_at_cap": 0,
+        "success_rate_pct": 92.651,
+        "p50_ms": 227.8,
+        "p95_ms": 755.4,
+        "p99_ms": 1860.4,
+        "status_codes": {
+          "200": 69421,
+          "304": 1684,
+          "429": 5640
+        },
+        "errors": {},
+        "order_flow": {
+          "pipelines": 86,
+          "settled": 49,
+          "rejected": 28,
+          "failed": 0
+        },
+        "ledger_reconciliation": {
+          "ok": true,
+          "mismatches": 0,
+          "teams_checked": 100,
+          "mismatched_teams": []
+        },
+        "per_minute": [
+          {
+            "t_min": 1,
+            "rps": 848.9,
+            "inflight": 228,
+            "failed_total": 5308,
+            "skipped": 0,
+            "settled": 36
+          }
+        ],
+        "endpoints": {
+          "admin": {
+            "requests": 5,
+            "failed": 0,
+            "p50_ms": 237.7,
+            "p95_ms": 241.8,
+            "p99_ms": 241.8,
+            "max_ms": 369.9
+          },
+          "GET market": {
+            "requests": 47211,
+            "failed": 3441,
+            "p50_ms": 226.6,
+            "p95_ms": 614.4,
+            "p99_ms": 1829.2,
+            "max_ms": 10497.5
+          },
+          "GET portfolio-details": {
+            "requests": 4574,
+            "failed": 336,
+            "p50_ms": 237.1,
+            "p95_ms": 1052.5,
+            "p99_ms": 1995.8,
+            "max_ms": 5498.8
+          },
+          "GET portfolios": {
+            "requests": 2284,
+            "failed": 168,
+            "p50_ms": 231,
+            "p95_ms": 1062.6,
+            "p99_ms": 2000.4,
+            "max_ms": 5634.9
+          },
+          "GET market-news": {
+            "requests": 2271,
+            "failed": 179,
+            "p50_ms": 226.6,
+            "p95_ms": 594.4,
+            "p99_ms": 1857.7,
+            "max_ms": 5624.8
+          },
+          "GET insights": {
+            "requests": 3126,
+            "failed": 235,
+            "p50_ms": 229.3,
+            "p95_ms": 1001,
+            "p99_ms": 1876.9,
+            "max_ms": 5405.1
+          },
+          "GET event-status": {
+            "requests": 9287,
+            "failed": 699,
+            "p50_ms": 227.6,
+            "p95_ms": 642.6,
+            "p99_ms": 1855.4,
+            "max_ms": 7868.3
+          },
+          "GET bank queue": {
+            "requests": 2319,
+            "failed": 169,
+            "p50_ms": 228.8,
+            "p95_ms": 886.6,
+            "p99_ms": 1830.8,
+            "max_ms": 3419.8
+          },
+          "GET tracking": {
+            "requests": 3100,
+            "failed": 223,
+            "p50_ms": 230,
+            "p95_ms": 981.9,
+            "p99_ms": 1898.1,
+            "max_ms": 5726.4
+          },
+          "GET exchange queue": {
+            "requests": 2327,
+            "failed": 181,
+            "p50_ms": 230.3,
+            "p95_ms": 810.6,
+            "p99_ms": 1967.6,
+            "max_ms": 5700
+          },
+          "POST orders": {
+            "requests": 86,
+            "failed": 8,
+            "p50_ms": 225.4,
+            "p95_ms": 726.2,
+            "p99_ms": 1598.1,
+            "max_ms": 1912.2
+          },
+          "POST exchange": {
+            "requests": 78,
+            "failed": 1,
+            "p50_ms": 233.5,
+            "p95_ms": 481.8,
+            "p99_ms": 797.6,
+            "max_ms": 849.5
+          },
+          "POST bank": {
+            "requests": 77,
+            "failed": 0,
+            "p50_ms": 240.3,
+            "p95_ms": 386.9,
+            "p99_ms": 1315.6,
+            "max_ms": 1801.9
+          }
+        }
+      }
+    },
+    "cleanup": {
+      "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:15270:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async signIn (file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/lib/client.mjs:29:7)\n    at async cleanup (file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/ci/run.mjs:38:17)\n    at async file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/ci/run.mjs:61:31"
+    }
+  },
+  "finished_at": "2026-10-10T15:33:32.643Z"
+}
