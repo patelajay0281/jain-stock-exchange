@@ -59,6 +59,12 @@ for (const s of cfg.suites) {
   try {
     if (s === "health") await health();
     else if (s === "cleanup") await cleanup();
+    else if (s === "ui") {
+      const { signIn } = await import("../lib/client.mjs");
+      const tokens = {};
+      for (const u of ["ADMIN", "PIT-01", "EXCHANGE-01", "BANK-01", "TEAM-031"]) tokens[u] = await signIn(u);
+      await run("ui", "python3", ["tests/ui_staging.py"], { SITE: cfg.site, API: BASE, UI_TOKENS: JSON.stringify(tokens) }, 20);
+    }
     else if (s === "api") await run("api", "node", ["--test", "--test-concurrency=1", "tests/api.test.mjs"]);
     else if (s === "listing") await run("listing", "node", ["--test", "--test-concurrency=1", "tests/listing.test.mjs"]);
     else if (s === "stress") {

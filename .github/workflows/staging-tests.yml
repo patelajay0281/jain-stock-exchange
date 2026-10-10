@@ -26,6 +26,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Playwright (browser test of the deployed site)
+        run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
       - name: Run the suites listed in tests/ci/run.json
         env:
           CI_OIDC_AUDIENCE: jse-staging

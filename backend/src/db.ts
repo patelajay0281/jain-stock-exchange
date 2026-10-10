@@ -27,6 +27,9 @@ function connectionString(): string {
   const raw = process.env.DATABASE_URL || "postgres://postgres@127.0.0.1:5433/jse";
   const url = new URL(raw);
   if (process.env.DB_NAME) url.pathname = "/" + process.env.DB_NAME;
+  // pg already verifies the certificate for sslmode=require; say so explicitly (silences its deprecation warning)
+  const mode = url.searchParams.get("sslmode");
+  if (mode === "require" || mode === "prefer" || mode === "verify-ca") url.searchParams.set("sslmode", "verify-full");
   return url.toString();
 }
 
