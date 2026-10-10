@@ -1,0 +1,40 @@
+name: JSE staging tests
+
+# Runs the end-to-end, stress and load suites against the STAGING deployment whenever
+# tests/ci/run.json changes on the v272 branch, then commits the results to tests/ci/results/.
+# The suites sign in with a GitHub OIDC token (no passwords or secrets are stored anywhere).
+on:
+  push:
+    branches: [v272]
+    paths: ["tests/ci/run.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: jse-staging-tests
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the suites listed in tests/ci/run.json
+        env:
+          CI_OIDC_AUDIENCE: jse-staging
+        run: node tests/ci/run.mjs
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.name "jse-ci"
+          git config user.email "jse-ci@users.noreply.github.com"
+          git add tests/ci/results
+          git commit -m "CI results: staging run ${GITHUB_RUN_ID} [skip ci]" || exit 0
+          for i in 1 2 3 4 5; do git pull --rebase origin v272 && git push origin HEAD:v272 && break; sleep 7; done

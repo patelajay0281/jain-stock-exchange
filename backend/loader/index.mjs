@@ -1,35 +1,38 @@
 // JSE API loader for Neon Functions.
 // Downloads the versioned API bundle named by APP_URL, checks it against APP_SHA256,
 // caches it in /tmp and delegates every request to it. Deploying a new API version
-// only changes these two environment variables.
+// only changes these environment variables. APP_URL may list several mirrors separated
+// by spaces or commas (for example GitHub raw and jsDelivr); they are tried in order.
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 let ready = null;
 
-async function download(url, sha) {
+async function download(urls, sha) {
   let lastError;
-  for (let attempt = 1; attempt <= 4; attempt++) {
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error("bundle download failed: HTTP " + res.status);
-      const buf = Buffer.from(await res.arrayBuffer());
-      const got = createHash("sha256").update(buf).digest("hex");
-      if (got !== sha) throw new Error("bundle integrity mismatch: " + got);
-      return buf;
-    } catch (e) {
-      lastError = e;
-      await new Promise((r) => setTimeout(r, 250 * attempt));
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+        if (!res.ok) throw new Error("bundle download failed: HTTP " + res.status + " from " + url);
+        const buf = Buffer.from(await res.arrayBuffer());
+        const got = createHash("sha256").update(buf).digest("hex");
+        if (got !== sha) throw new Error("bundle integrity mismatch from " + url + ": " + got);
+        return buf;
+      } catch (e) {
+        lastError = e;
+      }
     }
+    await new Promise((r) => setTimeout(r, 300 * attempt));
   }
   throw lastError;
 }
 
 async function load() {
-  const url = process.env.APP_URL;
+  const urls = String(process.env.APP_URL || "").split(/[\s,]+/).filter(Boolean);
   const sha = String(process.env.APP_SHA256 || "").toLowerCase();
-  if (!url || !/^[0-9a-f]{64}$/.test(sha)) throw new Error("APP_URL / APP_SHA256 not configured");
+  if (!urls.length || !/^[0-9a-f]{64}$/.test(sha)) throw new Error("APP_URL / APP_SHA256 not configured");
   const file = "/tmp/jse-api-" + sha.slice(0, 20) + ".mjs";
   let code = null;
   try {
@@ -37,7 +40,7 @@ async function load() {
     if (createHash("sha256").update(code).digest("hex") !== sha) code = null;
   } catch {}
   if (!code) {
-    code = await download(url, sha);
+    code = await download(urls, sha);
     try {
       await writeFile(file, code);
     } catch {}
@@ -60,10 +63,10 @@ export default {
       const app = await ready;
       return await app.fetch(request);
     } catch (e) {
-      const origin = request.headers.get("origin") || "*";
-      return new Response(JSON.stringify({ success: false, error: "The trading service is starting. Please retry in a moment.", code: "SERVICE_STARTING", detail: String((e && e.message) || e).slice(0, 300) }), {
+      console.error("[loader]", (e && e.message) || e);
+      return new Response(JSON.stringify({ success: false, error: "The trading service is starting. Please retry in a moment.", code: "SERVICE_STARTING" }), {
         status: 503,
-        headers: { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": origin, "access-control-allow-credentials": "true", "vary": "origin", "retry-after": "2" },
+        headers: { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": request.headers.get("origin") || "*", "vary": "origin", "retry-after": "2", "cache-control": "no-store" },
       });
     }
   },

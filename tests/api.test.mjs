@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { signIn } from "./lib/client.mjs";
 
 const BASE = process.env.BASE || "http://127.0.0.1:8788";
 const PW = {
@@ -49,11 +50,8 @@ async function fullTrade(team, symbol, side, qty, price) {
 }
 
 test("login all roles", async () => {
-  for (const u of Object.keys(PW)) {
-    const r = await POST("/api/login", { username: u, password: PW[u] });
-    assert.equal(r.status, 200, u + " " + JSON.stringify(r.data));
-    tokens[u] = r.data.token;
-  }
+  // locally: known test passwords (tests/test-passwords.sql); on staging: GitHub OIDC sign-in
+  for (const u of Object.keys(PW)) tokens[u] = await signIn(u);
   const bad = await POST("/api/login", { username: "ADMIN", password: "nope" });
   assert.equal(bad.status, 401);
 });
@@ -64,6 +62,7 @@ test("reset to a clean event", async () => {
   const r = await POST("/api/reset-event", { confirm: "RESET", keep_allotments: false }, "ADMIN");
   assert.equal(r.status, 200, JSON.stringify(r.data));
   assert.equal(r.data.status, "NOT_STARTED");
+  await POST("/api/ipo-listing", { action: "CLEAR" }, "ADMIN");   // IPOs trade from their issue prices in this suite
 });
 
 test("reference data: 100 teams, 50 stocks, 4 IPOs, 10 brokers, IPO prices", async () => {

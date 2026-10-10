@@ -220,6 +220,41 @@ BEGIN
   RETURN jsonb_build_object('success', true);
 END $$;
 
+-- First administrator password (and recovery). Database console only — no API route calls this.
+--   SELECT jse_bootstrap_password('ADMIN');              -- random password, returned once
+--   SELECT jse_bootstrap_password('ADMIN', 'my-own-pw'); -- chosen password (8+ characters)
+-- The account must choose a new password at its next sign-in.
+CREATE OR REPLACE FUNCTION jse_bootstrap_password(p_username text, p_password text DEFAULT NULL)
+RETURNS text LANGUAGE plpgsql AS $$
+DECLARE u app_users%ROWTYPE; v_pw text := coalesce(nullif(p_password, ''), jse_random_password());
+BEGIN
+  SELECT * INTO u FROM app_users WHERE lower(username) = lower(trim(coalesce(p_username, ''))) FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'No account named %', p_username; END IF;
+  IF length(v_pw) < 8 THEN RAISE EXCEPTION 'Use at least 8 characters'; END IF;
+  UPDATE app_users SET password_hash = crypt(v_pw, gen_salt('bf', 8)), must_change_password = true, failed_logins = 0,
+         locked_until = NULL, active = true, updated_at = now() WHERE id = u.id;
+  UPDATE sessions SET revoked_at = now() WHERE user_id = u.id AND revoked_at IS NULL;
+  PERFORM jse_audit('{"username":"DATABASE CONSOLE","role":"SYSTEM"}'::jsonb, 'PASSWORD_BOOTSTRAP', 'user', u.username, u.team_id,
+                    NULL, NULL, NULL, NULL);
+  RETURN v_pw;
+END $$;
+
+-- Session for automated tests on a staging deployment. The API calls this only when it runs with
+-- CI_OIDC_REPOSITORY set and the caller presents a valid GitHub Actions OIDC token for that repository.
+CREATE OR REPLACE FUNCTION jse_ci_session(p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE u app_users%ROWTYPE; v_token text; a jsonb;
+BEGIN
+  SELECT * INTO u FROM app_users WHERE lower(username) = lower(trim(coalesce(p->>'username', '')));
+  IF NOT FOUND OR NOT u.active THEN PERFORM jse_fail('INVALID_CREDENTIALS', 'Unknown or disabled account.', 401); END IF;
+  v_token := encode(gen_random_bytes(32), 'hex');
+  INSERT INTO sessions(token_hash, user_id, expires_at, ip, user_agent)
+  VALUES (encode(digest(v_token, 'sha256'), 'hex'), u.id, now() + interval '6 hours', p->>'ip', left('CI ' || coalesce(p->>'subject', ''), 300));
+  a := jsonb_build_object('id', u.id, 'username', u.username, 'role', u.role, 'ip', p->>'ip', 'ua', p->>'ua');
+  PERFORM jse_audit(a, 'CI_LOGIN', 'user', u.id::text, u.team_id, NULL, NULL, NULL,
+                    jsonb_build_object('subject', p->>'subject', 'run_id', p->>'run_id', 'workflow', p->>'workflow'));
+  RETURN jsonb_build_object('success', true, 'token', v_token, 'user', jse_user_json(u));
+END $$;
+
 -- ---------------------------------------------------------------------------
 -- Order creation (participant / broker desk). No cash, holding or price change here.
 -- ---------------------------------------------------------------------------

@@ -64,7 +64,8 @@ CREATE OR REPLACE FUNCTION jse_security_json(s securities) RETURNS jsonb LANGUAG
     'price', s.price, 'previous_price', s.previous_price, 'base_price', s.base_price,
     'change', s.price - s.previous_price, 'change_pct', round(jse_pct(s.price, s.previous_price), 2),
     'day_change_pct', round(jse_pct(s.price, s.base_price), 2), 'lot_size', s.lot_size,
-    'trade_count', s.trade_count, 'traded_value', s.traded_value, 'last_trade_at', s.last_trade_at, 'updated_at', s.updated_at)
+    'trade_count', s.trade_count, 'traded_value', s.traded_value, 'last_trade_at', s.last_trade_at, 'updated_at', s.updated_at,
+    'listed', CASE WHEN s.kind = 'IPO' THEN s.listed_at IS NOT NULL END, 'listed_at', s.listed_at)
 $$;
 
 CREATE OR REPLACE FUNCTION jse_market() RETURNS jsonb LANGUAGE sql STABLE AS $$
@@ -549,6 +550,7 @@ BEGIN
                   FROM (SELECT security_id, count(*) n, sum(lots) lots, sum(quantity) q, sum(amount) amt FROM ipo_allotments WHERE reversed_at IS NULL GROUP BY security_id) z
                   JOIN securities s ON s.id = z.security_id), '[]'::jsonb))
       FROM ipo_allotments WHERE reversed_at IS NULL),
+    'ipo_listing', jse_listing_state(a),
     'brokers', (SELECT jsonb_agg(jsonb_build_object('code', code, 'name', name) ORDER BY code) FROM brokers),
     'users', (SELECT jsonb_object_agg(role, n) FROM (SELECT role, count(*) n FROM app_users WHERE active GROUP BY role) u));
 END $$;

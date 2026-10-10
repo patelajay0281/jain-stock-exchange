@@ -3,6 +3,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { ApiError, call, ensureMigrated, rawQuery } from "./db";
+import { verifyGithubOidc } from "./oidc";
 import { buildXlsx, toCsv, type Sheet } from "./xlsx";
 
 export const VERSION = "2.72.0";
@@ -242,8 +243,27 @@ get("/api/me", async (ctx) => {
 });
 post("/api/change-password", async (ctx) => {
   need(ctx);
+  if (!rateLimit("pw:" + ctx.user!.id, 0.2, 6)) throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Too many attempts. Wait a minute and try again.");
   const out = await call("jse_change_password", actor(ctx), ctx.body || {});
   sessions.clear();
+  return json(ctx, out);
+});
+// Staging only: automated tests sign in with a GitHub Actions OIDC token instead of a password.
+post("/api/ci-login", async (ctx) => {
+  const repository = process.env.CI_OIDC_REPOSITORY;
+  if (!repository) throw new ApiError(404, "NOT_FOUND", "Unknown API endpoint: /api/ci-login");
+  if (!rateLimit("ci-login:" + ctx.ip, 10, 300)) throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Too many sign-in attempts.");
+  let claims;
+  try {
+    claims = await verifyGithubOidc(String(ctx.body?.token || ""), {
+      repository, audience: process.env.CI_OIDC_AUDIENCE || "jse-staging",
+      refs: (process.env.CI_OIDC_REFS || "").split(",").map((s) => s.trim()).filter(Boolean),
+    });
+  } catch (e) {
+    throw new ApiError(401, "INVALID_CI_TOKEN", "CI token rejected: " + (e as Error).message);
+  }
+  const out = await call("jse_ci_session", null, { username: String(ctx.body?.username || ""), ip: ctx.ip, ua: ctx.ua,
+    subject: claims.sub, run_id: claims.run_id, workflow: claims.workflow }, { noActor: true });
   return json(ctx, out);
 });
 
@@ -358,9 +378,11 @@ post("/api/market-news", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx,
 
 // ---- event administration ----
 get("/api/admin-state", async (ctx) => {
-  need(ctx, "ADMIN", "VIEWER");
-  return respond(ctx, 200, await cached("admin:state", 1500, () => call("jse_admin_state", actor(ctx), {})));
+  const u = need(ctx, "ADMIN", "VIEWER");
+  // per role: saved IPO listing prices are visible to administrators only
+  return respond(ctx, 200, await cached("admin:state:" + u.role, 1500, () => call("jse_admin_state", actor(ctx), {})));
 });
+post("/api/ipo-listing", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_ipo_listing", ctx.body || {}); });
 post("/api/event", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_event_action", ctx.body || {}); });
 post("/api/reset-event", async (ctx) => {
   need(ctx, "ADMIN");

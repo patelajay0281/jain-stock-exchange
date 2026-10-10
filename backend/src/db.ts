@@ -2,6 +2,7 @@
 // (`SELECT fn($1::jsonb, $2::jsonb)`) so each financial action is exactly one transaction.
 import pg from "pg";
 import m001 from "../../db/migrations/001_schema.sql";
+import m001a from "../../db/migrations/001a_upgrades.sql";
 import m002 from "../../db/migrations/002_core.sql";
 import m003 from "../../db/migrations/003_ops.sql";
 import m004 from "../../db/migrations/004_reads.sql";
@@ -10,11 +11,11 @@ import m006 from "../../db/migrations/006_seed.sql";
 import m007 from "../../db/migrations/007_tuning.sql";
 
 export const MIGRATIONS: Array<[string, string]> = [
-  ["001_schema", m001], ["002_core", m002], ["003_ops", m003], ["004_reads", m004],
+  ["001_schema", m001], ["001a_upgrades", m001a], ["002_core", m002], ["003_ops", m003], ["004_reads", m004],
   ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007],
 ];
-// Files whose content may be re-applied safely (CREATE OR REPLACE only) when their text changes.
-const REPLAYABLE = new Set(["002_core", "003_ops", "004_reads", "005_exports", "007_tuning"]);
+// Files whose content may be re-applied safely (idempotent / CREATE OR REPLACE only) when their text changes.
+const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning"]);
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string, public extra?: Record<string, unknown>) {

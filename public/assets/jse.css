@@ -229,7 +229,7 @@ table.t .actions { white-space: nowrap; text-align: right; }
   .wrap { padding: 12px 12px 28px; }
   .topbar-in { padding: 6px 12px; gap: 8px; }
   .brand-name { font-size: 12px; letter-spacing: .8px; }
-  .tb-user .who, .tb-index, .env-pill { display: none; }
+  .tb-user .who, .tb-index, .env-pill, .tb-pw { display: none; }
   .topbar-mid { gap: 8px; }
   .topbar .pill { padding: 3px 8px; font-size: 10.5px; letter-spacing: .3px; }
   .tb-btn { padding: 5px 9px; font-size: 12px; }

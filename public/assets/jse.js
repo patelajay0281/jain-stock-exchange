@@ -174,7 +174,8 @@
     }).join("");
     var right = user
       ? '<div class="tb-user"><div class="who"><b>' + esc(user.name || user.username) + "</b><span>" + esc(ROLE_LABEL[user.role] || user.role) +
-        (user.team ? " · " + esc(user.team) : "") + '</span></div><button class="tb-btn" type="button" id="jseLogout">Sign out</button></div>'
+        (user.team ? " · " + esc(user.team) : "") + '</span></div><button class="tb-btn tb-pw" type="button" id="jsePw" title="Change your password">Password</button>' +
+        '<button class="tb-btn" type="button" id="jseLogout">Sign out</button></div>'
       : '<a class="tb-btn" href="/login.html?next=' + encodeURIComponent(location.pathname + location.search) + '">Sign in</a>';
     var envTag = CFG.env === "staging" ? ' <span class="pill settlement env-pill" title="Staging data">Staging</span>' : CFG.env === "local" ? ' <span class="pill not-started env-pill">Local</span>' : "";
     var top = el('<header class="topbar"><div class="topbar-in">' +
@@ -190,6 +191,8 @@
     document.body.insertBefore(el('<a class="skip" href="#main">Skip to content</a>'), document.body.firstChild);
     var lo = document.getElementById("jseLogout");
     if (lo) lo.addEventListener("click", function () { session.logout(); });
+    var pw = document.getElementById("jsePw");
+    if (pw) pw.addEventListener("click", function () { changePassword(); });
     if (!document.querySelector(".toasts")) document.body.appendChild(el('<div class="toasts" role="status" aria-live="polite"></div>'));
     var cur = document.querySelector('.nav a[aria-current="page"]');
     if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ block: "nearest", inline: "center" }); } catch (e) {} }
@@ -275,6 +278,46 @@
     });
   }
 
+  /** Change-password dialog. opts.required: no Cancel (first sign-in); opts.oldPassword pre-fills the current one. */
+  function changePassword(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var back = el('<div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="jsePwH"><form class="modal" novalidate>' +
+        '<div class="modal-h" id="jsePwH">' + esc(opts.title || "Change password") + '</div><div class="modal-b">' +
+        (opts.note ? '<p class="muted" style="margin-top:0">' + esc(opts.note) + "</p>" : "") +
+        '<div class="alert bad hidden" id="jsePwErr" role="alert"></div>' +
+        '<div class="field"><label for="jsePwOld">Current password</label><input class="input" id="jsePwOld" type="password" autocomplete="current-password"></div>' +
+        '<div class="field" style="margin-top:10px"><label for="jsePwNew">New password (at least 8 characters)</label><input class="input" id="jsePwNew" type="password" autocomplete="new-password"></div>' +
+        '<div class="field" style="margin-top:10px"><label for="jsePwNew2">Repeat the new password</label><input class="input" id="jsePwNew2" type="password" autocomplete="new-password"></div>' +
+        '</div><div class="modal-f">' + (opts.required ? "" : '<button class="btn" type="button" data-x="cancel">Cancel</button>') +
+        '<button class="btn primary" type="submit" id="jsePwGo">Save new password</button></div></form></div>');
+      var form = back.querySelector("form"), err = back.querySelector("#jsePwErr");
+      function close(v) { back.remove(); document.removeEventListener("keydown", onKey); resolve(v); }
+      function onKey(e) { if (e.key === "Escape" && !opts.required) close(false); }
+      function showErr(m) { err.textContent = m; err.classList.remove("hidden"); }
+      back.addEventListener("click", function (e) { if (e.target.getAttribute && e.target.getAttribute("data-x") === "cancel") close(false); });
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        var o = back.querySelector("#jsePwOld").value, n = back.querySelector("#jsePwNew").value, n2 = back.querySelector("#jsePwNew2").value;
+        if (!o || !n) return showErr("Fill in your current and new password.");
+        if (n.length < 8) return showErr("Use at least 8 characters for the new password.");
+        if (n !== n2) return showErr("The two new passwords do not match.");
+        if (n === o) return showErr("Choose a password different from the current one.");
+        var go = back.querySelector("#jsePwGo"); go.disabled = true;
+        try {
+          await api.post("/api/change-password", { old_password: o, new_password: n });
+          var u = getUser(); if (u) { u.must_change_password = false; store.set(USER_KEY, JSON.stringify(u)); }
+          toast("Password changed.", "good");
+          close(true);
+        } catch (ex) { go.disabled = false; showErr(ex.message); }
+      });
+      document.addEventListener("keydown", onKey);
+      document.body.appendChild(back);
+      if (opts.oldPassword) back.querySelector("#jsePwOld").value = opts.oldPassword;
+      back.querySelector(opts.oldPassword ? "#jsePwNew" : "#jsePwOld").focus();
+    });
+  }
+
   // ------------------------------------------------------------------ badges
   var STATUS_BADGE = { EXCHANGE_PENDING: "s-pending", EXCHANGE_APPROVED: "s-approved", BANK_PENDING: "s-bank", BANK_SETTLED: "s-settled", EXCHANGE_REJECTED: "s-rejected", BANK_REJECTED: "s-rejected" };
   var badge = {
@@ -321,6 +364,9 @@
     renderShell({ page: o.id });
     document.addEventListener("jse:signedout", function () { if (roles !== "*") location.href = "/login.html?expired=1&next=" + encodeURIComponent(location.pathname + location.search); });
     startStatusTicker(o.statusFromPage);
+    if (user && user.must_change_password && o.id !== "login") {
+      changePassword({ required: true, title: "Choose a new password", note: "This account was given a temporary password. Choose your own before continuing." });
+    }
     var main = document.getElementById("main");
     if (roles !== "*" && (!user || roles.indexOf(user.role) < 0)) {
       if (main) {
@@ -345,7 +391,7 @@
 
   window.JSE = {
     config: CFG, api: api, session: session, fmt: fmt, esc: esc, el: el, poll: poll, toast: toast, dialog: dialog, badge: badge,
-    uuid: uuid, debounce: debounce, download: download, page: page, applyStatus: applyStatus, offline: offlinePill,
+    uuid: uuid, debounce: debounce, download: download, page: page, applyStatus: applyStatus, offline: offlinePill, changePassword: changePassword,
     onStatus: function (cb) { shellState.statusCbs.push(cb); if (shellState.status) cb(shellState.status); },
     get status() { return shellState.status; }, teamSort: teamSort, teamCodes: teamCodes, ROLE_LABEL: ROLE_LABEL, STATUS: STATUS, toNum: toNum,
   };

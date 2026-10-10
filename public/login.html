@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272">
+<link rel="stylesheet" href="/assets/jse.css?v=272.1">
 <style>
   .login { max-width: 420px; margin: 48px auto; }
   .login .card-b { padding: 26px 26px 22px; }
@@ -22,8 +22,8 @@
     <img class="logo" src="/assets/img/jain-cms-logo.png" alt="JAIN (Deemed-to-be University) · CMS Business School">
     <form class="card" id="f" novalidate>
       <div class="card-b">
-        <h1>Desk sign in</h1>
-        <p>For event staff: brokers, Exchange, Bank, institutional desk, faculty and administrators.</p>
+        <h1>Sign in</h1>
+        <p>For participant teams (TEAM-001 … TEAM-100) and event staff: brokers, Exchange, Bank, institutional desk, faculty and administrators.</p>
         <div class="alert bad hidden" id="err" role="alert"></div>
         <div class="alert info hidden" id="info"></div>
         <div class="field"><label for="u">Username</label><input class="input lg" id="u" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required placeholder="e.g. BANK-01"></div>
@@ -34,8 +34,8 @@
     </form>
   </div>
 </main>
-<script src="/assets/config.js?v=272"></script>
-<script src="/assets/jse.js?v=272"></script>
+<script src="/assets/config.js?v=272.1"></script>
+<script src="/assets/jse.js?v=272.1"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -59,6 +59,11 @@
     btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Signing in…';
     try {
       var user = await JSE.session.login(u, p);
+      if (user.must_change_password) {
+        btn.textContent = "Signed in";
+        await JSE.changePassword({ required: true, oldPassword: p, title: "Choose a new password",
+          note: "This account was given a temporary password. Choose your own password to continue." });
+      }
       location.replace(next(user));
     } catch (ex) {
       err.textContent = ex.message; err.classList.remove("hidden");

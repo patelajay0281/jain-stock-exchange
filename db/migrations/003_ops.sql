@@ -265,7 +265,7 @@ END $$;
 CREATE OR REPLACE FUNCTION jse_event_action(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE
   v_action text := upper(coalesce(p->>'action', ''));
-  v_cur text; v_to text; v_open integer;
+  v_cur text; v_to text; v_open integer; v_listed jsonb := '[]'::jsonb; v_one jsonb; r record;
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN');
   SELECT status INTO v_cur FROM event_control WHERE id = 1 FOR UPDATE;
@@ -289,9 +289,17 @@ BEGIN
       PERFORM jse_fail('OPEN_ORDERS', 'Cannot finalize while ' || v_open || ' order(s) are still waiting at the Exchange or Bank. Settle or reject them first.', 409);
     END IF;
   END IF;
+  -- IPOs with a saved listing price open at that price when the market starts
+  IF v_action = 'START' AND (SELECT auto_list_ipos FROM event_config WHERE id = 1) THEN
+    FOR r IN SELECT id FROM securities WHERE kind = 'IPO' AND active AND listing_price IS NOT NULL AND listed_at IS NULL ORDER BY display_order, id LOOP
+      v_one := jse__list_ipo(a, r.id);
+      IF v_one IS NOT NULL THEN v_listed := v_listed || jsonb_build_array(v_one); END IF;
+    END LOOP;
+  END IF;
   RETURN jse__set_status(a, v_to, true,
     CASE v_action WHEN 'START' THEN 'EVENT_START' WHEN 'PAUSE' THEN 'EVENT_PAUSE' WHEN 'RESUME' THEN 'EVENT_RESUME'
-                  WHEN 'CLOSE' THEN 'EVENT_CLOSE' WHEN 'REOPEN' THEN 'EVENT_REOPEN' ELSE 'EVENT_FINALIZE' END);
+                  WHEN 'CLOSE' THEN 'EVENT_CLOSE' WHEN 'REOPEN' THEN 'EVENT_REOPEN' ELSE 'EVENT_FINALIZE' END)
+    || jsonb_build_object('listed', v_listed);
 END $$;
 
 -- Rejects every order still waiting at the Exchange or Bank (used at close).
@@ -434,6 +442,123 @@ BEGIN
 END $$;
 
 -- ---------------------------------------------------------------------------
+-- IPO listing. The Controller saves a confidential listing price for each IPO before the event.
+-- Listing moves the IPO from its issue price to the listing price (source LISTING), either with
+-- "List IPOs now" or automatically at START EVENT. Only the administrator sees saved prices.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION jse__list_ipo(a jsonb, p_id integer) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE s securities%ROWTYPE; v_pct numeric;
+BEGIN
+  SELECT * INTO s FROM securities WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND OR s.kind <> 'IPO' OR s.listing_price IS NULL OR s.listed_at IS NOT NULL THEN RETURN NULL; END IF;
+  IF s.trade_count > 0 OR s.price <> s.base_price
+     OR EXISTS (SELECT 1 FROM market_news n WHERE n.security_id = s.id AND n.reversed_at IS NULL) THEN
+    PERFORM jse_fail('IPO_ALREADY_MOVED', s.symbol || ' has already traded or moved on Market News; it can no longer be listed.', 409);
+  END IF;
+  v_pct := jse_pct(s.listing_price, s.price);
+  UPDATE securities SET previous_price = price, price = listing_price, listed_at = now(), updated_at = now() WHERE id = s.id;
+  INSERT INTO price_history(security_id, previous_price, new_price, change_pct, source) VALUES (s.id, s.price, s.listing_price, v_pct, 'LISTING');
+  PERFORM jse_audit(a, 'IPO_LISTED', 'security', s.symbol, NULL, NULL,
+    jsonb_build_object('price', s.price, 'previous_price', s.previous_price),
+    jsonb_build_object('price', s.listing_price, 'previous_price', s.price),
+    jsonb_build_object('issue_price', s.base_price, 'listing_price', s.listing_price, 'change_pct', round(v_pct, 2), 'source', 'LISTING'));
+  PERFORM jse_journal('IPO_LISTING', s.id,
+    s.symbol || ' listed at ₹' || s.listing_price || ' (issue ₹' || s.base_price || ', ' || to_char(round(v_pct, 2), 'SG990.00') || '%)',
+    jsonb_build_object('security_id', s.id, 'from_price', s.price, 'from_previous', s.previous_price, 'listing_price', s.listing_price), a);
+  RETURN jsonb_build_object('symbol', s.symbol, 'name', s.name, 'issue_price', s.base_price, 'listing_price', s.listing_price,
+                            'change_pct', round(v_pct, 2));
+END $$;
+
+-- Listing status of every IPO; the saved price is visible only to administrators until the IPO lists.
+CREATE OR REPLACE FUNCTION jse_listing_state(a jsonb) RETURNS jsonb LANGUAGE sql STABLE AS $$
+  SELECT coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'symbol', s.symbol, 'name', s.name, 'issue_price', s.base_price, 'price', s.price,
+           'listing_saved', s.listing_price IS NOT NULL,
+           'listing_price', CASE WHEN a->>'role' = 'ADMIN' OR s.listed_at IS NOT NULL THEN s.listing_price END,
+           'gain_pct', CASE WHEN (a->>'role' = 'ADMIN' OR s.listed_at IS NOT NULL) AND s.listing_price IS NOT NULL
+                            THEN round(jse_pct(s.listing_price, s.base_price), 2) END,
+           'listed', s.listed_at IS NOT NULL, 'listed_at', s.listed_at, 'set_at', s.listing_set_at, 'set_by', s.listing_set_by,
+           'traded', s.trade_count > 0) ORDER BY s.display_order, s.id), '[]'::jsonb)
+  FROM securities s WHERE s.kind = 'IPO' AND s.active
+$$;
+
+CREATE OR REPLACE FUNCTION jse_ipo_listing(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(p->>'action', 'SET'));
+  cfg event_config%ROWTYPE; v_status text; r jsonb; x jsonb; s securities%ROWTYPE; v_price numeric; v_i integer := 0;
+  v_errors jsonb := '[]'::jsonb; v_rows jsonb := '[]'::jsonb; v_out jsonb := '[]'::jsonb; v_one jsonb;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR UPDATE;
+  IF v_status NOT IN ('NOT_STARTED', 'LIVE', 'SETTLEMENT_ONLY') THEN
+    PERFORM jse_fail('EVENT_CLOSED', 'IPO listing is not possible after the market has closed.', 409);
+  END IF;
+
+  IF v_action = 'SET' THEN
+    IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
+      PERFORM jse_fail('NO_ROWS', 'Enter at least one listing price.', 400);
+    END IF;
+    FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+      v_i := v_i + 1;
+      SELECT * INTO s FROM securities WHERE kind = 'IPO' AND symbol = upper(trim(coalesce(r->>'ipo', r->>'symbol', '')));
+      IF NOT FOUND THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown IPO ' || coalesce(r->>'ipo', r->>'symbol', '(blank)')); CONTINUE; END IF;
+      IF s.listed_at IS NOT NULL THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ' is already listed'); CONTINUE; END IF;
+      IF nullif(trim(coalesce(r->>'listing_price', '')), '') IS NULL THEN
+        v_rows := v_rows || jsonb_build_object('id', s.id, 'symbol', s.symbol, 'price', NULL);   -- blank = no listing price
+        CONTINUE;
+      END IF;
+      BEGIN v_price := (r->>'listing_price')::numeric; EXCEPTION WHEN others THEN v_price := NULL; END;
+      IF v_price IS NULL OR v_price <= 0 THEN
+        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': enter a positive price'); CONTINUE;
+      END IF;
+      IF v_price <> jse_round_tick(v_price, cfg.price_tick) THEN
+        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': use whole rupees (price step ₹' || cfg.price_tick || ')'); CONTINUE;
+      END IF;
+      IF v_price < s.base_price * 0.5 OR v_price > s.base_price * 2 THEN
+        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': the listing price must be between 50% and 200% of the issue price ₹' || s.base_price);
+        CONTINUE;
+      END IF;
+      v_rows := v_rows || jsonb_build_object('id', s.id, 'symbol', s.symbol, 'price', v_price);
+    END LOOP;
+    IF jsonb_array_length(v_errors) > 0 THEN
+      RETURN jsonb_build_object('success', false, 'code', 'LISTING_ERRORS', 'error', 'Nothing was saved. Fix the rows listed.', 'errors', v_errors, 'http', 400);
+    END IF;
+    FOR x IN SELECT value FROM jsonb_array_elements(v_rows) LOOP
+      UPDATE securities SET listing_price = (x->>'price')::numeric, listing_set_at = now(), listing_set_by = jse_actor_name(a) WHERE id = (x->>'id')::integer;
+    END LOOP;
+    -- the prices themselves stay out of the audit trail until the IPO lists (IPO_LISTED records them)
+    PERFORM jse_audit(a, 'IPO_LISTING_PRICES_SAVED', 'security', NULL, NULL, NULL, NULL, NULL,
+      jsonb_build_object('ipos', (SELECT jsonb_agg(e->>'symbol') FROM jsonb_array_elements(v_rows) e),
+                         'with_price', (SELECT count(*) FROM jsonb_array_elements(v_rows) e WHERE e->>'price' IS NOT NULL)));
+    RETURN jsonb_build_object('success', true, 'saved', jsonb_array_length(v_rows), 'listing', jse_listing_state(a));
+
+  ELSIF v_action = 'CLEAR' THEN
+    UPDATE securities SET listing_price = NULL, listing_set_at = now(), listing_set_by = jse_actor_name(a)
+    WHERE kind = 'IPO' AND listed_at IS NULL AND listing_price IS NOT NULL;
+    GET DIAGNOSTICS v_i = ROW_COUNT;
+    PERFORM jse_audit(a, 'IPO_LISTING_PRICES_CLEARED', 'security', NULL, NULL, NULL, NULL, NULL, jsonb_build_object('cleared', v_i));
+    RETURN jsonb_build_object('success', true, 'cleared', v_i, 'listing', jse_listing_state(a));
+
+  ELSIF v_action = 'APPLY' THEN
+    FOR s IN SELECT * FROM securities
+             WHERE kind = 'IPO' AND active AND listing_price IS NOT NULL AND listed_at IS NULL
+               AND (jsonb_typeof(p->'symbols') IS DISTINCT FROM 'array'
+                    OR symbol IN (SELECT upper(trim(v)) FROM jsonb_array_elements_text(p->'symbols') v))
+             ORDER BY display_order, id LOOP
+      v_one := jse__list_ipo(a, s.id);
+      IF v_one IS NOT NULL THEN v_out := v_out || jsonb_build_array(v_one); END IF;
+    END LOOP;
+    IF jsonb_array_length(v_out) = 0 THEN
+      PERFORM jse_fail('NOTHING_TO_LIST', 'No saved listing price is waiting to be applied.', 409);
+    END IF;
+    UPDATE event_control SET market_updated_at = now() WHERE id = 1;
+    RETURN jsonb_build_object('success', true, 'listed', v_out, 'listing', jse_listing_state(a));
+  END IF;
+  PERFORM jse_fail('INVALID_ACTION', 'Use SET, CLEAR or APPLY.', 400);
+  RETURN NULL;
+END $$;
+
+-- ---------------------------------------------------------------------------
 -- Reset: clean starting state. Audit history is archived, not lost.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION jse_reset_event(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
@@ -468,8 +593,9 @@ BEGIN
                    interest_paid = 0, principal_repaid = 0, draws = 0, status = 'NONE', updated_at = now();
   INSERT INTO loans(team_id) SELECT id FROM teams ON CONFLICT (team_id) DO NOTHING;
   UPDATE institutions SET cash = initial_cash, updated_at = now();
+  -- saved IPO listing prices are kept (they list again at the next START); the listing itself is undone
   UPDATE securities SET price = base_price, previous_price = base_price, trade_count = 0, traded_quantity = 0, traded_value = 0,
-                        last_trade_at = NULL, updated_at = now();
+                        last_trade_at = NULL, listed_at = NULL, updated_at = now();
   INSERT INTO cash_ledger(team_id, entry_type, credit, balance_after, note, actor_id, actor_name)
   SELECT id, 'INITIAL_CAPITAL', cfg.initial_capital, cfg.initial_capital, 'Initial event capital', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM teams;
   INSERT INTO institution_ledger(institution_id, entry_type, credit, balance_after, note, actor_id, actor_name)
@@ -678,6 +804,27 @@ BEGIN
       VALUES (s.id, s.price, n.new_price, jse_pct(n.new_price, s.price), 'REDO', n.id);
       UPDATE market_news SET reversed_at = NULL, created_at = now() WHERE id = n.id;
     END IF;
+  ELSIF j.action = 'IPO_LISTING' THEN
+    SELECT * INTO s FROM securities WHERE id = (j.payload->>'security_id')::integer FOR UPDATE;
+    IF v_action = 'UNDO' THEN
+      IF s.listed_at IS NULL THEN PERFORM jse_fail('ALREADY_UNDONE', s.symbol || ' is not listed.', 409); END IF;
+      IF s.price <> (j.payload->>'listing_price')::numeric OR s.trade_count > 0
+         OR EXISTS (SELECT 1 FROM price_history ph WHERE ph.security_id = s.id AND ph.created_at > s.listed_at) THEN
+        PERFORM jse_fail('UNSAFE_UNDO', s.symbol || ' has traded or moved since listing. Undo the later actions first.', 409);
+      END IF;
+      UPDATE securities SET price = (j.payload->>'from_price')::numeric, previous_price = (j.payload->>'from_previous')::numeric,
+             listed_at = NULL, updated_at = now() WHERE id = s.id;
+      INSERT INTO price_history(security_id, previous_price, new_price, change_pct, source)
+      VALUES (s.id, s.price, (j.payload->>'from_price')::numeric, jse_pct((j.payload->>'from_price')::numeric, s.price), 'UNDO');
+    ELSE
+      IF s.listed_at IS NOT NULL THEN PERFORM jse_fail('NOT_UNDONE', s.symbol || ' is already listed.', 409); END IF;
+      IF s.price <> (j.payload->>'from_price')::numeric OR s.trade_count > 0 THEN
+        PERFORM jse_fail('UNSAFE_REDO', s.symbol || ' has moved since; save the listing price and list it again instead.', 409);
+      END IF;
+      UPDATE securities SET previous_price = price, price = (j.payload->>'listing_price')::numeric, listed_at = now(), updated_at = now() WHERE id = s.id;
+      INSERT INTO price_history(security_id, previous_price, new_price, change_pct, source)
+      VALUES (s.id, s.price, (j.payload->>'listing_price')::numeric, jse_pct((j.payload->>'listing_price')::numeric, s.price), 'REDO');
+    END IF;
   ELSIF j.action = 'EVENT_STATUS' THEN
     v_from := j.payload->>'from'; v_to := j.payload->>'to';
     IF v_action = 'UNDO' THEN
@@ -734,6 +881,7 @@ BEGIN
     auto_loan_on_settlement = coalesce((p->>'auto_loan_on_settlement')::boolean, auto_loan_on_settlement),
     participant_order_entry = coalesce((p->>'participant_order_entry')::boolean, participant_order_entry),
     institution_overdraft   = coalesce((p->>'institution_overdraft')::boolean, institution_overdraft),
+    auto_list_ipos          = coalesce((p->>'auto_list_ipos')::boolean, auto_list_ipos),
     updated_at = now(), updated_by = jse_actor_name(a)
   WHERE id = 1;
   IF p ? 'institutional_cash' THEN UPDATE institutions SET initial_cash = (p->>'institutional_cash')::numeric; END IF;
