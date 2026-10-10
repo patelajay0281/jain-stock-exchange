@@ -75,7 +75,7 @@ Commits whose message contains `[skip ci]` do not trigger a Pages build.
    - `DB_NAME` = `jse_stage` (staging) or `jse` (production)
    - staging only: `CI_OIDC_REPOSITORY=patelajay0281/jain-stock-exchange`, `CI_OIDC_REFS=refs/heads/v272`, `CI_OIDC_AUDIENCE=jse-staging`
    - optional: `DB_POOL_MAX` (default 8), `CORS_ORIGINS` (extra allowed origins, comma separated)
-3. The first request after the release applies any new migrations.
+3. The first request after the release applies any new migrations. Release before or after the event, not during trading: a migration briefly locks the tables it changes.
 The loader zip is `backend/loader/index.mjs` zipped as `index.mjs`; it only needs redeploying when the loader itself changes.
 
 **Production cutover (needs the organiser's go-ahead).** Create database `jse` and function `jse` (same loader, `DB_NAME=jse`, no `CI_OIDC_*`),
