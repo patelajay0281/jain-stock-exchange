@@ -25,7 +25,12 @@ Neon Postgres 18 — PL/pgSQL financial engine (db/migrations), append-only ledg
 | API | `backend/src/` | `server.ts` routes and permissions, `db.ts` pool, error mapping and auto-migrations, `xlsx.ts` Excel writer, `oidc.ts` staging-only CI sign-in. Built to `backend/dist/app.mjs`. |
 | Loader | `backend/loader/index.mjs` | What is deployed to Neon Functions: downloads the API bundle named by `APP_URL` (GitHub raw, jsDelivr mirror), verifies `APP_SHA256`, caches it. A release = change two environment variables. |
 | Database | `db/migrations/` | `001_schema` tables and constraints · `001a_upgrades` additive changes · `002_core` auth, orders, Exchange, Bank settlement · `003_ops` institutional, loans, Market News, event control, IPO allotment and listing, reset, undo/redo, admin · `004_reads` read models · `005_exports` 23 export sheets · `006_seed` teams, brokers, securities, accounts · `007_tuning` timeouts. Applied automatically by the API on first request (advisory-locked, replayable files re-applied when they change). |
-| Tests | `tests/` | API end-to-end (`api.test.mjs`, `listing.test.mjs`), browser smoke test of all pages (`ui_smoke.py`), stress test with integrity audit (`stress.mjs`), load generator (`load.mjs`), staging CI runner (`ci/`). |
+| Tests | `tests/` | API end-to-end (`api.test.mjs`, `listing.test.mjs`), browser smoke tests of all pages (`ui_smoke.py` local, `ui_staging.py` deployed site), stress test with integrity audit (`stress.mjs`), load generator (`load.mjs`), staging CI runner (`ci/`). |
+
+**Live updates: polling, not SSE.** The master prompt prefers WebSocket/SSE "if practical". On Neon Functions every open SSE/WebSocket
+stream holds one function invocation, and an account is limited to about 100 concurrent invocations, so 500 open market screens cannot
+each hold a stream. The pages therefore poll with ETags (market every 2.5 s, desks every 2.5–5 s, only while the tab is visible, backing
+off on errors); unchanged data comes back as a tiny `304`, and the API answers market reads from a ~1 s in-memory cache.
 
 ## Environments and URLs
 
@@ -132,3 +137,4 @@ function invocations by default; the API answers cached reads in a few milliseco
 
 - `docs/API.md` — every endpoint, roles, inputs and errors
 - `docs/TEST-REPORT.md` — test, stress and load results
+- `docs/OPERATIONS.md` — event-day desk guide
