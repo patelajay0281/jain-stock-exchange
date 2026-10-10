@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 12px 10px; font-size: 14px; }
@@ -21,16 +21,28 @@
   .j-undone td { color: var(--muted); text-decoration: line-through; }
   .cfg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 14px; }
   @media (max-width: 900px) { .cfg-grid { grid-template-columns: 1fr 1fr; } }
-  details > summary { cursor: pointer; font-weight: 700; color: var(--navy); }
+  .mi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .mi .box { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; background: var(--surface-2); min-width: 0; }
+  .mi .box h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-2); }
+  .mi .box .v { font-size: 19px; font-weight: 900; color: var(--navy); }
+  .mi ul { margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
+  .mi li { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+  .mi .wide2 { grid-column: span 2; }
+  @media (max-width: 1100px) { .mi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .alerts li { padding: 4px 0; }
+  .consistency { margin-bottom: 14px; }
+  textarea.pv { min-height: 70px; font-family: var(--font); font-size: 13px; }
 </style>
 </head>
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">Chief Stock Exchange Controller</div><h1>Event Admin</h1><p>Start, pause, close and finalize the market, publish Market News, load IPO allotments, manage accounts and export the final report.</p></div>
+    <div><div class="eyebrow">Event Admin · Chief Stock Exchange Controller</div><h1>Event Admin</h1>
+      <p>Lifecycle controls, Market News (the only price engine), Market Intelligence, team names, roster imports, the IPO round, Rules &amp; Configuration, accounts and the final reports. Material changes are confirmed with your administrator password.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
   <div class="kpis k5" id="kpis"></div>
+  <div id="consistency" class="consistency"></div>
 
   <div class="grid cols-2">
     <section class="card">
@@ -46,74 +58,103 @@
           <button class="btn primary" data-ev="FINALIZE">FINALIZE EVENT</button>
         </div>
         <div class="row admin-only" style="margin-top:10px">
-          <button class="btn sm" id="undoLast" type="button">↶ Undo last action</button>
+          <button class="btn sm" id="undoLast" type="button">↶ Undo last settlement / action</button>
           <button class="btn sm" id="redoLast" type="button">↷ Redo</button>
-          <button class="btn sm bad" id="rejectOpen" type="button">Reject all open orders</button>
+          <button class="btn sm bad" id="rejectOpen" type="button">Reject open orders</button>
         </div>
         <div class="danger admin-only">
-          <div class="row between"><div><b>Reset event</b><div class="small muted">Restores ₹20,00,000 per team, ₹2,00,00,000 institutional cash and base prices (IPOs ₹890 / ₹780 / ₹620 / ₹710). Clears orders, settlements, holdings, ledgers, commissions, news, price history, loans and attempt counters. Audit history is archived. Allowed when the market is not LIVE.</div></div></div>
+          <div><b>Reset event + base prices</b><div class="small muted" id="resetText">Restores the starting capital for every team, institutional cash and base prices; IPOs return to the pre-market stage. Clears orders, slips, instructions, settlements, holdings, ledgers, commissions, news, price history, loans and attempt counters. Audit history is archived. Team names, saved listing prices and IPO applications are kept. Allowed when the market is not LIVE.</div></div>
           <div class="row" style="margin-top:8px"><label class="check"><input type="checkbox" id="keepAllot" checked> Keep loaded IPO allotments</label><button class="btn bad sm" id="resetBtn" type="button">RESET EVENT…</button></div>
         </div>
       </div>
     </section>
 
     <section class="card">
-      <div class="card-h"><h2>Market News</h2><span class="small muted">Admin only · source MARKET_NEWS</span></div>
+      <div class="card-h"><div class="fox-h"><span class="fox-mark">FOX</span><h2>Market News</h2></div><span class="small muted">The only way prices change</span></div>
       <div class="card-b">
         <div class="form-grid">
           <div class="field span-2"><label for="nSec">Company</label><select class="input" id="nSec"></select></div>
+          <div class="field span-2"><label for="nHead">Headline</label><input class="input" id="nHead" maxlength="240" placeholder="e.g. Voltra Motors wins a ₹2,000 crore battery order"></div>
         </div>
-        <div class="label" style="margin:12px 0 6px">Market mood</div>
+        <div class="label" style="margin:12px 0 6px">News severity</div>
         <div class="moods" id="moods"></div>
-        <div class="row between" style="margin-top:12px"><span class="small muted">Headline: <b id="nHead">Automatic … market impact</b> · a random % inside the band, capped at ±10%.</span>
+        <div class="row between" style="margin-top:12px"><span class="small muted">The engine picks a random move inside the severity band (cap ±10%). No manual price input exists.</span>
           <button class="btn primary admin-only" id="nGo" type="button">Publish news</button></div>
       </div>
-      <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Time</th><th>Security</th><th>Mood</th><th class="num">Move</th><th class="num">Price</th></tr></thead><tbody id="news"></tbody></table></div></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:240px"><table class="t"><thead><tr><th>Time</th><th>Company</th><th>Severity · headline</th><th class="num">Move</th><th class="num">Price</th></tr></thead><tbody id="news"></tbody></table></div></div>
     </section>
+  </div>
 
+  <section class="card" style="margin-top:14px" id="intelligence">
+    <div class="card-h"><h2>Market Intelligence</h2><span class="small muted" id="miMeta">Live · same data as portfolios and order tracking</span></div>
+    <div class="card-b"><div class="mi" id="mi"><div class="muted">Loading…</div></div></div>
+  </section>
+
+  <div class="grid cols-2" style="margin-top:14px">
     <section class="card">
-      <div class="card-h"><h2>Undo / Redo journal</h2><span class="small muted">Undo is allowed only when it is safe (latest change on that security, cash still available)</span></div>
+      <div class="card-h"><h2>Undo / Redo journal</h2><span class="small muted">Only when safe; settlement undo returns cash and holdings (prices are never touched)</span></div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:380px"><table class="t"><thead><tr><th>Time</th><th>Action</th><th>By</th><th>State</th><th class="actions"></th></tr></thead><tbody id="journal"></tbody></table></div></div>
     </section>
 
     <section class="card">
-      <div class="card-h"><h2>IPO allotments</h2><span class="small muted" id="allotSum"></span></div>
+      <div class="card-h"><h2>Team identity</h2><span class="small muted" id="tnSum"></span></div>
       <div class="card-b">
-        <p class="small muted" style="margin-top:0">Paste or upload the final lucky-draw allotment (CSV columns: <span class="mono">team, ipo, lots</span>; 1 lot = 50 shares at the IPO price, no brokerage). Allowed before START only. Nothing is loaded unless every row is valid.</p>
-        <textarea class="input" id="allotCsv" placeholder="team,ipo,lots&#10;TEAM-001,VOLTRA,2&#10;TEAM-001,BLUEAI,1&#10;TEAM-002,AAROGYA,4"></textarea>
-        <div class="row" style="margin-top:8px">
-          <input type="file" id="allotFile" accept=".csv,text/csv" class="small">
-          <label class="check"><input type="checkbox" id="allotReplace"> Replace existing allotments for these teams</label>
-        </div>
-        <div class="row admin-only" style="margin-top:10px"><button class="btn primary" id="allotGo" type="button">Validate &amp; load allotments</button><button class="btn sm bad" id="allotClear" type="button">Remove all allotments</button></div>
-        <div id="allotResult" style="margin-top:10px"></div>
+        <p class="small muted" style="margin-top:0">Every team gets a unique name from the curated Indian Knowledge System pool. The assignment is random but reproducible (same seed + same pool → same names) and is locked automatically when the event starts.</p>
+        <div class="row admin-only"><button class="btn sm primary" id="tnRandom" type="button">Randomize names (new seed)…</button><button class="btn sm" id="tnLock" type="button">Lock names…</button><button class="btn sm" id="tnUnlock" type="button">Unlock…</button></div>
       </div>
-      <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO</th><th class="num">Teams</th><th class="num">Lots</th><th class="num">Shares</th><th class="num">Amount</th></tr></thead><tbody id="allotTable"></tbody></table></div></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:300px"><table class="t"><thead><tr><th>Team</th><th>Team name</th><th>Meaning</th><th>Broker</th></tr></thead><tbody id="tnRows"></tbody></table></div></div>
     </section>
 
     <section class="card">
-      <div class="card-h"><h2>IPO listing prices</h2><span class="small muted" id="listSum">Confidential until listed</span></div>
+      <div class="card-h"><h2>Roster import (Excel / CSV)</h2></div>
       <div class="card-b">
-        <p class="small muted" style="margin-top:0">Save each IPO's listing price before the event. Saved prices are visible only to administrators. At listing the IPO moves from its issue price to the listing price (price history source LISTING); after that trading follows the normal ±10% rule.</p>
+        <div class="form-grid">
+          <div class="field"><label for="impKind">Import</label><select class="input" id="impKind">
+            <option value="teams">Teams — Team, Team Name, Section, Broker, Members</option>
+            <option value="brokers">Brokers — Broker Code, Broker Name (Contact, Desk)</option>
+            <option value="allotments">IPO allotments — Team, IPO, Lots, Shares, Amount</option></select></div>
+          <div class="field"><label for="impFile">File (.xlsx or .csv)</label><input type="file" id="impFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="input"></div>
+        </div>
+        <div class="row" style="margin-top:8px"><label class="check hidden" id="impReplaceWrap"><input type="checkbox" id="impReplace"> Replace existing allotments for these teams</label>
+          <a class="small" href="#" id="impTemplate">Download the current list as a template</a></div>
+        <div class="row admin-only" style="margin-top:10px"><button class="btn sm" id="impCheck" type="button">Validate only</button><button class="btn sm primary" id="impGo" type="button">Validate &amp; import…</button></div>
+        <div id="impResult" style="margin-top:10px"></div>
+        <p class="small muted" style="margin:8px 0 0">Every row is validated first; nothing is saved unless the whole file is valid. Team names must come from the IKS pool and cannot change once names are locked. teams.broker_id stays the one broker assignment.</p>
       </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Brokers (communicated to participants)</h2><span class="small muted" id="brSum"></span></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:320px"><table class="t"><thead><tr><th>Broker</th><th>Name</th><th>Desk</th><th>Contact</th><th class="num">Teams</th></tr></thead><tbody id="brRows"></tbody></table></div></div>
+      <div class="card-b"><div class="row"><button class="btn sm" type="button" id="rosterCsv">Export broker roster (CSV)</button><button class="btn sm" type="button" id="teamsCsv">Export team roster (CSV)</button></div></div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>IPO round</h2><span class="small muted" id="ipoWin"></span></div>
+      <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO</th><th>Stage</th><th class="num">Applications</th><th class="num">Lots applied</th><th>Prospectus</th></tr></thead><tbody id="ipoRows"></tbody></table></div></div>
+      <div class="card-b"><div class="row"><button class="btn sm" type="button" id="appsCsv">Export applications (CSV)</button><button class="btn sm" type="button" id="allotCsv">Export allotments (CSV)</button>
+        <button class="btn sm bad admin-only" type="button" id="appsClear">Clear applications…</button></div>
+        <p class="small muted" style="margin:8px 0 0">The window opens exactly 48 hours before the configured event start. Participants apply on the IPO page; run the allotment from the applications, then import the allotment file (Team, IPO, Lots, Shares, Amount).</p></div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>IPO allotments</h2><span class="small muted" id="allotSum"></span></div>
+      <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO</th><th class="num">Teams</th><th class="num">Lots</th><th class="num">Shares</th><th class="num">Amount</th></tr></thead><tbody id="allotTable"></tbody></table></div></div>
+      <div class="card-b admin-only"><div class="row"><button class="btn sm bad" id="allotClear" type="button">Remove all allotments…</button></div>
+        <p class="small muted" style="margin:8px 0 0">Allotments are loaded with the roster import (before START). Cash is deducted at the issue price with no brokerage; allotments are not assessment trades.</p></div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>IPO listing</h2><span class="small muted" id="listSum">Confidential until listed</span></div>
+      <div class="card-b"><p class="small muted" style="margin-top:0">Save each IPO's listing price before the event (visible only to administrators). At listing the IPO moves to the listing price, joins the listed market and becomes a CMS INDEX component exactly once. With automatic listing on, START EVENT lists every IPO (at the saved price, otherwise at the issue price).</p></div>
       <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO</th><th class="num">Issue price</th><th class="num">Listing price (₹)</th><th class="num">vs issue</th><th>Status</th></tr></thead><tbody id="listRows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table></div></div>
       <div class="card-b admin-only">
-        <label class="check"><input type="checkbox" id="autoList"> List automatically when START EVENT is pressed</label>
+        <div class="small" id="autoListText"></div>
         <div class="row" style="margin-top:10px">
-          <button class="btn primary sm" id="listSave" type="button">Save listing prices</button>
+          <button class="btn primary sm" id="listSave" type="button">Save listing prices…</button>
           <button class="btn good sm" id="listApply" type="button">List IPOs now…</button>
-          <button class="btn sm bad" id="listClear" type="button">Clear saved prices</button>
+          <button class="btn sm bad" id="listClear" type="button">Clear saved prices…</button>
         </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-h"><h2>Teams &amp; brokers</h2></div>
-      <div class="card-b">
-        <p class="small muted" style="margin-top:0">Update team names, sections, members and broker assignment (CSV columns: <span class="mono">team, name, section, broker, members</span>). Broker names: <span class="mono">broker, name</span>.</p>
-        <textarea class="input" id="teamCsv" placeholder="team,name,section,broker,members&#10;TEAM-001,Bull Runners,BBA A,BROKER-01,Asha; Rahul; Meera"></textarea>
-        <div class="row admin-only" style="margin-top:8px"><button class="btn primary sm" id="teamGo" type="button">Update teams</button><button class="btn sm" id="brokerGo" type="button">Update broker names (same box)</button></div>
-        <div id="teamResult" style="margin-top:8px"></div>
       </div>
     </section>
 
@@ -121,7 +162,7 @@
       <div class="card-h"><h2>Rules &amp; configuration</h2><span class="small muted" id="cfgUpd"></span></div>
       <div class="card-b">
         <div class="cfg-grid" id="cfg"></div>
-        <div class="row admin-only" style="margin-top:12px"><button class="btn primary sm" id="cfgSave" type="button">Save configuration</button></div>
+        <div class="row admin-only" style="margin-top:12px"><button class="btn primary sm" id="cfgSave" type="button">Save configuration…</button><span class="small muted">The saved configuration is the single source of truth for every page and rule.</span></div>
       </div>
     </section>
 
@@ -129,89 +170,120 @@
       <div class="card-h"><h2>Accounts &amp; passwords</h2><span class="small muted" id="userSum"></span></div>
       <div class="card-b admin-only">
         <div class="row">
-          <select class="input" id="roleSel" style="max-width:220px"><option value="BROKER">Brokers / Pit managers</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
+          <select class="input" id="roleSel" style="max-width:240px"><option value="BROKER">Brokers (BROKER-01…10)</option><option value="PIT_MANAGER">Pit Managers (PIT-01…10)</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
             <option value="INSTITUTIONAL">Institutional desk</option><option value="VIEWER">Faculty viewers</option><option value="PARTICIPANT">Participant teams (100)</option><option value="ADMIN">Administrators</option></select>
           <button class="btn sm" id="issueBtn" type="button">Issue new passwords for this role…</button>
         </div>
         <p class="small muted">New passwords are shown once and downloaded as a CSV. Old sessions for those accounts are signed out.</p>
       </div>
-      <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Username</th><th>Role</th><th>Team</th><th>Last sign-in</th><th>Status</th><th class="actions"></th></tr></thead><tbody id="users"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Username</th><th>Role</th><th>Broker</th><th>Last sign-in</th><th>Status</th><th class="actions"></th></tr></thead><tbody id="users"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
     </section>
 
     <section class="card">
       <div class="card-h"><h2>Reports &amp; exports</h2></div>
       <div class="card-b stack">
-        <div><button class="btn primary" id="xlsx" type="button">Download final event report (Excel)</button>
-          <div class="small muted" style="margin-top:6px">Winner, team & participant details, brokers, cash, holdings, sold stocks/IPOs, net worth & P/L, loans & interest, cash rule, risk attempts, order tracking, rejected orders, trade history, cash ledger, broker commission, institutional, market news, price history and audit logs.</div></div>
-        <div class="row"><select class="input" id="sheetSel" style="max-width:280px"></select><button class="btn sm" id="csvBtn" type="button">Download CSV</button></div>
+        <div class="row"><button class="btn primary" id="xlsx" type="button">Final Event Excel</button><button class="btn" id="jsonBtn" type="button">Final Event JSON</button><button class="btn" id="winnerCsv" type="button">Winner &amp; Runner-Up CSV</button></div>
+        <div class="small muted">Excel and JSON contain every sheet: Winner &amp; Runner-Up, assessment &amp; eligibility, teams, participants, broker roster and performance, cash, holdings, net worth, loans, cash rule, risk attempts, order tracking, trading slips, instructions, trades, cash ledger, broker commission, institutional, IPO applications &amp; allotments, Market News, price history, action journal and audit log.</div>
+        <div class="row"><select class="input" id="sheetSel" style="max-width:300px"></select><button class="btn sm" id="csvBtn" type="button">Download CSV</button></div>
       </div>
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
   "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
-  var S = { st: null, admin: false, mood: null, users: null };
+  var S = { st: null, admin: false, mood: null, users: null, market: null, names: null };
   var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
     ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
-  var SHEETS = [["winner", "Winner"], ["networth", "Net Worth & P/L"], ["teams", "Team Details"], ["participants", "Participant Details"], ["brokers", "Broker Details"], ["cash", "Cash"], ["holdings", "Holdings"],
-    ["sold_stocks", "Sold Stocks"], ["sold_ipos", "Sold IPOs"], ["loans", "Loans & Interest"], ["cash_rule", "Cash Rule"], ["short_sell", "Short Selling Attempts"], ["cash_shortfall", "Cash Shortfall Attempts"],
-    ["insufficient_balance", "Insufficient Balance Rejections"], ["orders", "Order Tracking"], ["rejected", "Rejected Orders"], ["trades", "Trade History"], ["ledger", "Cash Ledger"], ["commission", "Broker Commission"],
-    ["institutional", "Institutional Investors"], ["news", "Market News"], ["prices", "Price History"], ["audit", "Audit Logs"]];
-  var CFG_FIELDS = [["event_name", "Event name", "text"], ["max_price_move_pct", "Max price move per order (%)", "number"], ["brokerage_rate", "Brokerage rate (0.005 = 0.5%)", "number"],
-    ["min_order_value", "Minimum order value (₹)", "number"], ["max_order_value", "Maximum order value (₹)", "number"], ["min_cash_buffer", "Minimum cash buffer (₹)", "number"],
-    ["cash_rule_limit", "Closing cash limit (₹)", "number"], ["loan_max_principal", "Max loan principal (₹)", "number"], ["loan_interest_rate", "Loan interest (0.02 = 2%)", "number"],
-    ["initial_capital", "Starting capital per team (₹)", "number"], ["institutional_cash", "Institutional starting cash (₹)", "number"],
-    ["loans_enabled", "Borrowing permitted", "bool"], ["auto_loan_on_settlement", "Auto loan at Bank settlement", "bool"], ["participant_order_entry", "Participants may enter their own orders", "bool"], ["institution_overdraft", "Institution may exceed its cash", "bool"]];
+  var SHEETS = [["winner", "Winner & Runner-Up"], ["assessment", "Assessment & Eligibility"], ["networth", "Net Worth & P/L"], ["teams", "Team Details (import template)"], ["participants", "Participant Details"],
+    ["broker_roster", "Broker Roster (import template)"], ["brokers", "Broker Performance"], ["cash", "Cash"], ["holdings", "Holdings"], ["sold_stocks", "Sold Stocks"], ["sold_ipos", "Sold IPOs"],
+    ["loans", "Loans & Interest"], ["cash_rule", "Cash Rule"], ["short_sell", "Short Selling Attempts"], ["cash_shortfall", "Cash Shortfall Attempts"], ["insufficient_balance", "Insufficient Balance Rejections"],
+    ["orders", "Order Tracking"], ["rejected", "Rejected Orders"], ["slips", "Trading Slips"], ["instructions", "Participant Instructions"], ["trades", "Trade History"], ["ledger", "Cash Ledger"],
+    ["commission", "Broker Commission"], ["institutional", "Institutional Investors"], ["ipo_applications", "IPO Applications"], ["ipo_allotments", "IPO Allotments (import template)"],
+    ["news", "Market News"], ["prices", "Price History"], ["journal", "Action Journal"], ["audit", "Audit Logs"]];
+  var CFG = [["event_name", "Event name", "text"], ["event_start_at", "Event start (IST)", "datetime"], ["max_price_move_pct", "Maximum price movement (%) — cap ±10%", "number"],
+    ["brokerage_rate", "Brokerage rate (%)", "pct"], ["min_order_value", "Minimum order value (₹)", "number"], ["max_order_value", "Maximum order value (₹)", "number"],
+    ["cash_rule_limit", "Closing cash limit (₹)", "number"], ["initial_capital", "Starting capital per team (₹)", "number"], ["loan_max_principal", "Maximum loan principal (₹)", "number"],
+    ["loan_interest_rate", "Loan interest rate (%)", "pct"], ["min_buy_trades", "Minimum settled BUY trades", "int"], ["min_sell_trades", "Minimum settled SELL trades", "int"],
+    ["ipo_application_hours", "IPO application window (hours from opening)", "number"], ["institutional_cash", "Institutional starting cash (₹)", "number"],
+    ["loans_enabled", "Borrowing permitted", "bool"], ["auto_loan_on_settlement", "Bank draws a loan for a BUY shortfall", "bool"], ["loan_repayment_required", "Full loan repayment required for eligibility", "bool"],
+    ["auto_list_ipos", "List IPOs automatically at START EVENT", "bool"], ["institution_overdraft", "Institution may exceed its cash", "bool"], ["institution_brokerage", "Brokerage on institutional orders", "bool"]];
 
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+  function istLocal(ts) { if (!ts) return ""; var d = new Date(new Date(ts).getTime() + 5.5 * 3600000); return d.toISOString().slice(0, 16); }
+  function errList(e) { var errs = (e.data && e.data.errors) || []; return errs.length ? "<ul>" + errs.slice(0, 60).map(function (x) { return "<li>" + (x.row ? "Row " + x.row + ": " : "") + esc(x.error) + "</li>"; }).join("") + "</ul>" : ""; }
+
+  // runs a material admin action: one password dialog, then the API call
+  async function confirmed(opts, path, body) {
+    var pw = await JSE.adminConfirm(opts);
+    if (!pw) return null;
+    body = Object.assign({}, body || {}, { admin_password: pw });
+    return JSE.api.post(path, body);
+  }
 
   function render() {
     var d = S.st; if (!d) return;
-    var c = d.counts, st = d.stats, m = d.market || {};
-    $("kpis").innerHTML = kpi("Teams", F.num(c.teams), "brokers " + F.num(c.brokers), "accent") + kpi("Stocks · IPOs", F.num(c.stocks) + " · " + F.num(c.ipos), "listed", "info") +
-      kpi("Pending orders", F.num(st.pending_orders), F.num(c.exchange_pending) + " Exchange · " + F.num(c.bank_pending) + " Bank", "warn") +
-      kpi("Settled orders", F.num(st.settled_orders), F.num(st.institutional_orders) + " institutional", "good") + kpi("Rejected orders", F.num(st.rejected_orders), "Exchange + Bank", "bad") +
-      kpi("Total trade value", F.short(st.total_trade_value), "settled", "info") + kpi("Total brokerage", F.money(st.total_brokerage), "0.5% of settled value", "info") +
-      kpi("CMS Index", m.index ? new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(N(m.index.value)) : "—", m.index ? F.pct(m.index.change_pct) + " · ▲" + m.breadth.advances + " ▼" + m.breadth.declines : "", "accent") +
+    var c = d.counts, st = d.stats, m = d.market || {}, ix = m.index || {};
+    $("kpis").innerHTML = kpi("Teams · brokers", F.num(c.teams) + " · " + F.num(c.brokers), N(d.unassigned_teams) ? d.unassigned_teams + " without a broker" : "all assigned", N(d.unassigned_teams) ? "warn" : "accent") +
+      kpi("Awaiting Pit Manager", F.num(c.pit_pending), F.num(st.open_instructions) + " open instructions", "info") +
+      kpi("At Exchange · Bank", F.num(c.exchange_pending) + " · " + F.num(c.bank_pending), "executed, not yet settled", "warn") +
+      kpi("Settled orders", F.num(st.settled_orders), F.num(st.slips) + " trading slips", "good") + kpi("Rejected", F.num(st.rejected_orders), F.num(st.stale_orders) + " price stale", "bad") +
+      kpi("Total trade value", F.short(st.total_trade_value), "settled", "info") + kpi("Total brokerage", F.money(st.total_brokerage), "rate " + JSE.rate(d.config.brokerage_rate), "info") +
+      kpi("CMS INDEX", ix.value !== undefined ? new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(N(ix.value)) : "—", (ix.components || 0) + " components · " + F.pct(ix.change_pct), "accent") +
       kpi("Risk events", F.num(N(st.risk.short_sell) + N(st.risk.cash_shortfall) + N(st.risk.insufficient_balance)), st.risk.short_sell + " short · " + st.risk.cash_shortfall + " cash · " + st.risk.insufficient_balance + " insufficient", "bad") +
       kpi("Loans outstanding", F.short(st.loans_outstanding), "incl. interest", "warn");
+    var cs = d.consistency || {};
+    $("consistency").innerHTML = '<div class="alert ' + (cs.ok ? "good" : "bad") + '"><b>CMS INDEX ' + (cs.ok ? "consistent" : "MISMATCH") + ":</b> " + F.num(cs.equities_active) + " active listed equities = " + F.num(cs.index_equity_components) +
+      " equity components · " + F.num(cs.ipos_listed) + " of " + F.num(cs.ipos) + " IPOs listed = " + F.num(cs.index_ipo_components) + " IPO components · " + F.num(cs.index_components) + " components in total.</div>";
     var meta = JSE.STATUS[d.status] || { cls: "closed", text: d.status };
     $("stPill").className = "pill " + meta.cls; $("stText").textContent = meta.text;
-    $("stInfo").textContent = (d.started_at ? "Started " + F.datetime(d.started_at) : "Not started") + (d.closed_at ? " · closed " + F.datetime(d.closed_at) : "") + (d.finalized_at ? " · finalized " + F.datetime(d.finalized_at) : "") + " · resets: " + d.reset_count;
+    var w = d.ipo_window || {};
+    $("stInfo").textContent = "Event start " + F.datetime(d.event_start_at) + " IST · " + (d.started_at ? "started " + F.datetime(d.started_at) : "not started") + (d.closed_at ? " · closed " + F.datetime(d.closed_at) : "") + (d.finalized_at ? " · finalized " + F.datetime(d.finalized_at) : "") + " · resets: " + d.reset_count;
     $("stChanged").textContent = "Changed " + F.datetime(d.status_changed_at);
     var allowed = { START: d.status === "NOT_STARTED", PAUSE: d.status === "LIVE", RESUME: d.status === "SETTLEMENT_ONLY", CLOSE: d.status === "LIVE" || d.status === "SETTLEMENT_ONLY", REOPEN: d.status === "CLOSED", FINALIZE: d.status === "CLOSED" };
     document.querySelectorAll("[data-ev]").forEach(function (b) { b.disabled = !allowed[b.getAttribute("data-ev")] || !S.admin; });
     $("resetBtn").disabled = d.status === "LIVE" || d.status === "SETTLEMENT_ONLY" || !S.admin;
-    $("allotGo").disabled = d.status !== "NOT_STARTED" || !S.admin; $("allotClear").disabled = d.status !== "NOT_STARTED" || !S.admin;
-    // journal
+    $("allotClear").disabled = d.status !== "NOT_STARTED" || !S.admin;
     $("journal").innerHTML = d.journal.length ? d.journal.map(function (j) {
       var btn = !S.admin ? "" : j.state === "ACTIVE" ? '<button class="btn sm" data-undo="' + j.id + '">Undo</button>' : j.state === "UNDONE" ? '<button class="btn sm" data-redo="' + j.id + '">Redo</button>' : "";
       return '<tr class="' + (j.state === "UNDONE" ? "j-undone" : "") + '"><td>' + F.time(j.at) + "</td><td>" + esc(j.summary) + "</td><td>" + esc(j.actor || "") + "</td><td>" +
         (j.state === "ACTIVE" ? '<span class="badge ok">Active</span>' : j.state === "UNDONE" ? '<span class="badge warn">Undone</span>' : '<span class="badge prov">Redone</span>') + '</td><td class="actions">' + btn + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="empty">No actions yet.</td></tr>';
-    // allotments
     var a = d.allotments || { by_ipo: [] };
     $("allotSum").textContent = F.num(a.rows) + " rows · " + F.num(a.teams) + " teams · " + F.short(a.amount);
     $("allotTable").innerHTML = a.by_ipo.length ? a.by_ipo.map(function (x) { return "<tr><td><b>" + esc(x.symbol) + '</b> <span class="muted small">' + esc(x.name) + '</span></td><td class="num">' + x.teams + '</td><td class="num">' + x.lots + '</td><td class="num">' + F.num(x.shares) + '</td><td class="num">' + F.money(x.amount) + "</td></tr>"; }).join("")
       : '<tr><td colspan="5" class="empty">No allotments loaded.</td></tr>';
+    var tn = d.team_names || {};
+    $("tnSum").textContent = "Pool " + tn.pool_size + " names · seed " + (tn.seed || "—") + " · " + (tn.locked ? "locked by " + (tn.locked_by || "administrator") : "not locked");
+    $("tnRandom").disabled = !S.admin || tn.locked || d.status !== "NOT_STARTED"; $("tnLock").disabled = !S.admin || tn.locked; $("tnUnlock").disabled = !S.admin || !tn.locked || d.status !== "NOT_STARTED";
+    $("brSum").textContent = (d.brokers || []).length + " brokers";
+    $("brRows").innerHTML = (d.brokers || []).map(function (b) { return "<tr><td><b>" + esc(b.code) + "</b></td><td>" + esc(b.name) + "</td><td>" + esc(b.desk || "—") + "</td><td>" + esc(b.contact || "—") + '</td><td class="num">' + b.teams + "</td></tr>"; }).join("");
+    $("ipoWin").textContent = w.opens_at ? "Window " + F.datetime(w.opens_at) + " → " + F.datetime(w.closes_at) + " IST · " + ({ PRE_IPO: "not open yet", OPEN: "OPEN", CLOSED: "closed" }[w.phase] || w.phase) : "";
+    $("ipoRows").innerHTML = (d.ipo_admin || []).map(function (i) {
+      return "<tr><td><b>" + esc(i.symbol) + '</b> <span class="small muted">' + esc(i.ipo_code || "") + '</span><div class="tiny muted">' + esc(i.name) + "</div></td><td>" + JSE.badge.stage(i.stage) + '</td><td class="num">' + F.num(i.applications) + '</td><td class="num">' + F.num(i.applied_lots) + "</td>" +
+        '<td><div class="row" style="gap:6px;flex-wrap:wrap;align-items:center">' + (N(i.prospectus_fields) ? '<span class="small">' + i.prospectus_fields + "/8 sections</span>" : '<span class="muted small">empty</span>') + (i.has_document ? ' <span class="badge ok">document</span>' : "") +
+        (S.admin ? '<button class="btn sm" type="button" data-pros="' + esc(i.symbol) + '">Edit</button>' : "") + "</div></td></tr>";
+    }).join("");
     renderListing(d);
-    // config (render once)
-    if (!$("cfg").children.length) {
-      var cfg = d.config_full || {};
-      $("cfg").innerHTML = CFG_FIELDS.map(function (f) {
-        if (f[2] === "bool") return '<label class="check field"><span><input type="checkbox" data-cfg="' + f[0] + '"' + (cfg[f[0]] ? " checked" : "") + "> " + esc(f[1]) + "</span></label>";
-        return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + f[0] + '" type="' + (f[2] === "number" ? "number" : "text") + '" step="any" value="' + esc(cfg[f[0]]) + '"></div>';
-      }).join("");
-      $("cfgUpd").textContent = cfg.updated_by ? "last changed by " + cfg.updated_by + " " + F.datetime(cfg.updated_at) : "";
-      if (!S.admin) $("cfg").querySelectorAll("input").forEach(function (i) { i.disabled = true; });
-    }
+    if (!$("cfg").children.length) renderConfig(d.config_full || {});
   }
 
-  // ---- IPO listing prices ----
+  function renderConfig(cfg) {
+    $("cfg").innerHTML = CFG.map(function (f) {
+      var k = f[0], v = cfg[k];
+      if (f[2] === "bool") return '<label class="check field"><span><input type="checkbox" data-cfg="' + k + '"' + (v ? " checked" : "") + "> " + esc(f[1]) + "</span></label>";
+      if (f[2] === "datetime") return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + k + '" type="datetime-local" value="' + esc(istLocal(v)) + '"></div>';
+      var shown = f[2] === "pct" ? +(N(v) * 100).toFixed(4) : v;
+      return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + k + '" type="' + (f[2] === "text" ? "text" : "number") + '" step="' + (f[2] === "int" ? "1" : "any") + '" value="' + esc(shown) + '"></div>';
+    }).join("");
+    $("cfgUpd").textContent = cfg.updated_by ? "last changed by " + cfg.updated_by + " " + F.datetime(cfg.updated_at) : "";
+    if (!S.admin) $("cfg").querySelectorAll("input").forEach(function (i) { i.disabled = true; });
+  }
+
+  // ---- IPO listing ----
   var listSig = "";
   function listDirty(rows) {
     return [].slice.call(document.querySelectorAll("[data-list]")).some(function (i) {
@@ -222,25 +294,52 @@
   }
   function renderListing(d) {
     var rows = d.ipo_listing || [];
-    var pending = rows.filter(function (x) { return x.listing_saved && !x.listed; }).length, listed = rows.filter(function (x) { return x.listed; }).length;
-    $("listSum").textContent = listed ? listed + " of " + rows.length + " listed" + (pending ? " · " + pending + " waiting" : "") : pending ? pending + " saved · confidential until listed" : "No listing prices saved";
-    if (document.activeElement !== $("autoList")) $("autoList").checked = !!(d.config_full && d.config_full.auto_list_ipos);
+    var unlisted = rows.filter(function (x) { return !x.listed; }), saved = unlisted.filter(function (x) { return x.listing_saved; }).length, listed = rows.length - unlisted.length;
+    $("listSum").textContent = listed + " of " + rows.length + " listed" + (unlisted.length ? " · " + saved + " saved price(s)" : "");
+    var auto = d.config_full && d.config_full.auto_list_ipos;
+    $("autoListText").innerHTML = auto ? "<b>Automatic listing is ON:</b> START EVENT lists every unlisted IPO." : "<b>Automatic listing is OFF:</b> list each IPO with “List IPOs now”. (Change it in Rules &amp; Configuration.)";
     var canEdit = S.admin && ["NOT_STARTED", "LIVE", "SETTLEMENT_ONLY"].indexOf(d.status) >= 0;
-    $("listSave").disabled = !canEdit || !rows.some(function (x) { return !x.listed; });
-    $("listApply").disabled = !canEdit || !pending;
-    $("listClear").disabled = !canEdit || !pending;
+    $("listSave").disabled = !canEdit || !unlisted.length;
+    $("listApply").disabled = !canEdit || !unlisted.length;
+    $("listClear").disabled = !canEdit || !saved;
     var sig = JSON.stringify(rows.map(function (x) { return [x.symbol, x.listing_price, x.listing_saved, x.listed, x.traded]; })) + canEdit;
     if (sig === listSig || listDirty(rows)) return;
     listSig = sig;
     $("listRows").innerHTML = rows.length ? rows.map(function (x) {
       var cell = !x.listed && canEdit
-        ? '<input class="input" style="max-width:130px;margin-left:auto;text-align:right" data-list="' + esc(x.symbol) + '" data-issue="' + esc(x.issue_price) + '" type="number" min="1" step="1" inputmode="numeric" aria-label="Listing price for ' + esc(x.symbol) + '" value="' + (x.listing_price != null ? esc(N(x.listing_price)) : "") + '">'
+        ? '<input class="input" style="max-width:130px;margin-left:auto;text-align:right" data-list="' + esc(x.symbol) + '" data-issue="' + esc(x.issue_price) + '" type="number" min="1" step="1" inputmode="numeric" aria-label="Listing price for ' + esc(x.symbol) + '" value="' + (x.listing_price != null ? esc(N(x.listing_price)) : "") + '" placeholder="issue price">'
         : x.listing_price != null ? F.price(x.listing_price) : x.listing_saved ? '<span class="muted">saved (hidden)</span>' : '<span class="muted">—</span>';
       var gain = x.gain_pct != null ? '<span class="' + F.dir(x.gain_pct) + '">' + F.pct(x.gain_pct) + "</span>" : '<span class="muted">—</span>';
-      var st = x.listed ? '<span class="badge ok">Listed ' + F.time(x.listed_at) + "</span>" : x.listing_saved ? '<span class="badge warn">Saved · not listed</span>' : '<span class="badge prov">No listing price</span>';
+      var st = x.listed ? '<span class="badge ok">Listed ' + F.time(x.listed_at) + " · in CMS INDEX</span>" : JSE.badge.stage(x.stage);
       return "<tr><td><b>" + esc(x.symbol) + '</b> <span class="muted small">' + esc(x.name) + '</span></td><td class="num">' + F.price(x.issue_price) + '</td><td class="num">' + cell +
         '</td><td class="num" data-gain="' + esc(x.symbol) + '">' + gain + "</td><td>" + st + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="empty">No IPOs.</td></tr>';
+  }
+
+  // ---- Market Intelligence (embedded; admin and faculty only) ----
+  function secList(list, key) {
+    return list && list.length ? "<ul>" + list.map(function (s) { return "<li><span><b>" + esc(s.symbol) + "</b></span><span class=\"" + F.dir(s[key || "day_change_pct"]) + '">' + F.pct(s[key || "day_change_pct"]) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">None yet</div>';
+  }
+  async function loadIntel() {
+    var r = await JSE.api.get("/api/insights");
+    var sent = r.sentiment || {}, fl = r.flow || {}, ins = r.institutional_signal || {}, nw = r.net_worth || {}, ord = r.orders || {};
+    var award = function (t, label) { return t ? "<li><span>" + label + " · <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span></span><span>" + F.short(t.net_worth) + "</span></li>" : "<li><span>" + label + '</span><span class="muted">no eligible team yet</span></li>'; };
+    $("mi").innerHTML =
+      '<div class="box"><h4>Market sentiment</h4><div class="v ' + (sent.label === "BULLISH" ? "up" : sent.label === "BEARISH" ? "down" : "") + '">' + esc(sent.label || "—") + '</div><div class="small muted">CMS INDEX ' + F.pct(sent.index_change_pct) + " · recent news " + (sent.recent_news ? sent.recent_news.positive + "+ / " + sent.recent_news.negative + "−" : "—") + "</div></div>" +
+      '<div class="box"><h4>Market breadth</h4><div class="v"><span class="up">▲ ' + r.breadth.advances + '</span> <span class="down">▼ ' + r.breadth.declines + '</span> <span class="flat">■ ' + r.breadth.unchanged + '</span></div><div class="small muted">' + (r.index.components || 0) + " CMS INDEX components</div></div>" +
+      '<div class="box"><h4>Net buying / selling flow</h4><div class="v ' + F.dir(fl.net_team_flow) + '">' + F.signedMoney(fl.net_team_flow) + '</div><div class="small muted">teams bought ' + F.short(fl.team_buy_value) + " · sold " + F.short(fl.team_sell_value) + "</div></div>" +
+      '<div class="box"><h4>Institutional signal</h4><div class="v">' + esc(ins.label || "—") + '</div><div class="small muted">net ' + F.signedMoney(ins.net) + "</div></div>" +
+      '<div class="box"><h4>Settled orders</h4><div class="v">' + F.num(ord.settled) + '</div><div class="small muted">' + F.num(ord.pit_pending) + " at Pit · " + F.num(ord.pending) + " open · " + F.num(ord.rejected) + " rejected (" + F.num(ord.stale) + " stale)</div></div>" +
+      '<div class="box"><h4>Top gainers</h4>' + secList(r.top_gainers) + "</div>" +
+      '<div class="box"><h4>Top losers</h4>' + secList(r.top_losers) + "</div>" +
+      '<div class="box"><h4>Winner · Runner-Up' + (r.final ? "" : " (provisional)") + "</h4><ul>" + award(r.winner, "Winner") + award(r.runner_up, "Runner-Up") + "</ul></div>" +
+      '<div class="box"><h4>Buy pressure (30 min)</h4>' + (r.buy_pressure.length ? "<ul>" + r.buy_pressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="up">' + F.short(p.buy_value) + " vs " + F.short(p.sell_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No buy-heavy securities</div>') + "</div>" +
+      '<div class="box"><h4>Sell pressure (30 min)</h4>' + (r.sell_pressure.length ? "<ul>" + r.sell_pressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="down">' + F.short(p.sell_value) + " vs " + F.short(p.buy_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No sell-heavy securities</div>') + "</div>" +
+      '<div class="box wide2"><h4>Sector analysis</h4><ul>' + (r.sectors || []).map(function (s) { return "<li><span>" + esc(s.sector) + ' <span class="tiny muted">' + s.securities + " · ▲" + s.advances + " ▼" + s.declines + '</span></span><span class="' + F.dir(s.avg_change_pct) + '">' + F.pct(s.avg_change_pct) + " · " + F.short(s.traded_value) + "</span></li>"; }).join("") + "</ul></div>" +
+      '<div class="box wide2"><h4>Participant performance</h4><div class="small muted" style="margin-bottom:4px">' + F.num(nw.eligible) + " eligible · " + F.num(nw.assessment_met) + " met assessment · highest " + F.short(nw.highest) + " · average " + F.short(nw.average) + "</div><ul>" +
+        (r.leaderboard || []).map(function (t) { return "<li><span>#" + t.rank + " <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span> " + JSE.badge.award(t.award) + '</span><span>' + F.short(t.net_worth) + ' <span class="tiny muted">B' + t.buys + " S" + t.sells + (t.eligible ? " ✓" : "") + "</span></span></li>"; }).join("") + "</ul></div>" +
+      '<div class="box wide2"><h4>Alerts</h4>' + (r.alerts.length ? '<ul class="alerts">' + r.alerts.map(function (a) { return '<li><span class="badge ' + (a.level === "bad" ? "no" : a.level === "warn" ? "warn" : "prov") + '">' + esc(a.level) + "</span> " + esc(a.text) + "</li>"; }).join("") + "</ul>" : '<div class="small muted">No alerts.</div>') + "</div>";
+    $("miMeta").textContent = "Live · " + F.time(new Date()) + " IST · same data as portfolios and order tracking";
   }
 
   async function load() {
@@ -248,17 +347,23 @@
     render();
     $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
+  async function loadNames() {
+    S.names = await JSE.api.get("/api/team-names");
+    $("tnRows").innerHTML = S.names.teams.map(function (t) { return "<tr><td class=\"mono nowrap\">" + esc(t.team) + "</td><td><b>" + esc(t.name) + '</b></td><td class="small muted">' + esc(t.meaning || "") + '</td><td class="nowrap">' + esc(t.broker || "—") + "</td></tr>"; }).join("");
+  }
   async function loadNews() {
     var n = await JSE.api.get("/api/market-news", { limit: 15 });
     $("news").innerHTML = n.news.length ? n.news.map(function (x) {
-      return "<tr" + (x.reversed ? ' class="j-undone"' : "") + "><td>" + F.time(x.created_at) + "</td><td><b>" + esc(x.symbol) + "</b></td><td>" + esc(x.mood) + '</td><td class="num ' + F.dir(x.applied_pct) + '">' + F.pct(x.applied_pct) + '</td><td class="num">' + F.price(x.previous_price) + " → " + F.price(x.new_price) + "</td></tr>";
+      return "<tr" + (x.reversed ? ' class="j-undone"' : "") + "><td>" + F.time(x.created_at) + "</td><td><b>" + esc(x.symbol) + "</b></td><td>" + esc(x.mood) + '<div class="tiny muted">' + esc(x.headline) + '</div></td><td class="num ' + F.dir(x.applied_pct) + '">' + F.pct(x.applied_pct) + '</td><td class="num">' + F.price(x.previous_price) + " → " + F.price(x.new_price) + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="empty">No news published.</td></tr>';
   }
   async function loadSecs() {
     var m = await JSE.api.get("/api/market");
-    var g = function (t, l) { return '<optgroup label="' + t + '">' + l.map(function (s) { return '<option value="' + s.id + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("") + "</optgroup>"; };
+    S.market = m;
+    var tradable = function (list) { return list.filter(function (s) { return s.listed; }); };
+    var g = function (t, l) { return l.length ? '<optgroup label="' + t + '">' + l.map(function (s) { return '<option value="' + s.id + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("") + "</optgroup>" : ""; };
     var v = $("nSec").value;
-    $("nSec").innerHTML = '<option value="">Select company…</option>' + g("IPOs", m.ipos) + g("Stocks", m.stocks);
+    $("nSec").innerHTML = '<option value="">Select a listed company…</option>' + g("Listed equities", tradable(m.stocks)) + g("Listed IPOs", tradable(m.ipos));
     if (v) $("nSec").value = v;
   }
   async function loadUsers() {
@@ -266,102 +371,165 @@
     var u = await JSE.api.get("/api/users");
     S.users = u.users;
     var counts = {}; u.users.forEach(function (x) { counts[x.role] = (counts[x.role] || 0) + 1; });
-    $("userSum").textContent = Object.keys(counts).map(function (k) { return k + " " + counts[k]; }).join(" · ");
+    $("userSum").textContent = Object.keys(counts).map(function (k) { return (JSE.ROLE_LABEL[k] || k) + " " + counts[k]; }).join(" · ");
     var staff = u.users.filter(function (x) { return x.role !== "PARTICIPANT"; });
     $("users").innerHTML = staff.map(function (x) {
-      return "<tr><td><b>" + esc(x.username) + "</b></td><td>" + esc(JSE.ROLE_LABEL[x.role] || x.role) + "</td><td>" + esc(x.team || "") + "</td><td>" + (x.last_login_at ? F.datetime(x.last_login_at) : '<span class="muted">never</span>') + "</td><td>" +
+      return '<tr><td class="nowrap"><b>' + esc(x.username) + "</b></td><td>" + esc(JSE.ROLE_LABEL[x.role] || x.role) + "</td><td>" + esc(x.broker || "") + '</td><td class="nowrap">' + (x.last_login_at ? F.datetime(x.last_login_at) : '<span class="muted">never</span>') + "</td><td>" +
         (x.active ? '<span class="badge ok">Active</span>' : '<span class="badge no">Disabled</span>') + '</td><td class="actions"><button class="btn sm" data-pw="' + esc(x.username) + '">New password</button> <button class="btn sm" data-act="' + esc(x.username) + '" data-on="' + (x.active ? "0" : "1") + '">' + (x.active ? "Disable" : "Enable") + "</button></td></tr>";
-    }).join("") + '<tr><td colspan="6" class="small muted">100 participant team accounts (TEAM-001 … TEAM-100) are managed with "Issue new passwords" above.</td></tr>';
+    }).join("") + '<tr><td colspan="6" class="small muted">The 100 participant team accounts (TEAM-001 … TEAM-100) are managed with “Issue new passwords” above.</td></tr>';
   }
 
   async function eventAction(action) {
-    var text = { START: "Start the market? Orders will be accepted immediately and IPO allotments are locked.", PAUSE: "Pause trading? New orders stop; the Exchange and Bank can still process pending orders.",
-      RESUME: "Resume LIVE trading?", CLOSE: "Close the market? New orders stop, the ₹50K cash rule becomes active and the winner pool narrows to eligible teams.",
-      REOPEN: "Reopen the market for trading?", FINALIZE: "Finalize the event? Results are frozen. All open orders must be settled or rejected first." }[action];
-    if (action === "START" && S.st) {
-      var waiting = (S.st.ipo_listing || []).filter(function (x) { return x.listing_saved && !x.listed; });
-      var auto = S.st.config_full && S.st.config_full.auto_list_ipos;
-      if (waiting.length) text += auto ? " " + waiting.map(function (x) { return x.symbol; }).join(", ") + " will list at the saved listing prices."
-                                       : " Automatic IPO listing is off: the saved listing prices are NOT applied (use “List IPOs now”).";
+    var d = S.st || {};
+    var text = { START: "Start the market? Trading becomes LIVE, team names are locked for the event and IPO allotments can no longer change.",
+      PAUSE: "Pause trading? New orders stop; the Pit Manager, Exchange and Bank can still clear queued orders.", RESUME: "Resume LIVE trading?",
+      CLOSE: "Close the market? New orders stop and the closing cash rule becomes final for eligibility.", REOPEN: "Reopen the market for trading?",
+      FINALIZE: "Finalize the event? Results are frozen. Every open order must be settled or rejected first." }[action];
+    if (action === "START") {
+      var unlisted = (d.ipo_listing || []).filter(function (x) { return !x.listed; });
+      if (unlisted.length) text += (d.config_full && d.config_full.auto_list_ipos)
+        ? " These IPOs list now and join the CMS INDEX: " + unlisted.map(function (x) { return x.symbol + (x.listing_saved ? " at the saved listing price" : " at the issue price ₹" + x.issue_price); }).join("; ") + "."
+        : " Automatic IPO listing is OFF — the IPOs stay in the IPO stage until you list them.";
     }
-    if (!(await JSE.dialog({ title: action.charAt(0) + action.slice(1).toLowerCase() + " event", text: text, confirmText: action, danger: action === "CLOSE" || action === "FINALIZE" }))) return;
     try {
-      var r = await JSE.api.post("/api/event", { action: action });
+      var r = await confirmed({ title: action.charAt(0) + action.slice(1).toLowerCase() + " event", text: text, confirmText: action, danger: action === "CLOSE" || action === "FINALIZE" }, "/api/event", { action: action });
+      if (!r) return;
       var lst = (r.listed || []).map(function (x) { return x.symbol + " " + F.price(x.listing_price); }).join(" · ");
       JSE.toast("Event status: " + F.statusText(r.status) + (lst ? " · listed " + lst : ""), "good", lst ? 9000 : 5000);
     } catch (e) { JSE.toast(e.message, "bad", 9000); }
-    poller.now(); loadSecs();
+    poller.now(); loadSecs(); loadNames();
   }
   async function undoRedo(action, id) {
+    var j = id ? (S.st.journal || []).filter(function (x) { return x.id === id; })[0] : null;
     try {
-      var r = await JSE.api.post("/api/undo-redo", id ? { action: action, journal_id: id } : { action: action });
+      var r = await confirmed({ title: (action === "UNDO" ? "Undo " : "Redo ") + (j ? "this action" : action === "UNDO" ? "the last action" : "the last undone action"), text: j ? j.summary : "The most recent journal entry is " + (action === "UNDO" ? "undone" : "redone") + " if it is safe.", confirmText: action === "UNDO" ? "Undo" : "Redo" },
+        "/api/undo-redo", id ? { action: action, journal_id: id } : { action: action });
+      if (!r) return;
       JSE.toast((action === "UNDO" ? "Undone: " : "Redone: ") + r.summary + (r.message ? " — " + r.message : ""), r.message ? "warn" : "good", 8000);
     } catch (e) { JSE.toast(e.message, "bad", 9000); }
     poller.now(); loadNews();
   }
 
-  function parseCsv(text) {
-    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
-    if (!lines.length) return [];
-    var split = function (l) { var out = [], cur = "", q = false; for (var i = 0; i < l.length; i++) { var ch = l[i]; if (ch === '"') q = !q; else if ((ch === "," || ch === "\t" || ch === ";") && !q) { out.push(cur.trim()); cur = ""; } else cur += ch; } out.push(cur.trim()); return out; };
-    var head = split(lines[0]).map(function (h) { return h.toLowerCase().replace(/[^a-z]/g, ""); });
-    var hasHead = head.indexOf("team") >= 0 || head.indexOf("broker") >= 0;
-    var keys = hasHead ? head : null;
-    return lines.slice(hasHead ? 1 : 0).map(function (l) { var c = split(l), o = {}; (keys || ["team", "ipo", "lots"]).forEach(function (k, i) { o[k] = c[i]; }); return o; });
-  }
-
-  // ---- wiring ----
+  // ---- Market News ----
   $("moods").innerHTML = MOODS.map(function (m) { return '<button type="button" class="' + m[3] + '" data-mood="' + m[0] + '" aria-pressed="false">' + m[1] + "<small>" + m[2] + "</small></button>"; }).join("");
   $("moods").addEventListener("click", function (e) { var b = e.target.closest("[data-mood]"); if (!b) return; S.mood = b.getAttribute("data-mood");
-    document.querySelectorAll("[data-mood]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); $("nHead").textContent = "Automatic " + S.mood.replace(/_/g, " ") + " market impact"; });
+    document.querySelectorAll("[data-mood]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); });
   $("nGo").addEventListener("click", async function () {
-    var sec = $("nSec").value; if (!sec || !S.mood) return JSE.toast("Choose a company and a market mood.", "warn");
+    var sec = $("nSec").value, head = $("nHead").value.trim();
+    if (!sec || !S.mood) return JSE.toast("Choose a company and a news severity.", "warn");
+    if (!head) return JSE.toast("Enter the headline.", "warn");
     var name = $("nSec").selectedOptions[0].textContent.split(" · ")[0];
-    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", text: "The price of " + name + " moves immediately by a random amount inside the band.", confirmText: "Publish" }))) return;
-    try { var r = await JSE.api.post("/api/market-news", { security_id: Number(sec), mood: S.mood });
-      JSE.toast(r.symbol + ": " + F.price(r.previous_price) + " → " + F.price(r.new_price) + " (" + F.pct(r.applied_pct) + ")", N(r.applied_pct) >= 0 ? "good" : "warn", 8000);
-      loadNews(); loadSecs(); poller.now();
+    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", html: "<p><b>" + esc(name) + "</b></p><p>“" + esc(head) + "”</p><p class=\"small muted\">The price moves immediately by a random amount inside the band. Orders still waiting for the Pit Manager at the old price become PRICE STALE.</p>", confirmText: "Publish" }))) return;
+    try { var r = await JSE.api.post("/api/market-news", { security_id: Number(sec), mood: S.mood, headline: head });
+      JSE.toast(r.symbol + ": " + F.price(r.previous_price) + " → " + F.price(r.new_price) + " (" + F.pct(r.applied_pct) + ")" + (N(r.stale_orders) ? " · " + r.stale_orders + " order(s) now price stale" : ""), N(r.applied_pct) >= 0 ? "good" : "warn", 9000);
+      $("nHead").value = ""; loadNews(); loadSecs(); poller.now();
     } catch (e) { JSE.toast(e.message, "bad"); }
   });
+
+  // ---- lifecycle wiring ----
   document.querySelectorAll("[data-ev]").forEach(function (b) { b.addEventListener("click", function () { eventAction(b.getAttribute("data-ev")); }); });
   $("undoLast").onclick = function () { undoRedo("UNDO"); };
   $("redoLast").onclick = function () { undoRedo("REDO"); };
   $("journal").addEventListener("click", function (e) { var u = e.target.getAttribute("data-undo"), r = e.target.getAttribute("data-redo"); if (u) undoRedo("UNDO", Number(u)); if (r) undoRedo("REDO", Number(r)); });
   $("rejectOpen").onclick = async function () {
-    var reason = await JSE.dialog({ title: "Reject all open orders?", text: "Every order still waiting at the Exchange or Bank is rejected (no cash, holdings or prices change). Use this before FINALIZE.", danger: true, confirmText: "Reject all", input: { label: "Reason", placeholder: "Market closed before settlement" } });
-    if (!reason) return;
-    try { var r = await JSE.api.post("/api/reject-open-orders", { reason: reason === true ? "" : reason }); JSE.toast(r.rejected + " order(s) rejected.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
+    try {
+      var r = await confirmed({ title: "Reject all open orders?", text: "Every order still waiting at the Pit, Exchange or Bank is rejected (reason: market closed before settlement) and open instructions expire. No cash, holdings or prices change. Use this before FINALIZE.", danger: true, confirmText: "Reject all" }, "/api/reject-open-orders", {});
+      if (r) JSE.toast(r.rejected + " order(s) rejected · " + r.instructions_expired + " instruction(s) expired.", "warn");
+    } catch (e) { JSE.toast(e.message, "bad"); }
     poller.now();
   };
   $("resetBtn").onclick = async function () {
     var keep = $("keepAllot").checked;
-    var v = await JSE.dialog({ title: "RESET EVENT", danger: true, confirmText: "Reset now",
-      html: "<p>This restores the clean starting state for all 100 teams" + (keep ? " and re-applies the loaded IPO allotments" : " <b>and removes IPO allotments</b>") + ". It cannot be undone.</p>",
-      input: { label: "Type RESET to confirm", match: "RESET", required: true } });
-    if (!v) return;
-    try { var r = await JSE.api.post("/api/reset-event", { confirm: "RESET", keep_allotments: keep }); JSE.toast("Event reset (#" + r.reset_no + "). " + r.kept_ipo_allotments + " IPO allotment rows kept.", "good", 8000); }
-    catch (e) { JSE.toast(e.message, "bad", 9000); }
+    try {
+      var r = await confirmed({ title: "RESET EVENT + BASE PRICES", danger: true, confirmText: "Reset now", typeWord: "RESET",
+        html: "<p>This restores the clean starting state for all teams" + (keep ? " and re-applies the loaded IPO allotments" : " <b>and removes IPO allotments</b>") + ". It cannot be undone.</p>" }, "/api/reset-event", { confirm: "RESET", keep_allotments: keep });
+      if (r) JSE.toast("Event reset (#" + r.reset_no + "). " + r.kept_ipo_allotments + " IPO allotment rows kept.", "good", 8000);
+    } catch (e) { JSE.toast(e.message, "bad", 9000); }
     $("cfg").innerHTML = ""; poller.now(); loadNews(); loadSecs();
   };
-  $("allotFile").addEventListener("change", function (e) { var f = e.target.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { $("allotCsv").value = String(r.result); }; r.readAsText(f); });
-  $("allotGo").onclick = async function () {
-    var rows = parseCsv($("allotCsv").value).filter(function (r) { return r.team; });
-    if (!rows.length) return JSE.toast("Paste the allotment CSV first.", "warn");
-    var total = 0; rows.forEach(function (r) { total += N(r.lots); });
-    if (!(await JSE.dialog({ title: "Load " + rows.length + " allotment rows?", text: total + " lots in total. Cash is deducted at the IPO price with no brokerage.", confirmText: "Load allotments" }))) return;
+
+  // ---- team names ----
+  async function names(action, title, text) {
     try {
-      var r = await JSE.api.post("/api/ipo-allotments", { rows: rows.map(function (x) { return { team: x.team, ipo: x.ipo || x.symbol, lots: x.lots }; }), replace: $("allotReplace").checked });
-      $("allotResult").innerHTML = '<div class="alert good">Loaded ' + r.rows + " rows · " + F.money(r.total_amount) + " (batch " + esc(r.batch_id) + ").</div>";
-    } catch (e) {
-      var errs = (e.data && e.data.errors) || [];
-      $("allotResult").innerHTML = '<div class="alert bad"><b>' + esc(e.message) + "</b>" + (errs.length ? "<ul>" + errs.slice(0, 40).map(function (x) { return "<li>" + (x.row ? "Row " + x.row + ": " : "") + esc(x.error) + "</li>"; }).join("") + "</ul>" : "") + "</div>";
-    }
+      var r = await confirmed({ title: title, text: text, confirmText: title.split(" ")[0] }, "/api/team-names", { action: action });
+      if (r) { JSE.toast("Team names: " + (r.locked ? "locked" : "unlocked") + " · seed " + r.seed, "good"); loadNames(); }
+    } catch (e) { JSE.toast(e.message, "bad"); }
+    poller.now();
+  }
+  $("tnRandom").onclick = function () { names("RANDOMIZE", "Randomize team names", "Every team gets a new random IKS name (a new seed is recorded so the result is reproducible). Do this before names are communicated to participants."); };
+  $("tnLock").onclick = function () { names("LOCK", "Lock team names", "Names cannot be randomized or changed while locked. They lock automatically at START EVENT."); };
+  $("tnUnlock").onclick = function () { names("UNLOCK", "Unlock team names", "Allowed only before the event starts."); };
+
+  // ---- roster import ----
+  function fileB64(file) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(",")[1] || ""); }; r.onerror = function () { rej(new Error("The file could not be read.")); }; r.readAsDataURL(file); }); }
+  $("impKind").onchange = function () { $("impReplaceWrap").classList.toggle("hidden", $("impKind").value !== "allotments"); };
+  $("impTemplate").onclick = function (e) { e.preventDefault(); var k = { teams: "teams", brokers: "broker_roster", allotments: "ipo_allotments" }[$("impKind").value]; JSE.download("/api/export?sheet=" + k, "JSE_" + k + ".csv").catch(function (x) { JSE.toast(x.message, "bad"); }); };
+  async function runImport(dry) {
+    var f = $("impFile").files[0]; if (!f) return JSE.toast("Choose an .xlsx or .csv file first.", "warn");
+    var body = { kind: $("impKind").value, filename: f.name, data_base64: await fileB64(f), dry_run: dry, replace: $("impReplace").checked };
+    $("impResult").innerHTML = '<span class="spinner"></span> ' + (dry ? "Validating…" : "Importing…");
+    try {
+      var r = dry ? await JSE.api.post("/api/import", body) : await confirmed({ title: "Import " + f.name + "?", text: "Every row is validated first; nothing is saved unless the whole file is valid.", confirmText: "Import" }, "/api/import", body);
+      if (!r) { $("impResult").innerHTML = ""; return; }
+      $("impResult").innerHTML = '<div class="alert good">' + (r.dry_run ? "Valid: " + r.rows + " row(s) ready to import" + (r.total_amount !== undefined ? " · " + F.money(r.total_amount) : "") + "." :
+        "Imported " + (r.updated !== undefined ? r.updated + " row(s), " + r.changed + " changed" : r.rows + " allotment row(s) · " + F.money(r.total_amount)) + ".") + "</div>";
+      if (!dry) { poller.now(); loadNames(); }
+    } catch (e) { $("impResult").innerHTML = '<div class="alert bad"><b>' + esc(e.message) + "</b>" + errList(e) + "</div>"; }
+  }
+  $("impCheck").onclick = function () { runImport(true); };
+  $("impGo").onclick = function () { runImport(false); };
+
+  // ---- exports ----
+  var dl = function (sheet) { JSE.download("/api/export?sheet=" + sheet, "JSE_" + sheet + ".csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
+  $("rosterCsv").onclick = function () { dl("broker_roster"); };
+  $("teamsCsv").onclick = function () { dl("teams"); };
+  $("appsCsv").onclick = function () { dl("ipo_applications"); };
+  $("allotCsv").onclick = function () { dl("ipo_allotments"); };
+  $("winnerCsv").onclick = function () { dl("winner"); };
+  $("sheetSel").innerHTML = SHEETS.map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + "</option>"; }).join("");
+  $("csvBtn").onclick = function () { dl($("sheetSel").value); };
+  async function bigDownload(btn, path, name) {
+    var t = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Preparing…';
+    try { await JSE.download(path, name); JSE.toast("Downloaded.", "good"); } catch (e) { JSE.toast(e.message, "bad"); }
+    btn.disabled = false; btn.textContent = t;
+  }
+  $("xlsx").onclick = function () { bigDownload($("xlsx"), "/api/export-event-excel", "JSE_Final_Event_Report.xlsx"); };
+  $("jsonBtn").onclick = function () { bigDownload($("jsonBtn"), "/api/export-event-json", "JSE_Final_Event.json"); };
+
+  // ---- IPO round ----
+  $("appsClear").onclick = async function () {
+    try { var r = await confirmed({ title: "Clear all IPO applications?", text: "Allowed only before the event starts. Use it to remove rehearsal applications.", danger: true, confirmText: "Clear", typeWord: "CLEAR" }, "/api/ipo-applications", { action: "CLEAR" });
+      if (r) JSE.toast(r.cleared + " application(s) cleared.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
     poller.now();
   };
+  $("ipoRows").addEventListener("click", async function (e) {
+    var sym = e.target.getAttribute && e.target.getAttribute("data-pros"); if (!sym) return;
+    var page = await JSE.api.get("/api/ipo"), ipo = page.ipos.filter(function (x) { return x.symbol === sym; })[0], p = ipo.prospectus || {};
+    var FIELDS = [["company_description", "Company description"], ["issue_details", "Issue details"], ["business_overview", "Business overview"], ["financial_information", "Financial information"],
+      ["risk_factors", "Risk information"], ["use_of_proceeds", "Use of proceeds"], ["promoters_management", "Promoters and management"], ["other_information", "Other prospectus information"]];
+    var back = JSE.el('<div class="modal-back" role="dialog" aria-modal="true"><form class="modal wide" novalidate><div class="modal-h">Prospectus · ' + esc(ipo.name) + " (" + esc(ipo.ipo_code || sym) + ")</div><div class=\"modal-b\">" +
+      '<p class="small muted" style="margin-top:0">Enter only information supplied by the event organisers. Issue price ₹' + esc(ipo.issue_price) + " and IPO lot size " + esc(ipo.lot_size) + " shares come from the IPO record.</p>" +
+      FIELDS.map(function (f) { return '<div class="field" style="margin-top:8px"><label>' + esc(f[1]) + '</label><textarea class="input pv" data-pf="' + f[0] + '">' + esc(p[f[0]] || "") + "</textarea></div>"; }).join("") +
+      '<div class="form-grid" style="margin-top:10px"><div class="field"><label>Prospectus PDF (max 4 MB)</label><input type="file" accept="application/pdf" id="pfFile" class="input"></div>' +
+      '<div class="field"><label>…or document link (https://)</label><input class="input" id="pfUrl" value="' + esc(p.document_url || "") + '"></div></div>' +
+      (p.has_document ? '<label class="check" style="margin-top:8px"><input type="checkbox" id="pfRemove"> Remove the uploaded PDF (' + esc(p.document_name || "") + ")</label>" : "") +
+      '</div><div class="modal-f"><button class="btn" type="button" data-x="cancel">Cancel</button><button class="btn primary" type="submit">Save prospectus</button></div></form></div>');
+    document.body.appendChild(back);
+    back.addEventListener("click", function (ev) { if (ev.target === back || (ev.target.getAttribute && ev.target.getAttribute("data-x") === "cancel")) back.remove(); });
+    back.querySelector("form").addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      var body = { ipo: sym, document_url: back.querySelector("#pfUrl").value.trim() };
+      back.querySelectorAll("[data-pf]").forEach(function (t) { body[t.getAttribute("data-pf")] = t.value; });
+      var file = back.querySelector("#pfFile").files[0];
+      if (file) { if (file.size > 4 * 1024 * 1024) return JSE.toast("The PDF is larger than 4 MB. Give a link instead.", "warn"); body.document = { name: file.name, data_base64: await fileB64(file) }; }
+      var rm = back.querySelector("#pfRemove"); if (rm && rm.checked) body.remove_document = true;
+      try { await JSE.api.post("/api/ipo-prospectus", body); JSE.toast(sym + " prospectus saved.", "good"); back.remove(); poller.now(); }
+      catch (ex) { JSE.toast(ex.message, "bad", 9000); }
+    });
+  });
   $("allotClear").onclick = async function () {
-    var v = await JSE.dialog({ title: "Remove all IPO allotments?", text: "Cash is returned and the allotted shares are removed for every team.", danger: true, confirmText: "Remove all", input: { label: "Type REMOVE to confirm", match: "REMOVE", required: true } });
-    if (!v) return;
-    try { var r = await JSE.api.post("/api/ipo-allotments", { clear: true }); JSE.toast(r.removed + " allotment rows removed.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
+    try { var r = await confirmed({ title: "Remove all IPO allotments?", text: "Cash is returned and the allotted shares are removed for every team.", danger: true, confirmText: "Remove all", typeWord: "REMOVE" }, "/api/ipo-allotments", { clear: true });
+      if (r) JSE.toast(r.removed + " allotment rows removed.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
     poller.now();
   };
   $("listRows").addEventListener("input", function (e) {
@@ -373,86 +541,72 @@
     var inputs = [].slice.call(document.querySelectorAll("[data-list]"));
     if (!inputs.length) return;
     var rows = inputs.map(function (i) { return { ipo: i.getAttribute("data-list"), listing_price: i.value.trim() }; });
-    var html = "<ul>" + rows.map(function (r) { return "<li><b>" + esc(r.ipo) + "</b>: " + (r.listing_price ? F.price(r.listing_price) : "no listing price (trades from the issue price)") + "</li>"; }).join("") +
-      '</ul><p class="small muted">Only administrators can see these prices until the IPOs are listed.</p>';
-    if (!(await JSE.dialog({ title: "Save listing prices?", html: html, confirmText: "Save" }))) return;
-    try { await JSE.api.post("/api/ipo-listing", { action: "SET", rows: rows }); JSE.toast("Listing prices saved.", "good"); listSig = ""; }
+    var html = "<ul>" + rows.map(function (r) { return "<li><b>" + esc(r.ipo) + "</b>: " + (r.listing_price ? F.price(r.listing_price) : "no listing price (lists at the issue price)") + "</li>"; }).join("") + '</ul><p class="small muted">Only administrators can see these prices until the IPOs are listed.</p>';
+    try { var r = await confirmed({ title: "Save listing prices?", html: html, confirmText: "Save" }, "/api/ipo-listing", { action: "SET", rows: rows }); if (r) { JSE.toast("Listing prices saved.", "good"); listSig = ""; } }
     catch (e) { var errs = (e.data && e.data.errors) || []; JSE.toast(e.message + (errs.length ? " " + errs.map(function (x) { return x.error; }).join("; ") : ""), "bad", 12000); }
     poller.now();
   };
   $("listApply").onclick = async function () {
-    var rows = ((S.st && S.st.ipo_listing) || []).filter(function (x) { return x.listing_saved && !x.listed; });
+    var rows = ((S.st && S.st.ipo_listing) || []).filter(function (x) { return !x.listed; });
     if (!rows.length) return;
-    var html = "<p>These IPOs move from the issue price to the listing price immediately and everyone sees it on the Market page.</p><ul>" +
-      rows.map(function (x) { return "<li><b>" + esc(x.symbol) + "</b>: " + F.price(x.issue_price) + " → " + F.price(x.listing_price) + " (" + F.pct(x.gain_pct) + ")</li>"; }).join("") + "</ul>";
-    if (!(await JSE.dialog({ title: "List " + rows.length + " IPO" + (rows.length > 1 ? "s" : "") + " now?", html: html, confirmText: "List now" }))) return;
-    try { var r = await JSE.api.post("/api/ipo-listing", { action: "APPLY" }); JSE.toast("Listed: " + r.listed.map(function (x) { return x.symbol + " " + F.price(x.listing_price); }).join(" · "), "good", 9000); listSig = ""; }
+    var html = "<p>These IPOs list immediately, move into the listed market and join the CMS INDEX (each exactly once):</p><ul>" +
+      rows.map(function (x) { return "<li><b>" + esc(x.symbol) + "</b>: " + F.price(x.issue_price) + " → " + (x.listing_price != null ? F.price(x.listing_price) + " (" + F.pct(x.gain_pct) + ")" : "issue price") + "</li>"; }).join("") + "</ul>";
+    try { var r = await confirmed({ title: "List " + rows.length + " IPO" + (rows.length > 1 ? "s" : "") + " now?", html: html, confirmText: "List now" }, "/api/ipo-listing", { action: "APPLY", at_issue_price: true });
+      if (r) { JSE.toast("Listed: " + r.listed.map(function (x) { return x.symbol + " " + F.price(x.listing_price); }).join(" · "), "good", 9000); listSig = ""; } }
     catch (e) { JSE.toast(e.message, "bad", 9000); }
     poller.now(); loadSecs();
   };
   $("listClear").onclick = async function () {
-    if (!(await JSE.dialog({ title: "Clear saved listing prices?", text: "IPOs that are not listed yet will trade from their issue price unless new listing prices are saved.", danger: true, confirmText: "Clear" }))) return;
-    try { var r = await JSE.api.post("/api/ipo-listing", { action: "CLEAR" }); JSE.toast(r.cleared + " saved price(s) cleared.", "warn"); listSig = ""; } catch (e) { JSE.toast(e.message, "bad"); }
+    try { var r = await confirmed({ title: "Clear saved listing prices?", text: "IPOs that are not listed yet will list at their issue price unless new listing prices are saved.", danger: true, confirmText: "Clear" }, "/api/ipo-listing", { action: "CLEAR" });
+      if (r) { JSE.toast(r.cleared + " saved price(s) cleared.", "warn"); listSig = ""; } } catch (e) { JSE.toast(e.message, "bad"); }
     poller.now();
   };
-  $("autoList").onchange = async function () {
-    var on = $("autoList").checked;
-    try { await JSE.api.post("/api/config", { auto_list_ipos: on }); JSE.toast(on ? "IPOs with saved prices will list when the event starts." : "Automatic listing is off. Use “List IPOs now”.", "good"); }
-    catch (e) { JSE.toast(e.message, "bad"); $("autoList").checked = !on; }
-    poller.now();
-  };
-  $("teamGo").onclick = async function () {
-    var rows = parseCsv($("teamCsv").value).filter(function (r) { return r.team; });
-    if (!rows.length) return JSE.toast("Paste team rows with a header line (team,name,section,broker,members).", "warn");
-    try { var r = await JSE.api.post("/api/teams", { rows: rows }); $("teamResult").innerHTML = '<div class="alert ' + (r.errors.length ? "warn" : "good") + '">Updated ' + r.updated + " teams." + r.errors.map(function (x) { return "<br>Row " + x.row + ": " + esc(x.error); }).join("") + "</div>"; }
-    catch (e) { JSE.toast(e.message, "bad"); }
-  };
-  $("brokerGo").onclick = async function () {
-    var rows = parseCsv($("teamCsv").value).filter(function (r) { return r.broker && r.name; });
-    if (!rows.length) return JSE.toast("Paste broker rows with a header line (broker,name).", "warn");
-    try { var r = await JSE.api.post("/api/brokers", { rows: rows }); $("teamResult").innerHTML = '<div class="alert good">Updated ' + r.updated + " brokers.</div>"; } catch (e) { JSE.toast(e.message, "bad"); }
-  };
+
+  // ---- configuration ----
   $("cfgSave").onclick = async function () {
-    var body = {};
-    $("cfg").querySelectorAll("[data-cfg]").forEach(function (i) { var k = i.getAttribute("data-cfg"); body[k] = i.type === "checkbox" ? i.checked : i.value; });
-    var cur = (S.st && S.st.config_full) || {};
-    Object.keys(body).forEach(function (k) { if (String(body[k]) === String(cur[k])) delete body[k]; });
-    if (!Object.keys(body).length) return JSE.toast("Nothing changed.", "warn");
-    if (!(await JSE.dialog({ title: "Save configuration?", html: "<ul>" + Object.keys(body).map(function (k) { return "<li><b>" + esc(k) + "</b>: " + esc(cur[k]) + " → " + esc(body[k]) + "</li>"; }).join("") + "</ul>", confirmText: "Save" }))) return;
-    try { await JSE.api.post("/api/config", body); JSE.toast("Configuration saved.", "good"); $("cfg").innerHTML = ""; } catch (e) { JSE.toast(e.message, "bad", 9000); }
+    var body = {}, cur = (S.st && S.st.config_full) || {}, changes = [];
+    $("cfg").querySelectorAll("[data-cfg]").forEach(function (i) {
+      var k = i.getAttribute("data-cfg"), f = CFG.filter(function (x) { return x[0] === k; })[0], v;
+      if (f[2] === "bool") v = i.checked;
+      else if (f[2] === "datetime") v = i.value ? i.value + ":00+05:30" : "";
+      else if (f[2] === "pct") v = i.value === "" ? "" : N(i.value) / 100;
+      else v = i.value;
+      var before = f[2] === "datetime" ? istLocal(cur[k]) : cur[k], after = f[2] === "datetime" ? i.value : v;
+      if (String(after) !== String(before) && !(f[2] !== "text" && f[2] !== "bool" && f[2] !== "datetime" && N(after) === N(before))) {
+        body[k] = v; changes.push("<li><b>" + esc(f[1]) + "</b>: " + esc(f[2] === "pct" ? JSE.rate(before) : before) + " → " + esc(f[2] === "pct" ? JSE.rate(v) : after) + "</li>");
+      }
+    });
+    if (!changes.length) return JSE.toast("Nothing changed.", "warn");
+    try { var r = await confirmed({ title: "Save Rules & Configuration?", html: "<ul>" + changes.join("") + "</ul>", confirmText: "Save" }, "/api/config", body);
+      if (r) { JSE.toast("Configuration saved.", "good"); $("cfg").innerHTML = ""; } } catch (e) { JSE.toast(e.message, "bad", 9000); }
     poller.now();
   };
+
+  // ---- accounts ----
   $("users").addEventListener("click", async function (e) {
     var pw = e.target.getAttribute("data-pw"), act = e.target.getAttribute("data-act");
-    if (pw) {
-      if (!(await JSE.dialog({ title: "Issue a new password for " + pw + "?", text: "The current password stops working and the account is signed out.", confirmText: "Issue password" }))) return;
-      try { var r = await JSE.api.post("/api/users", { action: "RESET_PASSWORD", username: pw });
-        await JSE.dialog({ title: "New password for " + r.username, html: '<p>Give this to the desk operator. It is shown only once.</p><p class="mono" style="font-size:20px;font-weight:800">' + esc(r.password) + "</p>", confirmText: "Done", cancel: false });
-      } catch (ex) { JSE.toast(ex.message, "bad"); }
-    }
-    if (act) {
-      var on = e.target.getAttribute("data-on") === "1";
-      try { await JSE.api.post("/api/users", { action: "SET_ACTIVE", username: act, active: on }); JSE.toast(act + (on ? " enabled" : " disabled"), "good"); loadUsers(); } catch (ex) { JSE.toast(ex.message, "bad"); }
-    }
+    try {
+      if (pw) {
+        var r = await confirmed({ title: "Issue a new password for " + pw + "?", text: "The current password stops working and the account is signed out.", confirmText: "Issue password" }, "/api/users", { action: "RESET_PASSWORD", username: pw });
+        if (r) await JSE.dialog({ title: "New password for " + r.username, html: '<p>Give this to the desk operator. It is shown only once.</p><p class="mono" style="font-size:20px;font-weight:800">' + esc(r.password) + "</p>", confirmText: "Done", cancel: false });
+      }
+      if (act) {
+        var on = e.target.getAttribute("data-on") === "1";
+        var r2 = await confirmed({ title: (on ? "Enable " : "Disable ") + act + "?", text: on ? "The account can sign in again." : "The account is signed out and cannot sign in.", confirmText: on ? "Enable" : "Disable", danger: !on }, "/api/users", { action: "SET_ACTIVE", username: act, active: on });
+        if (r2) { JSE.toast(act + (on ? " enabled" : " disabled"), "good"); loadUsers(); }
+      }
+    } catch (ex) { JSE.toast(ex.message, "bad"); }
   });
   $("issueBtn").onclick = async function () {
     var role = $("roleSel").value, label = $("roleSel").selectedOptions[0].textContent;
-    var v = await JSE.dialog({ title: "Issue new passwords: " + label, danger: true, confirmText: "Issue passwords",
-      html: "<p>Every account with this role gets a new random password. Existing passwords stop working immediately and the CSV downloads once.</p>", input: { label: "Type ISSUE to confirm", match: "ISSUE", required: true } });
-    if (!v) return;
     try {
-      var r = await JSE.api.post("/api/users", { action: "RESET_ROLE_PASSWORDS", role: role });
+      var r = await confirmed({ title: "Issue new passwords: " + label, danger: true, confirmText: "Issue passwords", typeWord: "ISSUE",
+        html: "<p>Every account with this role gets a new random password. Existing passwords stop working immediately and the CSV downloads once.</p>" }, "/api/users", { action: "RESET_ROLE_PASSWORDS", role: role });
+      if (!r) return;
       var csv = "﻿username,password,role,site\r\n" + r.credentials.map(function (c) { return c.username + "," + c.password + "," + role + "," + location.origin; }).join("\r\n") + "\r\n";
       var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "JSE_credentials_" + role + ".csv"; a.click();
       JSE.toast(r.credentials.length + " passwords issued and downloaded.", "good", 8000); loadUsers();
     } catch (e) { JSE.toast(e.message, "bad"); }
-  };
-  $("sheetSel").innerHTML = SHEETS.map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + "</option>"; }).join("");
-  $("csvBtn").onclick = function () { JSE.download("/api/export?sheet=" + $("sheetSel").value, "JSE_" + $("sheetSel").value + ".csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
-  $("xlsx").onclick = async function () {
-    var b = $("xlsx"); b.disabled = true; var t = b.textContent; b.innerHTML = '<span class="spinner"></span> Preparing report…';
-    try { await JSE.download("/api/export-event-excel", "JSE_Final_Event_Report.xlsx"); JSE.toast("Report downloaded.", "good"); } catch (e) { JSE.toast(e.message, "bad"); }
-    b.disabled = false; b.textContent = t;
   };
 
   var poller;
@@ -461,9 +615,12 @@
     S.admin = user.role === "ADMIN";
     if (!S.admin) document.querySelectorAll(".admin-only").forEach(function (x) { x.classList.add("hidden"); });
     poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    JSE.poll(loadIntel, 5000, { onError: function () {} });
     JSE.poll(loadNews, 10000);
     JSE.poll(loadSecs, 15000);
+    loadNames().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
+    if (location.hash === "#intelligence") setTimeout(function () { $("intelligence").scrollIntoView(); }, 400);
   });
 })();
 </script>

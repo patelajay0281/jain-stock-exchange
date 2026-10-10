@@ -1,29 +1,31 @@
-// JAIN STOCK EXCHANGE (JSE) v272 — API server (Neon Functions / Node.js 24).
+// JAIN STOCK EXCHANGE (JSE) v311 — API server (Neon Functions / Node.js 24).
 // Default export is a fetch handler: { fetch(request): Promise<Response> }.
+// Every financial rule lives in the database (db/migrations); this layer authenticates, routes, caches reads,
+// rate-limits writes and turns exports into CSV / Excel / JSON.
 import { createHash, randomUUID } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { ApiError, call, ensureMigrated, rawQuery } from "./db";
 import { verifyGithubOidc } from "./oidc";
-import { buildXlsx, toCsv, type Sheet } from "./xlsx";
+import { buildXlsx, readCsv, readXlsx, toCsv, type Sheet } from "./xlsx";
 
-export const VERSION = "2.72.0";
+export const VERSION = "3.11.0";
 const STARTED = Date.now();
 
 // ---------------------------------------------------------------------------
 // Small helpers
 // ---------------------------------------------------------------------------
-type Role = "ADMIN" | "EXCHANGE" | "BANK" | "BROKER" | "INSTITUTIONAL" | "PARTICIPANT" | "VIEWER";
+type Role = "ADMIN" | "EXCHANGE" | "BANK" | "BROKER" | "PIT_MANAGER" | "INSTITUTIONAL" | "PARTICIPANT" | "VIEWER";
 interface User {
   id: number; username: string; name: string; email?: string | null; role: Role;
-  team_id?: number | null; team?: string | null; broker_id?: number | null; broker?: string | null;
-  institution_id?: number | null; institution?: string | null; session?: string; must_change_password?: boolean;
+  team_id?: number | null; team?: string | null; team_name?: string | null; broker_id?: number | null; broker?: string | null;
+  institution_id?: number | null; institution?: string | null; session?: string; session_kind?: string; must_change_password?: boolean;
 }
 interface Ctx {
   req: Request; url: URL; method: string; ip: string; ua: string; origin: string | null;
   token: string | null; user: User | null; body: any; started: number; reqId: string;
 }
 
-const STAFF: Role[] = ["ADMIN", "EXCHANGE", "BANK", "BROKER", "INSTITUTIONAL", "VIEWER"];
+const ALL: Role[] = ["ADMIN", "EXCHANGE", "BANK", "BROKER", "PIT_MANAGER", "INSTITUTIONAL", "PARTICIPANT", "VIEWER"];
 
 function sha256(s: string): string { return createHash("sha256").update(s).digest("hex"); }
 
@@ -48,7 +50,7 @@ function corsHeaders(ctx: Pick<Ctx, "origin">): Record<string, string> {
     h["access-control-allow-origin"] = o;
     h["access-control-allow-methods"] = "GET, POST, OPTIONS";
     h["access-control-allow-headers"] = "Authorization, Content-Type, X-Request-Id";
-    h["access-control-expose-headers"] = "ETag, X-JSE-Version, X-Request-Id, Content-Disposition";
+    h["access-control-expose-headers"] = "ETag, X-JSE-Version, X-Request-Id, Content-Disposition, Date";
     h["access-control-max-age"] = "7200";
   }
   return h;
@@ -114,8 +116,8 @@ async function cached(key: string, ttlMs: number, load: () => Promise<unknown>):
     return entry.value;
   }).catch((e) => {
     entry.pending = undefined;
-    // serve stale data for up to 30 s if the database hiccups
-    if (entry.value && Date.now() - entry.at < 30_000) return entry.value;
+    // serve stale data for up to 30 s if the database hiccups (never for errors the engine reported)
+    if (!(e instanceof ApiError) && entry.value && Date.now() - entry.at < 30_000) return entry.value;
     throw e;
   });
   cache.set(key, entry);
@@ -150,20 +152,20 @@ function actor(ctx: Ctx): Record<string, unknown> {
   return {
     id: u?.id ?? null, username: u?.username ?? "anonymous", name: u?.name ?? null, email: u?.email ?? null, role: u?.role ?? null,
     team_id: u?.team_id ?? null, broker_id: u?.broker_id ?? null, institution_id: u?.institution_id ?? null,
-    session: u?.session ?? null, ip: ctx.ip, ua: ctx.ua,
+    session: u?.session ?? null, session_kind: u?.session_kind ?? null, ip: ctx.ip, ua: ctx.ua,
   };
 }
 
 function need(ctx: Ctx, ...roles: Role[]): User {
   if (!ctx.user) throw new ApiError(401, "UNAUTHENTICATED", "Please sign in to continue.");
   if (roles.length && !roles.includes(ctx.user.role)) {
-    throw new ApiError(403, "FORBIDDEN", `Your role (${ctx.user.role}) cannot do this.`);
+    throw new ApiError(403, "FORBIDDEN", `Your role (${ctx.user.role.replace(/_/g, " ")}) cannot do this.`);
   }
   return ctx.user;
 }
 
 // ---------------------------------------------------------------------------
-// Simple rate limiting (per process): login attempts and write bursts per client
+// Simple rate limiting (per process): login attempts, admin-password confirmations and write bursts
 // ---------------------------------------------------------------------------
 const buckets = new Map<string, { tokens: number; at: number }>();
 function rateLimit(key: string, perSecond: number, burst: number): boolean {
@@ -182,20 +184,36 @@ function rateLimit(key: string, perSecond: number, burst: number): boolean {
 // Routes
 // ---------------------------------------------------------------------------
 type Handler = (ctx: Ctx) => Promise<Response>;
-const routes = new Map<string, Handler>();
-const get = (p: string, h: Handler) => routes.set("GET " + p, h);
-const post = (p: string, h: Handler) => routes.set("POST " + p, h);
+const routes = new Map<string, { h: Handler; maxBody?: number }>();
+const get = (p: string, h: Handler) => routes.set("GET " + p, { h });
+const post = (p: string, h: Handler, maxBody?: number) => routes.set("POST " + p, { h, maxBody });
 const q = (ctx: Ctx, k: string) => (ctx.url.searchParams.get(k) || "").trim();
+function params(ctx: Ctx, keys: string[]): Record<string, string> {
+  const p: Record<string, string> = {};
+  for (const k of keys) { const v = q(ctx, k); if (v) p[k] = v; }
+  return p;
+}
 
 // mutation helper: call the engine, then clear caches that could now be stale
-async function mutate(ctx: Ctx, fn: string, params: unknown, clear?: string[]): Promise<Response> {
+async function mutate(ctx: Ctx, fn: string, body: unknown, clear?: string[]): Promise<Response> {
   if (!rateLimit("w:" + (ctx.user?.id ?? ctx.ip), 15, 40)) {
     throw new ApiError(429, "TOO_MANY_REQUESTS", "Too many actions in a short time. Please wait a moment.");
   }
-  const out = await call(fn, actor(ctx), params);
-  invalidate(clear);
-  return json(ctx, out);
+  if (body && typeof body === "object" && "admin_password" in (body as any) && ctx.user
+      && !rateLimit("adminpw:" + ctx.user.id, 0.1, 12)) {
+    throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Too many password confirmations. Wait a minute and try again.");
+  }
+  try {
+    const out = await call(fn, actor(ctx), body);
+    invalidate(clear);
+    return json(ctx, out);
+  } catch (e) {
+    // engine results that commit before reporting a problem (e.g. PRICE STALE) still change state
+    if (e instanceof ApiError && (e.code === "PRICE_STALE")) invalidate(clear);
+    throw e;
+  }
 }
+const ORDER_CACHES = ["trk:", "staff:", "pd:", "q:", "bd:", "ins:", "slips:", "pub:status"];
 
 // ---- public ----
 get("/api/health", async (ctx) => {
@@ -207,14 +225,36 @@ get("/api/health", async (ctx) => {
 });
 get("/api/market", async (ctx) => respond(ctx, 200, await cached("pub:market", 900, () => call("jse_market", null)), {}, 1));
 get("/api/event-status", async (ctx) => respond(ctx, 200, await cached("pub:status", 900, () => call("jse_event_status", null)), {}, 1));
-get("/api/insights", async (ctx) => respond(ctx, 200, await cached("pub:insights", 2500, () => call("jse_insights", null)), {}, 2));
 get("/api/market-news", async (ctx) => {
   const limit = Math.min(200, Math.max(1, Number(q(ctx, "limit")) || 30));
   return respond(ctx, 200, await cached("pub:news:" + limit, 1500, () => call("jse_news_list", null, { limit }, { noActor: true })), {}, 1);
 });
 get("/api/cms50", async (ctx) => {
   const m = JSON.parse((await cached("pub:market", 900, () => call("jse_market", null))).body);
-  return json(ctx, { success: true, name: "CMS INDEX", status: m.status, ...m.index, stock_count: m.stocks.length, ipo_count: m.ipos.length });
+  return json(ctx, { success: true, status: m.status, ...m.index, market_stock_count: m.stocks.length, ipo_count: m.ipos.length });
+});
+get("/api/ipo", async (ctx) => respond(ctx, 200, await cached("pub:ipo", 3000, () => call("jse_ipo_page", null)), {}, 2));
+// prospectus document (PDF uploaded by the administrator)
+const docCache = new Map<string, { at: number; type: string; name: string; data: Buffer }>();
+get("/api/ipo-document", async (ctx) => {
+  const sym = q(ctx, "symbol").toUpperCase();
+  if (!/^[A-Z0-9_-]{1,20}$/.test(sym)) throw new ApiError(400, "INVALID_SYMBOL", "Choose an IPO.");
+  let hit = docCache.get(sym);
+  if (!hit || Date.now() - hit.at > 60_000) {
+    const r = await rawQuery(
+      "SELECT p.document_data, p.document_type, p.document_name, p.document_url FROM ipo_prospectus p JOIN securities s ON s.id = p.security_id WHERE s.symbol = $1 AND s.kind = 'IPO'", [sym]);
+    const row = r.rows[0];
+    if (!row) throw new ApiError(404, "IPO_NOT_FOUND", "IPO not found.");
+    if (!row.document_data) {
+      if (row.document_url) return new Response(null, { status: 302, headers: { location: row.document_url, ...corsHeaders(ctx) } });
+      throw new ApiError(404, "NO_DOCUMENT", "The prospectus document has not been published yet.");
+    }
+    hit = { at: Date.now(), type: row.document_type || "application/pdf", name: row.document_name || sym + "-prospectus.pdf", data: row.document_data };
+    docCache.set(sym, hit);
+  }
+  return new Response(new Uint8Array(hit.data), { status: 200, headers: {
+    "content-type": hit.type, "content-disposition": `inline; filename="${hit.name.replace(/[^\w.\- ]/g, "_")}"`,
+    "cache-control": "public, max-age=60", ...corsHeaders(ctx) } });
 });
 
 // ---- authentication ----
@@ -269,43 +309,80 @@ post("/api/ci-login", async (ctx) => {
 
 // ---- portfolios ----
 get("/api/portfolios", async (ctx) => {
-  need(ctx, ...STAFF);
+  need(ctx, "ADMIN", "VIEWER");
   return respond(ctx, 200, await cached("staff:portfolios", 1800, () => call("jse_portfolios", actor(ctx), {})));
 });
 get("/api/portfolio-details", async (ctx) => {
-  const u = need(ctx);
+  const u = need(ctx, "ADMIN", "VIEWER", "BROKER", "PARTICIPANT");
   const team = (u.role === "PARTICIPANT" ? u.team : q(ctx, "team")) || "";
   if (!team) throw new ApiError(400, "TEAM_REQUIRED", "Choose a team.");
-  return respond(ctx, 200, await cached("pd:" + team.toUpperCase() + ":" + (u.role === "PARTICIPANT" ? u.id : "staff"), 1500,
-    () => call("jse_portfolio_detail", actor(ctx), { team })));
+  const scope = u.role === "PARTICIPANT" ? "p" + u.id : u.role === "BROKER" ? "b" + u.broker_id : "staff";
+  return respond(ctx, 200, await cached("pd:" + team.toUpperCase() + ":" + scope, 1500, () => call("jse_portfolio_detail", actor(ctx), { team })));
 });
 
 // ---- orders / tracking ----
-function trackingParams(ctx: Ctx) {
-  const p: Record<string, string> = {};
-  for (const k of ["team", "status", "side", "kind", "account", "q", "page", "page_size"]) { const v = q(ctx, k); if (v) p[k] = v; }
-  return p;
+function scopeKey(u: User): string {
+  return u.role === "PARTICIPANT" ? "p" + u.team_id : u.role === "BROKER" ? "b" + u.broker_id : u.role === "INSTITUTIONAL" ? "i" + u.institution_id : "s";
 }
 const trackingHandler: Handler = async (ctx) => {
-  const u = need(ctx);
-  const p = trackingParams(ctx);
-  const key = "trk:" + (u.role === "PARTICIPANT" ? "p" + u.team_id : "s") + ":" + JSON.stringify(p);
-  return respond(ctx, 200, await cached(key, 1200, () => call("jse_tracking", actor(ctx), p)));
+  const u = need(ctx, ...ALL);
+  const p = params(ctx, ["team", "status", "side", "kind", "account", "q", "page", "page_size"]);
+  return respond(ctx, 200, await cached("trk:" + scopeKey(u) + ":" + JSON.stringify(p), 1200, () => call("jse_tracking", actor(ctx), p)));
 };
 get("/api/tracking", trackingHandler);
 get("/api/orders", trackingHandler);
 get("/api/order", async (ctx) => {
-  need(ctx);
-  return json(ctx, await call("jse_order_detail", actor(ctx), { order_id: q(ctx, "id") || undefined, order_no: q(ctx, "order_no") || undefined }));
+  need(ctx, ...ALL);
+  return json(ctx, await call("jse_order_detail", actor(ctx),
+    { order_id: q(ctx, "id") || undefined, order_no: q(ctx, "order_no") || undefined, slip_no: q(ctx, "slip_no") || undefined }));
 });
+// Broker submission (participants are refused by the engine with an explanation)
 post("/api/orders", async (ctx) => {
-  need(ctx, "ADMIN", "BROKER", "PARTICIPANT");
+  need(ctx, ...ALL);
   const b = ctx.body || {};
-  if (Array.isArray(b.legs)) {
-    // paired buyer/seller ticket: two linked orders created in one transaction
-    return mutate(ctx, "jse_place_pair", b, ["trk:", "staff:", "pd:", "q:"]);
-  }
-  return mutate(ctx, "jse_place_order", b, ["trk:", "staff:", "pd:", "q:"]);
+  if (Array.isArray(b.legs)) return mutate(ctx, "jse_place_pair", b, ORDER_CACHES);
+  return mutate(ctx, "jse_place_order", b, ORDER_CACHES);
+});
+
+// ---- participant instructions ----
+get("/api/instructions", async (ctx) => {
+  const u = need(ctx, "PARTICIPANT", "BROKER", "ADMIN", "VIEWER");
+  const p = params(ctx, ["team"]);
+  return respond(ctx, 200, await cached("ins:" + scopeKey(u) + ":" + JSON.stringify(p), 1200, () => call("jse_instructions", actor(ctx), p)));
+});
+post("/api/instructions", async (ctx) => {
+  need(ctx, "PARTICIPANT", "BROKER", "ADMIN");
+  return mutate(ctx, "jse_instruction_action", ctx.body || {}, ["ins:", "bd:", "pd:"]);
+});
+
+// ---- broker desk ----
+get("/api/broker-desk", async (ctx) => {
+  const u = need(ctx, "BROKER", "ADMIN", "VIEWER");
+  const broker = u.role === "BROKER" ? String(u.broker || "") : q(ctx, "broker");
+  return respond(ctx, 200, await cached("bd:" + (u.role === "BROKER" ? "own" + u.broker_id : broker || "first"), 1200,
+    () => call("jse_broker_desk", actor(ctx), broker ? { broker } : {})));
+});
+
+// ---- pit manager ----
+get("/api/pit", async (ctx) => {
+  need(ctx, "PIT_MANAGER", "ADMIN", "VIEWER");
+  return respond(ctx, 200, await cached("q:pit", 900, () => call("jse_pit_queue", actor(ctx), {})));
+});
+post("/api/pit", async (ctx) => {
+  need(ctx, "PIT_MANAGER", "ADMIN");
+  return mutate(ctx, "jse_pit_action", ctx.body || {}, ORDER_CACHES);
+});
+
+// ---- trading slips ----
+get("/api/slips", async (ctx) => {
+  const u = need(ctx, ...ALL);
+  const p = params(ctx, ["team", "q", "page", "page_size"]);
+  return respond(ctx, 200, await cached("slips:" + scopeKey(u) + ":" + JSON.stringify(p), 1500, () => call("jse_slips", actor(ctx), p)));
+});
+get("/api/slip", async (ctx) => {
+  need(ctx, ...ALL);
+  return json(ctx, await call("jse_slip", actor(ctx), { slip_no: q(ctx, "slip_no") || undefined, order_no: q(ctx, "order_no") || undefined,
+    order_id: q(ctx, "order_id") || undefined }));
 });
 
 // ---- exchange ----
@@ -315,7 +392,7 @@ get("/api/exchange", async (ctx) => {
 });
 post("/api/exchange", async (ctx) => {
   need(ctx, "ADMIN", "EXCHANGE");
-  return mutate(ctx, "jse_exchange_decide", ctx.body || {}, ["q:", "trk:", "staff:", "pd:", "pub:status"]);
+  return mutate(ctx, "jse_exchange_decide", ctx.body || {}, ORDER_CACHES);
 });
 
 // ---- bank ----
@@ -332,7 +409,7 @@ post("/api/bank", async (ctx) => {
     : action === "CLAIM" ? "jse_bank_claim"
     : action === "RELEASE" ? "jse_bank_claim" : "";
   if (!fn) throw new ApiError(400, "INVALID_ACTION", "Use SETTLE, REJECT, CLAIM or RELEASE.");
-  return mutate(ctx, fn, { ...b, release: action === "RELEASE" }, action === "CLAIM" || action === "RELEASE" ? ["q:bank"] : undefined);
+  return mutate(ctx, fn, { ...b, release: action === "RELEASE" }, action === "CLAIM" || action === "RELEASE" ? ["q:bank"] : ORDER_CACHES.concat(["cash:", "q:loans"]));
 });
 
 // ---- loans ----
@@ -340,41 +417,62 @@ get("/api/loan", async (ctx) => {
   need(ctx, "ADMIN", "BANK", "VIEWER");
   return respond(ctx, 200, await cached("q:loans", 1500, () => call("jse_loans", actor(ctx), {})));
 });
-post("/api/loan", async (ctx) => { need(ctx, "ADMIN", "BANK"); return mutate(ctx, "jse_loan_action", ctx.body || {}); });
+post("/api/loan", async (ctx) => { need(ctx, "ADMIN", "BANK"); return mutate(ctx, "jse_loan_action", ctx.body || {}, ["q:", "staff:", "pd:", "cash:", "bd:"]); });
 
 // ---- ledgers, audit, commissions ----
 get("/api/cash", async (ctx) => {
-  const u = need(ctx, "ADMIN", "BANK", "VIEWER", "PARTICIPANT", "EXCHANGE");
-  const p: Record<string, string> = {};
-  for (const k of ["team", "type", "q", "page", "page_size"]) { const v = q(ctx, k); if (v) p[k] = v; }
+  const u = need(ctx, "ADMIN", "BANK", "VIEWER", "PARTICIPANT");
+  const p = params(ctx, ["team", "type", "q", "page", "page_size"]);
   return respond(ctx, 200, await cached("cash:" + (u.role === "PARTICIPANT" ? u.team_id : "s") + ":" + JSON.stringify(p), 1500,
     () => call("jse_cash", actor(ctx), p)));
 });
 get("/api/audit", async (ctx) => {
-  need(ctx, "ADMIN", "VIEWER", "EXCHANGE", "BANK");
-  const p: Record<string, string> = {};
-  for (const k of ["action", "team", "q", "page", "page_size"]) { const v = q(ctx, k); if (v) p[k] = v; }
+  need(ctx, "ADMIN", "VIEWER");
+  const p = params(ctx, ["action", "team", "q", "page", "page_size"]);
   return respond(ctx, 200, await cached("audit:" + JSON.stringify(p), 1500, () => call("jse_audit_log", actor(ctx), p)));
 });
 get("/api/commissions", async (ctx) => {
-  need(ctx, ...STAFF);
-  return respond(ctx, 200, await cached("staff:commissions", 2000, () => call("jse_commissions", actor(ctx), {})));
+  const u = need(ctx, "ADMIN", "BROKER", "VIEWER");
+  const p = params(ctx, ["broker", "page", "page_size"]);
+  return respond(ctx, 200, await cached("staff:commissions:" + (u.role === "BROKER" ? "b" + u.broker_id : "s") + ":" + JSON.stringify(p), 2000,
+    () => call("jse_commissions", actor(ctx), p)));
 });
 
 // ---- institutional ----
 get("/api/institutional-portfolio", async (ctx) => {
-  need(ctx, "ADMIN", "INSTITUTIONAL", "VIEWER");
-  const id = q(ctx, "institution_id");
-  return respond(ctx, 200, await cached("inst:" + (id || ctx.user?.institution_id || "default"), 1500,
+  const u = need(ctx, "ADMIN", "INSTITUTIONAL", "VIEWER");
+  const id = u.role === "INSTITUTIONAL" ? "" : q(ctx, "institution_id");
+  return respond(ctx, 200, await cached("inst:" + (id || u.institution_id || "default"), 1500,
     () => call("jse_institutional", actor(ctx), id ? { institution_id: id } : {})));
 });
 post("/api/institutional-order", async (ctx) => {
   need(ctx, "ADMIN", "INSTITUTIONAL");
-  return mutate(ctx, "jse_place_institutional_order", ctx.body || {}, ["inst:", "trk:", "q:", "staff:"]);
+  return mutate(ctx, "jse_place_institutional_order", ctx.body || {}, ORDER_CACHES.concat(["inst:"]));
 });
 
-// ---- market news ----
+// ---- market news (Event Admin only: the one price engine) ----
 post("/api/market-news", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_market_news", ctx.body || {}); });
+
+// ---- IPO round ----
+get("/api/ipo-mine", async (ctx) => {
+  const u = need(ctx, "PARTICIPANT", "ADMIN", "VIEWER", "BROKER");
+  const p = params(ctx, ["team"]);
+  return respond(ctx, 200, await cached("ipo-mine:" + scopeKey(u) + ":" + JSON.stringify(p), 1500, () => call("jse_ipo_mine", actor(ctx), p)));
+});
+get("/api/ipo-applications", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  return respond(ctx, 200, await cached("staff:ipo-applications", 1500, () => call("jse_ipo_applications", actor(ctx), {})));
+});
+post("/api/ipo-applications", async (ctx) => {
+  need(ctx, "PARTICIPANT", "ADMIN");
+  return mutate(ctx, "jse_ipo_application", ctx.body || {}, ["ipo-mine:", "staff:", "admin:", "pd:"]);
+});
+post("/api/ipo-prospectus", async (ctx) => {
+  need(ctx, "ADMIN");
+  const out = await mutate(ctx, "jse_ipo_prospectus_update", ctx.body || {}, ["pub:ipo", "admin:"]);
+  docCache.clear();
+  return out;
+}, 7_000_000);
 
 // ---- event administration ----
 get("/api/admin-state", async (ctx) => {
@@ -382,14 +480,14 @@ get("/api/admin-state", async (ctx) => {
   // per role: saved IPO listing prices are visible to administrators only
   return respond(ctx, 200, await cached("admin:state:" + u.role, 1500, () => call("jse_admin_state", actor(ctx), {})));
 });
+// Market Intelligence is embedded in Event Admin (administrators and faculty only)
+get("/api/insights", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  return respond(ctx, 200, await cached("staff:insights", 2500, () => call("jse_insights", null)));
+});
 post("/api/ipo-listing", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_ipo_listing", ctx.body || {}); });
 post("/api/event", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_event_action", ctx.body || {}); });
-post("/api/reset-event", async (ctx) => {
-  need(ctx, "ADMIN");
-  const out = await call("jse_reset_event", actor(ctx), ctx.body || {});
-  invalidate();
-  return json(ctx, out);
-});
+post("/api/reset-event", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_reset_event", ctx.body || {}); });
 post("/api/undo-redo", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_undo_redo", ctx.body || {}); });
 post("/api/reject-open-orders", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_reject_open_orders", ctx.body || {}); });
 post("/api/ipo-allotments", async (ctx) => {
@@ -400,13 +498,61 @@ post("/api/ipo-allotments", async (ctx) => {
 post("/api/teams", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_teams", ctx.body || {}); });
 post("/api/brokers", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_brokers", ctx.body || {}); });
 post("/api/config", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_config", ctx.body || {}); });
+get("/api/team-names", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  return respond(ctx, 200, await cached("admin:team-names", 2000, () => call("jse_team_names", actor(ctx), { action: "STATE" })));
+});
+post("/api/team-names", async (ctx) => {
+  need(ctx, "ADMIN");
+  const out = await mutate(ctx, "jse_team_names", ctx.body || {});
+  sessions.clear();
+  return out;
+});
 get("/api/users", async (ctx) => { need(ctx, "ADMIN"); return json(ctx, await call("jse_admin_users", actor(ctx), { action: "LIST" })); });
 post("/api/users", async (ctx) => {
   need(ctx, "ADMIN");
-  const out = await call("jse_admin_users", actor(ctx), ctx.body || {});
+  const out = await mutate(ctx, "jse_admin_users", ctx.body || {}, []);
   sessions.clear();
-  return json(ctx, out);
+  return out;
 });
+
+// Excel / CSV imports: Teams (Team, Team Name, Section, Broker, Members) · Brokers (Broker Code, Broker Name[, Contact, Desk])
+// · IPO allotments (Team, IPO, Lots, Shares, Amount). The file is parsed here; the engine validates every row atomically.
+const IMPORTS: Record<string, { fn: string; required: string[]; map: Record<string, string> }> = {
+  teams: { fn: "jse_update_teams", required: ["team"], map: { team: "team", "team code": "team", "team name": "name", name: "name", section: "section", broker: "broker", "broker code": "broker", members: "members", "participant members": "members" } },
+  brokers: { fn: "jse_update_brokers", required: ["broker"], map: { "broker code": "broker", broker: "broker", code: "broker", "broker name": "name", name: "name", contact: "contact", "broker contact": "contact", desk: "desk", "broker desk": "desk" } },
+  allotments: { fn: "jse_ipo_allot", required: ["team", "ipo", "lots"], map: { team: "team", "team code": "team", ipo: "ipo", "ipo code": "ipo", symbol: "ipo", lots: "lots", shares: "shares", quantity: "shares", amount: "amount" } },
+};
+post("/api/import", async (ctx) => {
+  need(ctx, "ADMIN");
+  const b = ctx.body || {};
+  const spec = IMPORTS[String(b.kind || "")];
+  if (!spec) throw new ApiError(400, "INVALID_IMPORT", "Choose what to import: teams, brokers or allotments.");
+  let rows: string[][];
+  try {
+    if (typeof b.csv_text === "string") rows = readCsv(b.csv_text);
+    else {
+      const bytes = Buffer.from(String(b.data_base64 || ""), "base64");
+      if (!bytes.length) throw new Error("The file is empty.");
+      rows = /\.csv$/i.test(String(b.filename || "")) ? readCsv(bytes.toString("utf8")) : readXlsx(new Uint8Array(bytes));
+    }
+  } catch (e) {
+    throw new ApiError(400, "UNREADABLE_FILE", (e as Error).message || "The file could not be read.");
+  }
+  const headerRow = rows.findIndex((r) => r.some((c) => spec.map[c.trim().toLowerCase()]));
+  if (headerRow < 0) throw new ApiError(400, "MISSING_HEADERS", "The first row must contain the column names (" + Object.keys(spec.map).slice(0, 5).join(", ") + ").");
+  const header = rows[headerRow].map((c) => spec.map[c.trim().toLowerCase()] || "");
+  const missing = spec.required.filter((k) => !header.includes(k));
+  if (missing.length) throw new ApiError(400, "MISSING_HEADERS", "Missing column(s): " + missing.join(", ") + ".");
+  const data = rows.slice(headerRow + 1).filter((r) => r.some((c) => c !== "")).map((r) => {
+    const o: Record<string, string> = {};
+    header.forEach((k, i) => { if (k && r[i] !== undefined && r[i] !== "") o[k] = r[i]; });
+    return o;
+  });
+  if (!data.length) throw new ApiError(400, "NO_ROWS", "The file has no data rows.");
+  if (data.length > 2000) throw new ApiError(400, "TOO_MANY_ROWS", "At most 2,000 rows per import.");
+  return mutate(ctx, spec.fn, { rows: data, admin_password: b.admin_password, dry_run: !!b.dry_run, replace: !!b.replace, batch_id: b.filename ? String(b.filename).slice(0, 60) : undefined });
+}, 3_000_000);
 
 // ---- reports, certificates, exports ----
 get("/api/reports", async (ctx) => {
@@ -417,16 +563,17 @@ get("/api/certificates", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
   return respond(ctx, 200, await cached("staff:certificates", 3000, () => call("jse_certificates", actor(ctx), {})));
 });
+get("/api/share-certificates", async (ctx) => {
+  const u = need(ctx, "ADMIN", "VIEWER", "PARTICIPANT", "BROKER");
+  const team = u.role === "PARTICIPANT" ? "" : q(ctx, "team");
+  return json(ctx, await call("jse_share_certificates", actor(ctx), team ? { team } : {}));
+});
 
-const SHEETS: Array<[string, string]> = [
-  ["winner", "Winner"], ["teams", "Team Details"], ["participants", "Participant Details"], ["brokers", "Broker Details"],
-  ["cash", "Cash"], ["holdings", "Holdings"], ["sold_stocks", "Sold Stocks"], ["sold_ipos", "Sold IPOs"],
-  ["networth", "Net Worth & PL"], ["loans", "Loans & Interest"], ["cash_rule", "Cash Rule"],
-  ["short_sell", "Short Selling Attempts"], ["cash_shortfall", "Cash Shortfall Attempts"], ["insufficient_balance", "Insufficient Balance Rejections"],
-  ["orders", "Order Tracking"], ["rejected", "Rejected Orders"], ["trades", "Trade History"], ["ledger", "Cash Ledger"],
-  ["commission", "Broker Commission"], ["institutional", "Institutional Investors"], ["news", "Market News"],
-  ["prices", "Price History"], ["audit", "Audit Logs"],
-];
+let SHEETS: Array<[string, string]> | null = null;
+async function sheetList(): Promise<Array<[string, string]>> {
+  if (!SHEETS) SHEETS = (await rawQuery("SELECT jse_export_sheets() AS s")).rows[0].s as Array<[string, string]>;
+  return SHEETS;
+}
 function stamp(): string {
   const t = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString();
   return t.slice(0, 10) + "_" + t.slice(11, 16).replace(":", "");
@@ -445,7 +592,7 @@ get("/api/export", async (ctx) => {
 get("/api/export-event-excel", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
   const sheets: Sheet[] = [];
-  for (const [key, title] of SHEETS) {
+  for (const [key, title] of await sheetList()) {
     const out = await call("jse_export", actor(ctx), { sheet: key });
     sheets.push({ name: title, columns: out.columns, rows: out.rows });
   }
@@ -455,15 +602,29 @@ get("/api/export-event-excel", async (ctx) => {
     "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "content-disposition": `attachment; filename="JSE_Final_Event_Report_${stamp()}.xlsx"`, "cache-control": "no-store", ...corsHeaders(ctx) } });
 });
+get("/api/export-event-json", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  const sheets: Record<string, unknown> = {};
+  for (const [key, title] of await sheetList()) {
+    const out = await call("jse_export", actor(ctx), { sheet: key });
+    sheets[key] = { title, columns: out.columns, rows: out.rows };
+  }
+  const event = await call("jse_event_status", null);
+  const body = JSON.stringify({ success: true, service: "JAIN STOCK EXCHANGE", version: VERSION, generated_at: new Date().toISOString(), event, sheets });
+  await call("jse_audit_note", actor(ctx), { action: "EXPORT_EVENT_JSON", sheets: Object.keys(sheets).length }).catch(() => null);
+  return new Response(body, { status: 200, headers: {
+    "content-type": "application/json; charset=utf-8", "content-disposition": `attachment; filename="JSE_Final_Event_${stamp()}.json"`,
+    "cache-control": "no-store", ...corsHeaders(ctx) } });
+});
 
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
-async function readBody(req: Request): Promise<any> {
+async function readBody(req: Request, max = 2_000_000): Promise<any> {
   const len = Number(req.headers.get("content-length") || 0);
-  if (len > 2_000_000) throw new ApiError(413, "TOO_LARGE", "The request is too large.");
+  if (len > max) throw new ApiError(413, "TOO_LARGE", "The request is too large.");
   const text = await req.text();
-  if (text.length > 2_000_000) throw new ApiError(413, "TOO_LARGE", "The request is too large.");
+  if (text.length > max) throw new ApiError(413, "TOO_LARGE", "The request is too large.");
   if (!text.trim()) return {};
   try { return JSON.parse(text); } catch { throw new ApiError(400, "INVALID_JSON", "The request body is not valid JSON."); }
 }
@@ -493,8 +654,8 @@ export async function handle(req: Request): Promise<Response> {
     const auth = req.headers.get("authorization") || "";
     ctx.token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : null;
     ctx.user = await resolveUser(ctx.token);
-    if (ctx.method === "POST") ctx.body = await readBody(req);
-    return await route(ctx);
+    if (ctx.method === "POST") ctx.body = await readBody(req, route.maxBody);
+    return await route.h(ctx);
   } catch (e) {
     return fail(ctx, e);
   }

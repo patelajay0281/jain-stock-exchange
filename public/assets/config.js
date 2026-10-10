@@ -17,5 +17,5 @@
   else if (host === "localhost" || host === "127.0.0.1") api = "";
   else if (host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host)) api = STAGE;
   else api = PROD;
-  window.JSE_CONFIG = { api: api, env: api === STAGE ? "staging" : api === PROD ? "production" : "local", version: "2.72.0" };
+  window.JSE_CONFIG = { api: api, env: api === STAGE ? "staging" : api === PROD ? "production" : "local", version: "3.11.0" };
 })();

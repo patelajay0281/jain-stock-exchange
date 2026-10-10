@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPO · JAIN STOCK EXCHANGE</title>
+<meta name="description" content="The four Dalal Street 2026 IPOs: prospectus, issue details, application window, allotment and listing status.">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
+<style>
+  .window { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .lifecycle { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+  .lifecycle .arrow { color: var(--faint); }
+  .ipo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .ipo-top { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 4px; }
+  .ipo-top .kpi { box-shadow: none; background: var(--surface-2); padding: 9px 11px; }
+  .ipo-top .kpi .v { font-size: 17px; }
+  .apply { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .apply .row .input { width: 110px; }
+  @media (max-width: 1100px) { .ipo-grid { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 640px) { .window, .ipo-top { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<main id="main" class="wrap">
+  <div class="page-head">
+    <div><div class="eyebrow">IPO round</div><h1>Initial Public Offerings</h1>
+      <p>Read each company's prospectus, then decide which IPO shares to apply for. Application, allotment, listing and secondary-market trading are separate stages.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+
+  <div class="window" id="window"></div>
+  <div class="card" style="margin-top:14px"><div class="card-b">
+    <div class="lifecycle">
+      <b>Stages:</b> <span class="badge stage-pre_ipo">Pre-IPO</span><span class="arrow">→</span><span class="badge stage-application_open">Open for application</span><span class="arrow">→</span>
+      <span class="badge stage-application_closed">Application closed</span><span class="arrow">→</span><span class="badge stage-allotment_completed">Allotment completed</span><span class="arrow">→</span>
+      <span class="badge stage-listed">Listed · in CMS INDEX</span><span class="arrow">→</span><span>secondary-market trading through your broker</span>
+    </div>
+    <p class="small muted" style="margin:8px 0 0"><b>IPO lot sizing:</b> applications and allotments are in whole IPO lots (the lot size is shown for each IPO). This is separate from the CMS INDEX,
+      whose “50” is the number of base equity components. IPO allotments do not count as BUY trades for the assessment.</p>
+  </div></div>
+
+  <div class="card hidden" id="minePanel" style="margin-top:14px">
+    <div class="card-h"><h2>Your applications</h2><span class="small muted" id="mineMeta"></span></div>
+    <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO</th><th>Application</th><th class="num">Amount</th><th>Allotment</th></tr></thead><tbody id="mineRows"></tbody></table></div></div>
+  </div>
+
+  <div class="ipo-grid" id="ipos" style="margin-top:14px"></div>
+  <p class="disc" style="margin-top:14px" id="disc"></p>
+</main>
+<footer class="footer">JAIN STOCK EXCHANGE · Dalal Street 2026 · JAIN (Deemed-to-be University), CMS Business School · FIG</footer>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum;
+  var S = { user: null, page: null, mine: null, busy: false };
+  var $ = function (id) { return document.getElementById(id); };
+  $("disc").textContent = JSE.DISCLAIMER + " Prospectus information comes from the event organisers.";
+  var SECTIONS = [["company_description", "Company description"], ["issue_details", "Issue details"], ["business_overview", "Business overview"],
+    ["financial_information", "Financial information"], ["risk_factors", "Risk information"], ["use_of_proceeds", "Use of proceeds"],
+    ["promoters_management", "Promoters and management"], ["other_information", "Other prospectus information"]];
+
+  function countdown(ts) {
+    var ms = new Date(ts).getTime() - Date.now(); if (ms <= 0) return "";
+    return "in " + Math.floor(ms / 86400000) + "d " + Math.floor((ms % 86400000) / 3600000) + "h " + Math.floor((ms % 3600000) / 60000) + "m";
+  }
+  function renderWindow(w, st) {
+    var phase = { PRE_IPO: "Pre-IPO", OPEN: "Open for application", CLOSED: "Application closed" }[w.phase] || w.phase;
+    $("window").innerHTML =
+      '<div class="kpi ' + (w.phase === "OPEN" ? "good" : "info") + '"><div class="k">Application window</div><div class="v">' + esc(phase) + '</div><div class="s">' + esc(w.phase === "PRE_IPO" ? "opens " + countdown(w.opens_at) : w.phase === "OPEN" ? "closes " + countdown(w.closes_at) : "allotment by the organisers") + "</div></div>" +
+      '<div class="kpi"><div class="k">Opens</div><div class="v">' + F.datetime(w.opens_at) + '</div><div class="s">exactly 48 hours before the event start</div></div>' +
+      '<div class="kpi"><div class="k">Deadline</div><div class="v">' + F.datetime(w.closes_at) + '</div><div class="s">' + esc(N(w.hours)) + "-hour application window</div></div>" +
+      '<div class="kpi accent"><div class="k">Event start</div><div class="v">' + F.datetime(w.event_start_at) + '</div><div class="s">market ' + esc((JSE.STATUS[st] || {}).text || st) + "</div></div>";
+  }
+
+  function mineFor(sym) { return S.mine ? (S.mine.items.filter(function (x) { return x.symbol === sym; })[0] || {}) : {}; }
+
+  function card(i) {
+    var p = i.prospectus || {}, m = mineFor(i.symbol);
+    var doc = p.has_document ? '<a class="btn sm primary" target="_blank" rel="noopener" href="' + esc(JSE.apiUrl("/api/ipo-document?symbol=" + encodeURIComponent(i.symbol))) + '">Open prospectus (PDF)</a>'
+      : p.document_url ? '<a class="btn sm primary" target="_blank" rel="noopener" href="' + esc(p.document_url) + '">Open prospectus</a>'
+      : '<span class="small muted">Prospectus document not published yet</span>';
+    var apply = "";
+    if (S.user && S.user.role === "PARTICIPANT") {
+      var app = m.application, al = m.allotment;
+      if (i.stage === "APPLICATION_OPEN") {
+        apply = '<div class="apply"><div class="label">Your application (lots of ' + esc(i.lot_size) + ' shares at ₹' + esc(i.issue_price) + ")</div>" +
+          '<div class="row" style="margin-top:6px"><input class="input" type="number" min="1" step="1" inputmode="numeric" data-lots="' + esc(i.symbol) + '" value="' + esc(app && app.status === "APPLIED" ? app.lots : 1) + '">' +
+          '<span class="small muted" data-amt="' + esc(i.symbol) + '"></span>' +
+          '<button class="btn primary sm" type="button" data-apply="' + esc(i.symbol) + '">' + (app && app.status === "APPLIED" ? "Update application" : "Apply") + "</button>" +
+          (app && app.status === "APPLIED" ? '<button class="btn sm" type="button" data-withdraw="' + esc(i.symbol) + '">Withdraw</button>' : "") + "</div>" +
+          '<div class="small muted" style="margin-top:6px">' + (app && app.status === "APPLIED" ? "Applied for " + app.lots + " lot(s) = " + F.num(app.shares) + " shares · " + F.money(app.amount) : app && app.status === "WITHDRAWN" ? "Application withdrawn." : "No application yet.") + "</div></div>";
+      } else {
+        apply = '<div class="apply small">' + (app ? "<b>Application:</b> " + (app.status === "APPLIED" ? app.lots + " lot(s) · " + F.money(app.amount) : "withdrawn") : "<b>Application:</b> none") +
+          " · <b>Allotment:</b> " + (al ? al.lots + " lot(s) = " + F.num(al.shares) + " shares · " + F.money(al.amount) : i.stage === "ALLOTMENT_COMPLETED" || i.stage === "LISTED" ? "not allotted" : "pending") + "</div>";
+      }
+    }
+    return '<article class="card ipo-card" id="' + esc(i.symbol) + '"><div class="card-h"><div><h2>' + esc(i.name) + '</h2><div class="small muted" style="margin-top:2px">' +
+      esc(i.ipo_code || "") + " · " + esc(i.symbol) + (i.sector ? " · " + esc(i.sector) : "") + "</div></div>" + JSE.badge.stage(i.stage) + "</div>" +
+      '<div class="card-b"><div class="ipo-top">' +
+      '<div class="kpi"><div class="k">Issue price</div><div class="v">' + F.price(i.issue_price) + "</div></div>" +
+      '<div class="kpi"><div class="k">IPO lot size</div><div class="v">' + F.num(i.lot_size) + ' sh</div></div>' +
+      '<div class="kpi"><div class="k">Value of one lot</div><div class="v">' + F.money(i.lot_value) + "</div></div>" +
+      '<div class="kpi"><div class="k">' + (i.listed ? "Listed at" : "Market price") + '</div><div class="v">' + (i.listed ? F.price(i.listing_price) : "after listing") + "</div></div></div>" +
+      '<div class="row" style="margin-top:8px">' + doc + (i.listed ? '<span class="badge stage-listed">In CMS INDEX since ' + F.datetime(i.listed_at) + "</span>" : "") + "</div>" +
+      SECTIONS.map(function (s) {
+        var v = p[s[0]];
+        return "<h4>" + esc(s[1]) + '</h4><p class="pv' + (v ? "" : " empty-pv") + '">' + (v ? esc(v) : "To be published by the event organisers.") + "</p>";
+      }).join("") +
+      (p.updated_at ? '<p class="tiny muted" style="margin:10px 0 0">Prospectus updated ' + F.datetime(p.updated_at) + " IST</p>" : "") + apply + "</div></article>";
+  }
+
+  function renderMine() {
+    var panel = $("minePanel");
+    if (!S.mine || !S.page) { panel.classList.add("hidden"); return; }
+    panel.classList.remove("hidden");
+    var total = 0;
+    $("mineRows").innerHTML = S.page.ipos.map(function (i) {
+      var m = mineFor(i.symbol), app = m.application, al = m.allotment;
+      if (app && app.status === "APPLIED") total += N(app.amount);
+      return "<tr><td><b>" + esc(i.symbol) + '</b> <span class="small muted">' + esc(i.name) + "</span></td><td>" + (app ? (app.status === "APPLIED" ? app.lots + " lot(s) · " + F.num(app.shares) + " shares" : '<span class="badge prov">withdrawn</span>') : '<span class="muted">—</span>') +
+        '</td><td class="num">' + (app && app.status === "APPLIED" ? F.money(app.amount) : "—") + "</td><td>" + (al ? '<span class="badge ok">' + al.lots + " lot(s) · " + F.num(al.shares) + " sh</span>" : '<span class="muted">' + (i.stage === "ALLOTMENT_COMPLETED" || i.stage === "LISTED" ? "not allotted" : "pending") + "</span>") + "</td></tr>";
+    }).join("");
+    $("mineMeta").textContent = "Team cash " + F.money(S.mine.cash) + " · total applied " + F.money(total);
+  }
+
+  function render() {
+    var d = S.page;
+    renderWindow(d.window, d.status);
+    $("ipos").innerHTML = d.ipos.map(card).join("");
+    renderMine();
+    $("ipos").querySelectorAll("[data-lots]").forEach(function (inp) {
+      var sym = inp.getAttribute("data-lots"), i = d.ipos.filter(function (x) { return x.symbol === sym; })[0];
+      var upd = function () { var n = Math.max(0, Math.floor(N(inp.value))); document.querySelector('[data-amt="' + sym + '"]').textContent = n ? "= " + F.num(n * i.lot_size) + " shares · " + F.money(n * i.lot_size * N(i.issue_price)) : ""; };
+      inp.addEventListener("input", upd); upd();
+    });
+    $("ipos").querySelectorAll("[data-apply]").forEach(function (b) { b.addEventListener("click", function () { act("SET", b.getAttribute("data-apply")); }); });
+    $("ipos").querySelectorAll("[data-withdraw]").forEach(function (b) { b.addEventListener("click", function () { act("WITHDRAW", b.getAttribute("data-withdraw")); }); });
+    if (location.hash && !S.scrolled) { var t = document.getElementById(location.hash.slice(1)); if (t) { t.scrollIntoView(); S.scrolled = true; } }
+  }
+
+  async function act(action, sym) {
+    if (S.busy) return;
+    var body = { action: action, ipo: sym };
+    if (action === "SET") body.lots = Math.floor(N(document.querySelector('[data-lots="' + sym + '"]').value));
+    if (action === "WITHDRAW" && !(await JSE.dialog({ title: "Withdraw application?", text: "Withdraw your " + sym + " application? You can apply again while the window is open.", confirmText: "Withdraw" }))) return;
+    S.busy = true;
+    try {
+      await JSE.api.post("/api/ipo-applications", body);
+      JSE.toast(action === "SET" ? sym + " application saved" : sym + " application withdrawn", "good");
+      await load();
+    } catch (e) { JSE.toast(e.message, "bad"); }
+    finally { S.busy = false; }
+  }
+
+  async function load() {
+    var reqs = [JSE.api.get("/api/ipo", null, { retries: 1 })];
+    if (S.user && S.user.role === "PARTICIPANT") reqs.push(JSE.api.get("/api/ipo-mine"));
+    var r = await Promise.all(reqs);
+    S.page = r[0]; S.mine = r[1] || null;
+    // keep typed values while polling
+    var typed = {}; document.querySelectorAll("[data-lots]").forEach(function (i) { if (document.activeElement === i) typed[i.getAttribute("data-lots")] = i.value; });
+    if (Object.keys(typed).length) return;
+    render();
+    $("conn").className = "conn"; $("connText").textContent = "Updated " + F.time(new Date()) + " IST";
+  }
+
+  JSE.page({ id: "ipo" }).then(function (user) {
+    S.user = user || null;
+    JSE.poll(load, 15000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = e.message; } });
+  });
+})();
+</script>
+</body>
+</html>

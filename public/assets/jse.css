@@ -1,4 +1,4 @@
-/* JAIN STOCK EXCHANGE (JSE) v272 — shared design system
+/* JAIN STOCK EXCHANGE (JSE) v311 — shared design system
    Light, high-contrast, projector-friendly. Navy / white / light grey with green & red for movement. */
 :root {
   --bg: #f4f6f9; --surface: #ffffff; --surface-2: #f8fafc; --surface-3: #eef2f7;
@@ -218,13 +218,64 @@ table.t .actions { white-space: nowrap; text-align: right; }
 .conn.stale .dot { background: #c47a00; } .conn.down .dot { background: var(--red); }
 .noaccess { max-width: 520px; margin: 60px auto; text-align: center; }
 
+/* ---------- v311: order flow, slips, identity, IPO, news ---------- */
+.badge.s-pit { background: #eef0ff; color: #3b3fb6; border-color: #cfd3fb; }
+.badge.s-stale { background: var(--amber-soft); color: var(--amber); border-color: #f2d3a3; }
+.badge.runner { background: #e6ecf5; color: var(--navy); border-color: #b9c7dc; }
+.badge.stage-pre_ipo { background: var(--grey-soft); color: #475569; border-color: var(--line-2); }
+.badge.stage-application_open { background: var(--green-soft); color: var(--green); border-color: #c4e6cf; }
+.badge.stage-application_closed { background: var(--amber-soft); color: var(--amber); border-color: #f2d3a3; }
+.badge.stage-allotment_completed { background: var(--cyan-soft); color: var(--cyan); border-color: #b9e4ec; }
+.badge.stage-listed { background: var(--purple-soft); color: var(--purple); border-color: #dccff5; }
+.flow.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.step.current { border-color: #c9daf5; background: var(--blue-soft); }
+.step.current .st { color: var(--blue); }
+.step.skipped, .step.na { background: var(--surface-2); color: var(--muted); }
+.step.inperson { border-style: dashed; }
+.step .at { font-size: 11.5px; color: var(--ink-2); margin-top: 3px; font-weight: 600; }
+.idcard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow); overflow: hidden; }
+.idcard > div { padding: 14px 18px; }
+.idcard > div + div { border-left: 1px solid var(--line); background: var(--surface-2); }
+.idcard .big { font-size: 24px; font-weight: 900; color: var(--navy); letter-spacing: .3px; line-height: 1.15; }
+.idcard .meaning { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.idcard .code { font-family: var(--mono); font-size: 13px; color: var(--ink-2); font-weight: 700; }
+.disc { font-size: 12px; color: #6b3a00; background: var(--amber-soft); border: 1px solid #f2d3a3; border-radius: var(--radius); padding: 9px 12px; }
+.fox-h { display: flex; align-items: center; gap: 8px; }
+.fox-mark { background: #c2410c; color: #fff; font-weight: 900; font-size: 11px; letter-spacing: 1.2px; border-radius: 5px; padding: 3px 7px; }
+.news-item { padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.news-item:last-child { border-bottom: 0; }
+.news-item .hl { font-weight: 700; color: var(--ink); }
+.news-item .mv { font-weight: 800; white-space: nowrap; }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 16px 2px 8px; flex-wrap: wrap; }
+.sec-h h2 { margin: 0; font-size: 13px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--navy); font-weight: 900; }
+.sec-h .note { font-size: 12px; color: var(--muted); }
+.slip { background: #fff; border: 2px solid var(--navy); border-radius: 12px; padding: 18px 22px; max-width: 760px; }
+.slip-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border-bottom: 2px solid var(--navy); padding-bottom: 10px; margin-bottom: 12px; }
+.slip-h img { height: 34px; }
+.slip-no { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--navy); }
+.slip .dl { grid-template-columns: minmax(150px, auto) 1fr; }
+.slip .foot { margin-top: 12px; font-size: 11.5px; color: var(--muted); border-top: 1px dashed var(--line-2); padding-top: 8px; }
+.ipo-card .card-b h4 { margin: 14px 0 4px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-2); }
+.ipo-card .card-b p.pv { margin: 0; white-space: pre-wrap; font-size: 13px; color: var(--ink); }
+.ipo-card .card-b p.pv.empty-pv { color: var(--faint); font-style: italic; }
+.awards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.award { border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow); }
+.award.w { border-top: 4px solid #0f5a37; } .award.r { border-top: 4px solid #5b6f8f; }
+.award .k { font-size: 11px; letter-spacing: 1.4px; font-weight: 900; text-transform: uppercase; color: var(--muted); }
+.award .n { font-size: 20px; font-weight: 900; color: var(--navy); margin-top: 3px; }
+@media print { .slip { border-width: 1px; box-shadow: none; } }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1280px) { .split { grid-template-columns: minmax(0, 1fr) 340px; } .cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1000px) {
   .split, .split.left, .cols-2, .cols-3 { grid-template-columns: minmax(0, 1fr); }
   .tb-clock, .brand-sub { display: none; }
-  .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .flow, .flow.six { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .idcard { grid-template-columns: minmax(0, 1fr); }
+  .idcard > div + div { border-left: 0; border-top: 1px solid var(--line); }
+  .awards { grid-template-columns: minmax(0, 1fr); }
 }
+@media (min-width: 1001px) and (max-width: 1400px) { .flow.six { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 640px) {
   .wrap { padding: 12px 12px 28px; }
   .topbar-in { padding: 6px 12px; gap: 8px; }

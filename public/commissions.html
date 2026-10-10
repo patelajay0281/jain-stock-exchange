@@ -5,39 +5,101 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Broker Commission · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
+<style>
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .toolbar .input { width: 220px; }
+</style>
 </head>
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">Brokerage 0.5% · earned only on Bank-settled orders</div><h1>Broker Commission</h1><p>Brokers ranked by commission generated. Each team's assigned broker earns the 0.5% brokerage on that team's settled orders.</p></div>
+    <div><div class="eyebrow" id="eyebrow">Brokerage · earned only on Bank-settled orders</div><h1 id="h1">Broker Commission</h1>
+      <p id="lead">Every Bank-settled, brokerage-bearing transaction creates one commission record for the team's assigned broker at the configured brokerage rate. Totals reconcile to the settled transactions.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
+  <div id="recon" style="margin-bottom:14px"></div>
   <div class="kpis" id="kpis"></div>
-  <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
-    <thead><tr><th class="num">Rank</th><th>Broker</th><th class="num">Teams</th><th class="num">Orders</th><th class="num">Buy volume</th><th class="num">Sell volume</th><th class="num">Total trade value</th><th class="num">Brokerage earned</th><th style="width:22%">Share</th><th class="num">Open orders</th></tr></thead>
-    <tbody id="rows"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div></div>
+  <div class="card" style="margin-bottom:18px"><div class="card-h"><h2 id="rankH">Broker ranking</h2><span class="small muted">by commission earned</span></div>
+    <div class="card-b flush"><div class="table-wrap"><table class="t">
+    <thead><tr><th class="num">Rank</th><th>Broker</th><th class="num">Teams</th><th class="num">Settled orders</th><th class="num">Buy value</th><th class="num">Sell value</th><th class="num">Total trade value</th><th class="num">Commission earned</th><th style="width:18%">Share</th><th class="num">In workflow</th></tr></thead>
+    <tbody id="rank"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div></div>
+  <div class="card"><div class="card-h"><h2>Commission transactions</h2>
+      <div class="toolbar"><label class="sr-only" for="fBroker">Broker</label><select class="input hidden" id="fBroker"></select>
+        <button class="btn sm hidden" type="button" id="csv">Download CSV</button></div></div>
+    <div class="card-b flush"><div class="table-wrap"><table class="t">
+    <thead><tr><th>Date / time</th><th>Broker</th><th>Order</th><th>Team</th><th>Security</th><th>Side</th><th class="num">Quantity</th><th class="num">Price</th><th class="num">Trade value</th><th class="num">Brokerage rate</th><th class="num">Commission</th><th>Status</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody></table></div>
+    <div class="row between" style="padding:10px 14px"><span class="small muted" id="info"></span><div class="row"><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div></div></div></div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
+  "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { page: 1, size: 100, broker: "", user: null, brokersLoaded: false };
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+
   async function load() {
-    var d = await JSE.api.get("/api/commissions");
-    var top = d.brokers[0], max = Math.max.apply(null, d.brokers.map(function (b) { return N(b.brokerage_earned); }).concat([1]));
-    $("kpis").innerHTML = kpi("Brokers", F.num(d.brokers.length), "rate " + F.pct(N(d.rate) * 100, { sign: false }), "accent") +
-      kpi("Settled orders", F.num(d.totals.orders), "with commission", "info") + kpi("Trade value", F.short(d.totals.trade_value), "settled", "info") +
-      kpi("Brokerage earned", F.money(d.totals.brokerage), "all brokers", "good") + kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.broker) : "—", top ? F.money(top.brokerage_earned) : "", "good");
-    $("rows").innerHTML = d.brokers.map(function (b) {
-      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(b.broker) + "</b>" + (b.name && b.name !== b.broker ? '<div class="tiny muted">' + esc(b.name) + "</div>" : "") + '</td><td class="num">' + b.teams + '</td><td class="num">' + F.num(b.orders) +
-        '<div class="tiny muted">' + b.buy_orders + " buy · " + b.sell_orders + ' sell</div></td><td class="num">' + F.money(b.buy_volume) + '<div class="tiny muted">' + F.num(b.buy_quantity) + ' shares</div></td><td class="num">' + F.money(b.sell_volume) + '<div class="tiny muted">' + F.num(b.sell_quantity) + " shares</div></td>" +
-        '<td class="num">' + F.money(b.total_trade_value) + '</td><td class="num"><b>' + F.money(b.brokerage_earned) + '</b></td><td><div class="bar"><i style="width:' + (N(b.brokerage_earned) / max * 100).toFixed(1) + '%"></i></div></td><td class="num">' + b.pending_orders + "</td></tr>";
-    }).join("");
-    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+    var d = await JSE.api.get("/api/commissions", { broker: S.broker, page: S.page, page_size: S.size });
+    var own = S.user.role === "BROKER", rateTxt = JSE.rate(d.rate);
+    $("eyebrow").textContent = "Brokerage " + rateTxt + " · earned only on Bank-settled orders";
+    var rc = d.reconciliation || {};
+    $("recon").innerHTML = rc.ok ? '<div class="alert good"><b>Reconciled.</b> Commission total ' + F.money(rc.commission_total, { dp: 2 }) + " equals the brokerage on settled transactions" + (own || S.broker ? " for this broker." : ".") + "</div>"
+      : '<div class="alert bad"><b>Mismatch:</b> commission total ' + F.money(rc.commission_total, { dp: 2 }) + " vs settled brokerage " + F.money(rc.settled_brokerage_total, { dp: 2 }) + ". Contact the administrator.</div>";
+    var brokers = d.brokers || [], top = brokers[0], max = Math.max(1, brokers.reduce(function (m, b) { return Math.max(m, N(b.brokerage_earned)); }, 0));
+    if (own) {
+      var me = brokers[0] || {};
+      $("kpis").innerHTML = kpi("Your rank", me.rank ? "#" + me.rank : "—", "among all brokers", "accent") + kpi("Assigned teams", F.num(me.teams || 0), "", "info") +
+        kpi("Settled orders", F.num(d.totals.orders), (me.buy_orders || 0) + " buy · " + (me.sell_orders || 0) + " sell", "info") + kpi("Trade value", F.short(d.totals.trade_value), "settled", "info") +
+        kpi("Commission earned", F.money(d.totals.brokerage, { dp: 2 }), "at " + rateTxt, "good");
+    } else {
+      $("kpis").innerHTML = kpi("Brokers", F.num(brokers.length), "rate " + rateTxt, "accent") + kpi("Settled transactions", F.num(d.totals.orders), S.broker ? "broker " + esc(S.broker) : "with commission", "info") +
+        kpi("Trade value", F.short(d.totals.trade_value), "settled", "info") + kpi("Commission", F.money(d.totals.brokerage, { dp: 2 }), S.broker ? esc(S.broker) : "all brokers", "good") +
+        kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.broker) : "—", top && N(top.brokerage_earned) ? F.money(top.brokerage_earned, { dp: 2 }) : "", "good");
+    }
+    $("rank").innerHTML = brokers.length ? brokers.map(function (b) {
+      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(b.broker) + "</b>" + (b.name && b.name !== b.broker ? '<div class="tiny muted">' + esc(b.name) + "</div>" : "") + '</td><td class="num">' + b.teams +
+        '</td><td class="num">' + F.num(b.orders) + '<div class="tiny muted">' + b.buy_orders + " buy · " + b.sell_orders + ' sell</div></td><td class="num">' + F.money(b.buy_volume) + '<div class="tiny muted">' + F.num(b.buy_quantity) + ' shares</div></td>' +
+        '<td class="num">' + F.money(b.sell_volume) + '<div class="tiny muted">' + F.num(b.sell_quantity) + ' shares</div></td><td class="num">' + F.money(b.total_trade_value) + '</td><td class="num"><b>' + F.money(b.brokerage_earned, { dp: 2 }) +
+        '</b></td><td><div class="bar"><i style="width:' + (N(b.brokerage_earned) / max * 100).toFixed(1) + '%"></i></div></td><td class="num">' + b.pending_orders + "</td></tr>";
+    }).join("") : '<tr><td colspan="10" class="empty">No brokers.</td></tr>';
+    if (!own && !S.brokersLoaded && brokers.length) {
+      var list = brokers.slice().sort(function (a, b) { return a.broker < b.broker ? -1 : 1; });
+      $("fBroker").innerHTML = '<option value="">All brokers</option>' + list.map(function (b) { return '<option value="' + esc(b.broker) + '">' + esc(b.broker + (b.name && b.name !== b.broker ? " · " + b.name : "")) + "</option>"; }).join("");
+      $("fBroker").value = S.broker; S.brokersLoaded = true;
+    }
+    var tx = d.transactions || [];
+    $("rows").innerHTML = tx.length ? tx.map(function (t) {
+      return '<tr><td class="nowrap">' + F.datetime(t.created_at) + "</td><td><b>" + esc(t.broker) + "</b>" + (t.broker_name && t.broker_name !== t.broker ? '<div class="tiny muted">' + esc(t.broker_name) + "</div>" : "") +
+        '</td><td class="mono"><a href="/orders.html?order=' + encodeURIComponent(t.order_no) + '">' + esc(t.order_no) + "</a></td><td><b>" + esc(t.team) + '</b><div class="tiny muted">' + esc(t.team_name || "") + "</div></td>" +
+        "<td><b>" + esc(t.symbol) + '</b><div class="tiny muted">' + esc(t.security || "") + "</div></td><td>" + JSE.badge.side(t.side) + '</td><td class="num">' + F.num(t.quantity) + '</td><td class="num">' + F.price(t.price) +
+        '</td><td class="num">' + F.money(t.trade_value, { dp: 2 }) + '</td><td class="num">' + JSE.rate(t.rate) + '</td><td class="num"><b>' + F.money(t.amount, { dp: 2 }) + "</b></td><td>" +
+        (t.status === "SETTLED" ? '<span class="badge ok">Settled</span>' : '<span class="badge no" title="Reversed by undo">Reversed</span>' + (t.reversed_at ? '<div class="tiny muted">' + F.datetime(t.reversed_at) + "</div>" : "")) + "</td></tr>";
+    }).join("") : '<tr><td colspan="12" class="empty"><b>No commission yet.</b>Commission is recorded when the Bank settles a brokerage-bearing order.</td></tr>';
+    var total = N(d.transactions_total), from = (S.page - 1) * S.size + 1, to = from + tx.length - 1;
+    $("info").textContent = tx.length ? from + "–" + to + " of " + F.num(total) + " record(s) (reversed records stay listed for the audit trail)" : "";
+    $("prev").disabled = S.page <= 1; $("next").disabled = to >= total;
+    $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date()) + " IST";
   }
-  JSE.page({ id: "commissions" }).then(function (u) { if (u) JSE.poll(load, 6000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } }); });
+
+  var poller;
+  JSE.page({ id: "commissions" }).then(function (u) {
+    if (!u) return;
+    S.user = u;
+    if (u.role === "BROKER") {
+      $("h1").textContent = "My Commission"; $("rankH").textContent = "Your position";
+      $("lead").textContent = "Commission earned on your assigned teams' Bank-settled orders, one record per settled transaction, at the configured brokerage rate.";
+    } else {
+      $("fBroker").classList.remove("hidden"); $("csv").classList.remove("hidden");
+      $("fBroker").addEventListener("change", function () { S.broker = $("fBroker").value; S.page = 1; poller.now(); });
+      $("csv").addEventListener("click", function () { JSE.download("/api/export?sheet=commission", "JSE_commission.csv").catch(function (e) { JSE.toast(e.message, "bad"); }); });
+    }
+    $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
+    $("next").onclick = function () { S.page++; poller.now(); };
+    poller = JSE.poll(load, 6000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+  });
 })();
 </script>
 </body>

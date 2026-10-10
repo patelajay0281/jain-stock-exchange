@@ -1,6 +1,7 @@
-/* JAIN STOCK EXCHANGE (JSE) v272 — shared browser library.
-   API client (bearer sessions, retries, timeouts), page shell + role-aware navigation, live status
-   ticker, visibility-aware polling, formatting (Indian rupees, IST), dialogs and toasts. */
+/* JAIN STOCK EXCHANGE (JSE) v311 — shared browser library.
+   API client (bearer sessions, retries, timeouts), page shell + role-aware navigation (one item per page,
+   only the pages a role needs), live status ticker, visibility-aware polling, formatting (Indian rupees, IST),
+   dialogs, administrator-password confirmation and toasts. */
 (function () {
   "use strict";
   var CFG = window.JSE_CONFIG || { api: "" };
@@ -143,33 +144,41 @@
   };
 
   // ------------------------------------------------------------------ pages & navigation
-  var STAFF = ["ADMIN", "EXCHANGE", "BANK", "BROKER", "INSTITUTIONAL", "VIEWER"];
+  var ALL = ["ADMIN", "EXCHANGE", "BANK", "BROKER", "PIT_MANAGER", "INSTITUTIONAL", "PARTICIPANT", "VIEWER"];
   var PAGES = [
     { id: "market", href: "/", label: "Market", roles: "*" },
-    { id: "order", href: "/order.html", label: "Create Order", roles: ["ADMIN", "BROKER"] },
-    { id: "exchange", href: "/exchange.html", label: "Exchange", roles: ["ADMIN", "EXCHANGE", "VIEWER"] },
-    { id: "bank", href: "/bank.html", label: "Bank", roles: ["ADMIN", "BANK", "VIEWER"] },
-    { id: "orders", href: "/orders.html", label: "Order Tracking", roles: STAFF.concat(["PARTICIPANT"]) },
-    { id: "institutional", href: "/institutional.html", label: "Institutional", roles: ["ADMIN", "INSTITUTIONAL", "VIEWER"] },
-    { id: "commissions", href: "/commissions.html", label: "Broker Commission", roles: STAFF },
-    { id: "portfolios", href: "/portfolios.html", label: "Portfolios", roles: STAFF.concat(["PARTICIPANT"]), labelFor: { PARTICIPANT: "My Portfolio" } },
+    { id: "ipo", href: "/ipo.html", label: "IPO", roles: "*" },
+    { id: "order", href: "/order.html", label: "Broker Desk", roles: ["ADMIN", "BROKER", "VIEWER"] },
+    { id: "pit", href: "/pit.html", label: "Pit Manager", roles: ["ADMIN", "PIT_MANAGER", "VIEWER"] },
+    { id: "exchange", href: "/exchange.html", label: "Exchange Settlement", roles: ["ADMIN", "EXCHANGE", "VIEWER"] },
+    { id: "bank", href: "/bank.html", label: "Bank Settlement", roles: ["ADMIN", "BANK", "VIEWER"] },
+    { id: "orders", href: "/orders.html", label: "Order Tracking", roles: ALL, labelFor: { PARTICIPANT: "My Orders" } },
+    { id: "slips", href: "/slips.html", label: "Trading Slips", roles: ["ADMIN", "PIT_MANAGER", "PARTICIPANT", "VIEWER"], labelFor: { PARTICIPANT: "My Trading Slips" },
+      access: ALL },
+    { id: "institutional", href: "/institutional.html", label: "Institutional Investors", roles: ["ADMIN", "INSTITUTIONAL", "VIEWER"] },
+    { id: "commissions", href: "/commissions.html", label: "Broker Commission", roles: ["ADMIN", "BROKER", "VIEWER"] },
+    { id: "portfolios", href: "/portfolios.html", label: "Participant Portfolios", roles: ["ADMIN", "VIEWER", "PARTICIPANT"], labelFor: { PARTICIPANT: "My Portfolio" } },
     { id: "admin", href: "/admin.html", label: "Event Admin", roles: ["ADMIN", "VIEWER"] },
-    { id: "audit", href: "/audit.html", label: "Audit Log", roles: ["ADMIN", "VIEWER", "EXCHANGE", "BANK"] },
-    { id: "cash", href: "/cash.html", label: "Cash Ledger", roles: ["ADMIN", "BANK", "VIEWER", "EXCHANGE", "PARTICIPANT"] },
-    { id: "insights", href: "/insights.html", label: "Market Intelligence", roles: "*" },
-    { id: "certificates", href: "/certificates.html", label: "Certificates", roles: ["ADMIN", "VIEWER"] },
+    { id: "audit", href: "/audit.html", label: "Audit Log", roles: ["ADMIN", "VIEWER"] },
+    { id: "cash", href: "/cash.html", label: "Cash Ledger", roles: ["ADMIN", "BANK", "VIEWER"] },
+    { id: "certificates", href: "/certificates.html", label: "Share Certificates", roles: ["ADMIN", "VIEWER"], access: ["ADMIN", "VIEWER", "PARTICIPANT", "BROKER"] },
   ];
+  // the page each role lands on after signing in
+  var HOME = { PARTICIPANT: "/portfolios.html", BROKER: "/order.html", PIT_MANAGER: "/pit.html", EXCHANGE: "/exchange.html",
+    BANK: "/bank.html", INSTITUTIONAL: "/institutional.html", ADMIN: "/admin.html", VIEWER: "/admin.html" };
   function allowed(page, user) {
     if (page.roles === "*") return true;
     return !!user && page.roles.indexOf(user.role) >= 0;
   }
-  var ROLE_LABEL = { ADMIN: "Administrator", EXCHANGE: "Exchange Operator", BANK: "Bank Operator", BROKER: "Broker / Pit Manager",
+  var ROLE_LABEL = { ADMIN: "Event Admin", EXCHANGE: "Exchange Operator", BANK: "Bank Operator", BROKER: "Broker", PIT_MANAGER: "Pit Manager",
     INSTITUTIONAL: "Institutional Investor", PARTICIPANT: "Participant", VIEWER: "Faculty Viewer" };
   var STATUS = {
     NOT_STARTED: { cls: "not-started", text: "Not started" }, LIVE: { cls: "live", text: "Market live" },
     SETTLEMENT_ONLY: { cls: "settlement", text: "Settlement only" }, CLOSED: { cls: "closed", text: "Market closed" },
     FINALIZED: { cls: "finalized", text: "Finalized" },
   };
+  var DISCLAIMER = "Market rumours, simulated chatter and surprise announcements are part of the Dalal Street event experience — they are not real investment advice. " +
+    "Prices change only when the Event Admin publishes Market News.";
 
   function el(html) { var t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
 
@@ -182,8 +191,8 @@
       return '<a href="' + p.href + '"' + (p.id === opts.page ? ' aria-current="page"' : "") + ">" + esc(label) + "</a>";
     }).join("");
     var right = user
-      ? '<div class="tb-user"><div class="who"><b>' + esc(user.name || user.username) + "</b><span>" + esc(ROLE_LABEL[user.role] || user.role) +
-        (user.team ? " · " + esc(user.team) : "") + '</span></div><button class="tb-btn tb-pw" type="button" id="jsePw" title="Change your password">Password</button>' +
+      ? '<div class="tb-user"><div class="who"><b>' + esc(user.team_name || user.name || user.username) + "</b><span>" + esc(ROLE_LABEL[user.role] || user.role) +
+        (user.team ? " · " + esc(user.team) : user.broker ? " · " + esc(user.broker) : "") + '</span></div><button class="tb-btn tb-pw" type="button" id="jsePw" title="Change your password">Password</button>' +
         '<button class="tb-btn" type="button" id="jseLogout">Sign out</button></div>'
       : '<a class="tb-btn" href="/login.html?next=' + encodeURIComponent(location.pathname + location.search) + '">Sign in</a>';
     var envTag = CFG.env === "staging" ? ' <span class="pill settlement env-pill" title="Staging data">Staging</span>' : CFG.env === "local" ? ' <span class="pill not-started env-pill">Local</span>' : "";
@@ -329,17 +338,64 @@
   }
 
   // ------------------------------------------------------------------ badges
-  var STATUS_BADGE = { EXCHANGE_PENDING: "s-pending", EXCHANGE_APPROVED: "s-approved", BANK_PENDING: "s-bank", BANK_SETTLED: "s-settled", EXCHANGE_REJECTED: "s-rejected", BANK_REJECTED: "s-rejected" };
+  var STATUS_BADGE = { PIT_PENDING: "s-pit", EXCHANGE_PENDING: "s-pending", EXCHANGE_APPROVED: "s-approved", BANK_PENDING: "s-bank", BANK_SETTLED: "s-settled",
+    PIT_REJECTED: "s-rejected", EXCHANGE_REJECTED: "s-rejected", BANK_REJECTED: "s-rejected" };
+  var STATUS_TEXT = { PIT_PENDING: "Awaiting Pit Manager", EXCHANGE_PENDING: "Executed · awaiting Exchange", EXCHANGE_APPROVED: "Awaiting Bank",
+    BANK_PENDING: "Bank verifying", BANK_SETTLED: "Settled", PIT_REJECTED: "Rejected · Pit", EXCHANGE_REJECTED: "Rejected · Exchange", BANK_REJECTED: "Rejected · Bank" };
+  var STAGE = { NOT_STARTED: "", PRE_IPO: "Pre-IPO", APPLICATION_OPEN: "Open for application", APPLICATION_CLOSED: "Application closed",
+    ALLOTMENT_COMPLETED: "Allotment completed", LISTED: "Listed · in CMS INDEX" };
   var badge = {
-    status: function (s) { return '<span class="badge ' + (STATUS_BADGE[s] || "prov") + '">' + esc(fmt.statusText(s)) + "</span>"; },
+    status: function (s, code) {
+      if (s === "PIT_REJECTED" && code === "PRICE_STALE") return '<span class="badge s-stale" title="The market price moved before execution">Price stale</span>';
+      return '<span class="badge ' + (STATUS_BADGE[s] || "prov") + '" title="' + esc(fmt.statusText(s)) + '">' + esc(STATUS_TEXT[s] || fmt.statusText(s)) + "</span>";
+    },
     side: function (s) { return '<span class="badge ' + (s === "BUY" ? "buy" : "sell") + '">' + esc(s) + "</span>"; },
     kind: function (k) { return k === "IPO" ? '<span class="badge ipo">IPO</span>' : '<span class="badge equity">Equity</span>'; },
+    stage: function (st) { return '<span class="badge stage-' + esc(String(st || "").toLowerCase()) + '">' + esc(STAGE[st] || fmt.statusText(st)) + "</span>"; },
     rule: function (met, status) {
       if (status === "PROVISIONAL") return '<span class="badge ' + (met ? "ok" : "warn") + '" title="Provisional until the market closes">' + (met ? "Satisfied" : "Not satisfied") + " · prov.</span>";
       return met ? '<span class="badge ok">Satisfied</span>' : '<span class="badge no">Not satisfied</span>';
     },
     access: function (a) { return '<span class="badge ' + (a === "ELIGIBLE" ? "ok" : a === "LOCKED" ? "no" : "prov") + '">' + esc(a) + "</span>"; },
+    eligibility: function (s) {
+      var cls = /^ELIGIBLE$/.test(s) ? "ok" : /^ELIGIBLE/.test(s) ? "ok" : /^NOT ELIGIBLE/.test(s) ? "no" : "warn";
+      return '<span class="badge ' + cls + '">' + esc(s || "—") + "</span>";
+    },
+    award: function (a) { return a === "WINNER" ? '<span class="badge win">Winner</span>' : a === "RUNNER_UP" ? '<span class="badge runner">Runner-Up</span>' : ""; },
+    progress: function (n, min, side) {
+      n = toNum(n); min = toNum(min);
+      return '<span class="badge ' + (n >= min ? "ok" : "prov") + '">' + esc(side) + " " + n + " / " + min + "</span>";
+    },
   };
+
+  /** Asks for the signed-in administrator's password (one dialog per action); resolves to the password or false. */
+  function adminConfirm(o) {
+    o = o || {};
+    return new Promise(function (resolve) {
+      var back = el('<div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="jseAcH"><form class="modal" novalidate>' +
+        '<div class="modal-h" id="jseAcH">' + esc(o.title || "Confirm with the administrator password") + '</div><div class="modal-b">' +
+        (o.html || (o.text ? "<p style=\"margin-top:0\">" + esc(o.text) + "</p>" : "")) +
+        (o.typeWord ? '<div class="field" style="margin-top:10px"><label for="jseAcW">Type ' + esc(o.typeWord) + ' to confirm</label><input class="input" id="jseAcW" autocomplete="off"></div>' : "") +
+        '<div class="field" style="margin-top:10px"><label for="jseAcP">Administrator password</label><input class="input" id="jseAcP" type="password" autocomplete="current-password"></div>' +
+        '<div class="hint small muted" style="margin-top:6px">Material event changes are confirmed with your own administrator password and recorded in the audit log.</div>' +
+        '</div><div class="modal-f"><button class="btn" type="button" data-x="cancel">Cancel</button>' +
+        '<button class="btn ' + (o.danger ? "bad" : "primary") + '" type="submit">' + esc(o.confirmText || "Confirm") + "</button></div></form></div>");
+      var form = back.querySelector("form");
+      function close(v) { back.remove(); document.removeEventListener("keydown", onKey); resolve(v); }
+      function onKey(e) { if (e.key === "Escape") close(false); }
+      back.addEventListener("click", function (e) { if (e.target === back || (e.target.getAttribute && e.target.getAttribute("data-x") === "cancel")) close(false); });
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (o.typeWord && back.querySelector("#jseAcW").value.trim() !== o.typeWord) { toast("Type " + o.typeWord + " exactly to confirm.", "warn"); back.querySelector("#jseAcW").focus(); return; }
+        var pw = back.querySelector("#jseAcP").value;
+        if (!pw) { back.querySelector("#jseAcP").focus(); return; }
+        close(pw);
+      });
+      document.addEventListener("keydown", onKey);
+      document.body.appendChild(back);
+      (back.querySelector("#jseAcW") || back.querySelector("#jseAcP")).focus();
+    });
+  }
 
   // ------------------------------------------------------------------ misc
   function uuid() {
@@ -368,7 +424,7 @@
   async function page(o) {
     o = o || {};
     var cfg = PAGES.filter(function (p) { return p.id === o.id; })[0] || { roles: "*" };
-    var roles = o.roles || cfg.roles;
+    var roles = o.roles || cfg.access || cfg.roles;
     var user = session.user;
     if (user) { var fresh = await session.refresh(); user = fresh; }
     renderShell({ page: o.id });
@@ -400,9 +456,21 @@
     }, 5000, { onError: offlinePill });
   }
 
+  function homeFor(role) { return HOME[role] || "/"; }
+  /** true when a signed-in user with this role may open the page at `path` (unknown paths are allowed) */
+  function canOpen(path, role) {
+    var p = String(path || "/").split(/[?#]/)[0] || "/";
+    var cfg = PAGES.filter(function (x) { return x.href === p || (p === "/index.html" && x.href === "/"); })[0];
+    if (!cfg) return true;
+    var roles = cfg.access || cfg.roles;
+    return roles === "*" || roles.indexOf(role) >= 0;
+  }
+  function rate(v) { return (Math.round(toNum(v) * 10000) / 100).toFixed(2) + "%"; }
+
   window.JSE = {
     config: CFG, api: api, session: session, fmt: fmt, esc: esc, el: el, poll: poll, toast: toast, dialog: dialog, badge: badge,
     uuid: uuid, debounce: debounce, download: download, page: page, applyStatus: applyStatus, offline: offlinePill, changePassword: changePassword,
+    adminConfirm: adminConfirm, homeFor: homeFor, canOpen: canOpen, rate: rate, apiUrl: function (path) { return BASE + path; }, DISCLAIMER: DISCLAIMER, STATUS_TEXT: STATUS_TEXT, STAGE: STAGE,
     onStatus: function (cb) { shellState.statusCbs.push(cb); if (shellState.status) cb(shellState.status); },
     get status() { return shellState.status; }, teamSort: teamSort, teamCodes: teamCodes, ROLE_LABEL: ROLE_LABEL, STATUS: STATUS, toNum: toNum,
   };

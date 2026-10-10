@@ -5,18 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Audit Log · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>
   .filters { display: grid; grid-template-columns: 260px 180px minmax(0, 1fr); gap: 10px; }
   @media (max-width: 760px) { .filters { grid-template-columns: 1fr; } }
-  pre.js { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); max-height: 140px; overflow: auto; }
+  pre.js { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); max-height: 160px; overflow: auto; }
   tr.row-main { cursor: pointer; }
 </style>
 </head>
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">Append-only</div><h1>Audit Log</h1><p>Every order, Exchange and Bank decision, settlement, risk event, loan, Market News move and event-control action, with user, role, time and before/after state.</p></div>
+    <div><div class="eyebrow">Append-only · immutable event history</div><h1>Audit Log</h1>
+      <p>Participant instructions, broker submissions, Pit Manager executions, Exchange and Bank decisions, Market News price moves, loans, configuration and lifecycle controls,
+        risk events, resets, undo / redo, IPO administration and team / broker changes — each with time, actor, role, team, order, asset, details and result. Click a row for the before / after record.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
   <div class="card" style="margin-bottom:14px"><div class="card-b"><div class="filters">
@@ -25,34 +27,48 @@
     <div class="field"><label for="fQ">Search</label><input class="input" id="fQ" type="search" placeholder="Order number, user, symbol, details"></div>
   </div></div></div>
   <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
-    <thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Entity</th><th>Team</th><th>Order</th><th>Details</th></tr></thead>
+    <thead><tr><th>Time (IST)</th><th>Actor</th><th>Action</th><th>Team</th><th>Order</th><th>Asset</th><th>Details</th><th>Result</th></tr></thead>
     <tbody id="rows"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody></table></div>
-    <div class="row between" style="padding:10px 14px"><span class="small muted" id="info"></span><div class="row"><button class="btn sm" id="prev">← Newer</button><button class="btn sm" id="next">Older →</button></div></div></div></div>
+    <div class="row between" style="padding:10px 14px"><span class="small muted" id="info"></span><div class="row"><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div></div></div></div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
+  "use strict";
   var F = JSE.fmt, esc = JSE.esc, $ = function (id) { return document.getElementById(id); };
-  var S = { page: 1, size: 100, open: {}, data: null, force: true };
-  function summary(r) {
-    var d = r.details || {}, parts = [];
-    ["side", "symbol", "quantity", "price", "trade_value", "brokerage", "amount", "interest", "mood", "applied_pct", "code", "reason", "required", "cash", "holding", "loan_drawn", "status"].forEach(function (k) {
-      if (d[k] !== undefined && d[k] !== null && d[k] !== "") parts.push(k.replace(/_/g, " ") + ": " + (typeof d[k] === "object" ? JSON.stringify(d[k]) : d[k]));
+  var S = { page: 1, size: 100, open: {}, data: null };
+  var KEYS = ["side", "quantity", "price", "expected_price", "trade_value", "brokerage", "amount", "interest", "mood", "headline", "applied_pct", "lots", "shares",
+    "instruction_no", "slip_no", "reason", "required", "cash", "holding", "loan_drawn", "from", "to", "seed", "rows", "changed", "sheets"];
+  function val(v) { return typeof v === "object" ? JSON.stringify(v) : String(v); }
+  function details(r) {
+    var d = r.details || {}, a = r.after || {}, parts = [];
+    KEYS.forEach(function (k) {
+      var v = d[k] !== undefined && d[k] !== null && d[k] !== "" ? d[k] : a[k];
+      if (v !== undefined && v !== null && v !== "" && k !== "status") parts.push(k.replace(/_/g, " ") + ": " + val(v));
     });
-    if (r.after && r.after.status) parts.push("→ " + r.after.status);
-    return parts.slice(0, 6).join(" · ");
+    return parts.slice(0, 7).join(" · ");
+  }
+  function asset(r) { var d = r.details || {}, a = r.after || {}, b = r.before || {}; return d.symbol || a.symbol || b.symbol || d.ipo || ""; }
+  function result(r) {
+    var a = r.after || {}, d = r.details || {};
+    if (/REJECT|SHORT_SELL|SHORTFALL|INSUFFICIENT|FAILED|DENIED|DECLINED/.test(r.action)) return '<span class="badge no">' + esc(d.code || a.status || "Rejected") + "</span>";
+    if (a.status) return JSE.badge.status(a.status, d.code);
+    if (d.result) return '<span class="badge prov">' + esc(d.result) + "</span>";
+    return '<span class="badge ok">Recorded</span>';
   }
   function render() {
     var d = S.data; if (!d) return;
     var sel = $("fAction"), v = sel.value;
-    if (sel.options.length <= 1 && d.actions.length) { sel.innerHTML = '<option value="">All actions</option>' + d.actions.sort().map(function (a) { return "<option>" + esc(a) + "</option>"; }).join(""); sel.value = v; }
+    if (sel.options.length <= 1 && d.actions.length) { sel.innerHTML = '<option value="">All actions</option>' + d.actions.slice().sort().map(function (a) { return "<option>" + esc(a) + "</option>"; }).join(""); sel.value = v; }
     $("rows").innerHTML = d.rows.length ? d.rows.map(function (r) {
-      var main = '<tr class="row-main" data-id="' + r.id + '"><td class="nowrap">' + F.datetime(r.created_at) + "</td><td><b>" + esc(r.actor || "") + "</b>" + (r.email ? '<div class="tiny muted">' + esc(r.email) + "</div>" : "") + "</td><td>" + esc(r.role || "") +
-        '</td><td><span class="badge ' + (/REJECT|SHORT|SHORTFALL|INSUFFICIENT|FAILED/.test(r.action) ? "no" : /SETTLED|APPROVED|LOGIN$|START/.test(r.action) ? "ok" : "prov") + '">' + esc(r.action) + "</span></td><td>" + esc((r.entity || "") + (r.entity_id ? " " + r.entity_id : "")) +
-        "</td><td>" + esc(r.team || "") + '</td><td class="mono">' + esc(r.order_no || "") + '</td><td class="small">' + esc(summary(r)) + "</td></tr>";
+      var main = '<tr class="row-main" data-id="' + r.id + '"><td class="nowrap">' + F.datetime(r.created_at) + "</td><td><b>" + esc(r.actor || "system") + '</b><div class="tiny muted">' + esc(JSE.ROLE_LABEL[r.role] || r.role || "") + "</div></td>" +
+        '<td><span class="badge ' + (/REJECT|SHORT|SHORTFALL|INSUFFICIENT|FAILED/.test(r.action) ? "no" : /SETTLED|APPROVED|EXECUTED|LOGIN$|START/.test(r.action) ? "ok" : "prov") + '">' + esc(r.action) + "</span>" +
+        (r.entity ? '<div class="tiny muted">' + esc(r.entity + (r.entity_id ? " " + r.entity_id : "")) + "</div>" : "") + "</td><td>" + esc(r.team || "") + '</td><td class="mono">' +
+        (r.order_no ? '<a href="/orders.html?order=' + encodeURIComponent(r.order_no) + '">' + esc(r.order_no) + "</a>" : "") + "</td><td><b>" + esc(asset(r)) + '</b></td><td class="small">' + esc(details(r)) + "</td><td>" + result(r) + "</td></tr>";
       var exp = S.open[r.id] ? '<tr class="expand"><td colspan="8"><div class="grid cols-3" style="padding:12px 14px"><div><div class="label">Before</div><pre class="js">' + esc(JSON.stringify(r.before, null, 1) || "—") +
-        '</pre></div><div><div class="label">After</div><pre class="js">' + esc(JSON.stringify(r.after, null, 1) || "—") + '</pre></div><div><div class="label">Details · IP ' + esc(r.ip || "—") + '</div><pre class="js">' + esc(JSON.stringify(r.details, null, 1) || "—") + "</pre></div></div></td></tr>" : "";
+        '</pre></div><div><div class="label">After</div><pre class="js">' + esc(JSON.stringify(r.after, null, 1) || "—") + '</pre></div><div><div class="label">Details · IP ' + esc(r.ip || "—") + (r.email ? " · " + esc(r.email) : "") +
+        '</div><pre class="js">' + esc(JSON.stringify(r.details, null, 1) || "—") + "</pre></div></div></td></tr>" : "";
       return main + exp;
     }).join("") : '<tr><td colspan="8" class="empty">No audit entries match.</td></tr>';
     var from = (S.page - 1) * S.size + 1, to = from + d.rows.length - 1;
@@ -61,16 +77,22 @@
   }
   async function load() {
     S.data = await JSE.api.get("/api/audit", { action: $("fAction").value, team: $("fTeam").value, q: $("fQ").value.trim(), page: S.page, page_size: S.size });
-    render(); $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+    render(); $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date()) + " IST";
   }
-  $("rows").addEventListener("click", function (e) { var tr = e.target.closest("tr.row-main"); if (!tr) return; var id = tr.getAttribute("data-id"); S.open[id] = !S.open[id]; render(); });
+  $("rows").addEventListener("click", function (e) { if (e.target.closest("a")) return; var tr = e.target.closest("tr.row-main"); if (!tr) return; var id = tr.getAttribute("data-id"); S.open[id] = !S.open[id]; render(); });
   ["fAction", "fTeam"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; poller.now(); }); });
   $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; poller.now(); }, 350));
   $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
   $("next").onclick = function () { S.page++; poller.now(); };
   $("fTeam").innerHTML = '<option value="">All teams</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
   var poller;
-  JSE.page({ id: "audit" }).then(function (u) { if (u) poller = JSE.poll(load, 8000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } }); });
+  JSE.page({ id: "audit" }).then(function (u) {
+    if (!u) return;
+    var p = new URLSearchParams(location.search);
+    if (p.get("team")) $("fTeam").value = p.get("team").toUpperCase();
+    if (p.get("q")) $("fQ").value = p.get("q");
+    poller = JSE.poll(load, 8000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+  });
 })();
 </script>
 </body>

@@ -67,12 +67,12 @@
 /exchange-live-v4 /exchange.html 301
 /exchange-live-v5.html /exchange.html 301
 /exchange-live-v5 /exchange.html 301
-/insights-live-v2.html /insights.html 301
-/insights-live-v2 /insights.html 301
-/insights-live-v3.html /insights.html 301
-/insights-live-v3 /insights.html 301
-/insights-live-v4.html /insights.html 301
-/insights-live-v4 /insights.html 301
+/insights-live-v2.html /admin.html#intelligence 301
+/insights-live-v2 /admin.html#intelligence 301
+/insights-live-v3.html /admin.html#intelligence 301
+/insights-live-v3 /admin.html#intelligence 301
+/insights-live-v4.html /admin.html#intelligence 301
+/insights-live-v4 /admin.html#intelligence 301
 /institutional-live-v2.html /institutional.html 301
 /institutional-live-v2 /institutional.html 301
 /institutional-live-v3.html /institutional.html 301
@@ -119,3 +119,5 @@
 /portfolios-live-v3 /portfolios.html 301
 /portfolios-live-v4.html /portfolios.html 301
 /portfolios-live-v4 /portfolios.html 301
+/insights.html /admin.html#intelligence 301
+/insights /admin.html#intelligence 301

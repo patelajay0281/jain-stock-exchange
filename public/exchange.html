@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Exchange Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>
   .risk { display: flex; flex-direction: column; gap: 3px; }
   .risk .badge { align-self: flex-start; }
@@ -16,7 +16,7 @@
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">Exchange desk</div><h1>Exchange Settlement</h1><p>Approve or reject orders. Exchange approval never changes cash, holdings or prices — the Bank settles approved orders.</p></div>
+    <div><div class="eyebrow">Exchange desk</div><h1>Exchange Settlement</h1><p>Review orders executed by the Pit Manager. Approve or reject; approval never changes cash, holdings or prices — the Bank settles approved orders.</p></div>
     <div class="row"><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
       <button class="btn good" type="button" id="bulk" title="Approve every pending order that has no warnings">Approve all clean orders</button></div>
   </div>
@@ -26,7 +26,7 @@
     <div class="card-h"><h2>Pending at Exchange <span class="muted" id="pendCount"></span></h2>
       <input class="input" id="q" type="search" placeholder="Filter by order, team, symbol" style="max-width:260px;min-height:34px"></div>
     <div class="card-b flush"><div class="table-wrap" style="max-height:62vh"><table class="t">
-      <thead><tr><th>Order · status</th><th>Time</th><th>Team</th><th>Broker</th><th>Security</th><th>Side</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Trade value</th><th class="num">Brokerage</th><th>Checks</th><th class="actions">Decision</th></tr></thead>
+      <thead><tr><th>Order · slip</th><th>Executed</th><th>Team</th><th>Assigned broker</th><th>Security</th><th>Side</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Trade value</th><th class="num">Brokerage</th><th>Risk indicators</th><th class="actions">Decision</th></tr></thead>
       <tbody id="rows"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody></table></div></div>
   </div>
   <div class="card" style="margin-top:16px">
@@ -36,8 +36,8 @@
       <tbody id="recent"></tbody></table></div></div>
   </div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
   "use strict";
@@ -49,7 +49,8 @@
   function risk(o) {
     var r = [];
     if (o.short_sell_risk) r.push('<span class="badge warn" title="Holding ' + o.holding + ', other open sells ' + o.open_sell_other + '">Short sell: holds ' + F.num(o.holding) + "</span>");
-    if (o.cash_risk) r.push('<span class="badge warn" title="Free cash ' + F.money(o.free_cash) + '">Cash short: free ' + F.short(o.free_cash) + "</span>");
+    if (o.cash_risk) r.push('<span class="badge warn" title="Free cash ' + F.money(o.free_cash) + ', loan room ' + F.money(o.loan_room) + '">Cash short: free ' + F.short(o.free_cash) + " + loan " + F.short(o.loan_room) + "</span>");
+    else if (o.loan_needed) r.push('<span class="badge prov" title="The Bank will draw a loan for the shortfall">Loan at settlement</span>');
     if (o.account_type === "INSTITUTION") r.push('<span class="badge inst">Institutional · ' + esc(o.team) + "</span>");
     if (o.pair_ref) r.push('<span class="badge prov">' + esc(o.pair_ref) + "</span>");
     if (!r.length) r.push('<span class="badge ok">Clean</span>');
@@ -60,26 +61,29 @@
     var d = S.data; if (!d) return;
     var pend = d.pending.filter(function (o) {
       if (!S.q) return true; var q = S.q.toLowerCase();
-      return (o.order_no + " " + o.team + " " + o.symbol + " " + (o.broker || "")).toLowerCase().indexOf(q) >= 0;
+      return (o.order_no + " " + o.team + " " + (o.team_name || "") + " " + o.symbol + " " + (o.broker || "") + " " + (o.slip_no || "")).toLowerCase().indexOf(q) >= 0;
     });
     var flagged = d.pending.filter(function (o) { return o.short_sell_risk || o.cash_risk; }).length;
-    $("kpis").innerHTML = kpi("Pending at Exchange", F.num(d.counts.pending), "oldest first", "accent") +
+    $("kpis").innerHTML = kpi("Executed · awaiting review", F.num(d.counts.pending), "oldest first", "accent") +
+      kpi("At the Pit Manager", F.num(d.counts.awaiting_pit), "not executed yet", "info") +
       kpi("Flagged for review", F.num(flagged), "short sell / cash warnings", flagged ? "warn" : "") +
-      kpi("Forwarded to Bank", F.num(d.counts.approved_today), "approved by Exchange", "good") +
+      kpi("Forwarded to Bank", F.num(d.counts.approved), "approved by Exchange", "good") +
       kpi("Rejected", F.num(d.counts.rejected), "by Exchange", "bad");
     $("pendCount").textContent = "(" + d.pending.length + ")";
     $("rows").innerHTML = pend.length ? pend.map(function (o) {
       var diff = N(o.price_diff_pct);
       return '<tr class="' + (o.short_sell_risk || o.cash_risk ? "flagged" : "") + '" data-id="' + o.id + '">' +
-        '<td class="mono"><b>' + esc(o.order_no) + "</b><div>" + JSE.badge.status(o.status) + "</div></td><td>" + F.time(o.created_at) + '<div class="small muted">' + F.age(o.age_seconds) + " ago</div></td><td><b>" + esc(o.team) + "</b></td><td>" + esc(o.broker || (o.account_type === "INSTITUTION" ? esc(o.institution) : "—")) + "</td>" +
+        '<td class="mono"><b>' + esc(o.order_no) + "</b><div>" + (o.slip_no ? '<a class="mono small" href="/slips.html?slip=' + encodeURIComponent(o.slip_no) + '">' + esc(o.slip_no) + "</a>" : JSE.badge.status(o.status)) + "</div></td>" +
+        "<td>" + F.time(o.executed_at || o.created_at) + '<div class="small muted">' + (o.executed_by ? "by " + esc(o.executed_by) + " · " : "") + F.age(o.age_seconds) + " ago</div></td>" +
+        "<td><b>" + esc(o.team) + '</b><div class="tiny muted">' + esc(o.team_name || "") + "</div></td><td>" + (o.account_type === "INSTITUTION" ? '<span class="badge inst">' + esc(o.institution) + "</span>" : "<b>" + esc(o.broker || "—") + '</b><div class="tiny muted">' + esc(o.broker_name || "") + "</div>") + "</td>" +
         "<td>" + esc(o.symbol) + " " + JSE.badge.kind(o.kind) + "</td><td>" + JSE.badge.side(o.side) + '</td><td class="num">' + F.num(o.quantity) + "</td>" +
-        '<td class="num">' + F.price(o.price) + '<div class="diff ' + F.dir(diff) + '">mkt ' + F.price(o.market_price) + " · " + F.pct(diff) + "</div></td>" +
-        '<td class="num">' + F.money(o.trade_value) + '</td><td class="num">' + F.money(o.brokerage) + "</td><td>" + risk(o) + "</td>" +
+        '<td class="num">' + F.price(o.price) + '<div class="diff muted">market now ' + F.price(o.market_price) + "</div></td>" +
+        '<td class="num">' + F.money(o.trade_value) + '</td><td class="num">' + F.money(o.brokerage) + '<div class="tiny muted">' + JSE.rate(o.brokerage_rate) + "</div></td><td>" + risk(o) + "</td>" +
         '<td class="actions">' + (S.canAct ? '<button class="btn good sm" data-a="APPROVE">Approve</button> <button class="btn bad sm" data-a="REJECT">Reject</button>' : '<span class="muted small">view only</span>') + "</td></tr>";
-    }).join("") : '<tr><td colspan="12" class="empty"><b>No orders waiting.</b>New orders appear here automatically.</td></tr>';
+    }).join("") : '<tr><td colspan="12" class="empty"><b>No executed orders waiting.</b>Orders appear here as soon as the Pit Manager executes them.</td></tr>';
     $("recent").innerHTML = d.recent.length ? d.recent.map(function (o) {
       return "<tr><td>" + F.time(o.exchange_at) + '</td><td class="mono">' + esc(o.order_no) + "</td><td>" + esc(o.team) + "</td><td>" + esc(o.symbol) + "</td><td>" + JSE.badge.side(o.side) +
-        '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + "</td><td>" + JSE.badge.status(o.status) + "</td><td>" + esc(o.exchange_by || "—") + '</td><td class="small">' + esc(o.reject_reason || "") + "</td></tr>";
+        '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + "</td><td>" + JSE.badge.status(o.status, o.reject_code) + "</td><td>" + esc(o.exchange_by || "—") + '</td><td class="small">' + esc(o.reject_reason || "") + "</td></tr>";
     }).join("") : '<tr><td colspan="9" class="empty">No decisions yet.</td></tr>';
   }
 

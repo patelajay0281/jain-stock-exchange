@@ -5,7 +5,7 @@ export const BASE = (process.env.BASE || "http://127.0.0.1:8788").replace(/\/$/,
 
 /** Local test databases use known passwords (tests/test-passwords.sql); staging uses CI sign-in. */
 export function localPassword(username) {
-  const known = { ADMIN: "admin-pass-1", "PIT-01": "pit-pass-01", "EXCHANGE-01": "exch-pass-01", "BANK-01": "bank-pass-01",
+  const known = { ADMIN: "admin-pass-1", "BROKER-01": "broker-pass-01", "PIT-01": "pit-pass-01", "EXCHANGE-01": "exch-pass-01", "BANK-01": "bank-pass-01",
     "INST-01": "inst-pass-01", "TEAM-001": "team-pass-001", "TEAM-002": "team-pass-002", "FACULTY-01": "faculty-pass-1" };
   return known[username] || username.toLowerCase() + "-pw";
 }

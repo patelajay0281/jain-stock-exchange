@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bank Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>
   .chk { display: flex; flex-direction: column; gap: 3px; } .chk .badge { align-self: flex-start; }
   tr.bad-row td { background: #fff7f8; } tr.loan-row td { background: #fffaf2; } tr.claimed td { box-shadow: inset 3px 0 0 var(--amber); }
@@ -15,7 +15,7 @@
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">CMS Bank · settlement desk</div><h1>Bank Settlement</h1><p>The Bank is the final authority. Every order is re-checked here (status, cash, holdings, brokerage, price band, loans) before cash, holdings and the market price change.</p></div>
+    <div><div class="eyebrow">CMS Bank · settlement desk</div><h1>Bank Settlement</h1><p>The Bank is the final authority for cash. Every Exchange-approved order is re-checked here (status, cash, allowed financing, holdings, brokerage) before cash and holdings change. Settlement never changes the market price.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
   <div class="kpis" id="kpis"></div>
@@ -38,15 +38,15 @@
     </div>
     <aside class="stack">
       <div class="card loans">
-        <div class="card-h"><h2>Loans</h2><span class="small muted" id="loanRule"></span></div>
+        <div class="card-h"><h2>Loans &amp; repayment</h2><span class="small muted" id="loanRule"></span></div>
         <div class="card-b">
           <form id="loanForm" class="form-grid" autocomplete="off">
             <div class="field span-2"><label for="lTeam">Team</label><select class="input" id="lTeam"></select></div>
-            <div class="field"><label for="lAction">Action</label><select class="input" id="lAction"><option value="DRAW">Draw loan</option><option value="REPAY">Repay (interest first)</option></select></div>
+            <div class="field"><label for="lAction">Action</label><select class="input" id="lAction"><option value="REPAY">Repay (interest first)</option><option value="DRAW">Draw loan</option></select></div>
             <div class="field"><label for="lAmt">Amount (₹)</label><input class="input" id="lAmt" type="number" min="1" step="1"></div>
             <div class="span-2"><button class="btn primary block" type="submit" id="lGo">Submit</button></div>
           </form>
-          <div class="small muted" style="margin-top:10px">A loan can be drawn only when the team's cash is at or below the minimum cash buffer. Interest is charged once per draw. Repayment cannot take cash below the buffer. Loans are never deducted from Net Worth.</div>
+          <div class="small muted" style="margin-top:10px" id="loanRules">Interest is charged on every draw. Repayment pays interest first, then principal; after a partial repayment, fresh interest is charged on the remaining principal. The full loan must be repaid for eligibility.</div>
         </div>
         <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
           <thead><tr><th>Team</th><th class="num">Cash</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Room</th></tr></thead>
@@ -55,8 +55,8 @@
     </aside>
   </div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
   "use strict";
@@ -66,14 +66,12 @@
 
   function checks(o, d) {
     var r = [], cls = "";
-    var band = o.price_ok ? '<span class="badge ok">Price within band</span>' : '<span class="badge no">Price out of band (mkt ' + F.price(o.market_price) + ")</span>";
-    if (!o.price_ok) cls = "bad-row";
     if (o.team_side === "BUY") {
-      var after = N(o.cash) - N(o.required), buf = N(d.min_cash_buffer);
-      if (after >= buf) r.push('<span class="badge ok">Cash OK · leaves ' + F.short(after) + "</span>");
+      var after = N(o.cash) - N(o.required);
+      if (after >= 0) r.push('<span class="badge ok">Cash OK · leaves ' + F.short(after) + "</span>");
       else {
-        var need = N(o.required) + buf - N(o.cash);
-        if (need <= N(o.loan_room)) { r.push('<span class="badge warn">Auto loan ' + F.money(need) + "</span>"); cls = cls || "loan-row"; }
+        var need = N(o.required) - N(o.cash);
+        if (d.auto_loan && need <= N(o.loan_room)) { r.push('<span class="badge warn">Auto loan ' + F.money(need) + " (" + JSE.rate(d.loan_rate) + ")</span>"); cls = "loan-row"; }
         else { r.push('<span class="badge no">Insufficient balance</span>'); cls = "bad-row"; }
       }
       if (o.account_type === "INSTITUTION") r.push(N(o.institution_holding) >= o.quantity ? '<span class="badge ok">Institution holds ' + F.num(o.institution_holding) + "</span>" : '<span class="badge no">Institution holds ' + F.num(o.institution_holding) + "</span>");
@@ -81,10 +79,9 @@
       if (N(o.holding) >= o.quantity) r.push('<span class="badge ok">Holds ' + F.num(o.holding) + "</span>");
       else { r.push('<span class="badge no">Short: holds ' + F.num(o.holding) + "</span>"); cls = "bad-row"; }
     }
-    r.push(band);
     if (o.account_type === "INSTITUTION") r.push('<span class="badge inst">Institutional ' + esc(o.side) + "</span>");
     if (o.claimed_by) r.push('<span class="badge s-bank">Verifying: ' + esc(o.claimed_by) + "</span>");
-    if (o.pair_ref) r.push('<span class="badge prov" title="Linked buyer/seller ticket">' + esc(o.pair_ref) + "</span>");
+    if (o.slip_no) r.push('<span class="badge prov" title="Trading slip">' + esc(o.slip_no) + "</span>");
     return { html: '<div class="chk">' + r.join("") + "</div>", cls: cls };
   }
 
@@ -94,9 +91,9 @@
     $("kpis").innerHTML = kpi("Awaiting Bank", F.num(d.pending.length), "approved by Exchange", "accent") +
       kpi("Settled", F.num(st.settled), F.short(st.settled_value) + " traded", "good") +
       kpi("Bank rejected", F.num(st.rejected), F.num(st.insufficient_balance) + " insufficient balance", "bad") +
-      kpi("Brokerage collected", F.money(st.brokerage), "0.5% per settled order", "info") +
+      kpi("Brokerage collected", F.money(st.brokerage), "at each order's configured rate", "info") +
       kpi("Loans outstanding", F.short(st.loans_outstanding), "interest due " + F.money(st.interest_outstanding), "warn");
-    $("loanRule").textContent = "Buffer " + F.money(d.min_cash_buffer) + " · limit " + F.short(d.loan_limit);
+    $("loanRule").textContent = "Limit " + F.short(d.loan_limit) + " · interest " + JSE.rate(d.loan_rate);
     var list = d.pending.filter(function (o) { if (!S.q) return true; return (o.order_no + " " + o.team + " " + o.symbol).toLowerCase().indexOf(S.q.toLowerCase()) >= 0; });
     $("pendCount").textContent = "(" + d.pending.length + ")";
     $("rows").innerHTML = list.length ? list.map(function (o) {
@@ -104,21 +101,21 @@
       var amt = o.team_side === "BUY" ? '<b class="down">−' + F.money(o.required) + '</b><div class="tiny muted">pays incl. brokerage</div>'
                                       : '<b class="up">+' + F.money(N(o.settlement_amount)) + '</b><div class="tiny muted">receives after brokerage</div>';
       return '<tr class="' + c.cls + (o.claimed_by ? " claimed" : "") + '" data-id="' + o.id + '"><td class="mono"><b>' + esc(o.order_no) + "</b></td><td>" + F.age(o.age_seconds) + "</td>" +
-        "<td><b>" + esc(o.team) + "</b>" + (o.account_type === "INSTITUTION" ? '<div class="tiny muted">counterparty</div>' : "") + "</td><td>" + esc(o.symbol) + " " + JSE.badge.kind(o.kind) + "</td>" +
+        "<td><b>" + esc(o.team) + '</b><div class="tiny muted">' + esc(o.team_name || "") + (o.account_type === "INSTITUTION" ? " · counterparty" : "") + "</div></td><td>" + esc(o.symbol) + " " + JSE.badge.kind(o.kind) + "</td>" +
         "<td>" + JSE.badge.side(o.team_side) + '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + '</td><td class="num">' + amt + '</td><td class="num">' + F.money(o.cash) + "</td>" +
         "<td>" + c.html + '</td><td class="actions">' + (S.canAct ? '<button class="btn good sm" data-a="SETTLE">Settle</button> <button class="btn bad sm" data-a="REJECT">Reject</button>' : '<span class="muted small">view only</span>') + "</td></tr>";
     }).join("") : '<tr><td colspan="10" class="empty"><b>Nothing waiting for the Bank.</b>Exchange-approved orders appear here automatically.</td></tr>';
     $("recent").innerHTML = d.recent.length ? d.recent.map(function (o) {
       return "<tr><td>" + F.time(o.bank_at) + '</td><td class="mono">' + esc(o.order_no) + "</td><td>" + esc(o.team) + "</td><td>" + esc(o.symbol) + "</td><td>" + JSE.badge.side(o.side) +
         '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + '</td><td class="num">' + F.money(o.brokerage) + '</td><td class="num">' + (N(o.loan_drawn) ? F.money(o.loan_drawn) : "—") +
-        "</td><td>" + JSE.badge.status(o.status) + '</td><td class="small">' + esc(o.reject_reason || "") + "</td></tr>";
+        "</td><td>" + JSE.badge.status(o.status, o.reject_code) + '</td><td class="small">' + esc(o.reject_reason || "") + "</td></tr>";
     }).join("") : '<tr><td colspan="10" class="empty">No settlements yet.</td></tr>';
   }
 
   function renderLoans() {
     var l = S.loans; if (!l) return;
     $("loans").innerHTML = l.loans.length ? l.loans.map(function (x) {
-      return "<tr><td><b>" + esc(x.team) + "</b>" + (x.can_draw ? ' <span class="badge warn">can draw</span>' : "") + '</td><td class="num">' + F.money(x.cash) + '</td><td class="num">' + F.money(x.principal) +
+      return "<tr><td><b>" + esc(x.team) + '</b> ' + (x.status === "REPAID" ? '<span class="badge ok">repaid</span>' : '<span class="badge warn">outstanding</span>') + '<div class="tiny muted">' + esc(x.team_name || "") + '</div></td><td class="num">' + F.money(x.cash) + '</td><td class="num">' + F.money(x.principal) +
         '</td><td class="num">' + F.money(x.interest) + '</td><td class="num">' + F.short(x.remaining_limit) + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="empty">No loans yet.</td></tr>';
   }
@@ -128,7 +125,7 @@
     render();
     $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
-  async function loadLoans() { S.loans = await JSE.api.get("/api/loan"); renderLoans(); }
+  async function loadLoans() { S.loans = await JSE.api.get("/api/loan"); if (S.loans.rules) $("loanRules").textContent = S.loans.rules; renderLoans(); }
 
   async function act(id, action) {
     if (S.busy[id]) return; S.busy[id] = true;
@@ -143,7 +140,7 @@
       }
       var r = await JSE.api.post("/api/bank", body);
       if (r.status === "BANK_SETTLED") {
-        JSE.toast((o ? o.order_no : "Order") + " settled · cash " + F.money(r.cash_before) + " → " + F.money(r.cash_after) + (N(r.loan_drawn) ? " · loan " + F.money(r.loan_drawn) : "") + " · price " + F.price(r.price_after), "good", 7000);
+        JSE.toast((o ? o.order_no : "Order") + " settled · cash " + F.money(r.cash_before) + " → " + F.money(r.cash_after) + " · holding " + F.num(r.holding_before) + " → " + F.num(r.holding_after) + (N(r.loan_drawn) ? " · loan " + F.money(r.loan_drawn) : "") + " · market price unchanged", "good", 7000);
       } else {
         JSE.toast((o ? o.order_no : "Order") + " rejected: " + (r.reason || r.code), "warn", 9000);
       }
@@ -163,12 +160,12 @@
     var team = $("lTeam").value, action = $("lAction").value, amount = N($("lAmt").value);
     if (!team || !amount) return JSE.toast("Choose a team and enter an amount.", "warn");
     var ok = await JSE.dialog({ title: (action === "DRAW" ? "Draw a loan of " : "Repay ") + F.money(amount) + (action === "DRAW" ? " for " : " from ") + team + "?",
-      text: action === "DRAW" ? "2% interest is charged once on this draw." : "Interest is repaid first, then principal.", confirmText: action === "DRAW" ? "Draw loan" : "Repay" });
+      text: action === "DRAW" ? JSE.rate(S.data ? S.data.loan_rate : 0.02) + " interest is charged on this draw (added to the loan balance)." : "Interest is repaid first, then principal. If principal remains after this payment, fresh interest is charged on it.", confirmText: action === "DRAW" ? "Draw loan" : "Repay" });
     if (!ok) return;
     try {
       var r = await JSE.api.post("/api/loan", { team: team, action: action, amount: amount });
       JSE.toast(action === "DRAW" ? team + ": drew " + F.money(r.amount) + " (interest " + F.money(r.interest_charged) + ") · cash " + F.money(r.cash)
-        : team + ": repaid " + F.money(r.amount) + " (interest " + F.money(r.interest_paid) + ", principal " + F.money(r.principal_paid) + ") · cash " + F.money(r.cash), "good", 8000);
+        : team + ": repaid " + F.money(r.amount) + " (interest " + F.money(r.interest_paid) + ", principal " + F.money(r.principal_paid) + (N(r.fresh_interest) ? ", fresh interest " + F.money(r.fresh_interest) + " on the remaining principal" : "") + ") · cash " + F.money(r.cash), "good", 9000);
       $("lAmt").value = ""; loanPoll.now();
     } catch (ex) { JSE.toast(ex.message, "bad", 9000); }
   });
@@ -181,7 +178,7 @@
     JSE.onStatus(function (s) {
       var open = s === "LIVE" || s === "SETTLEMENT_ONLY", n = $("closedNote");
       n.classList.toggle("hidden", open);
-      n.innerHTML = open ? "" : "<b>Market is " + esc(F.statusText(s)) + ".</b> Bank settlement and loans are possible only while the market is LIVE or SETTLEMENT ONLY.";
+      n.innerHTML = open ? "" : "<b>Market is " + esc(F.statusText(s)) + ".</b> Settlement is possible only while the market is LIVE or SETTLEMENT ONLY" + (s === "CLOSED" ? "; loan repayments are still accepted until FINALIZE." : ".");
     });
     poller = JSE.poll(load, 2500, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
     loanPoll = JSE.poll(loadLoans, 6000);

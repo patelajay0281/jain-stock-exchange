@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pit Manager · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
+<style>
+  tr.stale td { background: var(--amber-soft) !important; }
+  .exec { min-width: 132px; }
+  .lastslip { border: 2px solid #c4e6cf; background: var(--green-soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+<main id="main" class="wrap wide">
+  <div class="page-head">
+    <div><div class="eyebrow">Pit Manager desk</div><h1>Execution queue</h1>
+      <p>Broker-submitted orders waiting for execution. <b>EXECUTE ORDER</b> executes at the canonical market price and creates the one official trading slip.
+        If Market News moved the price after the broker submitted, the order is PRICE STALE and cannot be executed — the broker submits a fresh order.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div id="last"></div>
+  <div class="card">
+    <div class="card-h"><h2>Awaiting execution</h2><span class="small muted" id="qMeta"></span></div>
+    <div class="card-b flush"><div class="table-wrap"><table class="t">
+      <thead><tr><th>Order</th><th>Team</th><th>Assigned broker</th><th>Security</th><th>Side</th><th class="num">Qty</th><th class="num">Market price</th><th class="num">Submitted price</th>
+        <th>Submitted</th><th>Status</th><th class="actions">Action</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="11" class="empty">Loading…</td></tr></tbody></table></div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-h"><h2>Recent Pit decisions</h2><a class="small" href="/slips.html">All trading slips →</a></div>
+    <div class="card-b flush"><div class="table-wrap" style="max-height:520px"><table class="t">
+      <thead><tr><th>Time</th><th>Order</th><th>Team</th><th>Trade</th><th class="num">Price</th><th>Slip</th><th>By</th><th>Status now</th></tr></thead>
+      <tbody id="recent"></tbody></table></div></div>
+  </div>
+</main>
+<footer class="footer">The Pit Manager cannot change a team's broker or any market price. Every execution and rejection is recorded in the audit log and Order Tracking.</footer>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum;
+  var $ = function (id) { return document.getElementById(id); };
+  var canAct = false, busy = {}, poller, data = null;
+
+  function render() {
+    var d = data, c = d.counts || {};
+    $("kpis").innerHTML = [["Awaiting execution", c.pending, "info"], ["Executed (slips issued)", c.executed, "good"], ["Rejected by Pit", c.rejected, "bad"], ["Price stale", c.stale, "warn"]]
+      .map(function (k) { return '<div class="kpi ' + k[2] + '"><div class="k">' + k[0] + '</div><div class="v">' + F.num(k[1]) + "</div></div>"; }).join("");
+    $("qMeta").textContent = d.pending.length + " order(s) · oldest first";
+    $("rows").innerHTML = d.pending.length ? d.pending.map(function (o) {
+      var who = o.account_type === "INSTITUTION" ? '<span class="badge inst">' + esc(o.institution) + "</span>" : "<b>" + esc(o.broker || "—") + '</b><div class="tiny muted">' + esc(o.broker_name || "") + "</div>";
+      var flags = (o.short_sell_flag ? ' <span class="badge no" title="Short-selling attempt recorded">short sell</span>' : "") + (o.cash_shortfall_flag ? ' <span class="badge warn">cash shortfall</span>' : "");
+      return '<tr class="' + (o.stale ? "stale" : "") + '"><td><span class="mono">' + esc(o.order_no) + "</span>" + (o.instruction_no ? '<div class="tiny muted">' + esc(o.instruction_no) + "</div>" : "") + "</td>" +
+        "<td><b>" + esc(o.team) + '</b><div class="tiny muted">' + esc(o.team_name) + (o.account_type === "INSTITUTION" ? " (counterparty)" : "") + "</div></td><td>" + who + "</td>" +
+        "<td><b>" + esc(o.symbol) + '</b> ' + JSE.badge.kind(o.kind) + '<div class="tiny muted">' + esc(o.security) + "</div></td><td>" + JSE.badge.side(o.side) + flags + "</td>" +
+        '<td class="num">' + F.num(o.quantity) + '</td><td class="num"><b>' + F.price(o.market_price) + '</b></td><td class="num">' + F.price(o.price) + (o.stale ? '<div class="tiny" style="color:var(--amber)">stale</div>' : "") + "</td>" +
+        "<td>" + F.time(o.created_at) + '<div class="tiny muted">by ' + esc(o.created_by) + " · " + F.age(o.age_seconds) + " ago</div></td>" +
+        "<td>" + (o.stale ? '<span class="badge s-stale">Price stale</span>' : '<span class="badge s-pit">Awaiting execution</span>') + "</td>" +
+        '<td class="actions">' + (canAct ? '<button class="btn good exec" type="button" data-exec="' + o.id + '"' + (busy[o.id] ? " disabled" : "") + '>EXECUTE ORDER</button> <button class="btn sm" type="button" data-reject="' + o.id + '">Reject</button>' : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="11" class="empty"><b>No orders waiting.</b>Broker-submitted orders appear here immediately.</td></tr>';
+    $("rows").querySelectorAll("[data-exec]").forEach(function (b) { b.addEventListener("click", function () { execute(Number(b.getAttribute("data-exec"))); }); });
+    $("rows").querySelectorAll("[data-reject]").forEach(function (b) { b.addEventListener("click", function () { reject(Number(b.getAttribute("data-reject"))); }); });
+    $("recent").innerHTML = d.recent.length ? d.recent.map(function (o) {
+      return "<tr><td>" + F.time(o.pit_at) + '</td><td><a class="mono" href="/orders.html?order=' + encodeURIComponent(o.order_no) + '">' + esc(o.order_no) + "</a></td><td><b>" + esc(o.team) + '</b> <span class="tiny muted">' + esc(o.team_name) + "</span></td>" +
+        "<td>" + JSE.badge.side(o.side) + " " + F.num(o.quantity) + " <b>" + esc(o.symbol) + '</b></td><td class="num">' + F.price(o.executed_price || o.price) + "</td>" +
+        "<td>" + (o.slip_no ? '<a class="mono" href="/slips.html?slip=' + encodeURIComponent(o.slip_no) + '">' + esc(o.slip_no) + "</a>" : '<span class="muted">—</span>') + "</td><td>" + esc(o.pit_by || "") + "</td>" +
+        "<td>" + JSE.badge.status(o.status, o.reject_code) + (o.status === "PIT_REJECTED" && o.reject_reason ? '<div class="tiny muted" style="max-width:280px">' + esc(o.reject_reason) + "</div>" : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="8" class="empty">No decisions yet.</td></tr>';
+  }
+
+  function order(id) { return (data.pending || []).filter(function (o) { return o.id === id; })[0]; }
+
+  async function execute(id) {
+    var o = order(id); if (!o || busy[id]) return;
+    busy[id] = true; render();
+    try {
+      var r = await JSE.api.post("/api/pit", { order_id: id, action: "EXECUTE" });
+      $("last").innerHTML = '<div class="lastslip"><b>Executed ' + esc(r.order.order_no) + "</b> · " + esc(r.order.team) + " " + esc(r.order.team_name) + " · " + JSE.badge.side(r.order.side) + " " + F.num(r.order.quantity) + " " + esc(r.order.symbol) +
+        " @ " + F.price(r.order.executed_price) + ' · trading slip <a class="mono" href="/slips.html?slip=' + encodeURIComponent(r.slip_no) + '"><b>' + esc(r.slip_no) + '</b></a> <a class="btn sm" href="/slips.html?slip=' + encodeURIComponent(r.slip_no) + '&print=1">Print slip</a></div>';
+      JSE.toast(r.order.order_no + " executed · slip " + r.slip_no, "good");
+    } catch (e) {
+      JSE.toast(e.message, e.code === "PRICE_STALE" ? "warn" : "bad", 12000);
+    } finally { delete busy[id]; poller.now(); }
+  }
+  async function reject(id) {
+    var o = order(id); if (!o) return;
+    var reason = await JSE.dialog({ title: "Reject " + o.order_no + "?", text: o.team + " · " + o.side + " " + o.quantity + " " + o.symbol + " @ ₹" + o.price, danger: true, confirmText: "Reject order",
+      input: { label: "Reason (shown to the broker and participant)", required: true, placeholder: "e.g. participant withdrew the trade at the pit" } });
+    if (!reason) return;
+    try { await JSE.api.post("/api/pit", { order_id: id, action: "REJECT", reason: reason }); JSE.toast(o.order_no + " rejected", "good"); }
+    catch (e) { JSE.toast(e.message, "bad"); }
+    poller.now();
+  }
+
+  async function load() {
+    data = await JSE.api.get("/api/pit");
+    render();
+    $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date()) + " IST";
+  }
+
+  JSE.page({ id: "pit" }).then(function (user) {
+    if (!user) return;
+    canAct = user.role === "PIT_MANAGER" || user.role === "ADMIN";
+    poller = JSE.poll(load, 2000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+  });
+})();
+</script>
+</body>
+</html>

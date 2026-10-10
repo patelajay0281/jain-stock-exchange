@@ -1,6 +1,6 @@
 {
   "name": "jain-stock-exchange",
-  "version": "2.72.0",
+  "version": "3.11.0",
   "private": true,
   "type": "module",
   "description": "JAIN STOCK EXCHANGE (JSE) - Dalal Street trading simulation",

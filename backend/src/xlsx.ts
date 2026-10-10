@@ -1,6 +1,6 @@
 // Minimal, dependency-light XLSX writer (Office Open XML) with a bold frozen header row,
 // auto-filter and Indian-style number formats. Strings are written inline.
-import { zipSync, strToU8 } from "fflate";
+import { zipSync, strToU8, unzipSync, strFromU8 } from "fflate";
 
 export interface Sheet { name: string; columns: string[]; rows: unknown[][] }
 
@@ -130,4 +130,95 @@ export function toCsv(columns: string[], rows: unknown[][]): string {
     return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
   return "﻿" + [columns.map(q).join(","), ...rows.map((r) => r.map(q).join(","))].join("\r\n") + "\r\n";
+}
+
+// ---------------------------------------------------------------------------
+// Reading imports: the first worksheet of an .xlsx file, or a CSV text, as rows of strings.
+// ---------------------------------------------------------------------------
+const unesc = (s: string) => s.replace(/&(lt|gt|amp|quot|apos|#\d+|#x[0-9a-fA-F]+);/g, (m, e: string) =>
+  e === "lt" ? "<" : e === "gt" ? ">" : e === "amp" ? "&" : e === "quot" ? '"' : e === "apos" ? "'"
+  : e[1] === "x" ? String.fromCodePoint(parseInt(e.slice(2), 16)) : String.fromCodePoint(parseInt(e.slice(1), 10)));
+
+function textOf(xml: string): string {
+  // concatenates every <t>…</t> (rich text runs included)
+  let out = "";
+  const re = /<t(?:\s[^>]*)?>([\s\S]*?)<\/t>|<t(?:\s[^>]*)?\/>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml))) out += m[1] ? unesc(m[1]) : "";
+  return out;
+}
+
+function colIndex(ref: string): number {
+  const letters = (/^[A-Z]+/.exec(ref) || ["A"])[0];
+  let n = 0;
+  for (const ch of letters) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n - 1;
+}
+
+export function readXlsx(bytes: Uint8Array): string[][] {
+  let files: Record<string, Uint8Array>;
+  try { files = unzipSync(bytes); } catch { throw new Error("The file is not a valid .xlsx workbook."); }
+  const get = (name: string) => (files[name] ? strFromU8(files[name]) : "");
+  // first worksheet named in the workbook
+  let sheetPath = "xl/worksheets/sheet1.xml";
+  const wb = get("xl/workbook.xml"), rels = get("xl/_rels/workbook.xml.rels");
+  const first = /<sheet\b[^>]*\br:id="([^"]+)"/.exec(wb);
+  if (first && rels) {
+    const rel = new RegExp('<Relationship\\b[^>]*Id="' + first[1] + '"[^>]*Target="([^"]+)"').exec(rels)
+      || new RegExp('<Relationship\\b[^>]*Target="([^"]+)"[^>]*Id="' + first[1] + '"').exec(rels);
+    if (rel) sheetPath = rel[1].startsWith("/") ? rel[1].slice(1) : "xl/" + rel[1].replace(/^\.\//, "");
+  }
+  const sheet = get(sheetPath);
+  if (!sheet) throw new Error("The workbook has no readable worksheet.");
+  const shared: string[] = [];
+  const sst = get("xl/sharedStrings.xml");
+  if (sst) { const re = /<si>([\s\S]*?)<\/si>/g; let m: RegExpExecArray | null; while ((m = re.exec(sst))) shared.push(textOf(m[1])); }
+  const rows: string[][] = [];
+  const rowRe = /<row\b[^>]*\/>|<row\b[^>]*>([\s\S]*?)<\/row>/g;
+  let rm: RegExpExecArray | null;
+  while ((rm = rowRe.exec(sheet))) {
+    const row: string[] = [];
+    const body = rm[1] || "";
+    const cellRe = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    let cm: RegExpExecArray | null;
+    let next = 0;
+    while ((cm = cellRe.exec(body))) {
+      const attrs = cm[1] || "", inner = cm[2] || "";
+      const ref = /\br="([A-Z]+)\d+"/.exec(attrs);
+      const idx = ref ? colIndex(ref[1]) : next;
+      next = idx + 1;
+      const type = (/\bt="([^"]+)"/.exec(attrs) || [])[1] || "n";
+      const v = /<v>([\s\S]*?)<\/v>/.exec(inner);
+      let value = "";
+      if (type === "s") value = v ? shared[Number(v[1])] ?? "" : "";
+      else if (type === "inlineStr") value = textOf(inner);
+      else if (type === "b") value = v && v[1] === "1" ? "TRUE" : "FALSE";
+      else value = v ? unesc(v[1]) : "";
+      while (row.length < idx) row.push("");
+      row[idx] = value.trim();
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+export function readCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [], cur = "", q = false;
+  const s = text.replace(/^\uFEFF/, "");
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (q) {
+      if (c === '"' && s[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') q = false;
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(cur.trim()); cur = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && s[i + 1] === "\n") i++;
+      row.push(cur.trim()); rows.push(row); row = []; cur = "";
+    } else cur += c;
+  }
+  if (cur.length || row.length) { row.push(cur.trim()); rows.push(row); }
+  return rows.filter((r) => r.some((x) => x !== ""));
 }

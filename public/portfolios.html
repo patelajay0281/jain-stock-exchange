@@ -5,58 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Participant Portfolios · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>
-  .criterion { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: center; background: #fff; border: 1px solid var(--line); border-left: 5px solid var(--navy); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
-  .criterion .t { font-weight: 900; letter-spacing: 1.2px; color: var(--navy); font-size: 12px; text-transform: uppercase; grid-row: span 2; }
-  .criterion .f { font-weight: 700; }
-  .criterion .p { color: var(--muted); font-size: 13px; }
-  .controls { display: grid; grid-template-columns: 220px minmax(0, 1fr) 200px auto; gap: 10px; align-items: end; }
+  .criterion { background: #fff; border: 1px solid var(--line); border-left: 5px solid var(--navy); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .criterion .t { font-weight: 900; letter-spacing: 1.2px; color: var(--navy); font-size: 12px; text-transform: uppercase; }
+  .criterion .f { font-weight: 700; margin-top: 3px; }
+  .criterion .p { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .controls { display: grid; grid-template-columns: 240px minmax(0, 1fr) 200px auto; gap: 10px; align-items: end; }
   @media (max-width: 900px) { .controls { grid-template-columns: 1fr 1fr; } }
   tr.pick { cursor: pointer; }
   .detail-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
-  .detail-head h2 { margin: 0; font-size: 22px; color: var(--navy); }
   .dgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
   @media (max-width: 1100px) { .dgrid { grid-template-columns: 1fr; } }
   .sec-title { font-size: 12px; font-weight: 900; letter-spacing: 1.3px; color: var(--navy); text-transform: uppercase; margin: 18px 0 8px; }
   .big { font-size: 26px; font-weight: 900; color: var(--navy); }
+  .gaps { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
 </style>
 </head>
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow" id="eyebrow">All 100 teams</div><h1 id="title">Participant Portfolios</h1><p id="poolRule">&nbsp;</p></div>
+    <div><div class="eyebrow" id="eyebrow">All teams</div><h1 id="title">Participant Portfolios</h1><p id="poolRule">&nbsp;</p></div>
     <div class="row"><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
-      <button class="btn sm hidden" type="button" id="exportBtn">Export Net Worth (CSV)</button></div>
+      <button class="btn sm hidden" type="button" id="exportBtn">Export portfolios (CSV)</button></div>
   </div>
-  <div class="criterion"><div class="t">Official winner<br>criterion</div>
-    <div class="f">Winner = highest NET WORTH = Liquid Cash + Σ(quantity × current price). Loans are not deducted. Ties: lower team code.</div>
-    <div class="p" id="ruleText">₹50K closing cash rule: at close, cash counted from initial capital must be ₹50,000 or less (cash from realised trading profit is exempt). Cash is never locked and portfolios stay visible.</div></div>
+  <div class="criterion"><div class="t">Winner and Runner-Up</div>
+    <div class="f">Exactly one Winner and one Runner-Up: the highest and second-highest <u>eligible</u> Net Worth. Net Worth = Liquid Cash + Holdings Market Value (shares held × closing price).</div>
+    <div class="p" id="ruleText">Eligibility: settled listed-stock BUY and SELL trades (IPO allotments do not count) + loan fully repaid + closing cash rule.</div></div>
 
   <section id="listView">
+    <div class="awards" id="awards" style="margin-bottom:14px"></div>
     <div class="kpis" id="kpis"></div>
     <div class="card" style="margin-bottom:14px"><div class="card-b">
       <div class="controls">
         <div class="field"><label for="teamSel">Team</label><select class="input" id="teamSel"></select></div>
         <div class="field"><label for="q">Search</label><input class="input" id="q" type="search" placeholder="Team code, name, broker, section"></div>
         <div class="field"><label for="sort">Sort by</label><select class="input" id="sort">
-          <option value="team">Team (TEAM-001 → TEAM-100)</option><option value="net_worth">Net Worth</option><option value="cash">Liquid Cash</option>
-          <option value="holdings">Holdings Value</option><option value="pnl">P/L</option><option value="return">Return %</option></select></div>
+          <option value="team">Team (TEAM-001 → TEAM-100)</option><option value="net_worth">Net Worth</option><option value="eligible">Eligible first</option>
+          <option value="cash">Liquid Cash</option><option value="holdings">Holdings Value</option><option value="pnl">P/L</option></select></div>
         <div class="chips" role="group" aria-label="View">
           <button class="chip" type="button" data-v="all" aria-pressed="true">All</button>
-          <button class="chip" type="button" data-v="top" aria-pressed="false">Top 10</button>
-          <button class="chip" type="button" data-v="bottom" aria-pressed="false">Bottom 10</button></div>
+          <button class="chip" type="button" data-v="eligible" aria-pressed="false">Eligible</button>
+          <button class="chip" type="button" data-v="top" aria-pressed="false">Top 10</button></div>
       </div>
     </div></div>
     <div class="card"><div class="card-b flush"><div class="table-wrap" style="max-height:70vh"><table class="t">
-      <thead><tr><th class="num">#</th><th>Team</th><th>Broker</th><th class="num">Liquid Cash</th><th class="num">Holdings Value</th><th class="num">Net Worth</th><th class="num">P/L</th><th class="num">Base Cash Counted</th><th class="num">Profit Cash Exempt</th><th>₹50K Rule</th><th class="num">Short Sell</th><th class="num">Cash Shortfall</th><th>Access</th><th>Winner</th></tr></thead>
-      <tbody id="rows"><tr><td colspan="14" class="empty">Loading…</td></tr></tbody></table></div></div></div>
+      <thead><tr><th class="num">#</th><th>Team</th><th>Broker</th><th class="num">Liquid Cash</th><th class="num">Holdings</th><th class="num">Net Worth</th><th class="num">P/L</th>
+        <th>Assessment</th><th>Loan</th><th>Closing cash rule</th><th>Eligibility</th><th>Award</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="12" class="empty">Loading…</td></tr></tbody></table></div></div></div>
   </section>
 
-  <section id="detail" class="card hidden" style="margin-top:16px" aria-live="polite"></section>
+  <section id="detail" class="hidden" style="margin-top:16px" aria-live="polite"></section>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
   "use strict";
@@ -66,36 +68,47 @@
 
   function rows() {
     var list = S.data.teams.slice();
-    if (S.q) { var q = S.q.toLowerCase(); list = list.filter(function (t) { return [t.code, t.name, t.broker, t.section].join(" ").toLowerCase().indexOf(q) >= 0; }); }
-    var key = { net_worth: "net_worth", cash: "cash", holdings: "holdings_value", pnl: "pnl", return: "return_pct" }[S.sort];
-    if (S.view !== "all") { list.sort(function (a, b) { return N(b.net_worth) - N(a.net_worth) || JSE.teamSort(a.code, b.code); }); list = S.view === "top" ? list.slice(0, 10) : list.slice(-10).reverse(); }
+    if (S.q) { var q = S.q.toLowerCase(); list = list.filter(function (t) { return [t.code, t.name, t.broker, t.broker_name, t.section].join(" ").toLowerCase().indexOf(q) >= 0; }); }
+    if (S.view === "eligible") list = list.filter(function (t) { return t.eligible; });
+    if (S.view === "top") { list.sort(function (a, b) { return N(b.net_worth) - N(a.net_worth) || JSE.teamSort(a.code, b.code); }); list = list.slice(0, 10); }
+    var key = { net_worth: "net_worth", cash: "cash", holdings: "holdings_value", pnl: "pnl" }[S.sort];
     if (key) list.sort(function (a, b) { return N(b[key]) - N(a[key]) || JSE.teamSort(a.code, b.code); });
-    else if (S.view === "all") list.sort(function (a, b) { return JSE.teamSort(a.code, b.code); });
+    else if (S.sort === "eligible") list.sort(function (a, b) { return (a.rank_eligible || 1e6) - (b.rank_eligible || 1e6) || N(b.net_worth) - N(a.net_worth); });
+    else if (S.view !== "top") list.sort(function (a, b) { return JSE.teamSort(a.code, b.code); });
     return list;
+  }
+
+  function awardCard(cls, title, t, final) {
+    return '<div class="award ' + cls + '"><div class="k">' + title + (final ? "" : " · provisional") + "</div>" +
+      (t ? '<div class="n">' + esc(t.name) + ' <span class="mono small muted">' + esc(t.code) + '</span></div><div class="small">Net Worth <b>' + F.money(t.net_worth) + "</b> · broker " + esc(t.broker || "—") + " · BUY " + t.settled_buys + " · SELL " + t.settled_sells + "</div>"
+         : '<div class="n muted">No eligible team yet</div><div class="small muted">A team becomes eligible once it meets every criterion.</div>') + "</div>";
   }
 
   function render() {
     var d = S.data; if (!d) return;
     var st = d.stats;
-    $("poolRule").textContent = d.pool_rule + " · market status: " + F.statusText(d.event_status);
+    $("poolRule").textContent = (d.final ? "Final evaluation (market " + F.statusText(d.event_status).toLowerCase() + ")" : "Provisional while the market is open — the closing cash rule is evaluated at close") + ".";
+    $("ruleText").textContent = d.eligibility_rule;
+    $("awards").innerHTML = awardCard("w", "Winner", d.winner, d.final) + awardCard("r", "Runner-Up", d.runner_up, d.final);
     $("kpis").innerHTML = kpi("Teams", F.num(st.teams), F.num(st.profitable) + " in profit", "accent") +
-      kpi("Highest net worth", F.short(st.highest_net_worth), d.winner ? "Leader: " + esc(d.winner.code) : "—", "good") +
-      kpi("Average net worth", F.short(st.average_net_worth), "lowest " + F.short(st.lowest_net_worth), "info") +
-      kpi("₹50K rule met", F.num(st.cash_rule_met) + " / " + F.num(st.teams), (d.event_status === "CLOSED" || d.event_status === "FINALIZED") ? "final" : "provisional while live", N(st.cash_rule_met) ? "good" : "warn") +
-      kpi("Risk attempts", F.num(N(st.short_sell_attempts) + N(st.cash_shortfall_attempts)), F.num(st.short_sell_attempts) + " short sell · " + F.num(st.cash_shortfall_attempts) + " cash", "bad") +
-      kpi("Loans outstanding", F.short(st.loans_outstanding), "not deducted from net worth", "warn");
+      kpi("Eligible", F.num(st.eligible) + " / " + F.num(st.teams), d.final ? "final" : "provisional", N(st.eligible) ? "good" : "warn") +
+      kpi("Assessment met", F.num(st.assessment_met), d.min_buy_trades + " BUY + " + d.min_sell_trades + " SELL settled", "info") +
+      kpi("Loans not repaid", F.num(st.loans_unpaid), F.short(st.loans_outstanding) + " outstanding", N(st.loans_unpaid) ? "warn" : "good") +
+      kpi("Highest net worth", F.short(st.highest_net_worth), "average " + F.short(st.average_net_worth), "info") +
+      kpi("Closing cash rule met", F.num(st.cash_rule_met) + " / " + F.num(st.teams), "base cash ≤ " + F.money(d.cash_rule_limit), "");
     var list = rows();
     $("rows").innerHTML = list.length ? list.map(function (t) {
-      return '<tr class="pick' + (t.winner ? " winner" : "") + (S.team === t.code ? " sel" : "") + '" data-team="' + esc(t.code) + '" tabindex="0">' +
-        '<td class="num">' + t.rank + "</td><td><b>" + esc(t.code) + "</b>" + (t.name && t.name !== "Team " + t.code.slice(5) ? '<div class="tiny muted">' + esc(t.name) + "</div>" : "") + "</td><td>" + esc(t.broker || "—") + "</td>" +
+      return '<tr class="pick' + (t.award ? " winner" : "") + (S.team === t.code ? " sel" : "") + '" data-team="' + esc(t.code) + '" tabindex="0">' +
+        '<td class="num">' + t.rank + "</td><td><b>" + esc(t.name) + '</b><div class="tiny muted mono">' + esc(t.code) + "</div></td><td>" + esc(t.broker || "—") + "</td>" +
         '<td class="num">' + F.money(t.cash) + '</td><td class="num">' + F.money(t.holdings_value) + '</td><td class="num"><b>' + F.money(t.net_worth) + "</b></td>" +
         '<td class="num ' + F.dir(t.pnl) + '">' + F.signedMoney(t.pnl) + "</td>" +
-        '<td class="num">' + F.money(t.base_cash_counted) + '</td><td class="num">' + F.money(t.profit_cash_exempt) + "</td><td>" + JSE.badge.rule(t.cash_rule_met, t.cash_rule_status) + "</td>" +
-        '<td class="num">' + t.short_sell_attempts + '</td><td class="num">' + t.cash_shortfall_attempts + "</td><td>" + JSE.badge.access(t.portfolio_access) + "</td>" +
-        "<td>" + (t.winner ? '<span class="badge win">Winner</span>' : t.rank_in_pool ? '<span class="muted small">#' + t.rank_in_pool + " in pool</span>" : '<span class="muted small">not eligible</span>') + "</td></tr>";
-    }).join("") : '<tr><td colspan="14" class="empty">No teams match.</td></tr>';
-    var sel = $("teamSel"); if (!sel.options.length || sel.options.length < 2) {
-      sel.innerHTML = '<option value="">Select team…</option>' + d.teams.slice().sort(function (a, b) { return JSE.teamSort(a.code, b.code); }).map(function (t) { return '<option value="' + esc(t.code) + '">' + esc(t.code) + "</option>"; }).join("");
+        "<td>" + JSE.badge.progress(t.settled_buys, t.min_buy_trades, "BUY") + " " + JSE.badge.progress(t.settled_sells, t.min_sell_trades, "SELL") + "</td>" +
+        "<td>" + (N(t.loan_liability) > 0 ? '<span class="badge warn">' + F.short(t.loan_liability) + " due</span>" : t.loan_original > 0 ? '<span class="badge ok">repaid</span>' : '<span class="muted small">no loan</span>') + "</td>" +
+        "<td>" + JSE.badge.rule(t.cash_rule_met, t.cash_rule_status) + "</td><td>" + JSE.badge.eligibility(t.eligibility_status) + (t.rank_eligible ? ' <span class="tiny muted">#' + t.rank_eligible + "</span>" : "") + "</td>" +
+        "<td>" + JSE.badge.award(t.award) + "</td></tr>";
+    }).join("") : '<tr><td colspan="12" class="empty">No teams match.</td></tr>';
+    var sel = $("teamSel"); if (sel.options.length < 2) {
+      sel.innerHTML = '<option value="">Select team…</option>' + d.teams.slice().sort(function (a, b) { return JSE.teamSort(a.code, b.code); }).map(function (t) { return '<option value="' + esc(t.code) + '">' + esc(t.code) + " · " + esc(t.name) + "</option>"; }).join("");
       if (S.team) sel.value = S.team;
     }
   }
@@ -107,50 +120,52 @@
 
   function renderDetail() {
     var d = S.detail, box = $("detail"); if (!d) { box.classList.add("hidden"); return; }
-    var t = d.team, l = d.loan || {};
+    var t = d.team, l = d.loan || {}, id = d.identity, b = d.broker, a = d.assessment, el = d.eligibility, participant = S.user && S.user.role === "PARTICIPANT";
     box.classList.remove("hidden");
-    box.innerHTML = '<div class="card-b">' +
-      '<div class="detail-head"><div><div class="eyebrow">Participant portfolio</div><h2>' + esc(t.code) + (t.name ? " · " + esc(t.name) : "") + "</h2>" +
-        '<div class="muted small">Section ' + esc(t.section || "—") + " · Broker " + esc(t.broker || "—") + " · Rank #" + t.rank + (t.rank_in_pool ? " (#" + t.rank_in_pool + " in winner pool)" : "") + (t.winner ? ' · <span class="badge win">Winner</span>' : "") + "</div></div>" +
-        '<div class="right"><div class="eyebrow">Net worth</div><div class="big">' + F.money(t.net_worth) + '</div><div class="' + F.dir(t.pnl) + '" style="font-weight:800">' + F.signedMoney(t.pnl) + " (" + F.pct(t.return_pct) + ")</div>" +
-        (S.user && S.user.role !== "PARTICIPANT" ? '<button class="btn sm" type="button" id="closeDetail" style="margin-top:6px">Close</button>' : "") + "</div></div>" +
-      '<div class="dgrid" style="margin-top:14px">' +
-        '<div class="card"><div class="card-h"><h3>Portfolio</h3></div><div class="card-b"><dl class="dl">' +
-          "<dt>Liquid cash</dt><dd>" + F.money(t.cash) + "</dd><dt>Holdings value</dt><dd>" + F.money(t.holdings_value) + "</dd><dt>Net worth</dt><dd>" + F.money(t.net_worth) + "</dd>" +
-          '<dt>P/L</dt><dd class="' + F.dir(t.pnl) + '">' + F.signedMoney(t.pnl) + "</dd><dt>Return</dt><dd>" + F.pct(t.return_pct) + "</dd><dt>Starting capital</dt><dd>" + F.money(d.starting_capital) + "</dd>" +
-          "<dt>Realised P/L</dt><dd>" + F.signedMoney(t.realized_pnl) + "</dd><dt>Unrealised P/L</dt><dd>" + F.signedMoney(t.unrealized_pnl) + "</dd><dt>Brokerage paid</dt><dd>" + F.money(t.brokerage_paid) + "</dd></dl></div></div>" +
-        '<div class="card"><div class="card-h"><h3>₹50K cash rule</h3></div><div class="card-b"><dl class="dl">' +
-          "<dt>Base cash counted</dt><dd>" + F.money(t.base_cash_counted) + "</dd><dt>Profit cash exempt</dt><dd>" + F.money(t.profit_cash_exempt) + "</dd><dt>Cash limit</dt><dd>" + F.money(d.cash_limit) + "</dd>" +
-          "<dt>₹50K rule</dt><dd>" + (t.cash_rule_met ? '<span class="badge ok">Satisfied</span>' : '<span class="badge no">Not satisfied</span>') + "</dd>" +
-          "<dt>Cash rule status</dt><dd>" + esc(F.statusText(t.cash_rule_status)) + "</dd><dt>Portfolio access</dt><dd>" + JSE.badge.access(t.portfolio_access) + "</dd></dl>" +
-          '<p class="small muted" style="margin:10px 0 0">Cash is never locked. During LIVE the status is provisional; at close a team that does not satisfy the rule is LOCKED out of the winner pool but its portfolio stays visible.</p></div></div>' +
-        '<div class="card"><div class="card-h"><h3>Loan &amp; risk</h3></div><div class="card-b"><dl class="dl">' +
-          "<dt>Original principal</dt><dd>" + F.money(l.original_principal) + "</dd><dt>Current principal</dt><dd>" + F.money(l.current_principal) + "</dd><dt>Interest due</dt><dd>" + F.money(l.interest) + "</dd>" +
-          "<dt>Total liability</dt><dd>" + F.money(l.total_liability) + "</dd><dt>Repayment status</dt><dd>" + esc(l.repayment_status || "NO LOAN") + "</dd>" +
-          "<dt>Short sell attempts</dt><dd>" + t.short_sell_attempts + "</dd><dt>Cash shortfall attempts</dt><dd>" + t.cash_shortfall_attempts + "</dd><dt>Insufficient balance rejections</dt><dd>" + t.insufficient_balance_rejections + "</dd></dl></div></div>" +
-      "</div>" +
-      '<div class="sec-title">Current holdings</div>' +
-      table([["Security"], ["Type"], ["Quantity", 1], ["Avg price", 1], ["Current price", 1], ["Market value", 1], ["P/L", 1]], d.holdings.map(function (h) {
-        return "<tr><td><b>" + esc(h.symbol) + '</b> <span class="muted small">' + esc(h.security) + "</span></td><td>" + JSE.badge.kind(h.type) + '</td><td class="num">' + F.num(h.quantity) + '</td><td class="num">' + F.price(h.avg_price) +
-          '</td><td class="num">' + F.price(h.current_price) + '</td><td class="num"><b>' + F.money(h.market_value) + '</b></td><td class="num ' + F.dir(h.unrealized_pnl) + '">' + F.signedMoney(h.unrealized_pnl) + "</td></tr>"; }), "No holdings.") +
-      '<div class="sec-title">Sold stocks / sold IPOs</div>' +
-      table([["Security"], ["Type"], ["Quantity", 1], ["Sell price", 1], ["Trade value", 1], ["Brokerage", 1], ["Net proceeds", 1], ["Realised P/L", 1], ["Time"], ["Order ID"]], d.sold.map(function (x) {
-        return "<tr><td><b>" + esc(x.symbol) + "</b>" + (x.counterparty === "Institution" ? ' <span class="badge inst">to institution</span>' : "") + "</td><td>" + JSE.badge.kind(x.type) + '</td><td class="num">' + F.num(x.quantity) + '</td><td class="num">' + F.price(x.sell_price) +
-          '</td><td class="num">' + F.money(x.trade_value) + '</td><td class="num">' + F.money(x.brokerage) + '</td><td class="num">' + F.money(x.net_proceeds) + '</td><td class="num ' + F.dir(x.realized_pnl) + '">' + F.signedMoney(x.realized_pnl) +
-          "</td><td>" + F.datetime(x.settled_at) + '</td><td class="mono">' + esc(x.order_no) + "</td></tr>"; }), "Nothing sold yet.") +
+    box.innerHTML =
+      '<div class="idcard"><div><div class="eyebrow">' + (participant ? "Your team" : "Team") + '</div><div class="big">' + esc(id.name) + '</div><div class="code">' + esc(id.code) + (id.section ? " · Section " + esc(id.section) : "") + "</div>" +
+        (id.name_meaning ? '<div class="meaning">' + esc(id.name_meaning) + (id.name_category ? " · " + esc(id.name_category) : "") + "</div>" : "") +
+        '<div class="small" style="margin-top:6px">' + (id.members ? esc(id.members) : '<span class="muted">Members not entered yet</span>') + "</div></div>" +
+      '<div><div class="eyebrow">Assigned broker</div><div class="big">' + esc(b ? b.name : "Not assigned yet") + '</div><div class="code">' + esc(b ? b.code : "") + "</div>" +
+        (b && (b.desk || b.contact) ? '<div class="small" style="margin-top:6px">' + esc([b.desk ? "Desk " + b.desk : "", b.contact].filter(Boolean).join(" · ")) + "</div>" : "") +
+        '<div class="small muted" style="margin-top:6px">' + (participant ? 'Give instructions to your broker in person or from <a href="/orders.html">My Orders</a>. Your broker submits every order.' : "") +
+        (S.user && S.user.role !== "PARTICIPANT" ? ' <button class="btn sm" type="button" id="closeDetail">Close</button>' : "") + "</div></div></div>" +
+      '<div class="kpis" style="margin-top:14px">' +
+        kpi("Net worth", F.money(t.net_worth), F.signedMoney(t.pnl) + " (" + F.pct(t.return_pct) + ")", "accent") + kpi("Liquid cash", F.money(t.cash), "starting " + F.money(d.rules.starting_capital), "") +
+        kpi("Holdings value", F.money(t.holdings_value), "at current prices", "") + kpi("Rank", "#" + t.rank, t.rank_eligible ? "#" + t.rank_eligible + " among eligible" : "not eligible yet", "info") +
+        kpi("Eligibility", esc(el.status), el.final ? "final" : "provisional", el.eligible ? "good" : "warn") + "</div>" +
       '<div class="dgrid">' +
-        '<div><div class="sec-title">Short-selling history</div>' + table([["Order ID"], ["Security"], ["Qty", 1], ["Holding before", 1], ["Status"], ["Time"]], d.short_sell_history.map(function (x) {
-          return '<tr><td class="mono">' + esc(x.order_no || "—") + "</td><td>" + esc(x.symbol) + '</td><td class="num">' + F.num(x.quantity) + '</td><td class="num">' + F.num(x.holding_before) + "</td><td>" + JSE.badge.status(x.status) + "</td><td>" + F.time(x.created_at) + "</td></tr>"; }), "No attempts.") + "</div>" +
-        '<div><div class="sec-title">Cash-shortfall history</div>' + table([["Order ID"], ["Security"], ["Required", 1], ["Available", 1], ["Shortage", 1], ["Status"], ["Time"]], d.cash_shortfall_history.map(function (x) {
-          return '<tr><td class="mono">' + esc(x.order_no || "—") + "</td><td>" + esc(x.symbol) + '</td><td class="num">' + F.money(x.required_cash) + '</td><td class="num">' + F.money(x.available_cash) + '</td><td class="num down">' + F.money(x.shortage) + "</td><td>" + JSE.badge.status(x.status) + "</td><td>" + F.time(x.created_at) + "</td></tr>"; }), "No attempts.") + "</div>" +
-        '<div><div class="sec-title">Insufficient-balance rejections</div>' + table([["Order ID"], ["Security"], ["Required", 1], ["Cash", 1], ["Time"]], d.insufficient_balance_history.map(function (x) {
-          return '<tr><td class="mono">' + esc(x.order_no || "—") + "</td><td>" + esc(x.symbol) + '</td><td class="num">' + F.money(x.required_cash) + '</td><td class="num">' + F.money(x.available_cash) + "</td><td>" + F.time(x.created_at) + "</td></tr>"; }), "None.") + "</div>" +
+        '<div class="card"><div class="card-h"><h3>Assessment</h3>' + JSE.badge.award(t.award) + '</div><div class="card-b">' +
+          '<div class="row">' + JSE.badge.progress(a.buy, a.min_buy, "BUY") + JSE.badge.progress(a.sell, a.min_sell, "SELL") + (a.met ? '<span class="badge ok">Assessment met</span>' : "") + "</div>" +
+          '<p class="small muted" style="margin:8px 0 0">' + esc(a.basis) + "</p>" +
+          (el.gaps && el.gaps.length ? '<div class="small" style="margin-top:8px"><b>Still needed for eligibility:</b></div><ul class="gaps">' + el.gaps.map(function (g) { return "<li>" + esc(g) + "</li>"; }).join("") + "</ul>" : '<p class="small" style="margin:8px 0 0"><b class="up">All criteria met.</b></p>') +
+        "</div></div>" +
+        '<div class="card"><div class="card-h"><h3>Loan</h3></div><div class="card-b"><dl class="dl">' +
+          "<dt>Original principal</dt><dd>" + F.money(l.original_principal) + "</dd><dt>Current principal</dt><dd>" + F.money(l.current_principal) + "</dd><dt>Interest due</dt><dd>" + F.money(l.interest) + "</dd>" +
+          "<dt>Total liability</dt><dd>" + F.money(l.total_liability) + "</dd><dt>Status</dt><dd>" + (l.repaid ? '<span class="badge ok">' + esc(l.repayment_status || "NO LOAN") + "</span>" : '<span class="badge warn">OUTSTANDING</span>') + "</dd>" +
+          "<dt>Remaining limit</dt><dd>" + F.money(l.remaining_limit) + "</dd></dl>" +
+          '<p class="small muted" style="margin:8px 0 0">Interest ' + JSE.rate(d.rules.loan_rate) + " on each draw; repayment pays interest first, then principal; fresh interest is charged on principal remaining after a partial repayment. Repay in full at the Bank for eligibility.</p></div></div>" +
+        '<div class="card"><div class="card-h"><h3>Closing cash rule</h3></div><div class="card-b"><dl class="dl">' +
+          "<dt>Base cash counted</dt><dd>" + F.money(t.base_cash_counted) + "</dd><dt>Profit cash exempt</dt><dd>" + F.money(t.profit_cash_exempt) + "</dd><dt>Limit</dt><dd>" + F.money(d.rules.cash_limit) + "</dd>" +
+          "<dt>Status</dt><dd>" + JSE.badge.rule(t.cash_rule_met, t.cash_rule_status) + "</dd></dl>" +
+          '<p class="small muted" style="margin:8px 0 0">Cash is never locked. The rule is evaluated when the market closes; profit-generated cash is exempt.</p></div></div>' +
       "</div>" +
-      (d.ipo_allotments.length ? '<div class="sec-title">IPO allotments (13–14 Oct)</div>' + table([["IPO"], ["Lots", 1], ["Shares", 1], ["Price", 1], ["Amount", 1]], d.ipo_allotments.map(function (a) {
-        return "<tr><td>" + esc(a.symbol) + '</td><td class="num">' + a.lots + '</td><td class="num">' + F.num(a.quantity) + '</td><td class="num">' + F.price(a.price) + '</td><td class="num">' + F.money(a.amount) + "</td></tr>"; }), "") : "") +
-      '<div class="sec-title">Recent orders</div>' + table([["Order ID"], ["Side"], ["Security"], ["Qty @ Price", 1], ["Status"], ["Time"]], d.recent_orders.map(function (o) {
-        return '<tr><td class="mono">' + esc(o.order_no) + "</td><td>" + JSE.badge.side(o.side) + "</td><td>" + esc(o.symbol) + '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + "</td><td>" + JSE.badge.status(o.status) + "</td><td>" + F.datetime(o.created_at) + "</td></tr>"; }), "No orders yet.") +
-      "</div>";
+      '<div class="sec-title">Holdings <a class="small" style="margin-left:8px;text-transform:none;letter-spacing:0" href="/certificates.html' + (participant ? "" : "?team=" + encodeURIComponent(t.code)) + '">Share certificates →</a></div>' +
+      table([["Security"], ["Type"], ["Quantity", 1], ["Average price", 1], ["Current price", 1], ["Current value", 1], ["Unrealised (after brokerage)", 1]], d.holdings.map(function (h) {
+        return "<tr><td><b>" + esc(h.symbol) + '</b> <span class="muted small">' + esc(h.security) + "</span></td><td>" + JSE.badge.kind(h.type) + '</td><td class="num">' + F.num(h.quantity) + '</td><td class="num">' + F.price(h.avg_price) +
+          '</td><td class="num">' + F.price(h.current_price) + '</td><td class="num"><b>' + F.money(h.market_value) + '</b></td><td class="num ' + F.dir(h.unrealized_pnl) + '">' + F.signedMoney(h.unrealized_pnl) + "</td></tr>"; }), "No holdings yet.") +
+      '<div class="small muted" style="margin-top:6px">Realised performance: ' + F.signedMoney(t.realized_pnl) + " · brokerage paid " + F.money(t.brokerage_paid) + "</div>" +
+      '<div class="sec-title">Recent orders</div>' + table([["Order"], ["Trade"], ["Value", 1], ["Status"], ["Slip"], ["Submitted"]], d.recent_orders.map(function (o) {
+        return '<tr><td><a class="mono" href="/orders.html?order=' + encodeURIComponent(o.order_no) + '">' + esc(o.order_no) + "</a></td><td>" + JSE.badge.side(o.side) + " " + F.num(o.quantity) + " <b>" + esc(o.symbol) + "</b> @ " + F.price(o.price) +
+          '</td><td class="num">' + F.money(o.trade_value) + "</td><td>" + JSE.badge.status(o.status, o.reject_code) + "</td><td>" + (o.slip_no ? '<a class="mono" href="/slips.html?slip=' + encodeURIComponent(o.slip_no) + '">' + esc(o.slip_no) + "</a>" : "—") + "</td><td>" + F.datetime(o.created_at) + "</td></tr>"; }), "No orders yet.") +
+      (d.ipo_allotments.length || d.ipo_applications.length ? '<div class="sec-title">IPO allotments (not assessment trades)</div>' + table([["IPO"], ["Applied"], ["Allotted lots", 1], ["Shares", 1], ["Price", 1], ["Amount", 1]],
+        (d.ipo_allotments.length ? d.ipo_allotments : d.ipo_applications).map(function (x) {
+          var app = d.ipo_applications.filter(function (p) { return p.symbol === x.symbol; })[0];
+          return "<tr><td>" + esc(x.symbol) + "</td><td>" + (app ? (app.status === "APPLIED" ? app.lots + " lot(s)" : "withdrawn") : "—") + '</td><td class="num">' + (x.quantity ? x.lots : "—") + '</td><td class="num">' + (x.quantity ? F.num(x.quantity) : "—") +
+            '</td><td class="num">' + (x.price ? F.price(x.price) : "—") + '</td><td class="num">' + (x.quantity ? F.money(x.amount) : "—") + "</td></tr>"; }), "") : "") +
+      '<div class="sec-title">Cash record (latest)</div>' + table([["Time"], ["Type"], ["Debit", 1], ["Credit", 1], ["Balance", 1], ["Note"]], d.recent_ledger.map(function (c) {
+        return "<tr><td>" + F.datetime(c.created_at) + "</td><td>" + esc(F.statusText(c.type)) + '</td><td class="num">' + (N(c.debit) ? F.money(c.debit) : "") + '</td><td class="num">' + (N(c.credit) ? F.money(c.credit) : "") +
+          '</td><td class="num">' + F.money(c.balance_after) + '</td><td class="small">' + esc(c.note || "") + (c.order_no && String(c.note || "").indexOf(c.order_no) < 0 ? ' <span class="mono">' + esc(c.order_no) + "</span>" : "") + "</td></tr>"; }), "No entries.");
     var c = $("closeDetail"); if (c) c.onclick = function () { S.team = null; S.detail = null; $("teamSel").value = ""; renderDetail(); render(); };
   }
 
@@ -179,7 +194,6 @@
   $("q").addEventListener("input", JSE.debounce(function (e) { S.q = e.target.value.trim(); render(); }, 150));
   document.querySelectorAll("[data-v]").forEach(function (b) { b.addEventListener("click", function () {
     S.view = b.getAttribute("data-v"); document.querySelectorAll("[data-v]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
-    if (S.view !== "all" && S.sort === "team") { S.sort = "net_worth"; $("sort").value = "net_worth"; }
     render(); }); });
   $("exportBtn").onclick = function () { JSE.download("/api/export?sheet=networth", "JSE_networth.csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
 
@@ -187,13 +201,13 @@
     if (!user) return;
     S.user = user;
     if (user.role === "PARTICIPANT") {
-      $("listView").classList.add("hidden"); $("title").textContent = "My Portfolio"; $("eyebrow").textContent = user.team; $("poolRule").textContent = "";
+      $("listView").classList.add("hidden"); $("title").textContent = "My Portfolio"; $("eyebrow").textContent = (user.team_name || "") + " · " + user.team; $("poolRule").textContent = "";
       S.team = user.team;
       JSE.poll(loadDetail, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
       $("conn").className = "conn"; $("connText").textContent = "Live";
       return;
     }
-    if (user.role === "ADMIN" || user.role === "VIEWER") $("exportBtn").classList.remove("hidden");
+    $("exportBtn").classList.remove("hidden");
     var t = new URLSearchParams(location.search).get("team"); if (t) S.team = t.toUpperCase();
     JSE.poll(loadList, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
     JSE.poll(loadDetail, 5000);

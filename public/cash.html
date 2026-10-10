@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cash Ledger · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>.filters { display: grid; grid-template-columns: 200px 220px minmax(0, 1fr); gap: 10px; } @media (max-width: 760px) { .filters { grid-template-columns: 1fr; } }</style>
 </head>
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">Append-only · reconciles with every team's cash</div><h1>Cash Ledger</h1><p>Every cash movement: initial capital, IPO allotments, buys, sells, brokerage, loan draws, interest and repayments.</p></div>
+    <div><div class="eyebrow">Append-only · reconciles with every team's cash</div><h1>Cash Ledger</h1><p>The canonical financial record: starting capital, IPO allotments, BUY and SELL settlements, brokerage, loan withdrawals, interest charged and paid, and repayments. Current cash reconciles with these movements.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
   <div id="recon" style="margin-bottom:14px"></div>
   <div class="kpis" id="kpis"></div>
   <div class="card" style="margin-bottom:14px"><div class="card-b"><div class="filters">
     <div class="field"><label for="fTeam">Team</label><select class="input" id="fTeam"></select></div>
-    <div class="field"><label for="fType">Type</label><select class="input" id="fType"><option value="">All types</option><option>INITIAL_CAPITAL</option><option>IPO_ALLOTMENT</option><option>BUY</option><option>SELL</option><option>BROKERAGE</option><option>LOAN_DRAW</option><option>INTEREST</option><option>LOAN_REPAYMENT</option><option>REVERSAL</option><option>ADJUSTMENT</option></select></div>
+    <div class="field"><label for="fType">Type</label><select class="input" id="fType"><option value="">All types</option><option value="INITIAL_CAPITAL">INITIAL CAPITAL</option><option value="IPO_ALLOTMENT">IPO ALLOTMENT</option><option>BUY</option><option>SELL</option><option>BROKERAGE</option><option value="LOAN_DRAW">LOAN WITHDRAWAL</option><option value="INTEREST_CHARGE">INTEREST CHARGED</option><option value="INTEREST">INTEREST PAID</option><option value="LOAN_REPAYMENT">LOAN REPAYMENT</option><option>REVERSAL</option><option>ADJUSTMENT</option></select></div>
     <div class="field"><label for="fQ">Search notes</label><input class="input" id="fQ" type="search" placeholder="Symbol, order, note"></div>
   </div></div></div>
   <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
@@ -26,12 +26,13 @@
     <tbody id="rows"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody></table></div>
     <div class="row between" style="padding:10px 14px"><span class="small muted" id="info"></span><div class="row"><button class="btn sm" id="prev">← Newer</button><button class="btn sm" id="next">Older →</button></div></div></div></div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
   var S = { page: 1, size: 100 };
+  var TYPE = { LOAN_DRAW: "LOAN WITHDRAWAL", INTEREST: "INTEREST PAID", INTEREST_CHARGE: "INTEREST CHARGED", INITIAL_CAPITAL: "INITIAL CAPITAL", IPO_ALLOTMENT: "IPO ALLOTMENT", LOAN_REPAYMENT: "LOAN REPAYMENT" };
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
   async function load() {
     var d = await JSE.api.get("/api/cash", { team: $("fTeam").value, type: $("fType").value, q: $("fQ").value.trim(), page: S.page, page_size: S.size });
@@ -41,15 +42,15 @@
     var g = function (k) { return bt[k] || { count: 0, debit: 0, credit: 0 }; };
     $("kpis").innerHTML = kpi("Entries", F.num(sm.entries), "matching filter", "accent") + kpi("Credits", F.short(sm.credits), "money in", "good") + kpi("Debits", F.short(sm.debits), "money out", "bad") +
       kpi("Brokerage", F.money(g("BROKERAGE").debit), g("BROKERAGE").count + " entries", "info") + kpi("Loan draws", F.short(g("LOAN_DRAW").credit), g("LOAN_DRAW").count + " draws", "warn") +
-      kpi("Interest paid", F.money(g("INTEREST").debit), "repayments " + F.short(g("LOAN_REPAYMENT").debit), "warn");
+      kpi("Interest paid", F.money(g("INTEREST").debit), g("INTEREST_CHARGE").count + " interest charge(s) · repayments " + F.short(g("LOAN_REPAYMENT").debit), "warn");
     $("rows").innerHTML = d.rows.length ? d.rows.map(function (x) {
-      return '<tr><td class="nowrap">' + F.datetime(x.created_at) + "</td><td><b>" + esc(x.team) + '</b></td><td class="mono">' + esc(x.order_no || "") + '</td><td><span class="badge ' + (N(x.credit) > 0 ? "ok" : "prov") + '">' + esc(x.type.replace(/_/g, " ")) +
+      return '<tr><td class="nowrap">' + F.datetime(x.created_at) + "</td><td><b>" + esc(x.team) + '</b></td><td class="mono">' + esc(x.order_no || "") + '</td><td><span class="badge ' + (N(x.credit) > 0 ? "ok" : "prov") + '">' + esc(TYPE[x.type] || x.type.replace(/_/g, " ")) +
         '</span></td><td class="num down">' + (N(x.debit) ? F.money(x.debit) : "") + '</td><td class="num up">' + (N(x.credit) ? F.money(x.credit) : "") + '</td><td class="num"><b>' + F.money(x.balance_after) + '</b></td><td class="small">' + esc(x.note || "") + '</td><td class="small">' + esc(x.actor || "") + "</td></tr>";
     }).join("") : '<tr><td colspan="9" class="empty">No ledger entries match.</td></tr>';
     var from = (S.page - 1) * S.size + 1, to = from + d.rows.length - 1;
     $("info").textContent = d.rows.length ? from + "–" + to + " of " + F.num(sm.entries) : "";
     $("prev").disabled = S.page <= 1; $("next").disabled = to >= N(sm.entries);
-    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+    $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date()) + " IST";
   }
   ["fTeam", "fType"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; poller.now(); }); });
   $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; poller.now(); }, 350));

@@ -3,20 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Certificates · JAIN STOCK EXCHANGE</title>
+<title>Share Certificates · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>
-  .cert { width: 100%; max-width: 1050px; aspect-ratio: 297 / 210; margin: 0 auto 24px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow); position: relative; padding: 4.5% 6%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--line-2); background: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 800; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+  .tabs button[aria-selected="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .cert { width: 100%; max-width: 1050px; aspect-ratio: 297 / 210; margin: 0 auto 24px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow); position: relative; padding: 4% 6%; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .cert::before { content: ""; position: absolute; inset: 14px; border: 3px double #172b4d; pointer-events: none; }
-  .cert .logo { max-width: 46%; margin-bottom: 2.5%; }
-  .cert .kind { font-size: clamp(14px, 2.2vw, 22px); letter-spacing: 6px; font-weight: 900; color: #8a6d1d; text-transform: uppercase; }
-  .cert h2 { font-size: clamp(26px, 4.4vw, 46px); margin: 1.5% 0 1%; color: var(--navy); letter-spacing: 2px; }
-  .cert .lead { font-size: clamp(12px, 1.6vw, 16px); color: var(--ink-2); }
-  .cert .who { font-size: clamp(22px, 3.6vw, 38px); font-weight: 900; color: var(--ink); margin: 2% 0 .5%; border-bottom: 2px solid var(--line-2); padding: 0 4% 1%; }
-  .cert .members { font-size: clamp(12px, 1.5vw, 15px); color: var(--muted); }
-  .cert .stats { display: flex; gap: 6%; justify-content: center; margin-top: 3%; font-size: clamp(11px, 1.4vw, 14px); }
+  .cert .logo { max-width: 40%; margin-bottom: 2%; }
+  .cert .kind { font-size: clamp(12px, 1.9vw, 19px); letter-spacing: 6px; font-weight: 900; color: #8a6d1d; text-transform: uppercase; }
+  .cert h2 { font-size: clamp(22px, 3.8vw, 40px); margin: 1.2% 0 .8%; color: var(--navy); letter-spacing: 2px; }
+  .cert .lead { font-size: clamp(11px, 1.5vw, 15px); color: var(--ink-2); }
+  .cert .who { font-size: clamp(20px, 3.2vw, 34px); font-weight: 900; color: var(--ink); margin: 1.6% 0 .4%; border-bottom: 2px solid var(--line-2); padding: 0 4% 1%; }
+  .cert .members { font-size: clamp(11px, 1.4vw, 14px); color: var(--muted); }
+  .cert .holding { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2%; width: 88%; margin-top: 2.5%; font-size: clamp(10px, 1.3vw, 13px); color: var(--ink-2); }
+  .cert .holding b { display: block; font-size: clamp(13px, 1.9vw, 19px); color: var(--navy); }
+  .cert .stats { display: flex; gap: 6%; justify-content: center; margin-top: 2.5%; font-size: clamp(11px, 1.4vw, 14px); }
   .cert .stats b { display: block; font-size: clamp(14px, 2vw, 20px); color: var(--navy); }
+  .cert .certno { position: absolute; top: 5.5%; right: 6%; font-family: var(--mono); font-size: clamp(9px, 1.1vw, 12px); color: var(--muted); }
+  .cert .fine { margin-top: 2%; font-size: clamp(9px, 1.05vw, 11.5px); color: var(--muted); max-width: 86%; }
   .cert .sign { position: absolute; bottom: 7%; left: 8%; right: 8%; display: flex; justify-content: space-between; font-size: clamp(10px, 1.2vw, 13px); color: var(--ink-2); }
   .cert .sign span { border-top: 1px solid var(--ink-2); padding-top: 4px; min-width: 24%; }
   @media print {
@@ -30,51 +37,142 @@
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head no-print">
-    <div><div class="eyebrow">Final results</div><h1>Certificates</h1><p>Winners are ranked by Net Worth among teams that satisfy the ₹50K closing cash rule (final after the market closes).</p></div>
-    <div class="row"><select class="input" id="which" style="max-width:300px">
-      <option value="top3">Winner, 1st and 2nd runner-up</option><option value="all">Participation — all teams</option><option value="team">Single team…</option></select>
-      <select class="input hidden" id="team" style="max-width:160px"></select>
+    <div><div class="eyebrow" id="eyebrow">Settled share ownership</div><h1 id="h1">Share Certificates</h1>
+      <p id="lead">A share certificate documents the shares a team owns after Bank settlement or IPO allotment. It is separate from the trading slip, which proves an executed order.</p></div>
+    <div class="row"><select class="input hidden" id="team" style="max-width:280px" aria-label="Team"></select>
+      <select class="input hidden" id="which" style="max-width:280px" aria-label="Certificates to show"><option value="awards">Winner and Runner-Up</option><option value="all">Participation — all teams</option><option value="team">Single team…</option></select>
+      <select class="input hidden" id="awardTeam" style="max-width:220px" aria-label="Team"></select>
       <button class="btn primary" id="print" type="button">Print / Save as PDF</button></div>
   </div>
-  <div class="alert warn no-print hidden" id="prov" style="margin-bottom:14px"></div>
-  <div class="card no-print" style="margin-bottom:18px"><div class="card-h"><h2>Final ranking</h2></div><div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
-    <thead><tr><th class="num">Pool rank</th><th>Team</th><th>Name</th><th class="num">Net Worth</th><th class="num">P/L</th><th class="num">Return</th><th>₹50K Rule</th></tr></thead><tbody id="rank"></tbody></table></div></div></div>
+  <div class="tabs no-print hidden" id="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="share" aria-selected="true">Share certificates</button>
+    <button type="button" role="tab" data-tab="award" aria-selected="false">Award certificates</button>
+  </div>
+  <div id="shareInfo" class="no-print" style="margin-bottom:14px"></div>
+  <div id="awardInfo" class="no-print hidden" style="margin-bottom:14px"></div>
+  <div class="card no-print hidden" id="rankCard" style="margin-bottom:18px"><div class="card-h"><h2>Final ranking</h2><span class="small muted">Eligible teams ranked by Net Worth</span></div><div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
+    <thead><tr><th class="num">Rank</th><th>Team</th><th>Team name</th><th>Award</th><th class="num">Net Worth</th><th class="num">Return</th><th>Assessment</th><th>Loan repaid</th><th>₹50K rule</th><th>Eligibility</th></tr></thead><tbody id="rank"></tbody></table></div></div></div>
   <div id="certs"></div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
-  var F = JSE.fmt, esc = JSE.esc, $ = function (id) { return document.getElementById(id); };
-  var S = { d: null };
-  var TITLES = ["Winner", "1st Runner-up", "2nd Runner-up"];
-  function cert(t, kind) {
-    return '<section class="cert"><img class="logo" src="/assets/img/jain-cms-logo.png" alt="JAIN (Deemed-to-be University) · CMS Business School">' +
-      '<div class="kind">' + esc(kind) + '</div><h2>Certificate of ' + (kind === "Participation" ? "Participation" : "Achievement") + "</h2>" +
-      '<div class="lead">This certificate is presented to</div><div class="who">' + esc(t.name && t.name !== "Team " + t.team.slice(5) ? t.name + " (" + t.team + ")" : t.team) + "</div>" +
-      (t.members ? '<div class="members">' + esc(t.members) + "</div>" : "") +
-      '<div class="lead" style="margin-top:2%">for ' + (kind === "Participation" ? "participating in" : "the " + esc(kind.toLowerCase()) + " position at") + " <b>" + esc(S.d.event_name || "DALAL STREET 2026") + "</b>, the JAIN STOCK EXCHANGE trading simulation.</div>" +
-      '<div class="stats"><div><b>' + F.money(t.net_worth) + "</b>Net Worth</div><div><b>" + F.pct(t.return_pct) + "</b>Return</div>" + (t.rank_in_pool ? "<div><b>#" + t.rank_in_pool + "</b>Rank</div>" : "") + "</div>" +
-      '<div class="sign"><span>Faculty Coordinator</span><span>Chief Stock Exchange Controller</span><span>Director, CMS Business School</span></div></section>';
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { user: null, tab: "share", share: null, awards: null, cfg: null };
+  var SIGN = '<div class="sign"><span>Faculty Coordinator</span><span>Chief Stock Exchange Controller</span><span>Director, CMS Business School</span></div>';
+  var LOGO = '<img class="logo" src="/assets/img/jain-cms-logo.png" alt="JAIN (Deemed-to-be University) · CMS Business School">';
+
+  function teamLabel(t) { return t.name ? t.name + " (" + t.code + ")" : t.code; }
+
+  function shareCert(team, c, d) {
+    return '<section class="cert"><div class="certno">' + esc(c.certificate_no) + "</div>" + LOGO +
+      '<div class="kind">JAIN STOCK EXCHANGE</div><h2>Share Certificate</h2>' +
+      '<div class="lead">This is to certify that</div><div class="who">' + esc(teamLabel(team)) + "</div>" +
+      (team.members ? '<div class="members">' + esc(team.members) + "</div>" : "") +
+      '<div class="lead" style="margin-top:1.6%">is the registered holder of the following fully settled shares in <b>' + esc(d.event_name || "DALAL STREET 2026") + "</b>:</div>" +
+      '<div class="holding"><div><b>' + esc(c.symbol) + "</b>" + esc(c.security) + "</div><div><b>" + F.num(c.quantity) + "</b>" + esc(c.asset_type) + "s</div>" +
+      "<div><b>" + F.price(c.avg_cost) + "</b>Average cost per share</div><div><b>" + F.datetime(c.last_settled_at) + "</b>Last settlement (IST)</div></div>" +
+      '<div class="fine">Recorded from ' + (N(c.allotted) ? F.num(c.allotted) + " IPO-allotted shares" + (N(c.settled_trades) ? " and " : "") : "") +
+      (N(c.settled_trades) ? c.settled_trades + " Bank-settled trade(s)" : "") + ". Assigned broker: " + esc(team.broker ? team.broker + (team.broker_name ? " · " + team.broker_name : "") : "—") +
+      ". Issued " + F.datetime(d.as_of) + " IST for the holding shown; a later settlement supersedes this certificate. This certificate documents ownership only — trading slips record executed orders.</div>" + SIGN + "</section>";
   }
-  function render() {
-    var d = S.d; if (!d) return;
-    $("prov").classList.toggle("hidden", d.status === "CLOSED" || d.status === "FINALIZED");
-    $("prov").innerHTML = "<b>Provisional:</b> the market is " + esc(F.statusText(d.status)) + ". Rankings become final when the event is CLOSED / FINALIZED.";
-    $("rank").innerHTML = d.ranking.map(function (r) { return "<tr" + (r.winner ? ' class="winner"' : "") + '><td class="num">' + (r.rank_in_pool || "—") + "</td><td><b>" + esc(r.team) + "</b></td><td>" + esc(r.name || "") + '</td><td class="num">' + F.money(r.net_worth) + '</td><td class="num ' + F.dir(r.pnl) + '">' + F.signedMoney(r.pnl) + '</td><td class="num">' + F.pct(r.return_pct) + "</td><td>" + (r.cash_rule_met ? '<span class="badge ok">Satisfied</span>' : '<span class="badge no">Not satisfied</span>') + "</td></tr>"; }).join("");
+
+  function renderShare() {
+    var d = S.share;
+    if (!d) { $("certs").innerHTML = ""; return; }
+    var t = d.team, list = d.certificates || [];
+    $("shareInfo").innerHTML = '<div class="alert info"><b>' + esc(teamLabel(t)) + "</b> · " + list.length + " certificate(s) for settled holdings" +
+      (t.broker ? " · broker " + esc(t.broker) : "") + ". Market status: " + esc(F.statusText(d.status)) + ".</div>";
+    $("certs").innerHTML = list.length ? list.map(function (c) { return shareCert(t, c, d); }).join("")
+      : '<div class="alert info no-print">No settled holdings yet. A share certificate appears after a BUY is settled by the Bank or IPO shares are allotted.</div>';
+  }
+
+  async function loadShare() {
+    var team = $("team").value;
+    if (S.user.role !== "PARTICIPANT" && !team) { S.share = null; $("shareInfo").innerHTML = '<div class="alert info">Choose a team to see its share certificates.</div>'; renderShare(); return; }
+    try { S.share = await JSE.api.get("/api/share-certificates", S.user.role === "PARTICIPANT" ? null : { team: team }); renderShare(); }
+    catch (e) { S.share = null; $("certs").innerHTML = ""; $("shareInfo").innerHTML = '<div class="alert bad">' + esc(e.message) + "</div>"; }
+  }
+
+  function awardCert(r, kind) {
+    var title = kind === "WINNER" ? "Winner" : kind === "RUNNER_UP" ? "Runner-Up" : "Participation";
+    return '<section class="cert">' + LOGO + '<div class="kind">' + esc(title) + '</div><h2>Certificate of ' + (kind ? "Achievement" : "Participation") + "</h2>" +
+      '<div class="lead">This certificate is presented to</div><div class="who">' + esc(r.name ? r.name + " (" + r.team + ")" : r.team) + "</div>" +
+      (r.members ? '<div class="members">' + esc(r.members) + "</div>" : "") +
+      '<div class="lead" style="margin-top:2%">' + (kind ? "as the <b>" + esc(title) + "</b> of" : "for participating in") + " <b>" + esc(S.awards.event_name || "DALAL STREET 2026") + "</b>, the JAIN STOCK EXCHANGE trading simulation.</div>" +
+      (kind ? '<div class="stats"><div><b>' + F.money(r.net_worth) + "</b>Net Worth</div><div><b>" + F.pct(r.return_pct) + "</b>Return</div><div><b>#" + r.rank_eligible + "</b>Final rank</div></div>" : "") +
+      SIGN + "</section>";
+  }
+
+  function renderAwards() {
+    var d = S.awards; if (!d) return;
+    var final = d.status === "CLOSED" || d.status === "FINALIZED";
+    var winner = d.ranking.filter(function (r) { return r.award === "WINNER"; })[0], runner = d.ranking.filter(function (r) { return r.award === "RUNNER_UP"; })[0];
+    $("awardInfo").innerHTML = (final ? "" : '<div class="alert warn" style="margin-bottom:10px"><b>Provisional:</b> the market is ' + esc(F.statusText(d.status)) + ". The Winner and Runner-Up become final when the event is CLOSED / FINALIZED.</div>") +
+      '<div class="alert info">Exactly one Winner and one Runner-Up: the two highest Net Worth teams among teams that met the assessment (' +
+      esc(String((S.cfg || {}).min_buy_trades || 5)) + " settled BUY + " + esc(String((S.cfg || {}).min_sell_trades || 5)) + " settled SELL listed-stock trades), repaid any loan in full and satisfied the closing cash rule.</div>";
+    $("rank").innerHTML = d.ranking.map(function (r) {
+      return "<tr" + (r.award ? ' class="winner"' : "") + '><td class="num">' + (r.rank_eligible || '<span class="muted">—</span>') + "</td><td><b>" + esc(r.team) + "</b></td><td>" + esc(r.name || "") + "</td><td>" + JSE.badge.award(r.award) +
+        '</td><td class="num">' + F.money(r.net_worth) + '</td><td class="num ' + F.dir(r.return_pct) + '">' + F.pct(r.return_pct) + "</td><td>" + JSE.badge.progress(r.buys, (S.cfg || {}).min_buy_trades || 5, "BUY") + " " + JSE.badge.progress(r.sells, (S.cfg || {}).min_sell_trades || 5, "SELL") +
+        "</td><td>" + (r.loan_repaid ? '<span class="badge ok">Yes</span>' : '<span class="badge no">No</span>') + "</td><td>" + (r.cash_rule_met ? '<span class="badge ok">Satisfied</span>' : '<span class="badge no">Not satisfied</span>') + "</td><td>" + JSE.badge.eligibility(r.eligibility_status) + "</td></tr>";
+    }).join("");
     var which = $("which").value, html = "";
-    if (which === "top3") html = d.ranking.filter(function (r) { return r.rank_in_pool && r.rank_in_pool <= 3; }).map(function (r) { return cert(r, TITLES[r.rank_in_pool - 1]); }).join("") || '<div class="alert info">No eligible teams yet.</div>';
-    else if (which === "all") html = d.ranking.slice().sort(function (a, b) { return JSE.teamSort(a.team, b.team); }).map(function (r) { return cert(r, "Participation"); }).join("");
-    else { var t = d.ranking.filter(function (r) { return r.team === $("team").value; })[0]; html = t ? cert(t, t.rank_in_pool && t.rank_in_pool <= 3 ? TITLES[t.rank_in_pool - 1] : "Participation") : ""; }
+    if (which === "awards") html = [winner && awardCert(winner, "WINNER"), runner && awardCert(runner, "RUNNER_UP")].filter(Boolean).join("") || '<div class="alert info no-print">No eligible teams yet.</div>';
+    else if (which === "all") html = d.ranking.slice().sort(function (a, b) { return JSE.teamSort(a.team, b.team); }).map(function (r) { return awardCert(r, null); }).join("");
+    else { var t = d.ranking.filter(function (r) { return r.team === $("awardTeam").value; })[0]; html = t ? awardCert(t, t.award || null) : ""; }
     $("certs").innerHTML = html;
   }
-  $("which").onchange = function () { $("team").classList.toggle("hidden", $("which").value !== "team"); render(); };
-  $("team").onchange = render;
-  $("print").onclick = function () { window.print(); };
+
+  async function loadAwards() {
+    S.awards = await JSE.api.get("/api/certificates");
+    var keep = $("awardTeam").value;
+    $("awardTeam").innerHTML = S.awards.ranking.slice().sort(function (a, b) { return JSE.teamSort(a.team, b.team); }).map(function (r) { return '<option value="' + esc(r.team) + '">' + esc(r.team + (r.name ? " · " + r.name : "")) + "</option>"; }).join("");
+    if (keep) $("awardTeam").value = keep;
+    renderAwards();
+  }
+
+  function setTab(tab) {
+    S.tab = tab;
+    document.querySelectorAll("[data-tab]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-tab") === tab)); });
+    var share = tab === "share";
+    $("team").classList.toggle("hidden", !share || S.user.role === "PARTICIPANT");
+    $("which").classList.toggle("hidden", share);
+    $("awardTeam").classList.toggle("hidden", share || $("which").value !== "team");
+    $("shareInfo").classList.toggle("hidden", !share); $("awardInfo").classList.toggle("hidden", share); $("rankCard").classList.toggle("hidden", share);
+    $("h1").textContent = share ? (S.user.role === "PARTICIPANT" ? "My Share Certificates" : "Share Certificates") : "Award Certificates";
+    $("eyebrow").textContent = share ? "Settled share ownership" : "Final results · Winner and Runner-Up";
+    $("lead").textContent = share ? "A share certificate documents the shares a team owns after Bank settlement or IPO allotment. It is separate from the trading slip, which proves an executed order."
+      : "Award certificates for the Winner and the Runner-Up, ranked by Net Worth among eligible teams, plus optional participation certificates.";
+    (share ? loadShare() : loadAwards()).catch(function (e) { JSE.toast(e.message, "bad"); });
+  }
+
   JSE.page({ id: "certificates" }).then(async function (u) {
     if (!u) return;
-    try { S.d = await JSE.api.get("/api/certificates"); $("team").innerHTML = S.d.ranking.slice().sort(function (a, b) { return JSE.teamSort(a.team, b.team); }).map(function (r) { return "<option>" + esc(r.team) + "</option>"; }).join(""); render(); }
-    catch (e) { JSE.toast(e.message, "bad"); }
+    S.user = u;
+    try { S.cfg = (await JSE.api.get("/api/event-status")).config; } catch (e) {}
+    $("print").onclick = function () { window.print(); };
+    var qTeam = (new URLSearchParams(location.search).get("team") || "").toUpperCase();
+    if (u.role === "ADMIN" || u.role === "VIEWER") {
+      $("tabs").classList.remove("hidden");
+      document.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { setTab(b.getAttribute("data-tab")); }); });
+      $("which").onchange = function () { $("awardTeam").classList.toggle("hidden", $("which").value !== "team"); renderAwards(); };
+      $("awardTeam").onchange = renderAwards;
+      try {
+        S.awards = await JSE.api.get("/api/certificates");
+        var teams = S.awards.ranking.slice().sort(function (a, b) { return JSE.teamSort(a.team, b.team); });
+        $("team").innerHTML = '<option value="">Choose a team…</option>' + teams.map(function (r) { return '<option value="' + esc(r.team) + '">' + esc(r.team + (r.name ? " · " + r.name : "")) + "</option>"; }).join("");
+      } catch (e) { JSE.toast(e.message, "bad"); }
+    } else if (u.role === "BROKER") {
+      try {
+        var bd = await JSE.api.get("/api/broker-desk");
+        $("team").innerHTML = '<option value="">Choose one of your teams…</option>' + bd.teams.map(function (t) { return '<option value="' + esc(t.code) + '">' + esc(t.code + (t.name ? " · " + t.name : "")) + "</option>"; }).join("");
+      } catch (e) { JSE.toast(e.message, "bad"); }
+    }
+    if (qTeam && u.role !== "PARTICIPANT") $("team").value = qTeam;
+    $("team").addEventListener("change", loadShare);
+    setTab(new URLSearchParams(location.search).get("tab") === "award" && (u.role === "ADMIN" || u.role === "VIEWER") ? "award" : "share");
   });
 })();
 </script>

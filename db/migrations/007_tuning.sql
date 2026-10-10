@@ -1,4 +1,4 @@
--- JAIN STOCK EXCHANGE (JSE) v272
+-- JAIN STOCK EXCHANGE (JSE) v311
 -- 007_tuning.sql: safety timeouts for this database (re-applicable).
 DO $$
 BEGIN

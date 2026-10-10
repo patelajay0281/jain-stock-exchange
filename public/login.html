@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=272.1">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
 <style>
   .login { max-width: 420px; margin: 48px auto; }
   .login .card-b { padding: 26px 26px 22px; }
@@ -23,27 +23,26 @@
     <form class="card" id="f" novalidate>
       <div class="card-b">
         <h1>Sign in</h1>
-        <p>For participant teams (TEAM-001 … TEAM-100) and event staff: brokers, Exchange, Bank, institutional desk, faculty and administrators.</p>
+        <p>For participant teams (TEAM-001 … TEAM-100) and event staff: brokers, Pit Managers, Exchange, Bank, the institutional desk, faculty and Event Admin.</p>
         <div class="alert bad hidden" id="err" role="alert"></div>
         <div class="alert info hidden" id="info"></div>
-        <div class="field"><label for="u">Username</label><input class="input lg" id="u" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required placeholder="e.g. BANK-01"></div>
+        <div class="field"><label for="u">Username</label><input class="input lg" id="u" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required placeholder="e.g. TEAM-001 or BROKER-01"></div>
         <div class="field"><label for="p">Password</label><input class="input lg" id="p" name="password" type="password" autocomplete="current-password" required></div>
         <div style="margin-top:18px"><button class="btn primary lg block" id="go" type="submit">Sign in</button></div>
-        <div class="roles">The market page and Market Intelligence are public — no sign-in needed.</div>
+        <div class="roles">The Market and IPO pages are public — no sign-in needed. Participants follow their orders, trading slips and portfolio after signing in; orders are placed through the assigned broker.</div>
       </div>
     </form>
   </div>
 </main>
-<script src="/assets/config.js?v=272.1"></script>
-<script src="/assets/jse.js?v=272.1"></script>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
-  var HOME = { ADMIN: "/admin.html", EXCHANGE: "/exchange.html", BANK: "/bank.html", BROKER: "/order.html", INSTITUTIONAL: "/institutional.html", PARTICIPANT: "/portfolios.html", VIEWER: "/portfolios.html" };
   function next(user) {
     var n = params.get("next") || "";
-    if (/^\/[A-Za-z0-9._\-\/?=&%]*$/.test(n) && n.indexOf("//") !== 0 && n.indexOf("/login") !== 0) return n;
-    return HOME[user.role] || "/";
+    if (/^\/[A-Za-z0-9._\-\/?=&%]*$/.test(n) && n.indexOf("//") !== 0 && n.indexOf("/login") !== 0 && JSE.canOpen(n, user.role)) return n;
+    return JSE.homeFor(user.role);
   }
   JSE.page({ id: "login", roles: "*" }).then(function (user) {
     if (user) { location.replace(next(user)); return; }

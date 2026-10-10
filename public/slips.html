@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trading Slips · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=311">
+<style>
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .toolbar .input { width: 240px; }
+  tr.click { cursor: pointer; }
+  .slip-wrap { display: flex; justify-content: center; }
+  @media print { .no-print { display: none !important; } .wrap { padding: 0; } .slip-wrap { display: block; } }
+</style>
+</head>
+<body>
+<main id="main" class="wrap">
+  <div class="page-head no-print">
+    <div><div class="eyebrow">Executed-order documents</div><h1 id="h1">Trading Slips</h1>
+      <p>One official trading slip is issued when the Pit Manager executes an order. It proves the executed order record and is different from a share certificate.</p></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+  </div>
+  <section id="one" class="hidden">
+    <div class="row no-print" style="margin-bottom:12px"><a class="btn sm" href="/slips.html">← All slips</a><button class="btn sm primary" type="button" id="printBtn">Print slip</button>
+      <a class="btn sm" id="trackLink" href="#">Order tracking</a></div>
+    <div class="slip-wrap"><div class="slip" id="slip"></div></div>
+  </section>
+  <section id="list">
+    <div class="toolbar no-print">
+      <label class="sr-only" for="q">Search</label><input class="input" id="q" type="search" placeholder="Slip, order, team or symbol">
+      <label class="sr-only" for="team">Team</label><input class="input hidden" id="team" placeholder="Team code (e.g. TEAM-001)" style="width:200px">
+    </div>
+    <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
+      <thead><tr><th>Slip</th><th>Executed</th><th>Order</th><th>Team</th><th>Broker</th><th>Trade</th><th class="num">Price</th><th class="num">Trade value</th>
+        <th class="num">Brokerage</th><th class="num">Settlement</th><th>Pit Manager</th><th>Exchange</th><th>Bank</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="13" class="empty">Loading…</td></tr></tbody></table></div></div></div>
+    <div class="row between no-print" style="margin-top:10px"><span class="small muted" id="pageInfo"></span>
+      <div class="row"><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div></div>
+  </section>
+</main>
+<script src="/assets/config.js?v=311"></script>
+<script src="/assets/jse.js?v=311"></script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc;
+  var $ = function (id) { return document.getElementById(id); };
+  var S = { page: 1, size: 50, q: "", team: "", total: 0, user: null };
+  var params = new URLSearchParams(location.search);
+
+  function statusBadge(s) {
+    var cls = { APPROVED: "ok", SETTLED: "ok", PENDING: "s-pending", WAITING: "prov", REJECTED: "no", "NOT APPLICABLE": "prov" }[s] || "prov";
+    return '<span class="badge ' + cls + '">' + esc(s) + "</span>";
+  }
+
+  function slipHtml(s, eventName) {
+    var row = function (k, v) { return "<dt>" + esc(k) + "</dt><dd>" + v + "</dd>"; };
+    return '<div class="slip-h"><div><div class="eyebrow">JAIN STOCK EXCHANGE · ' + esc(eventName || "Dalal Street 2026") + '</div><div style="font-size:20px;font-weight:900;color:var(--navy);margin-top:2px">TRADING SLIP</div>' +
+      '<div class="slip-no">' + esc(s.slip_no) + "</div></div><img src=\"/assets/img/jain-cms-logo.png\" alt=\"JAIN CMS Business School\"></div>" +
+      '<dl class="dl">' +
+      row("Trading Slip ID", '<span class="mono">' + esc(s.slip_no) + "</span>") + row("Order Code", '<span class="mono">' + esc(s.order_no) + "</span>") +
+      row("Date and time", F.datetime(s.executed_at) + " IST") +
+      (s.account_type === "INSTITUTION" ? row("Institution", esc(s.institution) + " · " + esc(s.institution_name || "")) + row("Counterparty team", esc(s.team) + " · " + esc(s.team_name))
+        : row("Team Code", esc(s.team)) + row("Team Name", esc(s.team_name)) + row("Assigned Broker", esc(s.broker_name || "—")) + row("Broker Code", esc(s.broker || "—"))) +
+      row("Security", esc(s.security)) + row("Symbol", esc(s.symbol)) + row("Asset type", esc(s.asset_type)) +
+      row("BUY / SELL", JSE.badge.side(s.side)) + row("Quantity", F.num(s.quantity) + " shares") + row("Execution price", F.price(s.price)) +
+      row("Trade value", F.money(s.trade_value, { dp: 2 })) + row("Brokerage rate", JSE.rate(s.brokerage_rate)) + row("Brokerage amount", F.money(s.brokerage, { dp: 2 })) +
+      row("Settlement value", F.money(s.settlement_value, { dp: 2 }) + (s.account_type === "TEAM" ? ' <span class="tiny muted">(' + (s.side === "BUY" ? "trade value + brokerage" : "trade value − brokerage") + ")</span>" : "")) +
+      row("Pit Manager execution", F.datetime(s.executed_at) + " · " + esc(s.executed_by)) +
+      row("Broker submission", F.datetime(s.submitted_at) + " · " + esc(s.submitted_by) + (s.instruction_no ? " · " + esc(s.instruction_no) : "")) +
+      row("Exchange status", statusBadge(s.exchange_status) + (s.exchange_at ? ' <span class="tiny muted">' + F.datetime(s.exchange_at) + " · " + esc(s.exchange_by || "") + "</span>" : "")) +
+      row("Bank settlement status", statusBadge(s.bank_status) + (s.bank_at ? ' <span class="tiny muted">' + F.datetime(s.bank_at) + " · " + esc(s.bank_by || "") + "</span>" : "")) +
+      (s.reject_reason ? row("Rejection reason", esc(s.reject_reason)) : "") + "</dl>" +
+      '<div class="foot">This slip is the official record of the executed order and is immutable after execution; only the Exchange and Bank status above change. ' +
+      "Cash and holdings change only after Bank settlement. Share ownership is documented separately on share certificates.</div>";
+  }
+
+  async function showOne(key) {
+    $("list").classList.add("hidden"); $("one").classList.remove("hidden");
+    try {
+      var r = await JSE.api.get("/api/slip", key);
+      $("slip").innerHTML = slipHtml(r.slip, r.event_name);
+      $("h1").textContent = "Trading Slip " + r.slip.slip_no;
+      $("trackLink").href = "/orders.html?order=" + encodeURIComponent(r.slip.order_no);
+      $("conn").className = "conn"; $("connText").textContent = "Loaded " + F.time(new Date()) + " IST";
+      if (params.get("print") === "1") setTimeout(function () { window.print(); }, 300);
+    } catch (e) { $("slip").innerHTML = '<div class="alert bad">' + esc(e.message) + "</div>"; }
+  }
+
+  async function load() {
+    var r = await JSE.api.get("/api/slips", { q: S.q, team: S.team, page: S.page, page_size: S.size });
+    S.total = r.total;
+    $("rows").innerHTML = r.rows.length ? r.rows.map(function (s) {
+      return '<tr class="click" data-slip="' + esc(s.slip_no) + '"><td><a class="mono" href="/slips.html?slip=' + encodeURIComponent(s.slip_no) + '"><b>' + esc(s.slip_no) + "</b></a></td><td>" + F.datetime(s.executed_at) + "</td>" +
+        '<td class="mono">' + esc(s.order_no) + "</td><td><b>" + esc(s.team) + '</b><div class="tiny muted">' + esc(s.team_name) + "</div></td><td>" + esc(s.account_type === "INSTITUTION" ? s.institution : s.broker || "—") + "</td>" +
+        "<td>" + JSE.badge.side(s.side) + " " + F.num(s.quantity) + " <b>" + esc(s.symbol) + '</b></td><td class="num">' + F.price(s.price) + '</td><td class="num">' + F.money(s.trade_value) + "</td>" +
+        '<td class="num">' + F.money(s.brokerage) + ' <span class="tiny muted">' + JSE.rate(s.brokerage_rate) + '</span></td><td class="num">' + F.money(s.settlement_value) + "</td>" +
+        "<td>" + esc(s.executed_by) + "</td><td>" + statusBadge(s.exchange_status) + "</td><td>" + statusBadge(s.bank_status) + "</td></tr>";
+    }).join("") : '<tr><td colspan="13" class="empty"><b>No trading slips yet.</b>A slip is issued when the Pit Manager executes an order.</td></tr>';
+    $("rows").querySelectorAll("tr.click").forEach(function (tr) { tr.addEventListener("click", function (e) { if (e.target.tagName !== "A") location.href = "/slips.html?slip=" + encodeURIComponent(tr.getAttribute("data-slip")); }); });
+    var from = (S.page - 1) * S.size + 1, to = Math.min(S.total, S.page * S.size);
+    $("pageInfo").textContent = S.total ? from + "–" + to + " of " + S.total + " slip(s)" : "";
+    $("prev").disabled = S.page <= 1; $("next").disabled = to >= S.total;
+    $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date()) + " IST";
+  }
+
+  var poller;
+  JSE.page({ id: "slips" }).then(function (user) {
+    if (!user) return;
+    S.user = user;
+    $("printBtn").onclick = function () { window.print(); };
+    if (user.role === "PARTICIPANT") $("h1").textContent = "My Trading Slips";
+    if (["ADMIN", "VIEWER", "PIT_MANAGER", "EXCHANGE", "BANK"].indexOf(user.role) >= 0) $("team").classList.remove("hidden");
+    var slip = params.get("slip"), ord = params.get("order");
+    if (slip || ord) return showOne(slip ? { slip_no: slip } : { order_no: ord });
+    $("q").addEventListener("input", JSE.debounce(function (e) { S.q = e.target.value.trim(); S.page = 1; poller.now(); }, 250));
+    $("team").addEventListener("input", JSE.debounce(function (e) { S.team = e.target.value.trim(); S.page = 1; poller.now(); }, 300));
+    $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
+    $("next").onclick = function () { S.page++; poller.now(); };
+    poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = e.message; } });
+  });
+})();
+</script>
+</body>
+</html>
