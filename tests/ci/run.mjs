@@ -67,6 +67,22 @@ for (const s of cfg.suites) {
       results.suites.prod_warm = { status: r.status, ms: Date.now() - t0, event_status: d.status, counts: d.counts, version: r.headers.get("x-jse-version") };
     }
     else if (s === "cleanup") await cleanup();
+    else if (s === "probe") {
+      // in-region load: the "jseprobe" Neon Function (same region as the API) generates the requests
+      results.suites.probe = { runs: [] };
+      for (const P of cfg.probes || []) {
+        const r = await fetch(process.env.ACTIONS_ID_TOKEN_REQUEST_URL + "&audience=jse-staging", { headers: { authorization: "Bearer " + process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN } });
+        const token = (await r.json()).value;
+        const t0 = Date.now();
+        const res = await fetch(cfg.probe_url, { method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ token, target: BASE, rps: P.rps, seconds: P.seconds, viewers: P.viewers || 600 }), signal: AbortSignal.timeout((P.seconds + 120) * 1000) });
+        const text = await res.text();
+        let report; try { report = JSON.parse(text); } catch { report = { raw: text.slice(0, 500) }; }
+        results.suites.probe.runs.push({ config: P, http: res.status, wall_s: Math.round((Date.now() - t0) / 1000), report });
+        console.log("[probe]", JSON.stringify({ rps: P.rps, http: res.status, achieved: report.achieved_rps, success: report.success_rate_pct, codes: report.status_codes, p95: report.p95_ms }));
+        if (P.pause_s) await new Promise((x) => setTimeout(x, P.pause_s * 1000));
+      }
+    }
     else if (s === "ui") {
       const { signIn } = await import("../lib/client.mjs");
       const tokens = {};

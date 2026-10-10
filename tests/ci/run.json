@@ -2,6 +2,12 @@
   "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
   "site": "https://v272.jse-live.pages.dev",
   "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
-  "suites": ["health", "ui", "cleanup"], "attempt": 2,
-  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 4: deployed-site browser test + cleanup."
+  "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+  "suites": ["health", "probe"],
+  "probes": [
+    { "rps": 200, "seconds": 15, "viewers": 300, "pause_s": 5 },
+    { "rps": 850, "seconds": 60, "viewers": 600, "pause_s": 10 },
+    { "rps": 1200, "seconds": 30, "viewers": 800 }
+  ],
+  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 6: in-region load from the jseprobe function (Singapore → Singapore): 200 (warm-up), 850 and 1,200 req/s."
 }
