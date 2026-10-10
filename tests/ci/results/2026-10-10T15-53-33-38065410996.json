@@ -1,0 +1,46 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-10T15:53:33.112Z",
+  "run_id": "38065410996",
+  "commit": "e44671469f02fb55db7f10c30888ad982f99bb9b",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "suites": [
+      "health",
+      "ui",
+      "cleanup"
+    ],
+    "attempt": 2,
+    "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 4: deployed-site browser test + cleanup."
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "2.72.0",
+        "db": "ok",
+        "db_ms": 26,
+        "uptime_s": 1285,
+        "node": "v24.16.0",
+        "time": "2026-10-10T15:53:33.883Z"
+      },
+      "ms": 864
+    },
+    "ui": {
+      "exit_code": 0,
+      "duration_s": 51,
+      "tail": "PASS broker: order created from the form  [ORD-001820 BUY TEAM-031 · 100 INFY @ ₹910 · EXCHANGE PENDING\nSent to the Exchange. Track it on Order Tracking.]\nPASS broker pages: no JS errors\nPASS exchange: approved from the queue\nPASS exchange page: no JS errors\nPASS bank: settled from the queue  [ORD-001820 settled · cash ₹20,00,000 → ₹19,08,545 · price ₹910\n×]\nPASS bank page: no JS errors\nPASS market price follows the settled trade  [910]\nPASS participant: own holdings visible\nPASS participant: no JS errors\nPASS admin opens /\nPASS /: no JS errors\nPASS admin opens /order.html\nPASS /order.html: no JS errors\nPASS admin opens /exchange.html\nPASS /exchange.html: no JS errors\nPASS admin opens /bank.html\nPASS /bank.html: no JS errors\nPASS admin opens /orders.html\nPASS /orders.html: no JS errors\nPASS admin opens /institutional.html\nPASS /institutional.html: no JS errors\nPASS admin opens /commissions.html\nPASS /commissions.html: no JS errors\nPASS admin opens /portfolios.html\nPASS /portfolios.html: no JS errors\nPASS admin opens /admin.html\nPASS /admin.html: no JS errors\nPASS admin opens /audit.html\nPASS /audit.html: no JS errors\nPASS admin opens /cash.html\nPASS /cash.html: no JS errors\nPASS admin opens /insights.html\nPASS /insights.html: no JS errors\nPASS admin opens /certificates.html\nPASS /certificates.html: no JS errors\n\n42/42 staging UI checks passed\n"
+    },
+    "cleanup": {
+      "reject": 200,
+      "close": 200,
+      "reset": 200,
+      "clear_listing": 200
+    }
+  },
+  "finished_at": "2026-10-10T15:54:28.999Z"
+}
