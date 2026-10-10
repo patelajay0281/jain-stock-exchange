@@ -316,6 +316,7 @@
         try {
           await api.post("/api/change-password", { old_password: o, new_password: n });
           var u = getUser(); if (u) { u.must_change_password = false; store.set(USER_KEY, JSON.stringify(u)); }
+          store.set("jse_pw_changed_at", String(Date.now()));   // other API instances may report the old flag for ~30 s
           toast("Password changed.", "good");
           close(true);
         } catch (ex) { go.disabled = false; showErr(ex.message); }
@@ -373,7 +374,8 @@
     renderShell({ page: o.id });
     document.addEventListener("jse:signedout", function () { if (roles !== "*") location.href = "/login.html?expired=1&next=" + encodeURIComponent(location.pathname + location.search); });
     startStatusTicker(o.statusFromPage);
-    if (user && user.must_change_password && o.id !== "login") {
+    var justChanged = Date.now() - Number(store.get("jse_pw_changed_at") || 0) < 120000;
+    if (user && user.must_change_password && o.id !== "login" && !justChanged) {
       changePassword({ required: true, title: "Choose a new password", note: "This account was given a temporary password. Choose your own before continuing." });
     }
     var main = document.getElementById("main");
