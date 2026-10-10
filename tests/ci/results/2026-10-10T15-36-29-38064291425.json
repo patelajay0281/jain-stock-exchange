@@ -1,0 +1,233 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-10T15:36:29.690Z",
+  "run_id": "38064291425",
+  "commit": "95c154cbf2afb856b537682657d16481b4b850e5",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "suites": [
+      "health",
+      "listing",
+      "load",
+      "cleanup"
+    ],
+    "load": {
+      "rps": 850,
+      "duration": 150,
+      "ramp": 45,
+      "write_rps": 1,
+      "viewers": 600
+    },
+    "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 2: listing suite + 850 req/s with a 45 s ramp, browser-like retry of platform 429s."
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "2.72.0",
+        "db": "ok",
+        "db_ms": 30,
+        "uptime_s": 262,
+        "node": "v24.16.0",
+        "time": "2026-10-10T15:36:30.596Z"
+      },
+      "ms": 1009
+    },
+    "listing": {
+      "exit_code": 0,
+      "duration_s": 17,
+      "pass": 10,
+      "fail": 0,
+      "tail": "# Subtest: reset restores issue prices and keeps saved listing prices\nok 7 - reset restores issue prices and keeps saved listing prices\n  ---\n  duration_ms: 2411.358692\n  type: 'test'\n  ...\n# Subtest: password change: wrong current password, weak password, success\nok 8 - password change: wrong current password, weak password, success\n  ---\n  duration_ms: 1752.372019\n  type: 'test'\n  ...\n# Subtest: console bootstrap forces a password change at next sign-in\nok 9 - console bootstrap forces a password change at next sign-in # SKIP set PGURL to run (local database only)\n  ---\n  duration_ms: 0.236571\n  type: 'test'\n  ...\n# Subtest: CI sign-in: absent locally, rejects forged tokens on staging\nok 10 - CI sign-in: absent locally, rejects forged tokens on staging\n  ---\n  duration_ms: 1012.281661\n  type: 'test'\n  ...\n# Subtest: cleanup: closed, reset and no saved listing prices\nok 11 - cleanup: closed, reset and no saved listing prices\n  ---\n  duration_ms: 1235.865596\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 1\n# todo 0\n# duration_ms 16625.929585\n"
+    },
+    "load": {
+      "exit_code": 1,
+      "duration_s": 162,
+      "tail": "    \"duration_s\": 109.3,\n    \"requests\": 68861,\n    \"achieved_rps\": 630.1,\n    \"failed\": 19929,\n    \"success_rate_pct\": 71.059,\n    \"p50_ms\": 4292.4,\n    \"p95_ms\": 8247.6,\n    \"p99_ms\": 9196.5,\n    \"status_codes\": {\n      \"200\": 48853,\n      \"304\": 79,\n      \"429\": 19929\n    }\n  },\n  \"success_rate_pct\": 77.132,\n  \"p50_ms\": 2656.6,\n  \"p95_ms\": 8151.7,\n  \"p99_ms\": 8930.3,\n  \"status_codes\": {\n    \"200\": 67508,\n    \"304\": 405,\n    \"429\": 20135\n  },\n  \"errors\": {\n    \"platform 429 (retried)\": 159675\n  },\n  \"order_flow\": {\n    \"pipelines\": 118,\n    \"settled\": 39,\n    \"rejected\": 16,\n    \"failed\": 9\n  },\n  \"ledger_reconciliation\": {\n    \"ok\": true,\n    \"mismatches\": 0,\n    \"teams_checked\": 100,\n    \"mismatched_teams\": []\n  }\n}\n",
+      "report": {
+        "tool": "tests/load.mjs",
+        "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+        "at": "2026-10-10T15:39:28.929Z",
+        "target_rps": 850,
+        "ramp_s": 45,
+        "duration_s": 154.3,
+        "achieved_rps": 668.1,
+        "requests": 88048,
+        "failed": 20135,
+        "skipped_at_cap": 20591,
+        "platform_429_retries": 159675,
+        "steady_state": {
+          "duration_s": 109.3,
+          "requests": 68861,
+          "achieved_rps": 630.1,
+          "failed": 19929,
+          "success_rate_pct": 71.059,
+          "p50_ms": 4292.4,
+          "p95_ms": 8247.6,
+          "p99_ms": 9196.5,
+          "status_codes": {
+            "200": 48853,
+            "304": 79,
+            "429": 19929
+          }
+        },
+        "success_rate_pct": 77.132,
+        "p50_ms": 2656.6,
+        "p95_ms": 8151.7,
+        "p99_ms": 8930.3,
+        "status_codes": {
+          "200": 67508,
+          "304": 405,
+          "429": 20135
+        },
+        "errors": {
+          "platform 429 (retried)": 159675
+        },
+        "order_flow": {
+          "pipelines": 118,
+          "settled": 39,
+          "rejected": 16,
+          "failed": 9
+        },
+        "ledger_reconciliation": {
+          "ok": true,
+          "mismatches": 0,
+          "teams_checked": 100,
+          "mismatched_teams": []
+        },
+        "per_minute": [
+          {
+            "t_min": 1,
+            "rps": 453.6,
+            "inflight": 2995,
+            "failed_total": 1498,
+            "platform_429_retries": 23892,
+            "skipped": 1757,
+            "settled": 18
+          },
+          {
+            "t_min": 2,
+            "rps": 646.4,
+            "inflight": 3000,
+            "failed_total": 13365,
+            "platform_429_retries": 112653,
+            "skipped": 14083,
+            "settled": 27
+          }
+        ],
+        "endpoints": {
+          "admin": {
+            "requests": 3,
+            "failed": 0,
+            "p50_ms": 199.9,
+            "p95_ms": 199.9,
+            "p99_ms": 199.9,
+            "max_ms": 300
+          },
+          "GET market": {
+            "requests": 54346,
+            "failed": 12440,
+            "p50_ms": 3010.6,
+            "p95_ms": 8158.4,
+            "p99_ms": 8937.2,
+            "max_ms": 19251.5
+          },
+          "GET portfolio-details": {
+            "requests": 5243,
+            "failed": 1172,
+            "p50_ms": 3093.5,
+            "p95_ms": 8139.9,
+            "p99_ms": 8874.8,
+            "max_ms": 17457.6
+          },
+          "GET event-status": {
+            "requests": 10678,
+            "failed": 2460,
+            "p50_ms": 2955.4,
+            "p95_ms": 8158,
+            "p99_ms": 9039,
+            "max_ms": 17078.7
+          },
+          "GET portfolios": {
+            "requests": 2609,
+            "failed": 573,
+            "p50_ms": 2967.5,
+            "p95_ms": 8132.9,
+            "p99_ms": 8803,
+            "max_ms": 14490.5
+          },
+          "GET tracking": {
+            "requests": 3453,
+            "failed": 795,
+            "p50_ms": 3000.1,
+            "p95_ms": 8142.9,
+            "p99_ms": 9058.7,
+            "max_ms": 17540.4
+          },
+          "GET market-news": {
+            "requests": 2612,
+            "failed": 580,
+            "p50_ms": 2725.8,
+            "p95_ms": 8065.3,
+            "p99_ms": 8668.3,
+            "max_ms": 16668.2
+          },
+          "GET insights": {
+            "requests": 3590,
+            "failed": 826,
+            "p50_ms": 2722.5,
+            "p95_ms": 8109.6,
+            "p99_ms": 8936.5,
+            "max_ms": 18409.4
+          },
+          "GET exchange queue": {
+            "requests": 2656,
+            "failed": 640,
+            "p50_ms": 2841.7,
+            "p95_ms": 8214.4,
+            "p99_ms": 8736.5,
+            "max_ms": 19227.4
+          },
+          "GET bank queue": {
+            "requests": 2593,
+            "failed": 586,
+            "p50_ms": 2841.7,
+            "p95_ms": 8145.6,
+            "p99_ms": 9244,
+            "max_ms": 14545.7
+          },
+          "POST orders": {
+            "requests": 118,
+            "failed": 35,
+            "p50_ms": 3934.6,
+            "p95_ms": 7971.8,
+            "p99_ms": 8252.5,
+            "max_ms": 8651.1
+          },
+          "POST exchange": {
+            "requests": 83,
+            "failed": 19,
+            "p50_ms": 2581.2,
+            "p95_ms": 7918.3,
+            "p99_ms": 8107.1,
+            "max_ms": 8496
+          },
+          "POST bank": {
+            "requests": 64,
+            "failed": 9,
+            "p50_ms": 906.3,
+            "p95_ms": 7733.7,
+            "p99_ms": 8347.3,
+            "max_ms": 8406.2
+          }
+        }
+      }
+    },
+    "cleanup": {
+      "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:15270:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async signIn (file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/lib/client.mjs:29:7)\n    at async cleanup (file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/ci/run.mjs:38:17)\n    at async file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/ci/run.mjs:61:31"
+    }
+  },
+  "finished_at": "2026-10-10T15:39:29.181Z"
+}
