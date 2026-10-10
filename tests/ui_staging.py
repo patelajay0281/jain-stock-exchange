@@ -40,8 +40,10 @@ check("event started", api("POST", "/api/event", {"action": "START"}, "ADMIN").g
 with sync_playwright() as pw:
     browser = pw.chromium.launch()
 
-    def new_page(who=None, w=1600, h=1000):
-        ctx = browser.new_context(viewport={"width": w, "height": h})
+    def new_page(who=None, w=1600, h=1000, enforce_csp=False):
+        # Playwright's wait_for_function polls with eval, which the site's CSP (no 'unsafe-eval') blocks, so the
+        # interactive checks run with bypass_csp; the market check keeps the real CSP to prove the site works under it.
+        ctx = browser.new_context(viewport={"width": w, "height": h}, bypass_csp=not enforce_csp)
         if who:
             ctx.add_init_script("try{localStorage.setItem(%s,%s);localStorage.setItem(%s,%s)}catch(e){}" % (
                 json.dumps("jse_token:" + API), json.dumps(TOK[who]), json.dumps("jse_user:" + API), json.dumps(json.dumps({"username": who, "role": "?"}))))
@@ -57,7 +59,7 @@ with sync_playwright() as pw:
             page.screenshot(path=os.path.join(SHOTS, name + ".png"), full_page=False)
 
     # public market page on the projector size
-    ctx, page, errors = new_page(None, 1920, 1080)
+    ctx, page, errors = new_page(None, 1920, 1080, enforce_csp=True)
     page.goto(SITE + "/")
     page.wait_for_selector(".tile", timeout=30000)
     time.sleep(1.5)
@@ -66,7 +68,7 @@ with sync_playwright() as pw:
     check("market: 8 tiles per row", cols == 8, str(cols))
     check("market: CMS INDEX and LIVE status", page.locator("#idxVal").inner_text() not in ("", "—") and "live" in page.locator("#mPillText").inner_text().lower())
     check("market: staging badge shown", page.locator(".env-pill").count() == 1)
-    check("market: no JS / CORS / CSP errors", not errors, "; ".join(errors)[:300])
+    check("market: no JS / CORS / CSP errors (CSP enforced)", not errors, "; ".join(errors)[:300])
     shot(page, "staging-market")
     ctx.close()
 
@@ -116,8 +118,8 @@ with sync_playwright() as pw:
     check("participant: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
-    # administrator opens every page
-    ctx, page, errors = new_page("ADMIN")
+    # administrator opens every page with the real CSP enforced (no eval-based waits here)
+    ctx, page, errors = new_page("ADMIN", enforce_csp=True)
     for p in ["/", "/order.html", "/exchange.html", "/bank.html", "/orders.html", "/institutional.html", "/commissions.html",
               "/portfolios.html", "/admin.html", "/audit.html", "/cash.html", "/insights.html", "/certificates.html"]:
         errors.clear()

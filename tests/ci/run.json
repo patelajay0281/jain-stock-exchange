@@ -2,6 +2,6 @@
   "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
   "site": "https://v272.jse-live.pages.dev",
   "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
-  "suites": ["health", "ui", "cleanup"],
+  "suites": ["health", "ui", "cleanup"], "attempt": 2,
   "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 4: deployed-site browser test + cleanup."
 }
