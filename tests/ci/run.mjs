@@ -7,6 +7,7 @@ import { join } from "node:path";
 
 const cfg = JSON.parse(readFileSync(process.env.RUN_CONFIG || new URL("./run.json", import.meta.url), "utf8"));
 const BASE = cfg.base.replace(/\/$/, "");
+process.env.BASE = BASE;   // tests/lib/client.mjs (signIn) reads it when first imported
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const runId = process.env.GITHUB_RUN_ID || "local";
 mkdirSync("tests/ci/results", { recursive: true });
