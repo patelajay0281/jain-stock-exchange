@@ -5,7 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const cfg = JSON.parse(readFileSync(new URL("./run.json", import.meta.url), "utf8"));
+const cfg = JSON.parse(readFileSync(process.env.RUN_CONFIG || new URL("./run.json", import.meta.url), "utf8"));
 const BASE = cfg.base.replace(/\/$/, "");
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const runId = process.env.GITHUB_RUN_ID || "local";
@@ -32,6 +32,22 @@ function run(name, cmd, args, env = {}, timeoutMin = 30) {
   });
 }
 
+// leave staging clean: market closed and reset, no saved IPO listing prices
+async function cleanup() {
+  const { signIn } = await import("../lib/client.mjs");
+  const token = await signIn("ADMIN");
+  const post = async (path, body) => {
+    const r = await fetch(BASE + path, { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + token }, body: JSON.stringify(body) });
+    return { status: r.status, data: await r.json() };
+  };
+  const st = (await (await fetch(BASE + "/api/event-status")).json()).status;
+  const steps = {};
+  if (st === "LIVE" || st === "SETTLEMENT_ONLY") { steps.reject = (await post("/api/reject-open-orders", {})).status; steps.close = (await post("/api/event", { action: "CLOSE" })).status; }
+  steps.reset = (await post("/api/reset-event", { confirm: "RESET", keep_allotments: false })).status;
+  steps.clear_listing = (await post("/api/ipo-listing", { action: "CLEAR" })).status;
+  results.suites.cleanup = steps;
+}
+
 async function health() {
   const t0 = Date.now();
   const r = await fetch(BASE + "/api/health");
@@ -42,6 +58,7 @@ async function health() {
 for (const s of cfg.suites) {
   try {
     if (s === "health") await health();
+    else if (s === "cleanup") await cleanup();
     else if (s === "api") await run("api", "node", ["--test", "--test-concurrency=1", "tests/api.test.mjs"]);
     else if (s === "listing") await run("listing", "node", ["--test", "--test-concurrency=1", "tests/listing.test.mjs"]);
     else if (s === "stress") {
