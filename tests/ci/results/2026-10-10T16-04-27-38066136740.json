@@ -1,0 +1,149 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-10T16:04:27.757Z",
+  "run_id": "38066136740",
+  "commit": "fc6bc0b5075b0a82227758019a7997d2bed7d834",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+    "suites": [
+      "health",
+      "probe"
+    ],
+    "probes": [
+      {
+        "rps": 200,
+        "seconds": 15,
+        "viewers": 300,
+        "pause_s": 5
+      },
+      {
+        "rps": 850,
+        "seconds": 60,
+        "viewers": 600,
+        "pause_s": 10
+      },
+      {
+        "rps": 1200,
+        "seconds": 30,
+        "viewers": 800
+      }
+    ],
+    "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 6: in-region load from the jseprobe function (Singapore → Singapore): 200 (warm-up), 850 and 1,200 req/s."
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "2.72.0",
+        "db": "ok",
+        "db_ms": 2,
+        "uptime_s": 1,
+        "node": "v24.16.0",
+        "time": "2026-10-10T16:04:29.960Z"
+      },
+      "ms": 2324
+    },
+    "probe": {
+      "runs": [
+        {
+          "config": {
+            "rps": 200,
+            "seconds": 15,
+            "viewers": 300,
+            "pause_s": 5
+          },
+          "http": 200,
+          "wall_s": 17,
+          "report": {
+            "success": 2999,
+            "region": null,
+            "target": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+            "target_rps": 200,
+            "seconds": 15,
+            "requests": 2999,
+            "achieved_rps": 199.9,
+            "success_rate_pct": 100,
+            "status_codes": {
+              "200": 2703,
+              "304": 296
+            },
+            "errors": 0,
+            "max_inflight": 98,
+            "p50_ms": 7.1,
+            "p95_ms": 34.4,
+            "p99_ms": 3493.3,
+            "max_ms": 4014.7
+          }
+        },
+        {
+          "config": {
+            "rps": 850,
+            "seconds": 60,
+            "viewers": 600,
+            "pause_s": 10
+          },
+          "http": 200,
+          "wall_s": 61,
+          "report": {
+            "success": 50995,
+            "region": null,
+            "target": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+            "target_rps": 850,
+            "seconds": 60.1,
+            "requests": 50995,
+            "achieved_rps": 849.1,
+            "success_rate_pct": 100,
+            "status_codes": {
+              "200": 47037,
+              "304": 3958
+            },
+            "errors": 0,
+            "max_inflight": 188,
+            "p50_ms": 32.6,
+            "p95_ms": 97.5,
+            "p99_ms": 173.3,
+            "max_ms": 3653.4
+          }
+        },
+        {
+          "config": {
+            "rps": 1200,
+            "seconds": 30,
+            "viewers": 800
+          },
+          "http": 200,
+          "wall_s": 31,
+          "report": {
+            "success": 24144,
+            "region": null,
+            "target": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+            "target_rps": 1200,
+            "seconds": 30.4,
+            "requests": 35995,
+            "achieved_rps": 1185.5,
+            "success_rate_pct": 67.076,
+            "status_codes": {
+              "0": 1790,
+              "200": 23325,
+              "304": 819,
+              "429": 8868,
+              "skipped": 1193
+            },
+            "errors": 1790,
+            "max_inflight": 2000,
+            "p50_ms": 250.6,
+            "p95_ms": 10010.9,
+            "p99_ms": 10379.7,
+            "max_ms": 10798.6
+          }
+        }
+      ]
+    }
+  },
+  "finished_at": "2026-10-10T16:06:34.392Z"
+}
