@@ -695,6 +695,13 @@ test("FINALIZE and the final exports: Event Excel, Event JSON, Winner CSV, IPO a
   const j = await GET("/api/export-event-json", "ADMIN");
   assert.equal(j.status, 200);
   for (const k of ["winner", "assessment", "teams", "broker_roster", "commission", "ipo_allotments", "news", "audit"]) assert.ok(j.data.sheets[k], k);
+  const ev = await GET("/api/export-event-csv", "ADMIN", { text: true });
+  assert.equal(ev.status, 200); assert.ok(ev.headers.get("content-type").includes("text/csv"));
+  for (const t of ["FINAL EVENT CSV", "WINNER & RUNNER-UP", "ALL TRANSACTIONS (SETTLED TRADES)", "ALL ORDERS (INCLUDING REJECTED)", "CASH LEDGER", "PRICE CHANGES", "MARKET NEWS", "AUDIT LOG"])
+    assert.ok(ev.data.includes(t), "final event CSV section " + t);
+  const nTrades = (await GET("/api/export?sheet=trades&format=json", "ADMIN")).data.rows.length;
+  assert.ok(nTrades > 0 && ev.data.includes("ALL TRANSACTIONS (SETTLED TRADES) (" + nTrades + " rows)"), "every settled trade is in the final event CSV");
+  assert.equal((await GET("/api/export-event-csv", "TEAM-001")).status, 403, "participants cannot download the final event CSV");
   const csv = await GET("/api/export?sheet=winner", "ADMIN", { text: true });
   assert.equal(csv.status, 200); assert.ok(csv.data.includes("WINNER") && csv.data.includes("RUNNER-UP"));
   const allot = (await GET("/api/export?sheet=ipo_allotments&format=json", "ADMIN")).data;

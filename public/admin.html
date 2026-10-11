@@ -162,7 +162,7 @@
         <div class="label">Operational data exports</div>
         <div class="row"><button class="btn" id="teamsCsv2" type="button">Teams CSV</button><button class="btn" id="brokersCsv2" type="button">Brokers CSV</button><button class="btn" id="allotCsv2" type="button">IPO Allotments CSV</button><button class="btn" id="newsCsv" type="button">Market News CSV</button></div>
         <div class="label">Winner and final archive</div>
-        <div class="row"><button class="btn" id="winnerCsv" type="button">Winner / Net Worth CSV</button><button class="btn primary" id="xlsx" type="button">Final Event Excel</button><button class="btn" id="jsonBtn" type="button">JSON Archive</button><a class="btn" href="/audit.html">Open Audit Log</a></div>
+        <div class="row"><button class="btn" id="winnerCsv" type="button">Winner / Net Worth CSV</button><button class="btn primary" id="evCsv" type="button">Final Event CSV</button><button class="btn primary" id="xlsx" type="button">Final Event Excel</button><button class="btn" id="jsonBtn" type="button">JSON Archive</button><a class="btn" href="/audit.html">Open Audit Log</a></div>
         <div class="row"><select class="input" id="sheetSel" style="max-width:300px"></select><button class="btn sm" id="csvBtn" type="button">Download CSV</button></div>
       </div>
     </section>
@@ -495,6 +495,7 @@
     btn.disabled = false; btn.textContent = t;
   }
   $("xlsx").onclick = function () { bigDownload($("xlsx"), "/api/export-event-excel", "JSE_Final_Event_Report.xlsx"); };
+  $("evCsv").onclick = function () { bigDownload($("evCsv"), "/api/export-event-csv", "JSE_Final_Event.csv"); };
   $("jsonBtn").onclick = function () { bigDownload($("jsonBtn"), "/api/export-event-json", "JSE_Final_Event.json"); };
 
   $("allotClear").onclick = async function () {

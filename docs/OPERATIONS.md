@@ -37,7 +37,7 @@ Material actions ask for your administrator password again.
 2. **CLOSE EVENT** — the closing cash limit is applied: at most ₹50,000 (5% of ₹20 lakh) cash per team; cash generated from trading profits is exempt, provided the initial capital has been fully invested.
 3. **Reject open orders** if anything is still waiting.
 4. **FINALIZE EVENT** — exactly one Winner and one Runner-Up among eligible teams (highest Net Worth).
-5. **Final Event Excel** (27 sheets), **JSON Archive** and **Winner / Net Worth CSV** from Reports & Exports.
+5. **Final Event CSV** (one file: Winner, Net Worth, all transactions, all orders, cash ledger, price changes, Market News, audit log), **Final Event Excel** (27 sheets), **JSON Archive** and **Winner / Net Worth CSV** from Reports & Exports.
 
 ## If something goes wrong
 

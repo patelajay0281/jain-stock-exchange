@@ -1440,7 +1440,7 @@ CREATE OR REPLACE FUNCTION jse_audit_note(a jsonb, p jsonb) RETURNS jsonb LANGUA
 DECLARE v_action text := upper(coalesce(p->>'action', ''));
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN', 'VIEWER');
-  IF v_action NOT IN ('EXPORT_EVENT_EXCEL', 'EXPORT_EVENT_JSON', 'EXPORT_CSV', 'CREDENTIALS_ISSUED') THEN PERFORM jse_fail('INVALID_ACTION', 'Unknown audit note.', 400); END IF;
+  IF v_action NOT IN ('EXPORT_EVENT_EXCEL', 'EXPORT_EVENT_JSON', 'EXPORT_EVENT_CSV', 'EXPORT_CSV', 'CREDENTIALS_ISSUED') THEN PERFORM jse_fail('INVALID_ACTION', 'Unknown audit note.', 400); END IF;
   PERFORM jse_audit(a, v_action, 'export', NULL, NULL, NULL, NULL, NULL, p - 'action' - 'admin_password');
   RETURN jsonb_build_object('success', true);
 END $$;

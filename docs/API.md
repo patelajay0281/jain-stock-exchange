@@ -148,6 +148,7 @@ Tracking shows the four steps *Order Created → Exchange Review → Bank Settle
 | GET | `/api/export?sheet=<key>&format=csv\|json` | One sheet: `winner, assessment, teams, participants, broker_roster, brokers, cash, holdings, sold_stocks, sold_ipos, networth, loans, cash_rule, short_sell, cash_shortfall, insufficient_balance, orders, rejected, trades, ledger, commission, institutional, ipo_allotments, news, prices, journal, audit`. |
 | GET | `/api/export-event-excel` | The final event report: one .xlsx workbook with all 27 sheets. |
 | GET | `/api/export-event-json` | The same data as one JSON file. |
+| GET | `/api/export-event-csv` | Final Event CSV: one file with Winner, Net Worth, every settled transaction, every order, the cash ledger, price changes, Market News and the full audit log, one section after another. |
 
 ## Database functions
 

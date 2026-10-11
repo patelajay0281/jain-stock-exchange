@@ -527,6 +527,33 @@ get("/api/export-event-excel", async (ctx) => {
     "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "content-disposition": `attachment; filename="JSE_Final_Event_Report_${stamp()}.xlsx"`, "cache-control": "no-store", ...corsHeaders(ctx) } });
 });
+// One CSV file for the whole event: every section stacked one after another (title row, header row, data rows, blank line).
+const EVENT_CSV_SECTIONS: Array<[string, string]> = [
+  ["winner", "WINNER & RUNNER-UP"], ["networth", "NET WORTH & P/L"],
+  ["trades", "ALL TRANSACTIONS (SETTLED TRADES)"], ["orders", "ALL ORDERS (INCLUDING REJECTED)"],
+  ["ledger", "CASH LEDGER"], ["prices", "PRICE CHANGES"], ["news", "MARKET NEWS"], ["audit", "AUDIT LOG"],
+];
+get("/api/export-event-csv", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  const event = await call("jse_event_status", null).catch(() => null);
+  const parts: string[] = [
+    toCsv(["JAIN STOCK EXCHANGE — FINAL EVENT CSV"], [
+      ["Event: " + (event?.event_name || "DALAL STREET 2026")],
+      ["Status: " + String(event?.status || "").replace(/_/g, " ")],
+      ["Generated (IST): " + stamp().replace("_", " ").replace(/(\d\d)(\d\d)$/, "$1:$2")],
+      ["Sections: " + EVENT_CSV_SECTIONS.map(([, t]) => t).join(" | ")],
+    ]),
+  ];
+  for (const [key, title] of EVENT_CSV_SECTIONS) {
+    const out = await call("jse_export", actor(ctx), { sheet: key });
+    parts.push(toCsv([title + " (" + out.rows.length + " rows)"], []) + toCsv(out.columns, out.rows));
+  }
+  const body = "\ufeff" + parts.map((x) => x.replace(/\ufeff/g, "")).join("\r\n");
+  await call("jse_audit_note", actor(ctx), { action: "EXPORT_EVENT_CSV", sheets: EVENT_CSV_SECTIONS.length }).catch(() => null);
+  return new Response(body, { status: 200, headers: {
+    "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="JSE_Final_Event_${stamp()}.csv"`,
+    "cache-control": "no-store", ...corsHeaders(ctx) } });
+});
 get("/api/export-event-json", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
   const sheets: Record<string, unknown> = {};
