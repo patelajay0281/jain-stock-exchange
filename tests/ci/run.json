@@ -30,7 +30,7 @@
       "viewers": 800
     }
   ],
-  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 8: v3.12.0 (Hatchable look, institutional counterparty at market \u00b12%) \u2014 API, listing and browser suites, 1,500-order stress with integrity audit, then cleanup.",
+  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 9: v3.13.0 (exactly the Hatchable application: Create Order \u2192 Exchange \u2192 Bank) \u2014 API, listing and browser suites, 1,500-order stress with integrity audit, then cleanup.",
   "stress": {
     "orders": 1500,
     "workers": 16
