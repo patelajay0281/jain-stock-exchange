@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Audit Log · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
   .aud-filters { display: grid; grid-template-columns: minmax(220px, 2fr) 260px 180px 200px auto; gap: 12px; align-items: center; }
   @media (max-width: 1100px) { .aud-filters { grid-template-columns: 1fr 1fr; } }
@@ -21,16 +21,19 @@
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1>Audit Log</h1>
-      <p>Forensic, append-only record of every material action: orders, Pit Manager executions, Exchange and Bank decisions, Market News price moves, loans, configuration and lifecycle controls, undo / redo, resets and administration. Risk indicators stay visibly distinguishable.</p></div>
+      <p>A clear record of what happened in the exchange, who did it, and which order or team was affected.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
+  <div class="chips" role="group" aria-label="Activity" id="tabs" style="margin-bottom:14px">
+    <button class="chip" type="button" data-tab="" aria-pressed="true">All Activity</button><button class="chip" type="button" data-tab="ORDERS" aria-pressed="false">Orders</button>
+    <button class="chip" type="button" data-tab="EXCHANGE" aria-pressed="false">Exchange</button><button class="chip" type="button" data-tab="EVENT" aria-pressed="false">Event</button></div>
   <div class="kpis k4" id="kpis"></div>
   <section class="card">
     <div class="card-b"><div class="aud-filters">
       <div><label class="sr-only" for="fQ">Search</label><input class="input" id="fQ" type="search" placeholder="Search order, user, security, details"></div>
       <div><label class="sr-only" for="fAction">Action</label><select class="input" id="fAction"><option value="">All actions</option></select></div>
       <div><label class="sr-only" for="fTeam">Team</label><select class="input" id="fTeam"></select></div>
-      <div><label class="sr-only" for="fRole">Actor role</label><select class="input" id="fRole"><option value="">All roles</option><option value="ADMIN">Event Admin</option><option value="BROKER">Broker</option><option value="PIT_MANAGER">Pit Manager</option>
+      <div><label class="sr-only" for="fRole">Actor role</label><select class="input" id="fRole"><option value="">All roles</option><option value="ADMIN">Event Admin</option><option value="BROKER">Broker</option>
         <option value="EXCHANGE">Exchange</option><option value="BANK">Bank</option><option value="INSTITUTIONAL">Institutional</option><option value="PARTICIPANT">Participant</option><option value="SYSTEM">System</option></select></div>
       <label class="check"><input type="checkbox" id="fRisk"> Risk indicators only</label>
     </div></div>
@@ -41,8 +44,8 @@
     <div class="pager" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line-3)"><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div>
   </section>
 </main>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   "use strict";
@@ -90,9 +93,11 @@
     $("prev").disabled = S.page <= 1; $("next").disabled = to >= d.total;
   }
   async function load() {
-    S.data = await JSE.api.get("/api/audit", { action: $("fAction").value, team: $("fTeam").value, role: $("fRole").value, risk: $("fRisk").checked ? "true" : "", q: $("fQ").value.trim(), page: S.page, page_size: S.size });
+    S.data = await JSE.api.get("/api/audit", { action: $("fAction").value, team: $("fTeam").value, role: $("fRole").value, group: S.tab || "", risk: $("fRisk").checked ? "true" : "", q: $("fQ").value.trim(), page: S.page, page_size: S.size });
     render(); $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date());
   }
+  document.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () {
+    S.tab = b.getAttribute("data-tab"); S.page = 1; document.querySelectorAll("[data-tab]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); poller.now(); }); });
   $("rows").addEventListener("click", function (e) { if (e.target.closest("a")) return; var tr = e.target.closest("tr.row-main"); if (!tr) return; var id = tr.getAttribute("data-id"); S.open[id] = !S.open[id]; render(); });
   ["fAction", "fTeam", "fRole", "fRisk"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; poller.now(); }); });
   $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; poller.now(); }, 350));

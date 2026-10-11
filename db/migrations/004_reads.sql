@@ -413,6 +413,7 @@ BEGIN
         'awaiting_bank', count(*) FILTER (WHERE status IN ('EXCHANGE_APPROVED', 'BANK_PENDING')),
         'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED')),
         'trade_value', coalesce(sum(trade_value), 0), 'settled_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED'), 0),
+        'gross_brokerage', coalesce(sum(brokerage), 0),
         'brokerage', coalesce(sum(brokerage) FILTER (WHERE status = 'BANK_SETTLED'), 0),
         'short_sell_flags', count(*) FILTER (WHERE short_sell_flag), 'cash_shortfall_flags', count(*) FILTER (WHERE cash_shortfall_flag)) FROM f),
     'page', v_page, 'page_size', v_size,
@@ -431,38 +432,24 @@ BEGIN
   RETURN v_res;
 END $$;
 
--- The canonical six-step processing flow of one order (every timestamp, actor and outcome)
+-- The processing flow of one order (Order Created → Exchange Review → Bank Settlement → Market / Cash Updated)
 CREATE OR REPLACE FUNCTION jse_order_flow(p_id bigint) RETURNS jsonb LANGUAGE sql STABLE AS $$
   SELECT jsonb_build_array(
-    jsonb_build_object('step', 'INSTRUCTION', 'label', 'Participant Instruction',
-      'state', CASE WHEN o.account_type = 'INSTITUTION' THEN 'NA' WHEN ins.id IS NOT NULL THEN 'DONE' ELSE 'IN_PERSON' END,
-      'at', ins.created_at, 'by', CASE WHEN ins.id IS NOT NULL THEN t.name || ' (' || t.code || ')' END,
-      'detail', CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional counterparty trade: ' || t.code || ' ' ||
-                          CASE WHEN o.side = 'SELL' THEN 'buys from' ELSE 'sells to' END || ' the institutional investor'
-                     WHEN ins.id IS NOT NULL THEN ins.instruction_no || ': ' || ins.side || ' ' || ins.quantity || ' ' || s.symbol ||
-                          coalesce(' · market price seen ' || jse_inr(ins.price_seen), '') || coalesce(' · note: ' || ins.note, '')
-                     ELSE 'Instruction given to the broker in person at the desk' END),
-    jsonb_build_object('step', 'BROKER_SUBMISSION', 'label', CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional Submission' ELSE 'Broker Submission' END,
+    jsonb_build_object('step', 'ORDER_CREATED', 'label', 'Order Created',
       'state', 'DONE', 'at', o.created_at, 'by', o.created_by_name || coalesce(' · ' || b.name || ' (' || b.code || ')', ''),
-      'detail', jse_team_side(o.account_type, o.side) || ' ' || o.quantity || ' ' || s.symbol ||
+      'detail', CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional transaction · ' ELSE '' END ||
+                jse_team_side(o.account_type, o.side) || ' ' || o.quantity || ' ' || s.symbol ||
                 CASE WHEN o.account_type = 'INSTITUTION' AND o.price IS DISTINCT FROM o.reference_price
                      THEN ' at ' || jse_inr(o.price) || ' (market ' || jse_inr(o.reference_price) || CASE WHEN o.side = 'SELL' THEN ' + ' ELSE ' − ' END ||
                           to_char(jse_inst_spread_pct(), 'FM990.##') || '%)'
                      ELSE ' at the market price ' || jse_inr(o.price) END || ' · trade value ' || jse_inr(o.trade_value) ||
                 ' · brokerage ' || jse_rate_text(coalesce(o.brokerage_rate, CASE WHEN o.trade_value > 0 THEN o.brokerage / o.trade_value END)) || ' = ' || jse_inr(o.brokerage)),
-    jsonb_build_object('step', 'PIT_EXECUTION', 'label', 'Pit Manager Execution',
-      'state', CASE WHEN o.executed_at IS NOT NULL THEN 'DONE' WHEN o.status = 'PIT_PENDING' THEN 'CURRENT' WHEN o.status = 'PIT_REJECTED' THEN 'REJECTED' ELSE 'NA' END,
-      'at', coalesce(o.executed_at, o.pit_at), 'by', coalesce(o.executed_by_name, o.pit_by_name),
-      'detail', CASE WHEN o.executed_at IS NOT NULL THEN 'Executed ' || o.executed_quantity || ' @ ' || jse_inr(o.executed_price) || ' · trading slip ' || coalesce(sl.slip_no, '—')
-                     WHEN o.status = 'PIT_PENDING' THEN 'Waiting for the Pit Manager to execute'
-                     WHEN o.status = 'PIT_REJECTED' THEN coalesce(o.reject_reason, 'Rejected by the Pit Manager')
-                     ELSE 'Recorded before the Pit Manager stage existed' END),
     jsonb_build_object('step', 'EXCHANGE_REVIEW', 'label', 'Exchange Review',
-      'state', CASE WHEN o.status = 'EXCHANGE_REJECTED' THEN 'REJECTED' WHEN o.status = 'EXCHANGE_PENDING' THEN 'CURRENT'
-                    WHEN o.exchange_at IS NOT NULL THEN 'DONE' WHEN o.status IN ('PIT_REJECTED') THEN 'SKIPPED' ELSE 'WAITING' END,
+      'state', CASE WHEN o.status IN ('EXCHANGE_REJECTED', 'PIT_REJECTED') THEN 'REJECTED' WHEN o.status IN ('EXCHANGE_PENDING', 'PIT_PENDING') THEN 'CURRENT'
+                    WHEN o.exchange_at IS NOT NULL THEN 'DONE' ELSE 'WAITING' END,
       'at', o.exchange_at, 'by', o.exchange_by_name,
-      'detail', CASE WHEN o.status = 'EXCHANGE_REJECTED' THEN coalesce(o.reject_reason, 'Rejected by the Exchange')
-                     WHEN o.status = 'EXCHANGE_PENDING' THEN 'Executed; waiting for Exchange review'
+      'detail', CASE WHEN o.status IN ('EXCHANGE_REJECTED', 'PIT_REJECTED') THEN coalesce(o.reject_reason, 'Rejected by the Exchange')
+                     WHEN o.status IN ('EXCHANGE_PENDING', 'PIT_PENDING') THEN 'Waiting for Exchange review'
                      WHEN o.exchange_at IS NOT NULL THEN 'Approved' || CASE WHEN o.short_sell_approved THEN ' — SHORT SELLING — EXCHANGE APPROVED (the Bank still checks the holding)' ELSE '' END
                      ELSE NULL END),
     jsonb_build_object('step', 'BANK_SETTLEMENT', 'label', 'Bank Settlement',
@@ -476,7 +463,7 @@ CREATE OR REPLACE FUNCTION jse_order_flow(p_id bigint) RETURNS jsonb LANGUAGE sq
                      WHEN o.status = 'BANK_REJECTED' THEN coalesce(o.reject_reason, 'Rejected by the Bank')
                      WHEN o.status = 'BANK_PENDING' THEN 'Being verified by ' || coalesce(o.bank_claimed_name, 'the Bank')
                      WHEN o.status = 'EXCHANGE_APPROVED' THEN 'Waiting for the Bank' ELSE NULL END),
-    jsonb_build_object('step', 'UPDATES', 'label', 'Market / Cash / Holdings Updated',
+    jsonb_build_object('step', 'UPDATES', 'label', 'Market / Cash Updated',
       'state', CASE WHEN o.status = 'BANK_SETTLED' THEN 'DONE' WHEN o.status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED') THEN 'SKIPPED' ELSE 'WAITING' END,
       'at', st.settled_at, 'by', st.settled_by_name,
       'detail', CASE WHEN st.id IS NOT NULL THEN t.code || ' cash ' || jse_inr(st.team_cash_before) || ' → ' || jse_inr(st.team_cash_after) || ' · ' || s.symbol || ' holding ' ||
@@ -484,8 +471,6 @@ CREATE OR REPLACE FUNCTION jse_order_flow(p_id bigint) RETURNS jsonb LANGUAGE sq
                      WHEN o.status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED') THEN 'No cash or holding change (order rejected)' ELSE NULL END))
   FROM orders o JOIN teams t ON t.id = o.team_id JOIN securities s ON s.id = o.security_id
   LEFT JOIN brokers b ON b.id = o.broker_id
-  LEFT JOIN instructions ins ON ins.id = o.instruction_id
-  LEFT JOIN trading_slips sl ON sl.order_id = o.id
   LEFT JOIN settlements st ON st.order_id = o.id AND st.reversed_at IS NULL
   WHERE o.id = p_id
 $$;
@@ -605,17 +590,19 @@ END $$;
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION jse_broker_desk(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql STABLE AS $$
 DECLARE b brokers%ROWTYPE; cfg event_config%ROWTYPE;
+  -- the Pit Manager records trades for every team; administrators can open the all-teams desk with broker=ALL
+  v_all boolean := a->>'role' = 'PIT_MANAGER' OR (a->>'role' IN ('ADMIN', 'VIEWER') AND upper(coalesce(p->>'broker', '')) = 'ALL');
 BEGIN
-  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'VIEWER');
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER', 'VIEWER');
   SELECT * INTO cfg FROM event_config WHERE id = 1;
   IF a->>'role' = 'BROKER' THEN
     SELECT * INTO b FROM brokers WHERE id = nullif(a->>'broker_id', '')::integer;
   ELSE
-    SELECT * INTO b FROM brokers WHERE code = upper(trim(coalesce(nullif(p->>'broker', ''), (SELECT min(code) FROM brokers))));
+    SELECT * INTO b FROM brokers WHERE code = CASE WHEN v_all THEN (SELECT min(code) FROM brokers) ELSE upper(trim(coalesce(nullif(p->>'broker', ''), (SELECT min(code) FROM brokers)))) END;
   END IF;
   IF NOT FOUND THEN PERFORM jse_fail('BROKER_NOT_FOUND', 'Broker not found.', 404); END IF;
   RETURN jsonb_build_object('success', true,
-    'broker', jsonb_build_object('code', b.code, 'name', b.name, 'contact', b.contact, 'desk', b.desk),
+    'broker', CASE WHEN v_all THEN jsonb_build_object('code', 'ALL', 'name', 'All teams') ELSE jsonb_build_object('code', b.code, 'name', b.name, 'contact', b.contact, 'desk', b.desk) END, 'all_teams', v_all,
     'brokers', CASE WHEN a->>'role' = 'BROKER' THEN NULL ELSE (SELECT jsonb_agg(jsonb_build_object('code', code, 'name', name) ORDER BY code) FROM brokers) END,
     'rules', jsonb_build_object('brokerage_rate', cfg.brokerage_rate, 'max_order_value', cfg.max_order_value, 'min_order_value', cfg.min_order_value,
       'stock_lot_size', cfg.stock_lot_size, 'loan_max_principal', cfg.loan_max_principal, 'loan_interest_rate', cfg.loan_interest_rate,
@@ -630,7 +617,7 @@ BEGIN
             FROM holdings h JOIN securities s ON s.id = h.security_id WHERE h.team_id = tm.team_id AND h.quantity > 0), '[]'::jsonb),
         'open_orders', (SELECT count(*) FROM orders o WHERE o.team_id = tm.team_id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')))
         ORDER BY tm.seq)
-      FROM jse_team_metrics tm WHERE tm.broker_id = b.id AND tm.active), '[]'::jsonb),
+      FROM jse_team_metrics tm WHERE (v_all OR tm.broker_id = b.id) AND tm.active), '[]'::jsonb),
     'instructions', coalesce((SELECT jsonb_agg(jsonb_build_object('id', i.id, 'instruction_no', i.instruction_no, 'team', t.code, 'team_name', t.name,
         'symbol', s.symbol, 'security', s.name, 'side', i.side, 'quantity', i.quantity, 'note', i.note, 'price_seen', i.price_seen, 'market_price', s.price,
         'status', i.status, 'created_at', i.created_at, 'handled_at', i.handled_at, 'handled_by', i.handled_by_name, 'decline_reason', i.decline_reason,
@@ -638,7 +625,7 @@ BEGIN
       FROM (SELECT * FROM instructions WHERE broker_id = b.id AND (status = 'OPEN' OR created_at > now() - interval '12 hours') ORDER BY id DESC LIMIT 80) i
       JOIN teams t ON t.id = i.team_id JOIN securities s ON s.id = i.security_id LEFT JOIN orders o ON o.id = i.order_id), '[]'::jsonb),
     'orders', coalesce((SELECT jsonb_agg(jse_order_json(x.id) ORDER BY x.id DESC) FROM (
-        SELECT o.id FROM orders o WHERE o.broker_id = b.id ORDER BY o.id DESC LIMIT 60) x), '[]'::jsonb),
+        SELECT o.id FROM orders o WHERE (v_all OR o.broker_id = b.id) ORDER BY o.id DESC LIMIT 60) x), '[]'::jsonb),
     'counts', (SELECT jsonb_build_object(
         'teams', (SELECT count(*) FROM teams WHERE broker_id = b.id AND active),
         'open_instructions', (SELECT count(*) FROM instructions WHERE broker_id = b.id AND status = 'OPEN'),
@@ -806,11 +793,21 @@ CREATE OR REPLACE FUNCTION jse_audit_risk(p_action text, p_details jsonb) RETURN
   END
 $$;
 
+CREATE OR REPLACE FUNCTION jse_audit_group(p_action text, p_entity text, p_role text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE
+    WHEN p_action LIKE 'EXCHANGE%' OR p_action = 'SHORT_SELLING_APPROVED' OR p_role = 'EXCHANGE' THEN 'EXCHANGE'
+    WHEN p_action LIKE 'EVENT%' OR p_action IN ('MARKET_NEWS_PRICE_MOVE', 'CONFIGURATION_UPDATED', 'UNDO', 'REDO', 'OPEN_ORDERS_REJECTED', 'IPO_LISTED')
+         OR p_entity IN ('event', 'config', 'security', 'journal') THEN 'EVENT'
+    WHEN p_entity = 'order' OR p_action LIKE 'ORDER%' OR p_action LIKE 'BANK%' OR p_action LIKE 'INSTITUTIONAL%' THEN 'ORDERS'
+    ELSE 'OTHER' END
+$$;
+
 CREATE OR REPLACE FUNCTION jse_audit_log(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql STABLE AS $$
 DECLARE
   v_action text := nullif(upper(trim(coalesce(p->>'action', ''))), '');
   v_risk boolean := coalesce((p->>'risk')::boolean, false);
   v_role text := nullif(upper(trim(coalesce(p->>'role', ''))), '');
+  v_group text := nullif(upper(trim(coalesce(p->>'group', ''))), '');  -- Hatchable tabs: ORDERS · EXCHANGE · EVENT
   v_team integer; v_q text := nullif(trim(coalesce(p->>'q', '')), '');
   v_page integer := greatest(1, coalesce(nullif(p->>'page', '')::integer, 1));
   v_size integer := least(500, greatest(10, coalesce(nullif(p->>'page_size', '')::integer, 100)));
@@ -821,7 +818,7 @@ BEGIN
     'actions', coalesce((SELECT jsonb_agg(DISTINCT action) FROM audit_log), '[]'::jsonb),
     'risk_count', (SELECT count(*) FROM audit_log al WHERE jse_audit_risk(al.action, al.details) IS NOT NULL),
     'total', (SELECT count(*) FROM audit_log al WHERE (v_action IS NULL OR al.action = v_action) AND (v_team IS NULL OR al.team_id = v_team)
-                AND (v_role IS NULL OR al.actor_role = v_role) AND (NOT v_risk OR jse_audit_risk(al.action, al.details) IS NOT NULL)
+                AND (v_role IS NULL OR al.actor_role = v_role) AND (v_group IS NULL OR jse_audit_group(al.action, al.entity, al.actor_role) = v_group) AND (NOT v_risk OR jse_audit_risk(al.action, al.details) IS NOT NULL)
                 AND (v_q IS NULL OR al.entity_id ILIKE '%' || v_q || '%' OR al.actor_username ILIKE '%' || v_q || '%' OR al.details::text ILIKE '%' || v_q || '%')),
     'rows', coalesce((SELECT jsonb_agg(jsonb_build_object('id', al.id, 'created_at', al.created_at, 'actor', al.actor_username, 'email', al.actor_email,
         'role', al.actor_role, 'action', al.action, 'entity', al.entity, 'entity_id', al.entity_id, 'team', t.code, 'order_no', o.order_no,
@@ -829,7 +826,7 @@ BEGIN
         'risk', jse_audit_risk(al.action, al.details),
         'before', al.before_state, 'after', al.after_state, 'details', al.details, 'ip', al.ip, 'session', al.session_id) ORDER BY al.id DESC)
       FROM (SELECT * FROM audit_log a0 WHERE (v_action IS NULL OR a0.action = v_action) AND (v_team IS NULL OR a0.team_id = v_team)
-              AND (v_role IS NULL OR a0.actor_role = v_role) AND (NOT v_risk OR jse_audit_risk(a0.action, a0.details) IS NOT NULL)
+              AND (v_role IS NULL OR a0.actor_role = v_role) AND (v_group IS NULL OR jse_audit_group(a0.action, a0.entity, a0.actor_role) = v_group) AND (NOT v_risk OR jse_audit_risk(a0.action, a0.details) IS NOT NULL)
               AND (v_q IS NULL OR a0.entity_id ILIKE '%' || v_q || '%' OR a0.actor_username ILIKE '%' || v_q || '%' OR a0.details::text ILIKE '%' || v_q || '%')
             ORDER BY a0.id DESC LIMIT v_size OFFSET (v_page - 1) * v_size) al
       LEFT JOIN teams t ON t.id = al.team_id LEFT JOIN orders o ON o.id = al.order_id LEFT JOIN securities s ON s.id = o.security_id), '[]'::jsonb));
@@ -1090,10 +1087,14 @@ BEGIN
     'allotments', (SELECT jsonb_build_object('rows', count(*), 'teams', count(DISTINCT team_id), 'amount', coalesce(sum(amount), 0),
         'by_ipo', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'name', s.name, 'teams', z.n, 'lots', z.lots, 'shares', z.q, 'amount', z.amt) ORDER BY s.display_order)
                   FROM (SELECT security_id, count(*) n, sum(lots) lots, sum(quantity) q, sum(amount) amt FROM ipo_allotments WHERE reversed_at IS NULL GROUP BY security_id) z
-                  JOIN securities s ON s.id = z.security_id), '[]'::jsonb))
+                  JOIN securities s ON s.id = z.security_id), '[]'::jsonb),
+        'list', coalesce((SELECT jsonb_agg(jsonb_build_object('team', t.code, 'team_name', t.name, 'ipo', s.symbol, 'ipo_code', s.ipo_code, 'lots', x.lots, 'shares', x.quantity, 'amount', x.amount) ORDER BY t.seq, s.display_order)
+                  FROM (SELECT * FROM ipo_allotments WHERE reversed_at IS NULL ORDER BY id LIMIT 1000) x JOIN teams t ON t.id = x.team_id JOIN securities s ON s.id = x.security_id), '[]'::jsonb))
       FROM ipo_allotments WHERE reversed_at IS NULL),
     'ipo_listing', jse_listing_state(a),
     'ipo_admin', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'ipo_code', s.ipo_code, 'name', s.name, 'stage', jse_ipo_stage(s.id),
+        'price', s.base_price, 'listed', s.listed_at IS NOT NULL, 'offered', s.ipo_shares_offered,
+        'remaining', CASE WHEN s.ipo_shares_offered IS NULL THEN NULL ELSE s.ipo_shares_offered - coalesce((SELECT sum(quantity) FROM ipo_allotments al WHERE al.security_id = s.id AND al.reversed_at IS NULL), 0) END,
         'applications', (SELECT count(*) FROM ipo_applications ap WHERE ap.security_id = s.id AND ap.status = 'APPLIED'),
         'applied_lots', (SELECT coalesce(sum(lots), 0) FROM ipo_applications ap WHERE ap.security_id = s.id AND ap.status = 'APPLIED'),
         'prospectus_fields', (SELECT (CASE WHEN pr.company_description IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.issue_details IS NOT NULL THEN 1 ELSE 0 END)

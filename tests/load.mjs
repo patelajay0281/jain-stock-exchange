@@ -1,6 +1,6 @@
 // Open-loop load generator modelled on Dalal Street traffic (v311): hundreds of screens polling the market,
-// participants checking their portfolio, orders and trading slips, brokers / Pit Managers / Exchange / Bank polling
-// their desks, and a steady stream of orders going broker → Pit Manager → Exchange → Bank.
+// participants checking their portfolio, orders and cash, brokers / Pit Managers / Exchange / Bank polling
+// their desks, and a steady stream of orders going Create Order → Exchange → Bank.
 //   BASE=http://127.0.0.1:8788 RPS=850 DURATION=60 WRITE_RPS=1 node tests/load.mjs
 //   (DURATION in seconds; OUT=path.json writes the summary; AUDIT=1 checks the ledger at the end)
 import { randomUUID } from "node:crypto";
@@ -39,9 +39,9 @@ const MIX = [
   [2, "GET ipo", () => ["/api/ipo", null]],
   [6, "GET portfolio-details", () => { const t = pick(teams); return ["/api/portfolio-details", tok[t]]; }],
   [3, "GET my orders", () => { const t = pick(teams); return ["/api/orders?page_size=50", tok[t]]; }],
-  [1, "GET my slips", () => { const t = pick(teams); return ["/api/slips", tok[t]]; }],
+  [1, "GET my cash", () => { const t = pick(teams); return ["/api/cash", tok[t]]; }],
   [3, "GET broker desk", () => ["/api/broker-desk", tok[pick(brokers)]]],
-  [3, "GET pit queue", () => ["/api/pit", tok[pick(pits)]]],
+  [3, "GET order desk", () => ["/api/broker-desk", tok[pick(pits)]]],
   [2, "GET exchange queue", () => ["/api/exchange", tok[pick(exchanges)]]],
   [2, "GET bank queue", () => ["/api/bank", tok[pick(banks)]]],
   [2, "GET admin-state", () => ["/api/admin-state", tok.ADMIN]],
@@ -75,8 +75,6 @@ async function firePipeline() {
     const x = inSteady ? steady : null;
     const o = await call(stats, "POST orders", "POST", "/api/orders", { token: tok[brokerOf[team]], body, extra: x });
     if (o.status !== 200) { if (o.status >= 500 || o.status === 0) flow.failed++; return; }
-    const e = await call(stats, "POST pit", "POST", "/api/pit", { token: tok[pick(pits)], body: { order_id: o.data.order.id, action: "EXECUTE" }, extra: x });
-    if (e.status !== 200) { if (e.status >= 500 || e.status === 0) flow.failed++; else flow.stale++; return; }
     flow.executed++;
     const a = await call(stats, "POST exchange", "POST", "/api/exchange", { token: tok[pick(exchanges)], body: { order_id: o.data.order.id, action: "APPROVE", confirm_short_sell: true }, extra: x });
     if (a.status !== 200) { if (a.status >= 500 || a.status === 0) flow.failed++; return; }

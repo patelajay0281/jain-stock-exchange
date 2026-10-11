@@ -1,4 +1,4 @@
--- JAIN STOCK EXCHANGE (JSE) v311
+-- JAIN STOCK EXCHANGE (JSE) v3.13
 -- 003_ops.sql: institutional orders, loans, Market News (the only price engine), event control,
 -- participant instructions, team names, IPO round (applications, allotments, prospectus, listing),
 -- reset, undo / redo and administration.
@@ -8,7 +8,7 @@
 -- Institutional order: a transaction-based counterparty for a participant team that cannot find one in the
 -- market. Price = prevailing market price + 2% when the participant BUYS from the institution, − 2% when the
 -- participant SELLS to it (nobody types a price). The participant pays the normal brokerage, earned by its
--- broker. No institutional cash or holdings restriction. Same Pit Manager → Exchange → Bank workflow.
+-- broker. No institutional cash or holdings restriction. Same Exchange → Bank workflow as every order.
 -- p.side is the INSTITUTION's side (BUY = it buys from the team; SELL = it sells to the team).
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION jse_place_institutional_order(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
@@ -100,20 +100,20 @@ BEGIN
   END IF;
 
   v_id := nextval(pg_get_serial_sequence('orders', 'id'));
-  v_no := 'INS-' || lpad(v_id::text, 6, '0');
+  v_no := 'INS-' || v_id::text;
   INSERT INTO orders(id, order_no, account_type, team_id, institution_id, broker_id, security_id, side, quantity, price, trade_value, brokerage,
                      brokerage_rate, settlement_amount, reference_price, status, notes, idempotency_key, created_by, created_by_name, created_role)
   VALUES (v_id, v_no, 'INSTITUTION', v_team.id, v_inst.id, v_team.broker_id, v_sec.id, v_side, v_qty, v_price, v_tv, v_brk,
-          v_rate, v_amount, v_sec.price, 'PIT_PENDING', left(p->>'notes', 300), v_key,
+          v_rate, v_amount, v_sec.price, 'EXCHANGE_PENDING', left(p->>'notes', 300), v_key,
           nullif(a->>'id', '')::integer, jse_actor_name(a), a->>'role');
-  PERFORM jse_order_event(v_id, 'INSTITUTION_SUBMITTED', NULL, 'PIT_PENDING', a,
+  PERFORM jse_order_event(v_id, 'INSTITUTION_SUBMITTED', NULL, 'EXCHANGE_PENDING', a,
     v_team.code || ' ' || CASE WHEN v_team_side = 'BUY' THEN 'buys from ' ELSE 'sells to ' END || v_inst.code || ' at ' || jse_inr(v_price) ||
     ' (market ' || jse_inr(v_sec.price) || CASE WHEN v_team_side = 'BUY' THEN ' + ' ELSE ' − ' END || to_char(jse_inst_spread_pct(), 'FM990.##') || '%)' ||
     ' · brokerage ' || jse_rate_text(v_rate) || ' = ' || jse_inr(v_brk),
     jsonb_build_object('price', v_price, 'market_price', v_sec.price, 'spread_pct', jse_inst_spread_pct(), 'trade_value', v_tv, 'brokerage', v_brk,
                        'institution', v_inst.code));
   PERFORM jse_audit(a, 'INSTITUTIONAL_ORDER_SUBMITTED', 'order', v_no, v_team.id, v_id, NULL,
-    jsonb_build_object('status', 'PIT_PENDING', 'side', v_side, 'team_side', v_team_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_price),
+    jsonb_build_object('status', 'EXCHANGE_PENDING', 'side', v_side, 'team_side', v_team_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_price),
     jsonb_build_object('account_type', 'INSTITUTION', 'institution', v_inst.code, 'counterparty', v_team.code, 'market_price', v_sec.price,
                        'spread_pct', jse_inst_spread_pct(), 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'settlement_amount', v_amount,
                        'broker', (SELECT code FROM brokers WHERE id = v_team.broker_id)));
@@ -270,7 +270,7 @@ DECLARE
   v_headline text := nullif(left(trim(coalesce(p->>'headline', '')), 240), '');
   v_band numeric[]; v_pct numeric; v_new numeric; v_lo numeric; v_hi numeric; v_cap numeric;
 BEGIN
-  PERFORM jse_require_role(a, 'ADMIN');
+  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL');  -- as on Hatchable: Event Admin and the Institutional desk
   SELECT * INTO cfg FROM event_config WHERE id = 1;
   SELECT status INTO v_status FROM event_control WHERE id = 1 FOR SHARE;
   IF v_status NOT IN ('NOT_STARTED', 'LIVE', 'SETTLEMENT_ONLY') THEN
@@ -944,7 +944,8 @@ BEGIN
   INSERT INTO audit_log_archive SELECT al2.*, now(), ev.reset_count + 1 FROM audit_log al2;
   GET DIAGNOSTICS v_archived = ROW_COUNT;
   TRUNCATE action_journal, broker_commissions, cash_ledger, institution_ledger, loan_transactions, risk_events, price_history,
-           market_news, order_events, settlements, holdings, institutional_holdings, ipo_allotments, trading_slips, instructions, orders, audit_log;
+           market_news, order_events, settlements, holdings, institutional_holdings, ipo_allotments, trading_slips, instructions, orders, audit_log
+           RESTART IDENTITY;
   PERFORM set_config('jse.maintenance', 'off', true);
 
   UPDATE teams SET cash = cfg.initial_capital, realized_pnl = 0, brokerage_paid = 0, short_sell_attempts = 0,

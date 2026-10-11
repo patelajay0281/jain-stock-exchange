@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cash Ledger · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
-  .cash-filters { display: grid; grid-template-columns: 220px 240px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+  .cash-filters { display: grid; grid-template-columns: 240px 260px 160px auto; justify-content: start; gap: 12px; align-items: center; }
   @media (max-width: 900px) { .cash-filters { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 640px) { .cash-filters { grid-template-columns: minmax(0, 1fr); } }
 </style>
@@ -15,7 +15,7 @@
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><h1>Cash Ledger</h1><p>The financial ledger of every participant team: starting capital, IPO allotments, BUY and SELL settlements, brokerage, loan withdrawals, interest and repayments. Current cash reconciles with these movements.</p></div>
+    <div><h1>Cash Ledger</h1><p>Complete cash movement audit trail. Current cash is shown separately from ledger movement.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
   <div id="recon" style="margin-bottom:16px"></div>
@@ -23,8 +23,9 @@
   <section class="card">
     <div class="card-b"><div class="cash-filters">
       <div><label class="sr-only" for="fTeam">Team</label><select class="input" id="fTeam"></select></div>
-      <div><label class="sr-only" for="fType">Transaction type</label><select class="input" id="fType"><option value="">All transaction types</option><option value="INITIAL_CAPITAL">Initial capital</option><option value="IPO_ALLOTMENT">IPO allotment</option><option value="BUY">Buy</option><option value="SELL">Sell</option><option value="BROKERAGE">Brokerage</option><option value="LOAN_DRAW">Loan withdrawal</option><option value="INTEREST_CHARGE">Interest charged</option><option value="INTEREST">Interest paid</option><option value="LOAN_REPAYMENT">Loan repayment</option><option value="REVERSAL">Reversal</option><option value="ADJUSTMENT">Adjustment</option></select></div>
-      <div><label class="sr-only" for="fQ">Search notes</label><input class="input" id="fQ" type="search" placeholder="Search notes — symbol, order, description"></div>
+      <div><label class="sr-only" for="fType">Transaction type</label><select class="input" id="fType"><option value="">All entry types</option><option value="INITIAL_CAPITAL">Initial capital</option><option value="IPO_ALLOTMENT">IPO allotment</option><option value="BUY">Buy</option><option value="SELL">Sell</option><option value="BROKERAGE">Brokerage</option><option value="LOAN_DRAW">Loan withdrawal</option><option value="INTEREST_CHARGE">Interest charged</option><option value="INTEREST">Interest paid</option><option value="LOAN_REPAYMENT">Loan repayment</option><option value="REVERSAL">Reversal</option><option value="ADJUSTMENT">Adjustment</option></select></div>
+      <div><label class="sr-only" for="fRows">Rows</label><select class="input" id="fRows"><option value="50">50 rows</option><option value="100">100 rows</option><option value="25">25 rows</option></select></div>
+      <input type="hidden" id="fQ" value="">
       <button class="btn primary" type="button" id="refresh">Refresh</button>
     </div></div>
     <div class="meta-row"><span id="info">Loading…</span><span id="byType" class="small"></span></div>
@@ -34,12 +35,12 @@
     <div class="pager" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line-3)"><button class="btn sm" id="prev">← Newer</button><button class="btn sm" id="next">Older →</button></div>
   </section>
 </main>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
-  var S = { page: 1, size: 100 };
+  var S = { page: 1, size: 50 };
   var TYPE = { LOAN_DRAW: "Loan withdrawal", INTEREST: "Interest paid", INTEREST_CHARGE: "Interest charged", INITIAL_CAPITAL: "Initial capital", IPO_ALLOTMENT: "IPO allotment", LOAN_REPAYMENT: "Loan repayment",
     BUY: "Buy", SELL: "Sell", BROKERAGE: "Brokerage", REVERSAL: "Reversal", ADJUSTMENT: "Adjustment" };
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
@@ -66,7 +67,7 @@
     $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date());
   }
   ["fTeam", "fType"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; poller.now(); }); });
-  $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; poller.now(); }, 350));
+  $("fRows").addEventListener("change", function () { S.size = Number($("fRows").value); S.page = 1; poller.now(); });
   $("refresh").onclick = function () { poller.now(); };
   $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
   $("next").onclick = function () { S.page++; poller.now(); };

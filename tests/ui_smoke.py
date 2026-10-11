@@ -16,13 +16,15 @@ KNOWN = {"ADMIN": "admin-pass-1", "BROKER-01": "broker-pass-01", "PIT-01": "pit-
 pw = lambda u: KNOWN.get(u, u.lower() + "-pw")
 A = {"admin_password": KNOWN["ADMIN"]}
 NAV = {
-    "PARTICIPANT": ["Market", "IPO", "My Orders", "My Trading Slips", "My Portfolio"],
-    "BROKER": ["Market", "IPO", "Create Order", "Order Tracking", "Broker Commission"],
-    "PIT_MANAGER": ["Market", "IPO", "Pit Manager", "Order Tracking", "Trading Slips"],
-    "EXCHANGE": ["Market", "IPO", "Exchange Settlement", "Order Tracking"],
-    "BANK": ["Market", "IPO", "Bank Settlement", "Order Tracking", "Cash Ledger"],
-    "INSTITUTIONAL": ["Market", "IPO", "Order Tracking", "Institutional Investors"],
+    "PARTICIPANT": ["Market", "Order Tracking", "Participant Portfolios", "Cash Ledger"],
+    "BROKER": ["Market", "Create Order", "Order Tracking", "Broker Commission"],
+    "PIT_MANAGER": ["Market", "Create Order", "Order Tracking"],
+    "EXCHANGE": ["Market", "Exchange Settlement", "Order Tracking"],
+    "BANK": ["Market", "Bank Settlement", "Order Tracking", "Cash Ledger"],
+    "INSTITUTIONAL": ["Market", "Order Tracking", "Institutional Investors"],
 }
+ADMIN_NAV = ["Market", "Create Order", "Exchange Settlement", "Bank Settlement", "Order Tracking", "Institutional Investors",
+             "Broker Commission", "Participant Portfolios", "Event Admin", "Audit Log", "Cash Ledger"]
 results = []
 
 
@@ -50,7 +52,6 @@ if st in ("LIVE", "SETTLEMENT_ONLY"):
 r = api("POST", "/api/reset-event", {"confirm": "RESET", "keep_allotments": False, **A}, admin)
 check("setup: reset", r.get("success"), str(r)[:200])
 api("POST", "/api/ipo-listing", {"action": "CLEAR", **A}, admin)
-api("POST", "/api/ipo-applications", {"action": "CLEAR", **A}, admin)
 api("POST", "/api/config", {"auto_list_ipos": True, "brokerage_rate": 0.005, **A}, admin)
 r = api("POST", "/api/ipo-allotments", {"rows": [{"team": "TEAM-001", "ipo": "VOLTRA", "lots": 2}], **A}, admin)
 check("setup: IPO allotment for TEAM-001", r.get("success"), str(r)[:200])
@@ -128,71 +129,62 @@ with sync_playwright() as pwr:
 
     # ---- 4. logged out: staff pages ask for sign-in ----
     ctx, page, errors = new_page()
-    page.goto(BASE + "/pit.html"); page.wait_for_selector(".noaccess")
+    page.goto(BASE + "/exchange.html"); page.wait_for_selector(".noaccess")
     check("staff page asks for sign-in when logged out", "Sign in required" in page.inner_text(".noaccess"))
     ctx.close()
 
-    # ---- 5. participant: own identity and broker, instruction to the broker ----
+    # ---- 5. participant: own identity and broker; no order entry ----
     ctx, page, errors = new_page(user="TEAM-001")
-    check("participant lands on My Portfolio", page.url.endswith("/portfolios.html"), page.url)
-    check("participant navigation: only its five pages", nav(page) == NAV["PARTICIPANT"], str(nav(page)))
+    check("participant lands on Participant Portfolios", page.url.endswith("/portfolios.html"), page.url)
+    check("participant navigation: Hatchable pages for a team", nav(page) == NAV["PARTICIPANT"], str(nav(page)))
     page.wait_for_selector("#detail:not(.hidden)")
     det = page.inner_text("#detail")
     check("participant sees its team name and code", team_name["TEAM-001"] in det and "TEAM-001" in det)
     check("participant sees its assigned broker", B1 in det)
     check("IPO allotment held but not counted (BUY 0 / 5)", "VOLTRA" in det and "BUY 0 / 5" in det.upper())
+    check("official winner criterion shown", "OFFICIAL WINNER CRITERION" in page.inner_text("#rules").upper())
     page.screenshot(path=os.path.join(SHOTS, "participant-portfolio.png"), full_page=True)
-    page.goto(BASE + "/orders.html"); page.wait_for_function("document.querySelectorAll('#insSec option').length > 50")
-    page.select_option("#insSec", "INFY"); page.fill("#insQty", "100"); page.fill("#insNote", "Buy before results")
-    page.click("#insGo"); page.wait_for_selector(".toast.good", timeout=10000)
-    toast = page.inner_text(".toasts")
-    check("participant sends an instruction to its broker", "REQ-" in toast and "sent to your broker" in toast, toast[:160])
-    ins_no = [w for w in toast.replace(",", " ").split() if w.startswith("REQ-")][0]
+    page.goto(BASE + "/order.html"); page.wait_for_selector(".noaccess")
+    check("participant cannot open Create Order (self entry disabled)", page.locator(".noaccess").count() == 1)
     page.goto(BASE + "/admin.html"); page.wait_for_selector(".noaccess")
     check("participant cannot open Event Admin", page.locator(".noaccess").count() == 1)
     check("participant pages: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
-    # ---- 6. broker: only its teams; submits the instruction and a manual ticket at the market price ----
+    # ---- 6. broker: only its teams; creates orders at the market price → Exchange ----
     ctx, page, errors = new_page(user=B1)
     check("broker lands on Create Order", page.url.endswith("/order.html"), page.url)
     check("broker navigation", nav(page) == NAV["BROKER"], str(nav(page)))
     page.wait_for_function("document.querySelectorAll('#team option').length > 1")
     opts = page.eval_on_selector_all("#team option", "els => els.map(e => e.value).filter(Boolean)")
     check("broker ticket lists only its 10 assigned teams", len(opts) == 10 and all(broker_of[t] == B1 for t in opts), str(opts))
-    page.wait_for_selector(f"[data-load='{ins_no}']")
-    page.click(f"[data-load='{ins_no}']")
-    page.wait_for_function("!document.getElementById('fromIns').classList.contains('hidden')")
+    page.select_option("#team", "TEAM-001")
+    page.wait_for_function("document.querySelectorAll('#sec option').length > 50")
+    page.select_option("#sec", "INFY"); page.fill("#qty", "100"); page.dispatch_event("#qty", "input")
     page.click("#submit"); page.wait_for_selector("#result .done", timeout=10000)
     txt = page.inner_text("#result")
-    check("broker submits the participant's instruction", "ORD-" in txt and "INFY" in txt and "awaiting pit manager" in txt.lower(), txt[:200])
+    check("broker creates an order → Exchange Pending", "ORD-" in txt and "Infosys" in txt and "exchange pending" in txt.lower(), txt[:200])
     ord1 = [w for w in txt.split() if w.startswith("ORD-")][0]
     page.select_option("#team", SECOND)
-    page.wait_for_function("document.querySelectorAll('#sec option').length > 50")
-    rel = page.evaluate("[...document.querySelectorAll('#sec option')].find(o => o.textContent.startsWith('RELIANCE')).value")
-    page.select_option("#sec", rel); page.fill("#qty", "100"); page.dispatch_event("#qty", "input")
+    page.select_option("#sec", "RELIANCE"); page.fill("#qty", "100"); page.dispatch_event("#qty", "input")
     page.wait_for_function("document.getElementById('pvTv').textContent.includes('2,89,000')")
-    check("ticket preview: market price × qty, brokerage shown as 0.50%",
-          page.inner_text("#pvBrkK").endswith("0.50%") and "1,445" in page.inner_text("#pvBrk") and "2,90,445" in page.inner_text("#pvAmt"),
-          page.inner_text("#pvBrkK") + " " + page.inner_text("#pvAmt"))
-    check("broker cannot type a price", page.locator("input#price").count() == 0)
-    page.screenshot(path=os.path.join(SHOTS, "broker-desk.png"), full_page=True)
-    page.click("#submit"); page.wait_for_function("document.querySelector('#result .done') && document.querySelector('#result').innerText.includes('RELIANCE')", timeout=10000)
+    check("settlement preview: total shares, trade value, brokerage, total required",
+          page.inner_text("#pvSh") == "100" and "1,445" in page.inner_text("#pvBrk") and "2,90,445" in page.inner_text("#pvAmt"),
+          page.inner_text("#pvBrk") + " " + page.inner_text("#pvAmt"))
+    check("price per share is locked to the market price", page.get_attribute("#mp", "readonly") is not None and page.input_value("#mp") == "2890.00")
+    page.screenshot(path=os.path.join(SHOTS, "create-order.png"), full_page=True)
+    page.click("#submit"); page.wait_for_function("document.querySelector('#result .done') && document.querySelector('#result').innerText.includes('Reliance')", timeout=10000)
     ord2 = [w for w in page.inner_text("#result").split() if w.startswith("ORD-")][0]
-    check("broker manual ticket submitted", ord2 != ord1)
+    check("second order created", ord2 != ord1)
     check("broker pages: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
-    # ---- 7. Pit Manager executes both orders (one trading slip each) ----
+    # ---- 7. Pit Manager records trades through Create Order for any team ----
     ctx, page, errors = new_page(user="PIT-01")
-    check("Pit Manager lands on the execution queue", page.url.endswith("/pit.html"), page.url)
+    check("Pit Manager lands on Create Order", page.url.endswith("/order.html"), page.url)
     check("Pit Manager navigation", nav(page) == NAV["PIT_MANAGER"], str(nav(page)))
-    for o in (ord1, ord2):
-        page.wait_for_selector(f"#rows .txn:has-text('{o}') [data-exec]")
-        page.locator("#rows .txn", has_text=o).locator("[data-exec]").click()
-        page.wait_for_function(f"document.getElementById('last').innerText.includes('{o}')", timeout=10000)
-    check("execution shows the trading slip", "TS-" in page.inner_text("#last"))
-    page.screenshot(path=os.path.join(SHOTS, "pit.png"), full_page=True)
+    page.wait_for_function("document.querySelectorAll('#team option').length > 100")
+    check("Pit Manager sees all 100 teams", page.locator("#team option").count() == 101)
     check("pit page: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
@@ -203,18 +195,21 @@ with sync_playwright() as pwr:
         page.wait_for_selector(f"#rows .txn:has-text('{o}') button[data-a=APPROVE]")
         page.locator("#rows .txn", has_text=o).locator("button[data-a=APPROVE]").click()
         page.wait_for_function(f"!document.getElementById('rows').innerText.includes('{o}')", timeout=10000)
-    check("Exchange approves the executed orders", True)
+    check("Exchange approves the created orders", True)
     check("exchange page: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
     ctx, page, errors = new_page(user="BANK-01")
     check("Bank navigation", nav(page) == NAV["BANK"], str(nav(page)))
     page.wait_for_selector(f"#rows .txn:has-text('{ord1}') button[data-a=SETTLE]")
     page.locator("#rows .txn", has_text=ord1).locator("button[data-a=SETTLE]").click()
+    if page.locator(".modal-h.review").count(): page.click(".modal [data-x=ok]")
     page.wait_for_selector(".toast.good", timeout=10000)
     t = page.inner_text(".toasts")
     check("Bank settlement toast: cash, holding, price unchanged", "settled" in t and "market price unchanged" in t, t[:200])
     page.wait_for_selector(f"#rows .txn:has-text('{ord2}') button[data-a=SETTLE]")
     page.locator("#rows .txn", has_text=ord2).locator("button[data-a=SETTLE]").click()
+    time.sleep(0.3)
+    if page.locator(".modal-h.review").count(): page.click(".modal [data-x=ok]")
     page.wait_for_function(f"!document.getElementById('rows').innerText.includes('{ord2}')", timeout=10000)
     check("bank page: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
@@ -223,25 +218,18 @@ with sync_playwright() as pwr:
           [float(s["price"]) for s in m["stocks"] if s["symbol"] in ("INFY", "RELIANCE")] == [2890.0, 900.0] or
           sorted(float(s["price"]) for s in m["stocks"] if s["symbol"] in ("INFY", "RELIANCE")) == [900.0, 2890.0])
 
-    # ---- 9. participant: trading slip, six-step tracking, portfolio ----
+    # ---- 9. participant: four-step tracking, portfolio, cash ledger ----
     ctx, page, errors = new_page(user="TEAM-001")
-    page.goto(BASE + "/slips.html"); page.wait_for_selector("#rows a.mono")
-    check("participant sees its trading slip", ord1 in page.inner_text("#rows"))
-    page.locator("#rows a.mono").first.click(); page.wait_for_selector("#slip .slip-no")
-    slip = page.inner_text("#slip")
-    check("slip shows order, broker, price, brokerage %, Exchange and Bank status",
-          all(k in slip for k in [ord1, B1, "₹900", "0.50%", "APPROVED", "SETTLED"]), slip[:300])
-    page.screenshot(path=os.path.join(SHOTS, "slip.png"), full_page=True)
     page.goto(BASE + "/orders.html?order=" + ord1); page.wait_for_selector(".flow", timeout=10000)
     flow = page.inner_text(".flow")
-    check("tracking shows the six-step flow", all(k.lower() in flow.lower() for k in
-          ["Participant Instruction", "Broker Submission", "Pit Manager Execution", "Exchange Review", "Bank Settlement", "Holdings Updated"]), flow[:300])
+    check("tracking shows the four-step flow", all(k.lower() in flow.lower() for k in
+          ["Order Created", "Exchange Review", "Bank Settlement", "Market / Cash Updated"]), flow[:300])
     page.screenshot(path=os.path.join(SHOTS, "tracking.png"), full_page=True)
     page.goto(BASE + "/portfolios.html"); page.wait_for_selector("#detail:not(.hidden)")
     det = page.inner_text("#detail").upper()
     check("portfolio: INFY holding and BUY 1 / 5", "INFY" in det and "BUY 1 / 5" in det)
-    page.goto(BASE + "/certificates.html"); page.wait_for_selector(".cert")
-    check("participant share certificates (INFY, VOLTRA)", "INFY" in page.inner_text("#certs") and "VOLTRA" in page.inner_text("#certs"))
+    page.goto(BASE + "/cash.html"); page.wait_for_selector("#rows tr"); time.sleep(0.8)
+    check("participant cash ledger shows its BUY", ord1 in page.inner_text("#rows"))
     check("participant follow-up pages: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
@@ -249,7 +237,9 @@ with sync_playwright() as pwr:
     ctx, page, errors = new_page(user="ADMIN")
     page.wait_for_function("document.querySelectorAll('#nSec option').length > 50")
     tcs = page.evaluate("[...document.querySelectorAll('#nSec option')].find(o => o.textContent.startsWith('TCS')).value")
-    page.select_option("#nSec", tcs); page.fill("#nHead", "TCS wins a large cloud deal"); page.click("[data-mood=POSITIVE]"); page.click("#nGo")
+    page.select_option("#nSec", tcs); page.click("[data-mood=POSITIVE]")
+    check("Market News headline is generated", "TCS" in page.input_value("#nHead"), page.input_value("#nHead"))
+    page.click("#nGo")
     page.wait_for_selector(".modal .btn.primary"); page.click(".modal .btn.primary")
     page.wait_for_function("document.querySelector('.toasts').innerText.includes('TCS')", timeout=10000)
     check("Market News published from Event Admin", True)
@@ -263,13 +253,13 @@ with sync_playwright() as pwr:
     time.sleep(0.5)
     check("brokerage back to 0.50%", abs(float(api("GET", "/api/event-status")["config"]["brokerage_rate"]) - 0.005) < 1e-9)
     page.screenshot(path=os.path.join(SHOTS, "admin.png"), full_page=True)
-    for p in ["/", "/ipo.html", "/order.html", "/pit.html", "/exchange.html", "/bank.html", "/orders.html", "/slips.html", "/institutional.html",
-              "/commissions.html", "/portfolios.html", "/admin.html", "/audit.html", "/cash.html", "/certificates.html", "/certificates.html?tab=award"]:
+    for p in ["/", "/order.html", "/exchange.html", "/bank.html", "/orders.html", "/institutional.html",
+              "/commissions.html", "/portfolios.html", "/admin.html", "/audit.html", "/cash.html"]:
         errors.clear()
         page.goto(BASE + p); page.wait_for_load_state("networkidle"); time.sleep(1.0)
         check(f"admin opens {p} without errors", page.locator(".noaccess").count() == 0 and not errors, "; ".join(errors)[:300])
     labels = nav(page)
-    check("admin navigation: one item per page, no duplicates", len(labels) == len(set(labels)) == 15, str(labels))
+    check("admin navigation: the 11 Hatchable pages in order", labels == ADMIN_NAV, str(labels))
     ctx.close()
 
     # ---- 11. faculty viewer is read-only; institution has no price controls ----
@@ -284,8 +274,8 @@ with sync_playwright() as pwr:
     check("institution lands on its desk", page.url.endswith("/institutional.html"), page.url)
     check("institution navigation", nav(page) == NAV["INSTITUTIONAL"], str(nav(page)))
     page.wait_for_selector("#mktPrice"); time.sleep(0.8)
-    check("institutional desk has no Market News or price controls",
-          page.locator("#nSec, #moods, #nGo, input#price").count() == 0 and "Market News control" not in page.content())
+    check("institutional desk: Market News → Automatic Price Impact, ticket, live market, history",
+          page.locator("#nSec").count() == 1 and page.locator("#moods [data-mood]").count() == 7 and page.locator("[data-side]").count() == 2 and page.locator("input#price").count() == 0)
     page.screenshot(path=os.path.join(SHOTS, "institutional.png"), full_page=True)
     check("institution page: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()

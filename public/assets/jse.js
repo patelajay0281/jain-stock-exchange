@@ -44,6 +44,7 @@
       var sign = o && o.sign === false ? "" : n > 0 ? "+" : n < 0 ? "−" : "";
       return sign + Math.abs(n).toFixed(d) + "%";
     },
+    signedPct: function (v) { var n = toNum(v); return (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n).toFixed(2) + "%"; },
     arrowPct: function (v) { var n = toNum(v); return (n > 0 ? "▲ " : n < 0 ? "▼ " : "■ ") + Math.abs(n).toFixed(2) + "%"; },
     dir: function (v) { var n = toNum(v); return n > 0 ? "up" : n < 0 ? "down" : "flat"; },
     time: function (ts) { if (!ts) return "—"; var d = new Date(ts); return isNaN(d) ? "—" : d.toLocaleTimeString("en-IN", { timeZone: TZ, hour12: false }); },
@@ -145,29 +146,22 @@
 
   // ------------------------------------------------------------------ pages & navigation
   var ALL = ["ADMIN", "EXCHANGE", "BANK", "BROKER", "PIT_MANAGER", "INSTITUTIONAL", "PARTICIPANT", "VIEWER"];
-  // the live application's navigation order (Market · Create Order · Exchange Settlement · Bank Settlement · Order Tracking ·
-  // Institutional Investors · Broker Commission · Participant Portfolios · Event Admin · Audit Log · Cash Ledger), with the
-  // IPO page, the Pit Manager desk, trading slips and share certificates in their places in the workflow
+  // the live Hatchable application's navigation, in its order (role-aware: each desk sees its own pages)
   var PAGES = [
     { id: "market", href: "/", label: "Market", roles: "*" },
-    { id: "ipo", href: "/ipo.html", label: "IPO", roles: "*" },
-    { id: "order", href: "/order.html", label: "Create Order", roles: ["ADMIN", "BROKER", "VIEWER"] },
-    { id: "pit", href: "/pit.html", label: "Pit Manager", roles: ["ADMIN", "PIT_MANAGER", "VIEWER"] },
+    { id: "order", href: "/order.html", label: "Create Order", roles: ["ADMIN", "BROKER", "PIT_MANAGER", "VIEWER"] },
     { id: "exchange", href: "/exchange.html", label: "Exchange Settlement", roles: ["ADMIN", "EXCHANGE", "VIEWER"] },
     { id: "bank", href: "/bank.html", label: "Bank Settlement", roles: ["ADMIN", "BANK", "VIEWER"] },
-    { id: "orders", href: "/orders.html", label: "Order Tracking", roles: ALL, labelFor: { PARTICIPANT: "My Orders" } },
-    { id: "slips", href: "/slips.html", label: "Trading Slips", roles: ["ADMIN", "PIT_MANAGER", "PARTICIPANT", "VIEWER"], labelFor: { PARTICIPANT: "My Trading Slips" },
-      access: ALL },
+    { id: "orders", href: "/orders.html", label: "Order Tracking", roles: ALL },
     { id: "institutional", href: "/institutional.html", label: "Institutional Investors", roles: ["ADMIN", "INSTITUTIONAL", "VIEWER"] },
     { id: "commissions", href: "/commissions.html", label: "Broker Commission", roles: ["ADMIN", "BROKER", "VIEWER"] },
-    { id: "portfolios", href: "/portfolios.html", label: "Participant Portfolios", roles: ["ADMIN", "VIEWER", "PARTICIPANT"], labelFor: { PARTICIPANT: "My Portfolio" } },
+    { id: "portfolios", href: "/portfolios.html", label: "Participant Portfolios", roles: ["ADMIN", "VIEWER", "PARTICIPANT"] },
     { id: "admin", href: "/admin.html", label: "Event Admin", roles: ["ADMIN", "VIEWER"] },
     { id: "audit", href: "/audit.html", label: "Audit Log", roles: ["ADMIN", "VIEWER"] },
-    { id: "cash", href: "/cash.html", label: "Cash Ledger", roles: ["ADMIN", "BANK", "VIEWER"] },
-    { id: "certificates", href: "/certificates.html", label: "Certificates", roles: ["ADMIN", "VIEWER"], access: ["ADMIN", "VIEWER", "PARTICIPANT", "BROKER"] },
+    { id: "cash", href: "/cash.html", label: "Cash Ledger", roles: ["ADMIN", "BANK", "VIEWER", "PARTICIPANT"] },
   ];
   // the page each role lands on after signing in
-  var HOME = { PARTICIPANT: "/portfolios.html", BROKER: "/order.html", PIT_MANAGER: "/pit.html", EXCHANGE: "/exchange.html",
+  var HOME = { PARTICIPANT: "/portfolios.html", BROKER: "/order.html", PIT_MANAGER: "/order.html", EXCHANGE: "/exchange.html",
     BANK: "/bank.html", INSTITUTIONAL: "/institutional.html", ADMIN: "/admin.html", VIEWER: "/admin.html" };
   function allowed(page, user) {
     if (page.roles === "*") return true;
@@ -218,14 +212,10 @@
         (user.team ? " · " + esc(user.team) : user.broker ? " · " + esc(user.broker) : "") + '</span></div><button class="tb-btn tb-pw" type="button" id="jsePw" title="Change your password">Password</button>' +
         '<button class="tb-btn" type="button" id="jseLogout">Sign out</button></div>'
       : '<a class="tb-btn dark" href="/login.html?next=' + encodeURIComponent(location.pathname + location.search) + '">Sign in</a>';
-    var envTag = CFG.env === "staging" ? '<span class="pill settlement env-pill" title="Staging data">Staging</span>' : CFG.env === "local" ? '<span class="pill not-started env-pill">Local</span>' : "";
+    var envTag = CFG.env === "staging" ? '<span class="env-pill" title="Staging data">STAGING</span>' : CFG.env === "local" ? '<span class="env-pill">LOCAL</span>' : "";
     var top = el('<header class="hd"><div class="hd-in">' +
-      '<a class="wordmark" href="/" aria-label="JAIN STOCK EXCHANGE — Market">JAIN STOCK EXCHANGE</a><span class="hd-event">Dalal Street 2026</span>' + envTag +
-      '<div class="hd-right">' +
-        '<div class="tb-index" id="jseTbIndex"><span class="lbl">CMS 50</span><span class="val" id="jseTbIdx">—</span><span class="chg flat" id="jseTbChg">—</span></div>' +
-        '<span class="pill not-started" id="jseTbPill"><span class="dot"></span><span id="jseTbPillText">Connecting…</span></span>' +
-        '<span class="tb-clock" id="jseTbClock"></span>' + right +
-      "</div></div>" +
+      '<a class="wordmark" href="/" aria-label="JAIN STOCK EXCHANGE — Market">JAIN STOCK EXCHANGE</a>' + envTag +
+      '<div class="hd-right">' + right + "</div></div>" +
       '<nav class="nav" aria-label="Main"><div class="nav-in">' + nav + "</div></nav></header>");
     document.body.insertBefore(top, document.body.firstChild);
     document.body.insertBefore(el('<a class="skip" href="#main">Skip to content</a>'), document.body.firstChild);
@@ -236,7 +226,6 @@
     if (!document.querySelector(".toasts")) document.body.appendChild(el('<div class="toasts" role="status" aria-live="polite"></div>'));
     var cur = document.querySelector('.nav a[aria-current="page"]');
     if (cur && cur.scrollIntoView && window.innerWidth <= 900) { try { cur.scrollIntoView({ block: "nearest", inline: "center" }); } catch (e) {} }
-    tickClock(); setInterval(tickClock, 1000);
   }
   function tickClock() {
     var c = document.getElementById("jseTbClock");
@@ -297,9 +286,10 @@
                            : '<input class="input" id="jseDlgIn" autocomplete="off" placeholder="' + esc(o.input.placeholder || "") + '">') +
         (o.input.hint ? '<span class="hint">' + esc(o.input.hint) + "</span>" : "") + "</div>" : "";
       var back = el('<div class="modal-back" role="dialog" aria-modal="true" aria-labelledby="jseDlgH"><div class="modal' + (o.wide ? " wide" : "") + '">' +
-        '<div class="modal-h" id="jseDlgH">' + esc(o.title || "Confirm") + '</div><div class="modal-b">' + (o.html || esc(o.text || "")) + inputHtml + "</div>" +
-        '<div class="modal-f">' + (o.cancel === false ? "" : '<button class="btn" type="button" data-x="cancel">' + esc(o.cancelText || "Cancel") + "</button>") +
-        '<button class="btn ' + (o.danger ? "bad" : "primary") + '" type="button" data-x="ok">' + esc(o.confirmText || "Confirm") + "</button></div></div></div>");
+        (o.eyebrow ? '<div class="modal-h review"><span class="dlg-ico' + (o.ok ? " ok" : "") + '">' + (o.ok ? "✓" : "!") + '</span><span class="dlg-eye">' + esc(o.eyebrow) + '</span><span class="dlg-t" id="jseDlgH">' + esc(o.title || "Confirm") + "</span></div>"
+                   : '<div class="modal-h" id="jseDlgH">' + esc(o.title || "Confirm") + "</div>") + '<div class="modal-b">' + (o.html || esc(o.text || "")) + inputHtml + "</div>" +
+        '<div class="modal-f">' + (o.cancel === false ? "" : '<button class="btn' + (o.eyebrow ? " caps" : "") + '" type="button" data-x="cancel">' + esc(o.cancelText || "Cancel") + "</button>") +
+        '<button class="btn ' + (o.danger ? "bad" : "primary") + (o.eyebrow ? " caps" : "") + '" type="button" data-x="ok">' + esc(o.confirmText || "Confirm") + "</button></div></div></div>");
       var prev = document.activeElement;
       function close(v) { back.remove(); document.removeEventListener("keydown", onKey); if (prev && prev.focus) prev.focus(); resolve(v); }
       function ok() {
@@ -360,22 +350,22 @@
   }
 
   // ------------------------------------------------------------------ badges
-  // order statuses in the live application's vocabulary: EXCHANGE_INTAKE (at the Pit Manager), EXCHANGE_PENDING, EXCHANGE_APPROVED,
+  // order statuses in the live application's vocabulary: EXCHANGE_INTAKE, EXCHANGE_PENDING, EXCHANGE_APPROVED,
   // SETTLED, EXCHANGE_REJECTED, BANK_REJECTED — and the stage each belongs to (EXCHANGE · BANK · COMPLETE · REJECTED)
   var STATUS_BADGE = { PIT_PENDING: "s-pit", EXCHANGE_PENDING: "s-pending", EXCHANGE_APPROVED: "s-approved", BANK_PENDING: "s-bank", BANK_SETTLED: "s-settled",
     PIT_REJECTED: "s-rejected", EXCHANGE_REJECTED: "s-rejected", BANK_REJECTED: "s-rejected" };
   var STATUS_TEXT = { PIT_PENDING: "Exchange Intake", EXCHANGE_PENDING: "Exchange Pending", EXCHANGE_APPROVED: "Exchange Approved",
     BANK_PENDING: "Bank Verifying", BANK_SETTLED: "Settled", PIT_REJECTED: "Intake Rejected", EXCHANGE_REJECTED: "Exchange Rejected", BANK_REJECTED: "Bank Rejected" };
-  var STATUS_HINT = { PIT_PENDING: "Broker submitted · awaiting Pit Manager execution", EXCHANGE_PENDING: "Executed by the Pit Manager · awaiting Exchange review",
+  var STATUS_HINT = { PIT_PENDING: "Exchange intake", EXCHANGE_PENDING: "Order created · awaiting Exchange review",
     EXCHANGE_APPROVED: "Approved by the Exchange · awaiting Bank settlement", BANK_PENDING: "The Bank is verifying cash and holdings", BANK_SETTLED: "Settled by the Bank",
-    PIT_REJECTED: "Rejected at the Pit Manager", EXCHANGE_REJECTED: "Rejected by the Exchange", BANK_REJECTED: "Rejected by the Bank" };
+    PIT_REJECTED: "Rejected at intake", EXCHANGE_REJECTED: "Rejected by the Exchange", BANK_REJECTED: "Rejected by the Bank" };
   var STAGE_OF = { PIT_PENDING: "EXCHANGE", EXCHANGE_PENDING: "EXCHANGE", EXCHANGE_APPROVED: "BANK", BANK_PENDING: "BANK", BANK_SETTLED: "COMPLETE",
     PIT_REJECTED: "REJECTED", EXCHANGE_REJECTED: "REJECTED", BANK_REJECTED: "REJECTED" };
   var STAGE = { NOT_STARTED: "", PRE_IPO: "Pre-IPO", APPLICATION_OPEN: "Open for application", APPLICATION_CLOSED: "Application closed",
     ALLOTMENT_COMPLETED: "Allotment completed", LISTED: "Listed · in CMS 50" };
   var badge = {
     status: function (s, code) {
-      if (s === "PIT_REJECTED" && code === "PRICE_STALE") return '<span class="badge s-stale" title="MARKET PRICE CHANGED — the market price moved before execution">Price Stale</span>';
+      if (code === "PRICE_STALE" && /REJECTED$/.test(s)) return '<span class="badge s-stale" title="MARKET PRICE CHANGED — the market price moved before settlement">Price Changed</span>';
       return '<span class="badge ' + (STATUS_BADGE[s] || "prov") + '" title="' + esc(STATUS_HINT[s] || fmt.statusText(s)) + '">' + esc(STATUS_TEXT[s] || fmt.statusText(s)) + "</span>";
     },
     side: function (s) { return '<span class="badge ' + (s === "BUY" ? "buy" : "sell") + '">' + esc(s) + "</span>"; },

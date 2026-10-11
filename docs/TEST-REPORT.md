@@ -1,5 +1,18 @@
 # JSE — test, stress and load report
 
+## v3.13.0 (11 October 2026) — exactly the Hatchable application
+
+The 11 Hatchable pages and the Create Order → Exchange → Bank flow (no Pit Manager page, trading slips, IPO page or certificates);
+Hatchable page layouts (Create Order ticket, 4-step Order Tracking, CMS BANK LTD desk with loan repayment, institutional desk with
+Market News, Event Admin control grid); Market News priced to the paisa; open orders closed when the market price changes.
+
+| Test | Where | Result |
+|---|---|---|
+| API end-to-end (orders, Exchange, Bank, loans, institutional ±2%, Market News, IPO allotments and listing, assessment, Winner / Runner-Up, undo / redo, exports, reset) | local | **43 pass, 0 fail** |
+| Browser smoke test, every page and role | local | **75/75** |
+| Stress: 3,000 orders with integrity audit | local | **all 19 integrity checks passed, 0 server errors** |
+| Visual check at 1920×1080, 1366×768, 1024×768, 390×844 | local | no horizontal scroll, no console errors |
+
 ## v3.12.0 (11 October 2026) — Hatchable look and rules
 
 Code: branch `v272`, commit `258f0c7`, API bundle SHA-256 `c2437d14…9f211`, deployed to staging (`jsestage` deployment 7). Staging CI run 38125079060.

@@ -7,7 +7,7 @@
 <meta name="description" content="Live market wall for the Dalal Street 2026 trading simulation: CMS 50, market status, the 50 listed CMS stocks, the IPOs and FOX Market Desk news.">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
   /* CMS 50 two-part card: identity (left) · value, status and movement (right) */
   .cms { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-hero); border: 1px solid #10233a; }
@@ -85,7 +85,7 @@
 <main id="main" class="wrap wide">
   <section class="cms" aria-label="CMS 50">
     <div class="cms-id">
-      <div class="e" id="evName">Dalal Street 2026 · Educational trading simulation</div>
+      <div class="e" id="evName">JSE System • Version v3.13</div>
       <h1>Jain Stock Exchange</h1>
       <div class="sub"><b>CMS 50</b> · live market wall · prices move only on official Market News</div>
     </div>
@@ -159,8 +159,8 @@
   <p class="disc" style="margin-top:14px" id="disc"></p>
 </main>
 <footer class="footer">JAIN STOCK EXCHANGE · Dalal Street 2026 · JAIN (Deemed-to-be University), CMS Business School · Educational simulation — all prices are virtual</footer>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   "use strict";
@@ -207,7 +207,7 @@
       '<div class="tile-top"><div class="tile-name">' + esc(s.name) + '</div><span class="badge ipo">' + esc(s.ipo_code || "IPO") + "</span></div>" +
       '<div class="tile-meta"><span class="sym">' + esc(s.symbol) + "</span>" + JSE.badge.stage(s.stage) + "</div>" +
       '<div class="tile-price">' + F.price(s.base_price) + '</div><div class="tile-chg"><span>Issue price · 1 lot = ' + esc(s.lot_size) + " shares</span></div>" +
-      '<div class="tile-foot"><span>Lot value ' + F.money(N(s.base_price) * N(s.lot_size)) + '</span><a href="/ipo.html#' + esc(s.symbol) + '">Prospectus →</a></div></li>';
+      '<div class="tile-foot"><span>Lot value ' + F.money(N(s.base_price) * N(s.lot_size)) + '</span><span>IPO lot 50 shares</span></div></li>';
   }
 
   function render() {
@@ -247,7 +247,7 @@
     document.getElementById("mPillText").textContent = meta.text;
     var b = d.breadth || {};
     document.getElementById("breadth").innerHTML = '<span class="up">▲ ' + (b.advances || 0) + '</span><span class="down">▼ ' + (b.declines || 0) + '</span><span class="flat">■ ' + (b.unchanged || 0) + "</span>";
-    if (d.event_name) document.getElementById("evName").textContent = d.event_name + " · Educational trading simulation";
+    document.getElementById("evName").textContent = "JSE System • Version v" + ((window.JSE_CONFIG && JSE_CONFIG.version) || "").split(".").slice(0, 2).join(".");
     document.getElementById("timingBox").classList.toggle("hidden", d.status !== "NOT_STARTED");
     // summary cards
     var m = bySymbol(), lst = (d.board && d.board.listed_market ? d.board.listed_market : []).map(function (s) { return m[s]; }).filter(Boolean);

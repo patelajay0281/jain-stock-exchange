@@ -33,7 +33,6 @@ async function submit(team, sym, side, qty, extra = {}) {
 }
 async function trade(team, sym, side, qty) {
   const o = await submit(team, sym, side, qty); ok(o, "submit");
-  ok(await POST("/api/pit", { order_id: o.data.order.id, action: "EXECUTE" }, "PIT-01"), "execute");
   ok(await POST("/api/exchange", { order_id: o.data.order.id, action: "APPROVE", confirm_short_sell: true }, "EXCHANGE-01"), "approve");
   const s = await POST("/api/bank", { order_id: o.data.order.id, action: "SETTLE" }, "BANK-01");
   assert.equal(s.data.status, "BANK_SETTLED", JSON.stringify(s.data));
@@ -54,7 +53,7 @@ test("sign in and start from a clean event", async () => {
 
 test("listing prices are validated all-or-nothing and need the administrator password", async () => {
   const bad = await POST("/api/ipo-listing", { action: "SET", rows: [
-    { ipo: "VOLTRA", listing_price: 1100 }, { ipo: "SHREEB", listing_price: 2000 }, { ipo: "BLUEAI", listing_price: "800.5" }, { ipo: "NOPE", listing_price: 10 }], ...A }, "ADMIN");
+    { ipo: "VOLTRA", listing_price: 1100 }, { ipo: "SHREEB", listing_price: 2000 }, { ipo: "BLUEAI", listing_price: "800.555" }, { ipo: "NOPE", listing_price: 10 }], ...A }, "ADMIN");
   assert.equal(bad.status, 400); assert.equal(bad.data.code, "LISTING_ERRORS"); assert.equal(bad.data.errors.length, 3, JSON.stringify(bad.data.errors));
   assert.ok((await listing()).every((x) => !x.listing_saved), "nothing saved after a failed upload");
   assert.equal((await POST("/api/ipo-listing", { action: "SET", rows: [{ ipo: "VOLTRA", listing_price: 1100 }], ...A }, "BANK-01")).status, 403);
@@ -98,7 +97,7 @@ test("a listed IPO trades at its market price like any listed stock", async () =
   ok(o); assert.equal(num(o.data.order.price), 1100);
   const stale = await submit("TEAM-020", "VOLTRA", "BUY", 50, { expected_price: 1200 });
   assert.equal(stale.data.code, "PRICE_CHANGED");
-  ok(await POST("/api/pit", { order_id: o.data.order.id, action: "REJECT", reason: "test clean-up" }, "PIT-01"));
+  ok(await POST("/api/exchange", { order_id: o.data.order.id, action: "REJECT", reason: "test clean-up" }, "EXCHANGE-01"));
 });
 
 test("listing can be undone and redone until the IPO has orders or trades", async () => {

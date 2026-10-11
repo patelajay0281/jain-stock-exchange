@@ -10,10 +10,11 @@ import m005 from "../../db/migrations/005_exports.sql";
 import m006 from "../../db/migrations/006_seed.sql";
 import m007 from "../../db/migrations/007_tuning.sql";
 import m008 from "../../db/migrations/008_v311.sql";
+import m009 from "../../db/migrations/009_hatchable.sql";
 
 export const MIGRATIONS: Array<[string, string]> = [
   ["001_schema", m001], ["001a_upgrades", m001a], ["002_core", m002], ["003_ops", m003], ["004_reads", m004],
-  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008],
+  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009],
 ];
 // Files whose content may be re-applied safely (idempotent / CREATE OR REPLACE only) when their text changes.
 const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning", "008_v311"]);

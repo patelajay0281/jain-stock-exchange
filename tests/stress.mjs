@@ -1,5 +1,5 @@
 // Financial-engine stress test (v311): thousands of orders through the full desk workflow —
-//   broker submission → Pit Manager execution (one trading slip) → Exchange review → Bank settlement —
+//   Create Order → Exchange review → Bank settlement —
 // by concurrent desks, while Market News moves prices underneath (orders go PRICE STALE), with duplicate
 // execution, duplicate settlement and idempotent-replay attacks mixed in, followed by the full integrity audit.
 //   BASE=http://127.0.0.1:8788 ORDERS=8000 WORKERS=32 NEWS_MS=1500 node tests/stress.mjs
@@ -93,25 +93,22 @@ async function processOne(i) {
   }
   tally.created++;
   const id = created.data.order.id;
-  // Pit Manager execution (every 20th order: two or three Pit Managers press EXECUTE together)
-  let ex;
+  // Hatchable flow: the created order goes straight to the Exchange (every 20th order: two or three Exchange desks
+  // press APPROVE together — exactly one approval may succeed)
+  let dupAp = null;
   if (i % 20 === 11) {
     tally.dup_exec_attempts++;
-    const rs = await Promise.all(pits.slice(0, 3).map((p) => desk("POST /api/pit", "POST", "/api/pit", { token: tok[p], body: { order_id: id, action: "EXECUTE" } })));
-    const okN = rs.filter((r) => r.status === 200).length;
+    const rs = await Promise.all(exchanges.slice(0, 3).map((x) => desk("POST /api/exchange", "POST", "/api/exchange", { token: tok[x], body: { order_id: id, action: "APPROVE", confirm_short_sell: true } })));
+    const okN = rs.filter((r) => r.status === 200 && r.data?.status === "EXCHANGE_APPROVED").length;
     if (okN > 1) tally.dup_exec_extra += okN - 1;
-    ex = rs.find((r) => r.status === 200) || rs[0];
-  } else {
-    ex = await desk("POST /api/pit", "POST", "/api/pit", { token: tok[pick(pits)], body: { order_id: id, action: "EXECUTE" } });
-  }
-  if (ex.status !== 200) {
-    if (isServer(ex)) { tally.http_errors++; return; }
-    if (ex.data?.code === "PRICE_STALE" || ex.data?.code === "ORDER_NOT_PENDING") { tally.stale++; refreshMarket(); return; }
-    count(tally.create_rejected, "PIT_" + (ex.data?.code || ex.status)); return;
+    dupAp = okN ? { status: 200 } : rs[0];
   }
   tally.executed++;
-  const ap = await desk("POST /api/exchange", "POST", "/api/exchange", { token: tok[pick(exchanges)], body: { order_id: id, action: "APPROVE", confirm_short_sell: true } });
-  if (ap.status !== 200) { tally.exch_rejected++; if (isServer(ap)) tally.http_errors++; return; }
+  const ap = dupAp || await desk("POST /api/exchange", "POST", "/api/exchange", { token: tok[pick(exchanges)], body: { order_id: id, action: "APPROVE", confirm_short_sell: true } });
+  if (ap.status !== 200) {
+    if (ap.data?.code === "PRICE_STALE" || ap.data?.code === "ORDER_NOT_PENDING") { tally.stale++; refreshMarket(); return; }
+    tally.exch_rejected++; if (isServer(ap)) tally.http_errors++; return;
+  }
   tally.approved++;
   let results;
   if (i % 20 === 3) {

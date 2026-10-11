@@ -1,4 +1,4 @@
-# JSE API reference (v3.12)
+# JSE API reference (v3.13)
 
 Base URL
 
@@ -20,11 +20,11 @@ All endpoints live under `/api/`. Requests and responses are JSON (`Content-Type
 |---|---|---|
 | `ADMIN` | `ADMIN`, `ASSOC-ADMIN` | Event Admin (Chief Stock Exchange Controller): lifecycle, Market News, configuration, accounts, reports |
 | `BROKER` | `BROKER-01…10` | Create Order for the broker's own teams (each team has exactly one broker) |
-| `PIT_MANAGER` | `PIT-01…10` | Pit Manager: EXECUTE ORDER (issues the one trading slip) or reject |
+| `PIT_MANAGER` | `PIT-01…10` | Records trades in Create Order for any team |
 | `EXCHANGE` | `EXCHANGE-01…04` | Exchange Settlement: approve / reject executed orders |
 | `BANK` | `BANK-01…04` | Bank Settlement: settle / reject, loans |
-| `INSTITUTIONAL` | `INST-01…04` | Institutional Investors transaction desk (counterparty mechanism) |
-| `PARTICIPANT` | `TEAM-001…100` | Own orders, trading slips, portfolio, IPO applications — never places orders directly |
+| `INSTITUTIONAL` | `INST-01…04` | Institutional Investors transaction desk (counterparty mechanism) and Market News |
+| `PARTICIPANT` | `TEAM-001…100` | Own orders, portfolio and cash ledger — participant self entry is disabled |
 | `VIEWER` | `FACULTY-01…02` | Read-only |
 
 **Material admin actions** (lifecycle, reset, Market News, configuration, listing, allotments, imports, accounts, undo/redo, reject open orders) need `admin_password` in the body: the administrator's own password, re-checked by the engine (`ADMIN_PASSWORD_REQUIRED` / `ADMIN_PASSWORD_INVALID`; 5 wrong attempts lock re-authentication for a few minutes).
@@ -46,7 +46,7 @@ All endpoints live under `/api/`. Requests and responses are JSON (`Content-Type
 | 429 | Too many actions (writes: 15/s per user, burst 40; sign-in limits) | `TOO_MANY_REQUESTS`, `TOO_MANY_ATTEMPTS` |
 | 500/503 | Server or database busy; safe to retry reads | `SERVER_ERROR`, `SERVICE_UNAVAILABLE`, `TIMEOUT` |
 
-A Bank settlement that fails a rule is **not** an HTTP error: the call returns `200` with `"status": "BANK_REJECTED"` and the reason (`SHORT_SELLING_NOT_ALLOWED`, `INSUFFICIENT_BALANCE`, …), because the rejection itself is a recorded outcome. The same holds for a Pit Manager execution of a stale order (`PRICE_STALE`, the order is closed as rejected).
+A Bank settlement that fails a rule is **not** an HTTP error: the call returns `200` with `"status": "BANK_REJECTED"` and the reason (`SHORT_SELLING_NOT_ALLOWED`, `INSUFFICIENT_BALANCE`, …), because the rejection itself is a recorded outcome.
 
 **Idempotency.** `POST /api/orders`, `POST /api/institutional-order` and participant instructions require `idempotency_key` (any unique string, e.g. a UUID). Re-sending the same key returns the original order with `"replayed": true`. Settlement is protected by a unique index on active settlements, row locks and an atomic status transition, so a second SETTLE always answers `409 ALREADY_SETTLED`.
 
@@ -55,15 +55,15 @@ A Bank settlement that fails a rule is **not** an HTTP error: the call returns `
 ## Order workflow and statuses
 
 ```
-Broker: Create Order ─▶ PIT_PENDING ─▶ Pit Manager EXECUTE ORDER (trading slip) ─▶ EXCHANGE_PENDING ─▶ Exchange APPROVE ─▶ EXCHANGE_APPROVED ─▶ Bank SETTLE ─▶ SETTLED
-                         │ PIT_REJECTED (incl. PRICE STALE)                              │ EXCHANGE_REJECTED                         │ BANK_REJECTED
+Create Order (broker / Pit Manager) ─▶ EXCHANGE_PENDING ─▶ Exchange APPROVE ─▶ EXCHANGE_APPROVED ─▶ Bank SETTLE ─▶ SETTLED (market / cash updated)
+                                        │ EXCHANGE_REJECTED                     │ BANK_REJECTED
 ```
 
-Tracking shows the six steps *Broker submitted → Pit Manager executed → Exchange review → Exchange approved → Bank settlement → Settled*, with the stage `EXCHANGE`, `BANK`, `COMPLETE` or `REJECTED`.
+Tracking shows the four steps *Order Created → Exchange Review → Bank Settlement → Market / Cash Updated*, with the stage `EXCHANGE`, `BANK`, `COMPLETE` or `REJECTED`. Order numbers are `ORD-<n>` (institutional `INS-<n>`) and restart at RESET.
 
-- **Price.** An order is always at the current market price; there is no manual price. The broker's screen sends `expected_price`; if Market News moved the price in between, submission fails with `PRICE_CHANGED` (nothing is created).
-- **Stale price.** If the market price changes while an order waits for the Pit Manager, the order becomes **PRICE STALE** and cannot be executed. Once executed, the trading slip price is final and the Bank settles at it.
-- **Prices move only** through Market News (Event Admin), IPO listing and their undo / redo — never through orders, execution, Exchange approval or Bank settlement.
+- **Price.** An order is always at the current market price; there is no manual price. The screen sends `expected_price`; if Market News moved the price in between, creation fails with `PRICE_CHANGED`.
+- **Market price changed.** When Market News moves a price, every open order created at the old price is closed (`EXCHANGE_REJECTED` or `BANK_REJECTED`, code `PRICE_STALE`, "MARKET PRICE CHANGED"); the Exchange and the Bank re-check too. An order never settles at an obsolete price.
+- **Prices move only** through Market News, IPO listing and their undo / redo — never through orders, Exchange approval or Bank settlement. Market News moves are priced to the paisa.
 
 ## Public (no sign-in)
 
@@ -74,8 +74,6 @@ Tracking shows the six steps *Broker submitted → Pit Manager executed → Exch
 | GET | `/api/event-status` | Event status, configuration (brokerage, loans, limits, institutional spread, IPO window), counts, the IPO window and the index. |
 | GET | `/api/market-news?limit=30` | Latest Market News items (severity, headline, applied %, previous → new price). |
 | GET | `/api/cms50` | CMS 50 summary only: value, change, 50 equity components + listed IPO components. |
-| GET | `/api/ipo` | IPO page: the four IPOs (issue price, lot size 50, stage, listing), prospectus sections, application window (opens exactly 48 h before the event start; `phase` `PRE_IPO`/`OPEN`/`CLOSED`, always `CLOSED` once the event has started). |
-| GET | `/api/ipo-document?symbol=VOLTRA` | The uploaded prospectus PDF (404 `NO_DOCUMENT` until published). |
 
 ## Sign-in and account
 
@@ -87,22 +85,18 @@ Tracking shows the six steps *Broker submitted → Pit Manager executed → Exch
 | POST | `/api/change-password` | `{ old_password, new_password }` | At least 8 characters; signs out the account's other sessions. |
 | POST | `/api/ci-login` | `{ token, username }` | **Staging only** (exists only when the function has `CI_OIDC_REPOSITORY`): session for automated tests from a GitHub Actions OIDC token of this repository. 404 in production. |
 
-## Orders, Pit Manager, Exchange, Bank
+## Orders, Exchange, Bank
 
 | Method | Path | Roles | Description |
 |---|---|---|---|
-| GET | `/api/broker-desk?broker=` | BROKER (own), ADMIN, VIEWER | Create Order desk: the broker's teams (cash, loan room, holdings), open participant instructions, recent orders, commission summary. |
-| POST | `/api/orders` | BROKER (own teams), ADMIN | `{ team, symbol \| security_id, side: BUY\|SELL, quantity, expected_price, instruction_no?, idempotency_key }` → `PIT_PENDING`. Quantity in multiples of 50 (stocks and listed IPOs); order value within the configured maximum. Short-sell and cash-shortfall attempts are recorded and returned as `warnings`. Paired ticket (buyer and seller teams): `{ legs: [{team, side:"BUY"}, {team, side:"SELL"}], symbol, quantity, expected_price, idempotency_key }`. Participants are refused (`PARTICIPANT_ENTRY_DISABLED`) — they ask their broker. |
-| GET / POST | `/api/instructions` | PARTICIPANT (own), BROKER, ADMIN (GET also VIEWER) | Participant instructions to the broker: `{ action: CREATE, side, symbol, quantity, note, idempotency_key }`, `{ action: CANCEL\|DECLINE, instruction_no, reason }`. Submitting an order with `instruction_no` closes it. |
-| GET | `/api/pit` | PIT_MANAGER, ADMIN, VIEWER | Pending executions (oldest first) with stale-price flags; recent decisions. |
-| POST | `/api/pit` | PIT_MANAGER, ADMIN | `{ order_id \| order_no, action: EXECUTE\|REJECT, reason? }`. EXECUTE records the official trade and issues its one trading slip (`TS-…`) → `EXCHANGE_PENDING`; a stale order is closed as `PRICE_STALE`. |
-| GET | `/api/slips?team=&q=` · `/api/slip?slip_no=` | Signed in (participants: own) | Trading slips: order, team, broker, side, quantity, price, trade value, brokerage 0.50%, settlement amount, Pit Manager, Exchange and Bank status. |
+| GET | `/api/broker-desk?broker=` | BROKER (own), PIT_MANAGER (all teams), ADMIN, VIEWER (`broker=ALL` for all teams) | Create Order desk: teams (cash, loan room, holdings), recent orders. |
+| POST | `/api/orders` | BROKER (own teams), PIT_MANAGER, ADMIN | `{ team, symbol \| security_id, side: BUY\|SELL, quantity, expected_price, idempotency_key }` → `EXCHANGE_PENDING`. Quantity in multiples of 50 (stocks and listed IPOs); order value within the configured maximum. Short-sell and cash-shortfall attempts are recorded and returned as `warnings`. Paired ticket (buyer and seller teams): `{ legs: [{team, side:"BUY"}, {team, side:"SELL"}], symbol, quantity, expected_price, idempotency_key }`. Participants are refused (`PARTICIPANT_ENTRY_DISABLED`) — they ask their broker. |
 | GET | `/api/tracking` (alias GET `/api/orders`) | Signed in | Order tracking with filters `team, status (OPEN\|PENDING\|REJECTED\|<status>), side, kind (STOCK\|IPO), account (TEAM\|INSTITUTION), q, page, page_size`; KPIs (awaiting Pit / Exchange / Bank, settled, rejected) follow the filter. Participants see only their team, brokers their teams. |
-| GET | `/api/order?order_no=` | Signed in | One order with its timeline, slip, settlement, risk events and audit trail. |
-| GET | `/api/exchange` | ADMIN, EXCHANGE, VIEWER | Exchange queue with pre-checks (holding, free cash, short-sell / cash risk, institutional counterparty) and statistics. |
+| GET | `/api/order?order_no=` | Signed in | One order with its four-step flow, timeline, settlement, risk events and audit trail. |
+| GET | `/api/exchange` | ADMIN, EXCHANGE, VIEWER | Exchange queue (created orders) with pre-checks (holding, free cash, short-sell / cash risk, institutional counterparty) and statistics. |
 | POST | `/api/exchange` | ADMIN, EXCHANGE | `{ order_id, action: APPROVE\|REJECT, reason?, confirm_short_sell? }`. Approving a flagged short sell needs `confirm_short_sell: true` (audited as `SHORT_SELLING_APPROVED`). Never changes cash, holdings or prices. |
 | GET | `/api/bank` | ADMIN, BANK, VIEWER | Bank queue with cash, holding, required amount and loan room per order; buy / sell request counts, warnings; recent settlements. |
-| POST | `/api/bank` | ADMIN, BANK | `{ order_id, action: SETTLE\|REJECT\|CLAIM\|RELEASE, reason? }`. SETTLE revalidates everything in one transaction, moves cash and holdings at the slip price, charges brokerage (0.50%) and records the broker commission. A BUY short of cash draws an automatic loan for exactly the shortfall (2% interest, ₹5,00,000 limit); if even that is not enough the order is `BANK_REJECTED` (`INSUFFICIENT_BALANCE`). |
+| POST | `/api/bank` | ADMIN, BANK | `{ order_id, action: SETTLE\|REJECT\|CLAIM\|RELEASE, reason? }`. SETTLE revalidates everything in one transaction (including the market price), moves cash and holdings at the order price, charges brokerage (0.50%) and records the broker commission. A BUY short of cash draws an automatic loan for exactly the shortfall (2% interest, ₹5,00,000 limit); if even that is not enough the order is `BANK_REJECTED` (`INSUFFICIENT_BALANCE`). |
 | GET / POST | `/api/loan` | ADMIN, BANK (GET also VIEWER) | Loans: principal, interest, liability, remaining limit. `{ team, action: DRAW\|REPAY, amount }`; repayment pays interest first. |
 
 ## Institutional Investors (counterparty mechanism)
@@ -110,7 +104,7 @@ Tracking shows the six steps *Broker submitted → Pit Manager executed → Exch
 | Method | Path | Roles | Description |
 |---|---|---|---|
 | GET | `/api/institutional-portfolio` | ADMIN, INSTITUTIONAL, VIEWER | Transaction desk: rules (spread 2%), current market with the participant BUY price (market + 2%) and SELL price (market − 2%) per security, teams with their brokers, transaction history, statistics. No institutional cash or holdings dashboard. |
-| POST | `/api/institutional-order` | ADMIN, INSTITUTIONAL | `{ counterparty_team, symbol, side, quantity, expected_price?, notes?, idempotency_key }`. `side` is the institution's side: `SELL` = the participant **buys** at market + 2%, `BUY` = the participant **sells** at market − 2%. The order belongs to the team's broker and goes through the normal Pit Manager → Exchange → Bank workflow. No institutional cash or holdings restriction; the participant pays the normal 0.50% brokerage, earned by its broker (shown in Broker Commission); the settled trade counts toward the team's 5 BUY + 5 SELL. Audited as `INSTITUTIONAL_ORDER_SUBMITTED`. |
+| POST | `/api/institutional-order` | ADMIN, INSTITUTIONAL | `{ counterparty_team, symbol, side, quantity, expected_price?, notes?, idempotency_key }`. `side` is the institution's side: `SELL` = the participant **buys** at market + 2%, `BUY` = the participant **sells** at market − 2%. The order belongs to the team's broker and goes through the normal Exchange → Bank workflow. No institutional cash or holdings restriction; the participant pays the normal 0.50% brokerage, earned by its broker (shown in Broker Commission); the settled trade counts toward the team's 5 BUY + 5 SELL. Audited as `INSTITUTIONAL_ORDER_SUBMITTED`. |
 
 ## Participants, ledgers, audit, commissions
 
@@ -119,18 +113,15 @@ Tracking shows the six steps *Broker submitted → Pit Manager executed → Exch
 | GET | `/api/portfolios` | ADMIN, VIEWER | All 100 teams with cash, holdings value, Net Worth, P/L, return %, assessment (settled BUY / SELL), loan repaid, ₹50K closing rule, eligibility, rank; Winner and Runner-Up. |
 | GET | `/api/portfolio-details?team=` | ADMIN, VIEWER, BROKER (own teams), PARTICIPANT (own) | One team: capital (base ₹20,00,000, loan sanctioned ₹5,00,000, base money left, loan available), metrics, holdings, sold stocks / IPOs with realised P/L, IPO allotments, loan and transactions, risk histories, orders and ledger. |
 | GET | `/api/cash?team=&type=&q=&page=&page_size=` | ADMIN, BANK, VIEWER, PARTICIPANT (own) | Cash ledger with summary (total debit, total credit, net movement, current cash, entries, by type) and a reconciliation of every team balance. |
-| GET | `/api/audit?action=&team=&role=&risk=true&q=&page=&page_size=` | ADMIN, VIEWER | Append-only audit log: actor, role, order, team, security, action (`ORDER_CREATED`, `PIT_EXECUTED`, `ORDER_PRICE_STALE`, `EXCHANGE_APPROVED`, `SHORT_SELLING_APPROVED`, `BANK_SETTLED`, `INSUFFICIENT_BALANCE_SETTLED`, `LOAN_DRAW`, `INSTITUTIONAL_ORDER_SUBMITTED`, `MARKET_NEWS_PRICE_MOVE`, `IPO_LISTED`, `CONFIGURATION_UPDATED`, `EVENT_RESET`, …), details, before / after, risk indicator (SHORT SELLING, INSUFFICIENT BALANCE, LOAN USED, PRICE STALE, …) and `risk_count`. |
+| GET | `/api/audit?action=&team=&role=&group=ORDERS\|EXCHANGE\|EVENT&risk=true&q=&page=&page_size=` | ADMIN, VIEWER | Append-only audit log: actor, role, order, team, security, action (`ORDER_CREATED`, `PIT_EXECUTED`, `ORDER_PRICE_STALE`, `EXCHANGE_APPROVED`, `SHORT_SELLING_APPROVED`, `BANK_SETTLED`, `INSUFFICIENT_BALANCE_SETTLED`, `LOAN_DRAW`, `INSTITUTIONAL_ORDER_SUBMITTED`, `MARKET_NEWS_PRICE_MOVE`, `IPO_LISTED`, `CONFIGURATION_UPDATED`, `EVENT_RESET`, …), details, before / after, risk indicator (SHORT SELLING, INSUFFICIENT BALANCE, LOAN USED, PRICE STALE, …) and `risk_count`. |
 | GET | `/api/commissions?broker=` | ADMIN, VIEWER, BROKER (own) | Broker ranking and commission report (trade value, rate 0.50%, commission, status), institutional brokerage total, reconciliation with settled brokerage. |
 
-## IPO round
+## IPO allotments and listing
 
 | Method | Path | Roles | Description |
 |---|---|---|---|
-| GET / POST | `/api/ipo-applications` | GET ADMIN, VIEWER · POST PARTICIPANT (own), ADMIN | `{ ipo, lots }` or `{ ipo, action: WITHDRAW }` while the window is open; `{ action: CLEAR, admin_password }` (admin, before START). Lots of 50 shares; cash is checked, not taken. |
-| GET | `/api/ipo-mine?team=` | PARTICIPANT (own), BROKER, ADMIN, VIEWER | The team's applications and allotments. |
-| POST | `/api/ipo-prospectus` | ADMIN | `{ ipo, company_description, issue_details, …, document: { name, data_base64 } \| document_url \| remove_document }` (PDF only). |
-| POST | `/api/ipo-allotments` | ADMIN | `{ rows: [{ team, ipo, lots }], replace?, dry_run? }` or `{ clear: true }` (before START only): all-or-nothing validation, shares = lots × 50, amount = shares × issue price, no brokerage; allotments do not count toward the assessment. |
-| POST | `/api/ipo-listing` | ADMIN | `{ action: SET, rows: [{ ipo, listing_price }] }` · `{ action: CLEAR }` · `{ action: APPLY, at_issue_price? }`. START EVENT lists every unlisted IPO (saved listing price, otherwise the issue price) and adds it to the CMS 50 once. |
+| POST | `/api/ipo-allotments` | ADMIN | `{ rows: [{ team, ipo, lots }], replace?, dry_run? }` or `{ clear: true }` (before START only): all-or-nothing validation, shares = lots × 50, amount = shares × issue price, no brokerage; allotments do not count toward the assessment. Event Admin shows the IPO master (IPO code, name, symbol, price, status, remaining = shares offered − allotted). |
+| POST | `/api/ipo-listing` | ADMIN | `{ action: SET\|CLEAR\|APPLY }`. START EVENT lists every IPO (saved price, otherwise the issue price) and adds it to the CMS 50 once; listed IPOs trade in Create Order (asset type IPO). |
 
 ## Event administration (ADMIN unless noted)
 
@@ -139,10 +130,10 @@ Tracking shows the six steps *Broker submitted → Pit Manager executed → Exch
 | GET | `/api/admin-state` | — | ADMIN, VIEWER. Status, counts, statistics, configuration, undo/redo journal, IPO round, brokers, account counts. |
 | GET | `/api/insights` | — | ADMIN, VIEWER. Market Intelligence: sentiment, breadth, net flow, institutional signal, gainers / losers, buy / sell pressure, sector analysis, participant performance, provisional Winner / Runner-Up, alerts. |
 | POST | `/api/event` | `{ action: START\|PAUSE\|RESUME\|CLOSE\|REOPEN\|FINALIZE }` | NOT_STARTED → LIVE ⇄ SETTLEMENT_ONLY → CLOSED → FINALIZED. START lists the IPOs. FINALIZE is refused while orders are open. |
-| POST | `/api/reject-open-orders` | `{ reason? }` | Rejects every order still waiting at the Pit Manager, Exchange or Bank. |
-| POST | `/api/market-news` | `{ symbol \| security_id, severity, headline }` | The only price engine. Severities: VERY SEVERE (−10 to −7.5%), SEVERE (−7.49 to −5%), NEGATIVE (−4.99 to −1%), NORMAL (±0.99%), POSITIVE (+1 to +4.99%), VERY POSITIVE (+5 to +7.49%), SUPER POSITIVE (+7.5 to +10%). A random move inside the band, capped at the configured maximum (±10%). Orders waiting at the Pit at the old price become PRICE STALE. |
+| POST | `/api/reject-open-orders` | `{ reason? }` | Rejects every order still waiting at the Exchange or Bank. |
+| POST | `/api/market-news` | `{ symbol \| security_id, mood, headline? }` (ADMIN and INSTITUTIONAL) | The only price engine; a headline is generated when none is given. Severities: VERY SEVERE (−10 to −7.5%), SEVERE (−7.49 to −5%), NEGATIVE (−4.99 to −1%), NORMAL (±0.99%), POSITIVE (+1 to +4.99%), VERY POSITIVE (+5 to +7.49%), SUPER POSITIVE (+7.5 to +10%). A random move inside the band, capped at the configured maximum (±10%). Open orders created at the old price are closed as MARKET PRICE CHANGED. |
 | POST | `/api/undo-redo` | `{ action: UNDO\|REDO, journal_id? }` | Undo / redo of settlements, rejections, Market News, IPO listing and status changes, only when nothing later depends on them. |
-| POST | `/api/reset-event` | `{ confirm: "RESET", keep_allotments }` | Clean starting state (₹20,00,000 per team, base prices, IPOs back to pre-market); clears orders, slips, instructions, settlements, holdings, ledgers, commissions, news, price history, loans and counters; archives the audit log (`EVENT_RESET`). Not allowed while LIVE. |
+| POST | `/api/reset-event` | `{ confirm: "RESET", keep_allotments }` | Clean starting state (₹20,00,000 per team, base prices, IPOs back to pre-market, order numbers restart); clears orders, settlements, holdings, ledgers, commissions, news, price history, loans and counters; archives the audit log (`EVENT_RESET`). Not allowed while LIVE. |
 | POST | `/api/config` | `brokerage_rate_pct, max_price_move_pct, max_order_value, min_order_value, cash_rule_limit, initial_capital, loan_max_principal, loan_interest_rate_pct, min_buy_trades, min_sell_trades, event_name, event_start_at, ipo_application_hours, loans_enabled, auto_loan_on_settlement, loan_repayment_required, auto_list_ipos` | Audited as `CONFIGURATION_UPDATED`. Starting capital changes only before START. |
 | POST | `/api/teams` · `/api/brokers` | `{ rows: [...] }` | Team details (name from the team-name pool, section, broker, members) and broker roster (code, name, contact, desk). |
 | GET / POST | `/api/team-names` | `{ action: RANDOMIZE\|LOCK\|UNLOCK, seed? }` | Indian Knowledge System team-name pool and the reproducible random assignment. |
@@ -154,12 +145,10 @@ Tracking shows the six steps *Broker submitted → Pit Manager executed → Exch
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/reports` | Event, portfolio statistics, commissions, insights and ledger reconciliation in one document. |
-| GET | `/api/certificates` | Final ranking (eligible teams by Net Worth), Winner and Runner-Up, participation list. |
-| GET | `/api/share-certificates?team=` | Share certificates for a team's settled holdings (also PARTICIPANT for its own team, BROKER for its teams). |
-| GET | `/api/export?sheet=<key>&format=csv\|json` | One sheet: `winner, assessment, teams, participants, broker_roster, brokers, cash, holdings, sold_stocks, sold_ipos, networth, loans, cash_rule, short_sell, cash_shortfall, insufficient_balance, orders, rejected, slips, instructions, trades, ledger, commission, institutional, ipo_applications, ipo_allotments, news, prices, journal, audit`. |
-| GET | `/api/export-event-excel` | The final event report: one .xlsx workbook with all 30 sheets. |
+| GET | `/api/export?sheet=<key>&format=csv\|json` | One sheet: `winner, assessment, teams, participants, broker_roster, brokers, cash, holdings, sold_stocks, sold_ipos, networth, loans, cash_rule, short_sell, cash_shortfall, insufficient_balance, orders, rejected, trades, ledger, commission, institutional, ipo_allotments, news, prices, journal, audit`. |
+| GET | `/api/export-event-excel` | The final event report: one .xlsx workbook with all 27 sheets. |
 | GET | `/api/export-event-json` | The same data as one JSON file. |
 
 ## Database functions
 
-Every endpoint is a single call to one PL/pgSQL function (`SELECT jse_<name>(actor, params)`), so every financial action is exactly one database transaction. The functions live in `db/migrations/002_core.sql` (auth, orders, Pit Manager, Exchange, Bank settlement), `003_ops.sql` (institutional orders, loans, Market News, event control, IPO round, reset, undo/redo, administration), `004_reads.sql` (read models), `005_exports.sql` (export sheets) and `008_v311.sql` (v311 data changes).
+Every endpoint is a single call to one PL/pgSQL function (`SELECT jse_<name>(actor, params)`), so every financial action is exactly one database transaction. The functions live in `db/migrations/002_core.sql` (auth, orders, Pit Manager, Exchange, Bank settlement), `003_ops.sql` (institutional orders, loans, Market News, event control, IPO round, reset, undo/redo, administration), `004_reads.sql` (read models), `005_exports.sql` (export sheets) and `008_v311.sql` and `009_hatchable.sql` (one-time data changes).

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Participant Portfolios · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
   .controls { display: grid; grid-template-columns: 260px minmax(0, 1fr) 260px auto; gap: 12px; align-items: end; }
   @media (max-width: 1000px) { .controls { grid-template-columns: 1fr 1fr; } }
@@ -24,7 +24,7 @@
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><h1 id="title">Participant Portfolios</h1><p id="poolRule">Wealth and ranking dashboard. The official ranking uses Net Worth = liquid cash + shares held × closing price.</p></div>
+    <div><h1 id="title">Participant Portfolios</h1><p id="poolRule">Live participant wealth, holdings, cash and transaction position across all JSE teams.</p></div>
     <div class="tools"><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
       <button class="btn sm hidden" type="button" id="exportBtn">Export portfolios (CSV)</button></div>
   </div>
@@ -37,9 +37,13 @@
     <div class="kpis" id="kpis"></div>
     <div class="card" style="margin-bottom:16px"><div class="card-b">
       <div class="controls">
-        <div class="field"><label for="teamSel">Team</label><select class="input" id="teamSel"></select></div>
+        <div class="field"><label for="teamSel">Portfolio</label><select class="input" id="teamSel"></select></div>
         <div class="field"><label for="q">Search</label><input class="input" id="q" type="search" placeholder="Team code, name, broker, section"></div>
-        <div class="field"><label for="sort">Ranking option</label><select class="input" id="sort">
+        <div class="chips rankby" role="group" aria-label="Ranking option">
+          <button class="chip" type="button" data-sort="net_worth" aria-pressed="true">Rank by Net Worth</button><button class="chip" type="button" data-sort="cash" aria-pressed="false">Rank by Liquid Cash</button>
+          <button class="chip" type="button" data-sort="holdings" aria-pressed="false">Rank by Holdings Value</button><button class="chip" type="button" data-sort="pnl" aria-pressed="false">Rank by P/L</button>
+          <button class="chip" type="button" data-sort="return" aria-pressed="false">Rank by Return</button><button class="btn sm" type="button" id="refreshBtn">Refresh</button></div>
+        <div class="field hidden"><label for="sort">Ranking option</label><select class="input" id="sort">
           <option value="net_worth">Net Worth (official ranking)</option><option value="cash">Cash</option><option value="holdings">Holdings</option>
           <option value="pnl">P/L</option><option value="return">Return</option><option value="eligible">Eligible first (award order)</option><option value="team">Team code</option></select></div>
         <div class="chips" role="group" aria-label="View">
@@ -55,8 +59,8 @@
 
   <section id="detail" class="hidden" style="margin-top:18px" aria-live="polite"></section>
 </main>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   "use strict";
@@ -69,11 +73,9 @@
     c = c || {};
     var minB = c.min_buy_trades || 5, minS = c.min_sell_trades || 5;
     $("rules").innerHTML =
-      '<div class="rule"><b>Winner &amp; Runner-Up</b>Exactly one Winner and one Runner-Up: the highest and second-highest final Net Worth among <u>eligible</u> teams. Net Worth = liquid cash + shares held × closing price. Ties go to the lower team code.</div>' +
-      '<div class="rule"><b>Mandatory assessment</b>At least ' + minB + " SETTLED BUY and " + minS + " SETTLED SELL trades — both required. Pending, rejected or provisional orders, order attempts, Exchange approval alone and IPO allotments do not count.</div>" +
-      '<div class="rule key"><b>₹50,000 closing cash criterion</b>' + esc(JSE.cashRuleText(c.cash_rule_limit)) + "</div>" +
-      '<div class="rule"><b>Capital &amp; loans</b>Each team starts with its own ' + F.money(c.initial_capital || 2000000) + ". The loan (up to " + F.money(c.loan_max_principal || 500000) + ", " + JSE.rate(c.loan_interest_rate || 0.02) +
-        " interest) is a credit facility, not starting capital: the Bank draws only the shortfall automatically. Repayment pays interest first, then principal; repay in full for eligibility.</div>";
+      '<div class="rule key wide"><b>Official winner criterion</b>Net Worth = Liquid Cash + (Shares Held × Closing Price). Assessment: minimum ' + minB + " settled BUY and " + minS + " settled SELL trades per participant. " +
+        "Closing cash limit: " + F.money(c.cash_rule_limit || 50000) + " maximum (5% of " + F.money(c.initial_capital || 2000000) + "). Profit-generated cash is exempt after the initial capital is deployed; cash is never locked. " +
+        "Exactly one Winner and one Runner-Up among eligible teams.</div>";
   }
 
   function metric(t) {
@@ -141,7 +143,7 @@
         '<div class="small" style="margin-top:6px">' + (id.members ? esc(id.members) : '<span class="muted">Members not entered yet</span>') + "</div></div>" +
       '<div><div class="eyebrow">Assigned broker</div><div class="big">' + esc(b ? b.name : "Not assigned yet") + '</div><div class="code">' + esc(b ? b.code : "") + "</div>" +
         (b && (b.desk || b.contact) ? '<div class="small" style="margin-top:6px">' + esc([b.desk ? "Desk " + b.desk : "", b.contact].filter(Boolean).join(" · ")) + "</div>" : "") +
-        '<div class="small muted" style="margin-top:8px">' + (participant ? 'Give instructions to your broker in person or from <a href="/orders.html">My Orders</a>. Your broker creates every order.' : "") +
+        '<div class="small muted" style="margin-top:8px">' + (participant ? "Your broker creates every order for your team; follow them in Order Tracking." : "") +
         (S.user && S.user.role !== "PARTICIPANT" ? ' <button class="btn sm" type="button" id="closeDetail">Close</button>' : "") + "</div></div></div>" +
       '<div class="minis ten" style="margin-top:16px">' +
         mini("Base capital", F.money(c.base_capital)) + mini("Loan sanctioned", F.money(c.loan_sanctioned)) + mini("Base money left", F.money(c.base_money_left)) +
@@ -168,15 +170,15 @@
           "<dt>Status</dt><dd>" + JSE.badge.rule(t.cash_rule_met, t.cash_rule_status) + "</dd></dl>" +
           '<p class="small muted" style="margin:10px 0 0">' + esc(JSE.cashRuleText(d.rules.cash_limit)) + "</p></div></div>" +
       "</div>" +
-      '<div class="sec-title">Holdings <a class="small" style="text-transform:none;letter-spacing:0" href="/certificates.html' + (participant ? "" : "?team=" + encodeURIComponent(t.code)) + '">Share certificates →</a></div>' +
+      '<div class="sec-title">Holdings</div>' +
       table([["Security"], ["Type"], ["Quantity", 1], ["Average price", 1], ["Current price", 1], ["Market value", 1], ["Unrealized P/L (after brokerage)", 1]], d.holdings.map(function (h) {
         return "<tr><td><b>" + esc(h.security) + '</b><span class="sub">' + esc(h.symbol) + "</span></td><td>" + JSE.badge.kind(h.type) + '</td><td class="num">' + F.num(h.quantity) + '</td><td class="num">' + F.price(h.avg_price) +
           '</td><td class="num">' + F.price(h.current_price) + '</td><td class="num"><b>' + F.money(h.market_value) + '</b></td><td class="num ' + F.dir(h.unrealized_pnl) + '">' + F.signedMoney(h.unrealized_pnl) + "</td></tr>"; }), "No holdings yet.") +
       '<div class="small muted" style="margin-top:8px">Realized P/L ' + F.signedMoney(t.realized_pnl) + " · brokerage paid " + F.money(t.brokerage_paid) + " (" + JSE.rate(d.rules.brokerage_rate) + ")</div>" +
-      '<div class="sec-title">Recent orders</div>' + table([["Order"], ["Trade"], ["Trade value", 1], ["Status"], ["Trading slip"], ["Created"]], d.recent_orders.map(function (o) {
+      '<div class="sec-title">Recent orders</div>' + table([["Order"], ["Trade"], ["Trade value", 1], ["Status"], ["Created"]], d.recent_orders.map(function (o) {
         var side = o.team_side || o.side;
         return '<tr><td><a class="mono" href="/orders.html?order=' + encodeURIComponent(o.order_no) + '">' + esc(o.order_no) + "</a>" + (o.account_type === "INSTITUTION" ? ' <span class="tag">Institutional</span>' : "") + '</td><td><span class="side-txt ' + side.toLowerCase() + '">' + esc(side) + "</span> · " + F.num(o.quantity) + " <b>" + esc(o.symbol) + "</b> @ " + F.price(o.price) +
-          '</td><td class="num">' + F.money(o.trade_value) + "</td><td>" + JSE.badge.status(o.status, o.reject_code) + "</td><td>" + (o.slip_no ? '<a class="mono" href="/slips.html?slip=' + encodeURIComponent(o.slip_no) + '">' + esc(o.slip_no) + "</a>" : "—") + "</td><td>" + F.datetime(o.created_at) + "</td></tr>"; }), "No orders yet.") +
+          '</td><td class="num">' + F.money(o.trade_value) + "</td><td>" + JSE.badge.status(o.status, o.reject_code) + "</td><td>" + F.datetime(o.created_at) + "</td></tr>"; }), "No orders yet.") +
       (d.ipo_allotments.length || d.ipo_applications.length ? '<div class="sec-title">IPO allotments (not assessment trades)</div>' + table([["IPO"], ["Applied"], ["Allotted lots", 1], ["Shares", 1], ["Price", 1], ["Amount", 1]],
         (d.ipo_allotments.length ? d.ipo_allotments : d.ipo_applications).map(function (x) {
           var app = d.ipo_applications.filter(function (p) { return p.symbol === x.symbol; })[0];
@@ -191,7 +193,7 @@
   async function loadList() {
     S.data = await JSE.api.get("/api/portfolios");
     render();
-    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+    $("conn").className = "conn"; $("connText").textContent = "LIVE · UPDATING";
   }
   async function loadDetail() {
     if (!S.team) return;
@@ -210,6 +212,9 @@
   $("rows").addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.matches("tr[data-team]")) select(e.target.getAttribute("data-team"), true); });
   $("teamSel").addEventListener("change", function () { select($("teamSel").value, true); });
   $("sort").addEventListener("change", function () { S.sort = $("sort").value; render(); });
+  document.querySelectorAll("[data-sort]").forEach(function (b) { b.addEventListener("click", function () {
+    S.sort = b.getAttribute("data-sort"); $("sort").value = S.sort; document.querySelectorAll("[data-sort]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); render(); }); });
+  $("refreshBtn").addEventListener("click", function () { if (window.__pfPoll) window.__pfPoll.now(); });
   $("q").addEventListener("input", JSE.debounce(function (e) { S.q = e.target.value.trim(); render(); }, 150));
   document.querySelectorAll("[data-v]").forEach(function (b) { b.addEventListener("click", function () {
     S.view = b.getAttribute("data-v"); document.querySelectorAll("[data-v]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
@@ -232,7 +237,7 @@
     }
     $("exportBtn").classList.remove("hidden");
     var t = new URLSearchParams(location.search).get("team"); if (t) S.team = t.toUpperCase();
-    JSE.poll(loadList, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    window.__pfPoll = JSE.poll(loadList, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
     JSE.poll(loadDetail, 5000);
   });
 })();

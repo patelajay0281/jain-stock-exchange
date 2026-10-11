@@ -47,7 +47,6 @@ async function cleanup() {
   if (st === "LIVE" || st === "SETTLEMENT_ONLY") { steps.reject = (await post("/api/reject-open-orders", pw)).status; steps.close = (await post("/api/event", { action: "CLOSE", ...pw })).status; }
   steps.reset = (await post("/api/reset-event", { confirm: "RESET", keep_allotments: false, ...pw })).status;
   steps.clear_listing = (await post("/api/ipo-listing", { action: "CLEAR", ...pw })).status;
-  steps.clear_applications = (await post("/api/ipo-applications", { action: "CLEAR", ...pw })).status;
   results.suites.cleanup = steps;
 }
 

@@ -222,4 +222,7 @@ ALTER TABLE cash_ledger ADD CONSTRAINT cash_ledger_entry_type_check
   CHECK (entry_type IN ('INITIAL_CAPITAL','IPO_ALLOTMENT','BUY','SELL','BROKERAGE','LOAN_DRAW','INTEREST','INTEREST_CHARGE',
                         'LOAN_REPAYMENT','REVERSAL','ADJUSTMENT'));
 
+-- v3.13: IPO shares on offer (Hatchable IPO master: remaining = offered − allotted)
+ALTER TABLE securities ADD COLUMN IF NOT EXISTS ipo_shares_offered integer;
+
 INSERT INTO schema_migrations(version) VALUES ('001a_upgrades');

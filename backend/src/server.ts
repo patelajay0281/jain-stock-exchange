@@ -8,7 +8,7 @@ import { ApiError, call, ensureMigrated, rawQuery } from "./db";
 import { verifyGithubOidc } from "./oidc";
 import { buildXlsx, readCsv, readXlsx, toCsv, type Sheet } from "./xlsx";
 
-export const VERSION = "3.12.0";
+export const VERSION = "3.13.0";
 const STARTED = Date.now();
 
 // ---------------------------------------------------------------------------
@@ -244,29 +244,6 @@ get("/api/cms50", async (ctx) => {
   const m = JSON.parse((await cached("pub:market", 900, () => call("jse_market", null))).body);
   return json(ctx, { success: true, status: m.status, ...m.index, market_stock_count: m.stocks.length, ipo_count: m.ipos.length });
 });
-get("/api/ipo", async (ctx) => respond(ctx, 200, await cached("pub:ipo", 3000, () => call("jse_ipo_page", null)), {}, 2));
-// prospectus document (PDF uploaded by the administrator)
-const docCache = new Map<string, { at: number; type: string; name: string; data: Buffer }>();
-get("/api/ipo-document", async (ctx) => {
-  const sym = q(ctx, "symbol").toUpperCase();
-  if (!/^[A-Z0-9_-]{1,20}$/.test(sym)) throw new ApiError(400, "INVALID_SYMBOL", "Choose an IPO.");
-  let hit = docCache.get(sym);
-  if (!hit || Date.now() - hit.at > 60_000) {
-    const r = await rawQuery(
-      "SELECT p.document_data, p.document_type, p.document_name, p.document_url FROM ipo_prospectus p JOIN securities s ON s.id = p.security_id WHERE s.symbol = $1 AND s.kind = 'IPO'", [sym]);
-    const row = r.rows[0];
-    if (!row) throw new ApiError(404, "IPO_NOT_FOUND", "IPO not found.");
-    if (!row.document_data) {
-      if (row.document_url) return new Response(null, { status: 302, headers: { location: row.document_url, ...corsHeaders(ctx) } });
-      throw new ApiError(404, "NO_DOCUMENT", "The prospectus document has not been published yet.");
-    }
-    hit = { at: Date.now(), type: row.document_type || "application/pdf", name: row.document_name || sym + "-prospectus.pdf", data: row.document_data };
-    docCache.set(sym, hit);
-  }
-  return new Response(new Uint8Array(hit.data), { status: 200, headers: {
-    "content-type": hit.type, "content-disposition": `inline; filename="${hit.name.replace(/[^\w.\- ]/g, "_")}"`,
-    "cache-control": "public, max-age=60", ...corsHeaders(ctx) } });
-});
 
 // ---- authentication ----
 post("/api/login", async (ctx) => {
@@ -355,45 +332,12 @@ post("/api/orders", async (ctx) => {
   return mutate(ctx, "jse_place_order", b, ORDER_CACHES);
 });
 
-// ---- participant instructions ----
-get("/api/instructions", async (ctx) => {
-  const u = need(ctx, "PARTICIPANT", "BROKER", "ADMIN", "VIEWER");
-  const p = params(ctx, ["team"]);
-  return respond(ctx, 200, await cached("ins:" + scopeKey(u) + ":" + JSON.stringify(p), 1200, () => call("jse_instructions", actor(ctx), p)));
-});
-post("/api/instructions", async (ctx) => {
-  need(ctx, "PARTICIPANT", "BROKER", "ADMIN");
-  return mutate(ctx, "jse_instruction_action", ctx.body || {}, ["ins:", "bd:", "pd:"]);
-});
-
 // ---- broker desk ----
 get("/api/broker-desk", async (ctx) => {
-  const u = need(ctx, "BROKER", "ADMIN", "VIEWER");
-  const broker = u.role === "BROKER" ? String(u.broker || "") : q(ctx, "broker");
+  const u = need(ctx, "BROKER", "PIT_MANAGER", "ADMIN", "VIEWER");
+  const broker = u.role === "BROKER" ? String(u.broker || "") : u.role === "PIT_MANAGER" ? "ALL" : q(ctx, "broker");
   return respond(ctx, 200, await cached("bd:" + (u.role === "BROKER" ? "own" + u.broker_id : broker || "first"), 1200,
     () => call("jse_broker_desk", actor(ctx), broker ? { broker } : {})));
-});
-
-// ---- pit manager ----
-get("/api/pit", async (ctx) => {
-  need(ctx, "PIT_MANAGER", "ADMIN", "VIEWER");
-  return respond(ctx, 200, await cached("q:pit", 900, () => call("jse_pit_queue", actor(ctx), {})));
-});
-post("/api/pit", async (ctx) => {
-  need(ctx, "PIT_MANAGER", "ADMIN");
-  return mutate(ctx, "jse_pit_action", ctx.body || {}, ORDER_CACHES);
-});
-
-// ---- trading slips ----
-get("/api/slips", async (ctx) => {
-  const u = need(ctx, ...ALL);
-  const p = params(ctx, ["team", "q", "page", "page_size"]);
-  return respond(ctx, 200, await cached("slips:" + scopeKey(u) + ":" + JSON.stringify(p), 1500, () => call("jse_slips", actor(ctx), p)));
-});
-get("/api/slip", async (ctx) => {
-  need(ctx, ...ALL);
-  return json(ctx, await call("jse_slip", actor(ctx), { slip_no: q(ctx, "slip_no") || undefined, order_no: q(ctx, "order_no") || undefined,
-    order_id: q(ctx, "order_id") || undefined }));
 });
 
 // ---- exchange ----
@@ -439,7 +383,7 @@ get("/api/cash", async (ctx) => {
 });
 get("/api/audit", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
-  const p = params(ctx, ["action", "team", "role", "risk", "q", "page", "page_size"]);
+  const p = params(ctx, ["action", "team", "role", "risk", "group", "q", "page", "page_size"]);
   return respond(ctx, 200, await cached("audit:" + JSON.stringify(p), 1500, () => call("jse_audit_log", actor(ctx), p)));
 });
 get("/api/commissions", async (ctx) => {
@@ -461,29 +405,8 @@ post("/api/institutional-order", async (ctx) => {
   return mutate(ctx, "jse_place_institutional_order", ctx.body || {}, ORDER_CACHES.concat(["inst:"]));
 });
 
-// ---- market news (Event Admin only: the one price engine) ----
-post("/api/market-news", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_market_news", ctx.body || {}); });
-
-// ---- IPO round ----
-get("/api/ipo-mine", async (ctx) => {
-  const u = need(ctx, "PARTICIPANT", "ADMIN", "VIEWER", "BROKER");
-  const p = params(ctx, ["team"]);
-  return respond(ctx, 200, await cached("ipo-mine:" + scopeKey(u) + ":" + JSON.stringify(p), 1500, () => call("jse_ipo_mine", actor(ctx), p)));
-});
-get("/api/ipo-applications", async (ctx) => {
-  need(ctx, "ADMIN", "VIEWER");
-  return respond(ctx, 200, await cached("staff:ipo-applications", 1500, () => call("jse_ipo_applications", actor(ctx), {})));
-});
-post("/api/ipo-applications", async (ctx) => {
-  need(ctx, "PARTICIPANT", "ADMIN");
-  return mutate(ctx, "jse_ipo_application", ctx.body || {}, ["ipo-mine:", "staff:", "admin:", "pd:"]);
-});
-post("/api/ipo-prospectus", async (ctx) => {
-  need(ctx, "ADMIN");
-  const out = await mutate(ctx, "jse_ipo_prospectus_update", ctx.body || {}, ["pub:ipo", "admin:"]);
-  docCache.clear();
-  return out;
-}, 7_000_000);
+// ---- market news (Event Admin and the Institutional desk, as on Hatchable: the one price engine) ----
+post("/api/market-news", async (ctx) => { need(ctx, "ADMIN", "INSTITUTIONAL"); return mutate(ctx, "jse_market_news", ctx.body || {}); });
 
 // ---- event administration ----
 get("/api/admin-state", async (ctx) => {
@@ -569,15 +492,6 @@ post("/api/import", async (ctx) => {
 get("/api/reports", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
   return respond(ctx, 200, await cached("staff:reports", 3000, () => call("jse_reports", actor(ctx), {})));
-});
-get("/api/certificates", async (ctx) => {
-  need(ctx, "ADMIN", "VIEWER");
-  return respond(ctx, 200, await cached("staff:certificates", 3000, () => call("jse_certificates", actor(ctx), {})));
-});
-get("/api/share-certificates", async (ctx) => {
-  const u = need(ctx, "ADMIN", "VIEWER", "PARTICIPANT", "BROKER");
-  const team = u.role === "PARTICIPANT" ? "" : q(ctx, "team");
-  return json(ctx, await call("jse_share_certificates", actor(ctx), team ? { team } : {}));
 });
 
 let SHEETS: Array<[string, string]> | null = null;

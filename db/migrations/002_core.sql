@@ -188,14 +188,14 @@ $$;
 -- User-facing stage of an order in the canonical flow
 CREATE OR REPLACE FUNCTION jse_stage_label(p_status text, p_code text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE p_status
-    WHEN 'PIT_PENDING' THEN 'Broker submitted · awaiting Pit Manager'
-    WHEN 'PIT_REJECTED' THEN CASE WHEN p_code = 'PRICE_STALE' THEN 'Rejected · price stale' ELSE 'Rejected by Pit Manager' END
-    WHEN 'EXCHANGE_PENDING' THEN 'Executed · awaiting Exchange'
+    WHEN 'PIT_PENDING' THEN 'Exchange intake'
+    WHEN 'PIT_REJECTED' THEN CASE WHEN p_code = 'PRICE_STALE' THEN 'Rejected · market price changed' ELSE 'Rejected' END
+    WHEN 'EXCHANGE_PENDING' THEN 'Order created · awaiting Exchange'
     WHEN 'EXCHANGE_APPROVED' THEN 'Exchange approved · awaiting Bank'
     WHEN 'BANK_PENDING' THEN 'Bank verifying'
-    WHEN 'BANK_SETTLED' THEN 'Settled'
-    WHEN 'EXCHANGE_REJECTED' THEN 'Rejected by Exchange'
-    WHEN 'BANK_REJECTED' THEN 'Rejected by Bank'
+    WHEN 'BANK_SETTLED' THEN 'Settled · market / cash updated'
+    WHEN 'EXCHANGE_REJECTED' THEN CASE WHEN p_code = 'PRICE_STALE' THEN 'Rejected · market price changed' ELSE 'Rejected by Exchange' END
+    WHEN 'BANK_REJECTED' THEN CASE WHEN p_code = 'PRICE_STALE' THEN 'Rejected · market price changed' ELSE 'Rejected by Bank' END
     ELSE p_status END
 $$;
 
@@ -235,25 +235,31 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- The canonical price writer. Called by Market News, IPO listing and their undo / redo — never by
--- order submission, execution, Exchange or Bank. Records price history and marks orders still
--- waiting for the Pit Manager at the old price as PRICE STALE.
+-- order creation, Exchange or Bank. Records price history and closes every open order that was created at the
+-- old market price (MARKET PRICE CHANGED): an order never settles at an obsolete price.
 -- The caller must hold the security row FOR UPDATE.
 -- ---------------------------------------------------------------------------
--- An order is priced from the market price it was submitted against (reference_price; for institutional orders
+-- An order is priced from the market price it was created against (reference_price; for institutional orders
 -- the order price is that market price ± the institutional spread).
 CREATE OR REPLACE FUNCTION jse__mark_stale(a jsonb, o orders, p_market numeric, p_source text)
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE v_reason text; v_ref numeric := coalesce(o.reference_price, o.price);
+        v_to text := CASE o.status WHEN 'EXCHANGE_PENDING' THEN 'EXCHANGE_REJECTED' WHEN 'PIT_PENDING' THEN 'EXCHANGE_REJECTED' ELSE 'BANK_REJECTED' END;
 BEGIN
-  v_reason := 'MARKET PRICE CHANGED — PRICE STALE: the market price moved from ' || jse_inr(v_ref) || ' to ' || jse_inr(p_market) || ' (' || replace(p_source, '_', ' ') ||
-              ') before the Pit Manager executed this order. The broker must submit a fresh order at the new market price.';
-  UPDATE orders SET status = 'PIT_REJECTED', reject_code = 'PRICE_STALE', reject_reason = v_reason,
-         pit_at = now(), pit_by_name = 'SYSTEM · ' || replace(p_source, '_', ' '), updated_at = now()
-  WHERE id = o.id AND status = 'PIT_PENDING';
-  PERFORM jse_order_event(o.id, 'PRICE_STALE', 'PIT_PENDING', 'PIT_REJECTED', a, v_reason,
+  IF o.status NOT IN ('PIT_PENDING', 'EXCHANGE_PENDING', 'EXCHANGE_APPROVED', 'BANK_PENDING') THEN RETURN; END IF;
+  v_reason := 'MARKET PRICE CHANGED: the market price moved from ' || jse_inr(v_ref) || ' to ' || jse_inr(p_market) || ' (' || replace(p_source, '_', ' ') ||
+              ') before settlement. The order was not settled at the old price — create a fresh order at the new market price.';
+  UPDATE orders SET status = v_to, reject_code = 'PRICE_STALE', reject_reason = v_reason,
+         exchange_at = CASE WHEN v_to = 'EXCHANGE_REJECTED' THEN now() ELSE exchange_at END,
+         exchange_by_name = CASE WHEN v_to = 'EXCHANGE_REJECTED' THEN 'SYSTEM · ' || replace(p_source, '_', ' ') ELSE exchange_by_name END,
+         bank_at = CASE WHEN v_to = 'BANK_REJECTED' THEN now() ELSE bank_at END,
+         bank_by_name = CASE WHEN v_to = 'BANK_REJECTED' THEN 'SYSTEM · ' || replace(p_source, '_', ' ') ELSE bank_by_name END,
+         bank_claimed_by = NULL, bank_claimed_name = NULL, bank_claimed_at = NULL, updated_at = now()
+  WHERE id = o.id;
+  PERFORM jse_order_event(o.id, 'PRICE_STALE', o.status, v_to, a, v_reason,
     jsonb_build_object('order_price', o.price, 'reference_price', v_ref, 'market_price', p_market, 'source', p_source));
-  PERFORM jse_audit(a, 'ORDER_PRICE_STALE', 'order', o.order_no, o.team_id, o.id, jsonb_build_object('status', 'PIT_PENDING'),
-    jsonb_build_object('status', 'PIT_REJECTED', 'reject_code', 'PRICE_STALE'),
+  PERFORM jse_audit(a, 'ORDER_PRICE_STALE', 'order', o.order_no, o.team_id, o.id, jsonb_build_object('status', o.status),
+    jsonb_build_object('status', v_to, 'reject_code', 'PRICE_STALE'),
     jsonb_build_object('order_price', o.price, 'reference_price', v_ref, 'market_price', p_market, 'source', p_source));
 END $$;
 
@@ -261,7 +267,8 @@ CREATE OR REPLACE FUNCTION jse__stale_orders(a jsonb, p_security integer, p_new_
 RETURNS integer LANGUAGE plpgsql AS $$
 DECLARE o orders%ROWTYPE; v_n integer := 0;
 BEGIN
-  FOR o IN SELECT * FROM orders WHERE security_id = p_security AND status = 'PIT_PENDING' AND coalesce(reference_price, price) <> p_new_price
+  FOR o IN SELECT * FROM orders WHERE security_id = p_security AND status IN ('PIT_PENDING', 'EXCHANGE_PENDING', 'EXCHANGE_APPROVED', 'BANK_PENDING')
+             AND coalesce(reference_price, price) <> p_new_price
            ORDER BY id FOR UPDATE LOOP
     PERFORM jse__mark_stale(a, o, p_new_price, p_source);
     v_n := v_n + 1;
@@ -434,9 +441,9 @@ DECLARE
 BEGIN
   IF a->>'role' = 'PARTICIPANT' THEN
     PERFORM jse_fail('PARTICIPANT_ENTRY_DISABLED',
-      'Participants do not place exchange orders. Give your instruction to your assigned broker (or send it from My Orders); the broker submits the order.', 403);
+      'Participant self entry is disabled. Your broker creates the order for your team.', 403);
   END IF;
-  PERFORM jse_require_role(a, 'ADMIN', 'BROKER');
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER');
   IF v_key IS NULL OR length(v_key) > 120 THEN
     PERFORM jse_fail('IDEMPOTENCY_KEY_REQUIRED', 'Order submission is missing its request key. Reload the page and try again.', 400);
   END IF;
@@ -543,22 +550,22 @@ BEGIN
   END IF;
 
   v_id := nextval(pg_get_serial_sequence('orders', 'id'));
-  v_no := 'ORD-' || lpad(v_id::text, 6, '0');
+  v_no := 'ORD-' || v_id::text;
   INSERT INTO orders(id, order_no, account_type, team_id, broker_id, security_id, side, quantity, price, trade_value, brokerage, brokerage_rate,
                      settlement_amount, reference_price, status, short_sell_flag, cash_shortfall_flag, notes, pair_ref, idempotency_key,
                      instruction_id, created_by, created_by_name, created_role)
   VALUES (v_id, v_no, 'TEAM', v_team.id, v_team.broker_id, v_sec.id, v_side, v_qty, v_sec.price, v_tv, v_brk, v_rate,
-          v_amount, v_sec.price, 'PIT_PENDING', v_short, v_shortfall, left(p->>'notes', 300), left(p->>'pair_ref', 60), v_key,
+          v_amount, v_sec.price, 'EXCHANGE_PENDING', v_short, v_shortfall, left(p->>'notes', 300), left(p->>'pair_ref', 60), v_key,
           v_ins.id, nullif(a->>'id', '')::integer, jse_actor_name(a), a->>'role');
   IF v_ins.id IS NOT NULL THEN
     UPDATE instructions SET status = 'SUBMITTED', order_id = v_id, handled_at = now(), handled_by_name = jse_actor_name(a) WHERE id = v_ins.id;
     PERFORM jse_order_event(v_id, 'INSTRUCTION_RECEIVED', NULL, NULL, jsonb_build_object('username', v_ins.created_by_name, 'role', 'PARTICIPANT'),
       v_ins.instruction_no || ': ' || v_ins.side || ' ' || v_ins.quantity || ' ' || v_sec.symbol, jsonb_build_object('at', v_ins.created_at));
   END IF;
-  PERFORM jse_order_event(v_id, 'BROKER_SUBMITTED', NULL, 'PIT_PENDING', a, 'Submitted at the market price ' || jse_inr(v_sec.price),
+  PERFORM jse_order_event(v_id, 'ORDER_CREATED', NULL, 'EXCHANGE_PENDING', a, 'Order created at the market price ' || jse_inr(v_sec.price),
     jsonb_build_object('price', v_sec.price, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'instruction_no', v_ins.instruction_no));
   PERFORM jse_audit(a, 'ORDER_CREATED', 'order', v_no, v_team.id, v_id, NULL,
-    jsonb_build_object('status', 'PIT_PENDING', 'side', v_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_sec.price),
+    jsonb_build_object('status', 'EXCHANGE_PENDING', 'side', v_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_sec.price),
     jsonb_build_object('trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'settlement_amount', v_amount,
                        'broker', (SELECT code FROM brokers WHERE id = v_team.broker_id), 'instruction_no', v_ins.instruction_no));
 
@@ -667,13 +674,17 @@ BEGIN
   END IF;
   SELECT * INTO o FROM orders WHERE id = nullif(p->>'order_id', '')::bigint FOR UPDATE;
   IF NOT FOUND THEN PERFORM jse_fail('ORDER_NOT_FOUND', 'Order not found.', 404); END IF;
-  IF o.status = 'PIT_PENDING' THEN
-    PERFORM jse_fail('NOT_EXECUTED', o.order_no || ' has not been executed by the Pit Manager yet.', 409);
-  END IF;
-  IF o.status <> 'EXCHANGE_PENDING' THEN
+  IF o.status NOT IN ('EXCHANGE_PENDING', 'PIT_PENDING') THEN
     PERFORM jse_fail('ORDER_NOT_PENDING', o.order_no || ' is no longer pending at the Exchange (status: ' || replace(o.status, '_', ' ') || ').', 409);
   END IF;
   IF v_action = 'REJECT' AND v_reason IS NULL THEN v_reason := 'Rejected by Exchange'; END IF;
+  IF v_action = 'APPROVE' AND coalesce(o.reference_price, o.price) <> (SELECT price FROM securities WHERE id = o.security_id) THEN
+    PERFORM jse__mark_stale(a, o, (SELECT price FROM securities WHERE id = o.security_id), 'PRICE_CHECK_AT_EXCHANGE');
+    RETURN jsonb_build_object('success', false, 'http', 409, 'code', 'PRICE_STALE',
+      'error', 'MARKET PRICE CHANGED — ' || o.order_no || ' was created at ' || jse_inr(coalesce(o.reference_price, o.price)) ||
+               ' but the market price is now ' || jse_inr((SELECT price FROM securities WHERE id = o.security_id)) || '. It has been closed; create a fresh order at the new market price.',
+      'order', jse_order_json(o.id));
+  END IF;
 
   IF v_action = 'APPROVE' THEN
     -- the participant team sells (its own SELL, or a sale to an institution): it may sell only shares it owns.
@@ -704,7 +715,7 @@ BEGIN
          reject_reason = CASE WHEN v_to = 'EXCHANGE_REJECTED' THEN v_reason ELSE NULL END,
          updated_at = now()
   WHERE id = o.id;
-  PERFORM jse_order_event(o.id, v_to, 'EXCHANGE_PENDING', v_to, a, v_reason, NULL);
+  PERFORM jse_order_event(o.id, v_to, o.status, v_to, a, v_reason, NULL);
   PERFORM jse_audit(a, v_to, 'order', o.order_no, o.team_id, o.id, jsonb_build_object('status', 'EXCHANGE_PENDING'),
                     jsonb_build_object('status', v_to), jsonb_build_object('reason', v_reason, 'account_type', o.account_type));
   PERFORM jse_journal('EXCHANGE_DECISION', o.id, o.order_no || ' ' || v_to, jsonb_build_object('order_id', o.id, 'decision', v_to, 'reason', v_reason), a);
@@ -833,6 +844,10 @@ BEGIN
   END IF;
 
   -- independent re-validation (never trust earlier desks alone)
+  IF coalesce(o.reference_price, o.price) <> s.price AND p_source = 'BANK' THEN
+    RETURN jse__bank_reject(a, o, 'PRICE_STALE', 'MARKET PRICE CHANGED: ' || o.order_no || ' was created at the market price ' || jse_inr(coalesce(o.reference_price, o.price)) ||
+      ' but the market price is now ' || jse_inr(s.price) || '. It is not settled at an obsolete price — create a fresh order.', jsonb_build_object('market_price', s.price));
+  END IF;
   IF NOT t.active THEN RETURN jse__bank_reject(a, o, 'TEAM_INACTIVE', 'Team ' || t.code || ' is not active.', '{}'::jsonb); END IF;
   IF NOT s.active THEN RETURN jse__bank_reject(a, o, 'SECURITY_INACTIVE', s.symbol || ' is not tradable.', '{}'::jsonb); END IF;
   IF o.quantity <= 0 OR o.quantity % s.lot_size <> 0 THEN
@@ -845,7 +860,7 @@ BEGIN
   IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
     RETURN jse__bank_reject(a, o, 'ORDER_VALUE_LIMIT', 'Order value ' || jse_inr(v_tv) || ' is outside the allowed ' || jse_inr(cfg.min_order_value) || ' to ' || jse_inr(cfg.max_order_value) || '.', '{}'::jsonb);
   END IF;
-  -- the brokerage rate is fixed on the order when it is submitted (shown on the trading slip). The participant team
+  -- the brokerage rate is fixed on the order when it is created. The participant team
   -- pays it on every trade, including trades with an institutional counterparty; its broker earns the commission.
   v_rate := coalesce(o.brokerage_rate, cfg.brokerage_rate);
   v_brk := round(v_tv * v_rate, 2);
@@ -1028,7 +1043,7 @@ DECLARE
   v_key text := nullif(trim(coalesce(p->>'idempotency_key', '')), '');
   v_pair text; r1 jsonb; r2 jsonb;
 BEGIN
-  PERFORM jse_require_role(a, 'ADMIN', 'BROKER');
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER');
   IF v_key IS NULL THEN PERFORM jse_fail('IDEMPOTENCY_KEY_REQUIRED', 'Order submission is missing its request key. Reload the page and try again.', 400); END IF;
   IF jsonb_typeof(legs) IS DISTINCT FROM 'array' OR jsonb_array_length(legs) <> 2 THEN
     PERFORM jse_fail('INVALID_PAIR', 'A paired trade needs exactly one BUY leg and one SELL leg.', 400);

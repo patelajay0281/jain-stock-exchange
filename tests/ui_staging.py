@@ -1,5 +1,5 @@
 """Browser test of the DEPLOYED site (Cloudflare Pages + Neon Function), v311 workflow through the real pages:
-participant instruction → broker submission → Pit Manager execution (trading slip) → Exchange → Bank, role-aware
+Create Order (broker) → Exchange → Bank on the deployed site, role-aware navigation and every page with the real CSP.
 navigation, CSP / CORS / config routing. Sessions are injected from tokens obtained by tests/ci/run.mjs (GitHub OIDC),
 so no passwords are needed (CI sessions are exempt from the administrator password dialog on staging).
   SITE=https://v272.jse-live.pages.dev API=https://...jsestage... UI_TOKENS='{"ADMIN":"…","BROKER":"…",…}' python3 tests/ui_staging.py
@@ -75,40 +75,28 @@ with sync_playwright() as pw:
     shot(page, "staging-market")
     ctx.close()
 
-    # participant instructs its broker
+    # participant: Hatchable navigation, no order entry
     ctx, page, errors = new_page("TEAM-031")
-    page.goto(SITE + "/orders.html")
-    page.wait_for_function("document.querySelectorAll('#insSec option').length > 50", timeout=30000)
-    check("participant navigation", nav(page) == ["Market", "IPO", "My Orders", "My Trading Slips", "My Portfolio"], str(nav(page)))
-    page.select_option("#insSec", "INFY"); page.fill("#insQty", "100")
-    page.click("#insGo"); page.wait_for_selector(".toast.good", timeout=20000)
-    toast = page.inner_text(".toasts")
-    check("participant: instruction sent to the broker", "REQ-" in toast, toast[:160])
-    ins_no = [w for w in toast.replace(",", " ").split() if w.startswith("REQ-")][0] if "REQ-" in toast else ""
+    page.goto(SITE + "/portfolios.html")
+    page.wait_for_selector("#detail:not(.hidden)", timeout=30000)
+    check("participant navigation", nav(page) == ["Market", "Order Tracking", "Participant Portfolios", "Cash Ledger"], str(nav(page)))
     check("participant pages: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
-    # broker submits it
+    # broker creates the order (Create Order → Exchange)
     ctx, page, errors = new_page("BROKER")
     page.goto(SITE + "/order.html")
-    page.wait_for_selector(f"[data-load='{ins_no}']", timeout=30000)
-    page.click(f"[data-load='{ins_no}']")
+    page.wait_for_function("document.querySelectorAll('#team option').length > 1", timeout=30000)
+    page.select_option("#team", "TEAM-031")
+    page.wait_for_function("document.querySelectorAll('#sec option').length > 50", timeout=30000)
+    page.select_option("#sec", "INFY"); page.fill("#qty", "100"); page.dispatch_event("#qty", "input")
     page.click("#submit"); page.wait_for_selector("#result .done", timeout=20000)
     txt = page.inner_text("#result")
-    check("broker: order submitted from the instruction", "ORD-" in txt, txt[:160])
+    check("broker: order created → Exchange Pending", "ORD-" in txt and "exchange pending" in txt.lower(), txt[:160])
     order_no = [w for w in txt.split() if w.startswith("ORD-")][0] if "ORD-" in txt else ""
     check("broker pages: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
-    # Pit Manager executes (trading slip), Exchange approves, Bank settles
-    ctx, page, errors = new_page("PIT-01")
-    page.goto(SITE + "/pit.html")
-    page.wait_for_selector(f"#rows .txn:has-text('{order_no}') [data-exec]", timeout=30000)
-    page.locator("#rows .txn", has_text=order_no).locator("[data-exec]").click()
-    page.wait_for_function(f"document.getElementById('last').innerText.includes('{order_no}')", timeout=20000)
-    check("pit: executed with a trading slip", "TS-" in page.inner_text("#last"), page.inner_text("#last")[:160])
-    check("pit page: no JS errors", not errors, "; ".join(errors)[:300])
-    ctx.close()
     ctx, page, errors = new_page("EXCHANGE-01")
     page.goto(SITE + "/exchange.html")
     page.wait_for_selector(f"#rows .txn:has-text('{order_no}') button[data-a=APPROVE]", timeout=30000)
@@ -121,6 +109,8 @@ with sync_playwright() as pw:
     page.goto(SITE + "/bank.html")
     page.wait_for_selector(f"#rows .txn:has-text('{order_no}') button[data-a=SETTLE]", timeout=30000)
     page.locator("#rows .txn", has_text=order_no).locator("button[data-a=SETTLE]").click()
+    time.sleep(0.5)
+    if page.locator(".modal-h.review").count(): page.click(".modal [data-x=ok]")
     page.wait_for_selector(".toast.good", timeout=20000)
     check("bank: settled, market price unchanged", "settled" in page.inner_text(".toasts") and "unchanged" in page.inner_text(".toasts"), page.inner_text(".toasts")[:160])
     check("bank page: no JS errors", not errors, "; ".join(errors)[:300])
@@ -128,22 +118,19 @@ with sync_playwright() as pw:
     infy = [s for s in api("GET", "/api/market")["stocks"] if s["symbol"] == "INFY"][0]
     check("settlement does not move the market price", float(infy["price"]) == 900.0, str(infy["price"]))
 
-    # participant: trading slip and six-step tracking
+    # participant: four-step tracking
     ctx, page, errors = new_page("TEAM-031")
-    page.goto(SITE + "/slips.html")
-    page.wait_for_selector("#rows a.mono", timeout=30000)
-    check("participant: trading slip listed", order_no in page.inner_text("#rows"))
     page.goto(SITE + "/orders.html?order=" + order_no)
     page.wait_for_selector(".flow", timeout=30000)
     flow = page.inner_text(".flow").lower()
-    check("participant: six-step flow", all(k in flow for k in ["participant instruction", "broker submission", "pit manager execution", "exchange review", "bank settlement"]), flow[:200])
+    check("participant: four-step flow", all(k in flow for k in ["order created", "exchange review", "bank settlement", "market / cash updated"]), flow[:200])
     check("participant follow-up pages: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
 
     # administrator opens every page with the real CSP enforced (no eval-based waits here)
     ctx, page, errors = new_page("ADMIN", enforce_csp=True)
-    for p in ["/", "/ipo.html", "/order.html", "/pit.html", "/exchange.html", "/bank.html", "/orders.html", "/slips.html", "/institutional.html",
-              "/commissions.html", "/portfolios.html", "/admin.html", "/audit.html", "/cash.html", "/certificates.html"]:
+    for p in ["/", "/order.html", "/exchange.html", "/bank.html", "/orders.html", "/institutional.html",
+              "/commissions.html", "/portfolios.html", "/admin.html", "/audit.html", "/cash.html"]:
         errors.clear()
         page.goto(SITE + p)
         page.wait_for_load_state("networkidle", timeout=30000)

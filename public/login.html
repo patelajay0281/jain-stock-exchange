@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
   .login { max-width: 440px; margin: 36px auto; }
   .login .card-b { padding: 28px 28px 24px; }
@@ -24,20 +24,20 @@
     <form class="card" id="f" novalidate>
       <div class="card-b">
         <h1>Sign in</h1>
-        <p>For participant teams (TEAM-001 … TEAM-100) and event staff: brokers, Pit Managers, Exchange, Bank, the institutional desk, faculty and Event Admin.</p>
+        <p>For participant teams (TEAM-001 … TEAM-100) and event staff: brokers, Exchange, Bank, the institutional desk, faculty and Event Admin.</p>
         <div class="alert bad hidden" id="err" role="alert"></div>
         <div class="alert info hidden" id="info"></div>
         <div class="field"><label for="u">Username</label><input class="input lg" id="u" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required placeholder="e.g. TEAM-001 or BROKER-01"></div>
         <div class="field"><label for="p">Password</label><input class="input lg" id="p" name="password" type="password" autocomplete="current-password" required></div>
         <div style="margin-top:20px"><button class="btn primary lg block caps" id="go" type="submit">Sign in</button></div>
-        <div class="roles">The Market and IPO pages are public — no sign-in needed. Participants follow their orders, trading slips and portfolio after signing in; orders are placed through the assigned broker.</div>
+        <div class="roles">The Market page is public — no sign-in needed. Participants follow their orders and portfolio after signing in; orders are created by the assigned broker.</div>
       </div>
     </form>
   </div>
   <div class="login-timing" id="timingBox"></div>
 </main>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);

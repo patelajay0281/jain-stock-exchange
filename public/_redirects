@@ -49,8 +49,8 @@
 /cash-live-v3 /cash.html 301
 /cash-live-v4.html /cash.html 301
 /cash-live-v4 /cash.html 301
-/certificates-v2.html /certificates.html 301
-/certificates-v2 /certificates.html 301
+/certificates-v2.html /portfolios.html 301
+/certificates-v2 /portfolios.html 301
 /commissions-live-v2.html /commissions.html 301
 /commissions-live-v2 /commissions.html 301
 /commissions-live-v3.html /commissions.html 301
@@ -121,3 +121,12 @@
 /portfolios-live-v4 /portfolios.html 301
 /insights.html /admin.html#intelligence 301
 /insights /admin.html#intelligence 301
+# Pages not in the Hatchable application (v3.13): IPO buying is in Create Order, the Pit step is Create Order itself
+/ipo.html / 301
+/ipo / 301
+/pit.html /order.html 301
+/pit /order.html 301
+/slips.html /orders.html 301
+/slips /orders.html 301
+/certificates.html /portfolios.html 301
+/certificates /portfolios.html 301

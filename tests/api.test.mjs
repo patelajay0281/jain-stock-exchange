@@ -1,6 +1,6 @@
-// End-to-end API tests for the v311 rules:
-//   participant instruction → broker submission → Pit Manager execution (one trading slip) → Exchange review
-//   → Bank settlement → cash / holdings updated; prices change only through Event Admin Market News.
+// End-to-end API tests for the Hatchable rules (v3.13):
+//   Create Order (broker / Pit Manager) → Exchange review → Bank settlement → market / cash updated;
+//   prices change only through Market News (Event Admin and the Institutional desk).
 // Run against a server with known test passwords (tests/test-passwords.sql) or, on staging, GitHub OIDC sign-in:
 //   BASE=http://127.0.0.1:8788 node --test --test-concurrency=1 tests/api.test.mjs
 import { test } from "node:test";
@@ -52,7 +52,8 @@ async function submit(team, symbol, side, quantity, { as, ...extra } = {}) {
   const s = await sec(symbol);
   return POST("/api/orders", { team, symbol, side, quantity, expected_price: s.price, idempotency_key: key(), ...extra }, as || brokerOf[team]);
 }
-const execute = (id, who = "PIT-01") => POST("/api/pit", { order_id: id, action: "EXECUTE" }, who);
+// there is no separate Pit Manager step any more: a created order goes straight to the Exchange
+const execute = async (id) => ({ status: 200, data: { status: "EXCHANGE_PENDING", id } });
 const approve = (id, extra = {}) => POST("/api/exchange", { order_id: id, action: "APPROVE", ...extra }, "EXCHANGE-01");
 const settle = (id, who = "BANK-01") => POST("/api/bank", { order_id: id, action: "SETTLE" }, who);
 async function fullTrade(team, symbol, side, quantity) {
@@ -61,7 +62,7 @@ async function fullTrade(team, symbol, side, quantity) {
   const x = await execute(id); ok(x, "execute");
   const a = await approve(id, { confirm_short_sell: true }); ok(a, "approve");
   const s = await settle(id); ok(s, "settle");
-  return { id, order: o.data.order, slip: x.data.slip_no, settle: s.data };
+  return { id, order: o.data.order, settle: s.data };
 }
 
 /** a minimal .xlsx workbook (inline strings) for the Excel import tests */
@@ -98,7 +99,6 @@ test("clean event with the standard v311 rules", async () => {
   }
   ok(await POST("/api/reset-event", { confirm: "RESET", keep_allotments: false, ...A }, "ADMIN"), "reset");
   ok(await POST("/api/ipo-listing", { action: "CLEAR", ...A }, "ADMIN"));                 // IPOs list at their issue prices in this suite
-  ok(await POST("/api/ipo-applications", { action: "CLEAR", ...A }, "ADMIN"));
   ok(await POST("/api/config", { brokerage_rate: 0.005, loan_interest_rate: 0.02, initial_capital: 2000000, loan_max_principal: 500000,
     min_order_value: 0, max_order_value: 2500000, cash_rule_limit: 50000, min_buy_trades: 5, min_sell_trades: 5, max_price_move_pct: 10,
     ipo_application_hours: 24, loans_enabled: true, auto_loan_on_settlement: true, loan_repayment_required: true, auto_list_ipos: true,
@@ -136,7 +136,7 @@ test("broker details are available in advance and a participant sees only its ow
   assert.ok(own.data.identity.name && own.data.identity.name !== "TEAM-001", "team name shown");
   assert.equal((await GET("/api/portfolios", "TEAM-001")).status, 403);
   assert.equal((await GET("/api/broker-desk", "TEAM-001")).status, 403);
-  assert.equal((await GET("/api/pit", "TEAM-001")).status, 403);
+  assert.equal((await GET("/api/pit", "TEAM-001")).status, 404, "no Pit Manager desk on Hatchable");
   assert.equal((await GET("/api/exchange", "TEAM-001")).status, 403);
   assert.equal((await GET("/api/bank", "TEAM-001")).status, 403);
   assert.equal((await GET("/api/audit", "TEAM-001")).status, 403);
@@ -147,13 +147,13 @@ test("broker details are available in advance and a participant sees only its ow
 });
 
 test("security: unauthenticated and wrong-role calls are refused server-side", async () => {
-  for (const p of ["/api/portfolios", "/api/admin-state", "/api/insights", "/api/pit", "/api/audit", "/api/cash", "/api/team-names"]) assert.equal((await GET(p)).status, 401, p);
+  for (const p of ["/api/portfolios", "/api/admin-state", "/api/insights", "/api/audit", "/api/cash", "/api/team-names"]) assert.equal((await GET(p)).status, 401, p);
   assert.equal((await POST("/api/event", { action: "START" })).status, 401);
   assert.equal((await POST("/api/event", { action: "START", ...A }, "PIT-01")).status, 403);
   assert.equal((await POST("/api/bank", { order_id: 1, action: "SETTLE" }, "EXCHANGE-01")).status, 403);
-  assert.equal((await POST("/api/pit", { order_id: 1, action: "EXECUTE" }, "BROKER-01")).status, 403);
+  for (const p of ["/api/pit", "/api/slips", "/api/instructions", "/api/ipo", "/api/certificates"]) assert.equal((await GET(p, "ADMIN")).status, 404, p + " is not part of the Hatchable application");
   assert.equal((await POST("/api/exchange", { order_id: 1, action: "APPROVE" }, "PIT-01")).status, 403);
-  for (const who of ["BANK-01", "INST-01", "BROKER-01", "PIT-01", "EXCHANGE-01", "TEAM-001", "FACULTY-01"]) {
+  for (const who of ["BANK-01", "BROKER-01", "PIT-01", "EXCHANGE-01", "TEAM-001", "FACULTY-01"]) {
     assert.equal((await POST("/api/market-news", { symbol: "TCS", mood: "POSITIVE", headline: "x" }, who)).status, 403, who + " cannot publish Market News");
   }
   assert.equal((await POST("/api/config", { brokerage_rate: 0.01, ...A }, "FACULTY-01")).status, 403);
@@ -219,50 +219,14 @@ test("team names: unique IKS names, randomly but reproducibly assigned before LI
   assert.equal(me.data.identity.name, original[0]);
 });
 
-test("IPO window opens exactly 48 hours before the event start; applications, prospectus", async () => {
-  let ipo = (await GET("/api/ipo")).data;
-  assert.equal(new Date(ipo.window.opens_at).getTime(), new Date(ipo.event_start_at).getTime() - 48 * 3600e3, "opens 48 h before the event start");
-  // open the window now: event start in 47 hours
-  const start = new Date(Date.now() + 47 * 3600e3).toISOString();
-  ok(await POST("/api/config", { event_start_at: start, ...A }, "ADMIN"));
-  ipo = (await GET("/api/ipo")).data;
-  assert.equal(ipo.window.phase, "OPEN");
-  assert.equal(new Date(ipo.window.opens_at).getTime(), new Date(start).getTime() - 48 * 3600e3);
-  assert.ok(ipo.ipos.every((i) => i.stage === "APPLICATION_OPEN"), JSON.stringify(ipo.ipos.map((i) => i.stage)));
-  assert.equal(ipo.ipos.length, 4); assert.ok(ipo.ipos.every((i) => i.lot_size === 50 && num(i.issue_price) === ISSUE[i.symbol]));
-  // prospectus: public read, administrator edit (organiser content only; the test restores what it touches)
-  const target = ipo.ipos.find((i) => !i.prospectus.has_document && !i.prospectus.document_url &&
-    ["company_description", "issue_details", "business_overview", "financial_information", "risk_factors", "use_of_proceeds", "promoters_management", "other_information"].every((f) => !i.prospectus[f]));
-  if (target) {
-    const pdf = Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n").toString("base64");
-    ok(await POST("/api/ipo-prospectus", { ipo: target.symbol, company_description: "Test description (automated test)", document: { name: "test.pdf", data_base64: pdf } }, "ADMIN"));
-    assert.equal((await POST("/api/ipo-prospectus", { ipo: target.symbol, company_description: "x" }, "TEAM-001")).status, 403);
-    const pub = (await GET("/api/ipo")).data.ipos.find((i) => i.symbol === target.symbol);
-    assert.equal(pub.prospectus.company_description, "Test description (automated test)"); assert.equal(pub.prospectus.has_document, true);
-    const doc = await GET("/api/ipo-document?symbol=" + target.symbol);
-    assert.equal(doc.status, 200); assert.equal(Buffer.from(doc.data).subarray(0, 5).toString(), "%PDF-");
-    assert.equal((await POST("/api/ipo-prospectus", { ipo: target.symbol, document: { name: "x.pdf", data_base64: Buffer.from("not a pdf").toString("base64") } }, "ADMIN")).data.code, "NOT_A_PDF");
-    ok(await POST("/api/ipo-prospectus", { ipo: target.symbol, company_description: "", remove_document: true }, "ADMIN"), "restore the prospectus");
-    assert.equal((await GET("/api/ipo-document?symbol=" + target.symbol)).status, 404);
-  }
-  // participant applications (IPO lots are separate from the CMS stock lots)
-  const ap = await POST("/api/ipo-applications", { ipo: "VOLTRA", lots: 2 }, "TEAM-001");
-  ok(ap); assert.equal(num(ap.data.application.amount), 2 * 50 * 890);
-  ok(await POST("/api/ipo-applications", { ipo: "IPO-02", lots: 1 }, "TEAM-002"));
-  assert.equal((await POST("/api/ipo-applications", { ipo: "VOLTRA", lots: 1000 }, "TEAM-001")).data.code, "APPLICATION_CASH");
-  const mine = (await GET("/api/ipo-mine", "TEAM-001")).data.items.find((i) => i.symbol === "VOLTRA");
-  assert.equal(mine.application.lots, 2);
-  const sum = (await GET("/api/ipo-applications", "ADMIN")).data.summary.find((x) => x.symbol === "VOLTRA");
-  assert.equal(sum.teams, 1); assert.equal(sum.lots, 2);
-  // with portal applications, an allotment cannot exceed what the team applied for
-  const over = await POST("/api/ipo-allotments", { rows: [{ team: "TEAM-001", ipo: "VOLTRA", lots: 3 }], dry_run: true }, "ADMIN");
-  assert.equal(over.status, 400); assert.equal(over.data.code, "ALLOTMENT_ERRORS");
-  // window not open yet (event start 72 h away) → applications refused
-  ok(await POST("/api/config", { event_start_at: new Date(Date.now() + 72 * 3600e3).toISOString(), ...A }, "ADMIN"));
-  const closed = await POST("/api/ipo-applications", { ipo: "VOLTRA", lots: 1 }, "TEAM-001");
-  assert.equal(closed.status, 409); assert.equal(closed.data.code, "IPO_WINDOW_CLOSED");
-  ok(await POST("/api/config", { event_start_at: S.origStart, ...A }, "ADMIN"), "restore the event start");
-  ok(await POST("/api/ipo-applications", { action: "CLEAR", ...A }, "ADMIN"));
+test("IPO master: four IPOs at their issue prices, lots of 50, shares on offer; no IPO application portal", async () => {
+  const st = (await GET("/api/admin-state", "ADMIN")).data;
+  assert.deepEqual(st.ipo_admin.map((i) => i.ipo_code), ["IPO-01", "IPO-02", "IPO-03", "IPO-04"]);
+  assert.deepEqual(Object.fromEntries(st.ipo_admin.map((i) => [i.symbol, num(i.price)])), ISSUE);
+  assert.deepEqual(Object.fromEntries(st.ipo_admin.map((i) => [i.symbol, i.offered])), { VOLTRA: 100000, BLUEAI: 80000, SHREEB: 120000, AAROGYA: 60000 });
+  assert.ok(st.ipo_admin.every((i) => i.remaining === i.offered && !i.listed));
+  assert.equal((await GET("/api/ipo-applications", "ADMIN")).status, 404);
+  assert.equal((await POST("/api/ipo-applications", { ipo: "VOLTRA", lots: 1 }, "TEAM-001")).status, 404);
 });
 
 test("Excel / CSV imports: allotments (Team, IPO, Lots, Shares, Amount), teams and brokers — all-or-nothing", async () => {
@@ -327,35 +291,18 @@ test("START (administrator password) lists all four IPOs once; CMS INDEX 54 comp
   assert.equal(st.consistency.ok, true, JSON.stringify(st.consistency));
 });
 
-test("a participant cannot place an exchange order; it instructs its assigned broker", async () => {
+test("a participant cannot create an order (self entry disabled); its broker creates it → Exchange Pending", async () => {
   const direct = await POST("/api/orders", { team: "TEAM-001", symbol: "INFY", side: "BUY", quantity: 100, idempotency_key: key() }, "TEAM-001");
   assert.equal(direct.status, 403); assert.equal(direct.data.code, "PARTICIPANT_ENTRY_DISABLED");
-  const ins = await POST("/api/instructions", { symbol: "INFY", side: "BUY", quantity: 100, note: "Buy before the results", idempotency_key: key() }, "TEAM-001");
-  ok(ins); S.ins = ins.data.instruction.instruction_no;
-  assert.match(S.ins, /^REQ-\d{6}$/);
-  const desk = (await GET("/api/broker-desk", brokerOf["TEAM-001"])).data;
-  assert.ok(desk.instructions.some((i) => i.instruction_no === S.ins && i.status === "OPEN"));
-  const other = BROKERS.find((b) => b !== brokerOf["TEAM-001"]);
-  assert.ok(!(await GET("/api/broker-desk", other)).data.instructions.some((i) => i.instruction_no === S.ins), "other brokers do not see it");
-  const steal = await POST("/api/orders", { instruction_no: S.ins, idempotency_key: key() }, other);
-  assert.equal(steal.status, 403); assert.equal(steal.data.code, "NOT_YOUR_TEAM");
-  const mismatch = await POST("/api/orders", { instruction_no: S.ins, quantity: 50, idempotency_key: key() }, brokerOf["TEAM-001"]);
-  assert.equal(mismatch.data.code, "INSTRUCTION_MISMATCH");
-  const o = await POST("/api/orders", { instruction_no: S.ins, expected_price: 900, idempotency_key: key() }, brokerOf["TEAM-001"]);
-  ok(o, "broker submits the instruction");
-  assert.equal(o.data.order.status, "PIT_PENDING"); assert.equal(num(o.data.order.price), 900); assert.equal(o.data.order.instruction_no, S.ins);
-  assert.equal(num(o.data.order.brokerage_rate), 0.005);
-  assert.match(o.data.order.order_no, /^ORD-\d{6}$/);
+  const o = await POST("/api/orders", { team: "TEAM-001", symbol: "INFY", side: "BUY", quantity: 100, expected_price: 900, idempotency_key: key() }, brokerOf["TEAM-001"]);
+  ok(o, "broker creates the order");
+  assert.equal(o.data.order.status, "EXCHANGE_PENDING", "Create Order → Exchange review (no Pit Manager step)");
+  assert.equal(num(o.data.order.price), 900); assert.equal(num(o.data.order.brokerage_rate), 0.005);
+  assert.match(o.data.order.order_no, /^ORD-\d+$/, "Hatchable order numbers: ORD-<n>");
   S.o1 = o.data.order;
-  const list = (await GET("/api/instructions", "TEAM-001")).data;
-  assert.equal((list.instructions || list.rows || []).find((i) => i.instruction_no === S.ins).status, "SUBMITTED");
-  assert.equal((await POST("/api/orders", { instruction_no: S.ins, idempotency_key: key() }, brokerOf["TEAM-001"])).data.code, "INSTRUCTION_NOT_OPEN");
-  // the participant can cancel an open instruction; the broker can decline one (with a reason)
-  const i2 = await POST("/api/instructions", { symbol: "TCS", side: "BUY", quantity: 50, idempotency_key: key() }, "TEAM-001"); ok(i2);
-  ok(await POST("/api/instructions", { action: "CANCEL", instruction_no: i2.data.instruction.instruction_no }, "TEAM-001"));
-  const i3 = await POST("/api/instructions", { symbol: "TCS", side: "BUY", quantity: 50, idempotency_key: key() }, "TEAM-001"); ok(i3);
-  assert.equal((await POST("/api/instructions", { action: "DECLINE", instruction_no: i3.data.instruction.instruction_no }, brokerOf["TEAM-001"])).data.code, "REASON_REQUIRED");
-  ok(await POST("/api/instructions", { action: "DECLINE", instruction_no: i3.data.instruction.instruction_no, reason: "Price moved; call me" }, brokerOf["TEAM-001"]));
+  // the Pit Manager records trades in Create Order for any team
+  const pitDesk = (await GET("/api/broker-desk", "PIT-01")).data;
+  assert.equal(pitDesk.teams.length, 100); assert.equal(pitDesk.all_teams, true);
 });
 
 test("a broker sees only its assigned teams and cannot submit for another broker's team", async () => {
@@ -389,42 +336,23 @@ test("submission is at the canonical market price; validation; idempotency; no p
   assert.equal(a.data.order.id, b.data.order.id); assert.equal(b.data.replayed, true);
   S.o2 = a.data.order;
   assert.equal(await price("TCS"), 1864); assert.equal(num((await detail("TEAM-002")).team.cash), 2000000);
-  // clean-up: the Pit Manager rejects the TCS order (a reason is required)
-  assert.equal((await POST("/api/pit", { order_id: manual.data.order.id, action: "REJECT" }, "PIT-01")).data.code, "REASON_REQUIRED");
-  const rj = await POST("/api/pit", { order_id: manual.data.order.id, action: "REJECT", reason: "Participant withdrew at the pit" }, "PIT-01");
-  ok(rj); assert.equal(rj.data.status, "PIT_REJECTED");
+  // clean-up: the Exchange rejects the TCS order with a reason
+  const rj = await POST("/api/exchange", { order_id: manual.data.order.id, action: "REJECT", reason: "Participant withdrew" }, "EXCHANGE-01");
+  ok(rj); assert.equal(rj.data.status, "EXCHANGE_REJECTED");
 });
 
-test("Pit Manager execution: one immutable trading slip per order", async () => {
-  const q = (await GET("/api/pit", "PIT-01")).data;
-  assert.ok(q.pending.some((o) => o.id === S.o1.id && o.stale === false));
-  assert.equal((await approve(S.o1.id)).data.code, "NOT_EXECUTED", "the Exchange cannot act before execution");
-  const x = await execute(S.o1.id);
-  ok(x); assert.equal(x.data.status, "EXCHANGE_PENDING"); assert.match(x.data.slip_no, /^TS-\d{6}$/);
-  S.slip1 = x.data.slip_no;
-  const again = await execute(S.o1.id, "PIT-02");
-  assert.equal(again.status, 409); assert.equal(again.data.code, "ORDER_NOT_PENDING"); assert.ok(again.data.error.includes(S.slip1));
-  // two Pit Managers pressing EXECUTE together on the same order: exactly one slip
-  const res = await Promise.all(Array.from({ length: 6 }, (_, i) => execute(S.o2.id, i % 2 ? "PIT-02" : "PIT-01")));
+test("orders reach the Exchange queue directly; a concurrent double approval approves once", async () => {
+  const ex = (await GET("/api/exchange", "EXCHANGE-01")).data;
+  assert.ok(ex.pending.some((o) => o.id === S.o1.id) && ex.pending.some((o) => o.id === S.o2.id));
+  const res = await Promise.all(Array.from({ length: 6 }, () => approve(S.o2.id)));
   assert.equal(res.filter((r) => r.status === 200).length, 1, res.map((r) => r.status + ":" + (r.data.code || "")).join(","));
-  const slip = (await GET("/api/slip?order_no=" + S.o2.order_no, "ADMIN")).data.slip;
-  assert.equal(slip.order_no, S.o2.order_no);
-  const all = (await GET("/api/slips?q=" + S.o2.order_no, "ADMIN")).data;
-  assert.equal(all.total, 1, "one slip for the order");
-  // the participant sees its own slip; another team does not
-  const s1 = (await GET("/api/slip?slip_no=" + S.slip1, "TEAM-001")).data.slip;
-  assert.equal(s1.team, "TEAM-001"); assert.equal(s1.broker, brokerOf["TEAM-001"]); assert.equal(num(s1.price), 900); assert.equal(s1.quantity, 100);
-  assert.equal(num(s1.trade_value), 90000); assert.equal(num(s1.brokerage_rate), 0.005); assert.equal(num(s1.brokerage), 450); assert.equal(num(s1.settlement_value), 90450);
-  assert.equal(s1.executed_by, "PIT-01"); assert.equal(s1.instruction_no, S.ins); assert.equal(s1.exchange_status, "PENDING"); assert.equal(s1.bank_status, "WAITING");
-  assert.equal((await GET("/api/slip?slip_no=" + S.slip1, "TEAM-002")).status, 403);
-  assert.ok((await GET("/api/slips", "TEAM-001")).data.rows.every((r) => r.team === "TEAM-001"));
 });
 
 test("Exchange receives the executed order; the Bank settles it — cash, holdings, brokerage; the price is not touched", async () => {
   const before = await sec("INFY"), idx0 = (await market()).index;
   const ex = (await GET("/api/exchange", "EXCHANGE-01")).data;
   const row = ex.pending.find((o) => o.id === S.o1.id);
-  assert.ok(row, "the executed order is in the Exchange queue"); assert.equal(row.slip_no, S.slip1); assert.equal(row.executed_by, "PIT-01");
+  assert.ok(row, "the created order is in the Exchange queue");
   const a = await approve(S.o1.id); ok(a); assert.equal(a.data.status, "EXCHANGE_APPROVED");
   assert.ok((await GET("/api/bank", "BANK-01")).data.pending.some((o) => o.id === S.o1.id), "the Bank receives Exchange-approved orders");
   const s = await settle(S.o1.id); ok(s);
@@ -436,15 +364,13 @@ test("Exchange receives the executed order; the Bank settles it — cash, holdin
   const after = await sec("INFY"), idx1 = (await market()).index;
   assert.equal(num(after.price), num(before.price)); assert.equal(num(after.previous_price), num(before.previous_price));
   assert.equal(num(idx1.value), num(idx0.value), "settlement never moves the market");
-  // the same transaction everywhere: tracking (six steps), slip, commission, cash ledger, audit log
+  // the same transaction everywhere: tracking (four steps), commission, cash ledger, audit log
   const det = (await GET("/api/order?id=" + S.o1.id, "TEAM-001")).data;
-  assert.deepEqual(det.flow.map((f) => f.step), ["INSTRUCTION", "BROKER_SUBMISSION", "PIT_EXECUTION", "EXCHANGE_REVIEW", "BANK_SETTLEMENT", "UPDATES"]);
+  assert.deepEqual(det.flow.map((f) => f.step), ["ORDER_CREATED", "EXCHANGE_REVIEW", "BANK_SETTLEMENT", "UPDATES"]);
   assert.ok(det.flow.every((f) => f.state === "DONE" && f.at), JSON.stringify(det.flow.map((f) => f.step + ":" + f.state)));
   assert.equal(det.assessment.counts, true);
   const trk = (await GET("/api/orders", "TEAM-001")).data;
-  assert.ok(trk.rows.find((o) => o.id === S.o1.id && o.status === "BANK_SETTLED" && o.slip_no === S.slip1));
-  const slip = (await GET("/api/slip?slip_no=" + S.slip1, "TEAM-001")).data.slip;
-  assert.equal(slip.exchange_status, "APPROVED"); assert.equal(slip.bank_status, "SETTLED");
+  assert.ok(trk.rows.find((o) => o.id === S.o1.id && o.status === "BANK_SETTLED"));
   const com = (await GET("/api/commissions?page_size=50", "ADMIN")).data;
   const c = com.transactions.find((t) => t.order_no === S.o1.order_no);
   assert.ok(c); assert.equal(c.broker, brokerOf["TEAM-001"]); assert.equal(num(c.amount), 450); assert.equal(num(c.rate), 0.005); assert.equal(c.status, "SETTLED");
@@ -452,13 +378,12 @@ test("Exchange receives the executed order; the Bank settles it — cash, holdin
   const led = (await GET("/api/cash?team=TEAM-001", "ADMIN")).data.rows.filter((x) => x.order_no === S.o1.order_no);
   assert.deepEqual(led.map((x) => x.type).sort(), ["BROKERAGE", "BUY"]);
   const aud = (await GET("/api/audit?page_size=100&q=" + S.o1.order_no, "ADMIN")).data.rows.map((x) => x.action);
-  for (const want of ["ORDER_CREATED", "PIT_EXECUTED", "EXCHANGE_APPROVED", "BANK_SETTLED"]) assert.ok(aud.includes(want), want + " in " + aud.join(","));
-  const insAudit = (await GET("/api/audit?action=INSTRUCTION_CREATED&q=" + S.ins, "ADMIN")).data.rows;
-  assert.equal(insAudit.length, 1);
+  for (const want of ["ORDER_CREATED", "EXCHANGE_APPROVED", "BANK_SETTLED"]) assert.ok(aud.includes(want), want + " in " + aud.join(","));
+  const tab = (await GET("/api/audit?group=EXCHANGE&page_size=200", "ADMIN")).data.rows;
+  assert.ok(tab.length && tab.every((x) => /EXCHANGE|SHORT_SELLING_APPROVED/.test(x.action) || x.role === "EXCHANGE"), "Exchange tab");
 });
 
 test("duplicate settlement is blocked (sequential and concurrent)", async () => {
-  ok(await approve(S.o2.id));
   const res = await Promise.all(Array.from({ length: 12 }, () => settle(S.o2.id)));
   assert.equal(res.filter((r) => r.status === 200 && r.data.status === "BANK_SETTLED").length, 1, res.map((r) => r.status + ":" + (r.data.code || "")).join(","));
   assert.ok(res.filter((r) => r.status === 409).length === 11);
@@ -549,23 +474,26 @@ test("loans: shortfall-only automatic draw, 2% interest, ₹5 L limit, interest 
   assert.equal((await POST("/api/loan", { team: "TEAM-008", action: "REPAY", amount: 10 }, "BANK-01")).data.code, "NO_LOAN");
 });
 
-test("stale-price rule: Market News after submission makes the order PRICE STALE; settlement never writes a price", async () => {
+test("market price changed: Market News closes open orders created at the old price; settlement never writes a price", async () => {
   const o = await submit("TEAM-009", "HDFCBANK", "BUY", 50);
   ok(o); assert.equal(num(o.data.order.price), 719);
   const n = await POST("/api/market-news", { symbol: "HDFCBANK", mood: "VERY_SEVERE", headline: "HDFC Bank faces a regulatory penalty" }, "ADMIN");
   ok(n); assert.ok(n.data.stale_orders >= 1);
   const det = (await GET("/api/order?id=" + o.data.order.id, "ADMIN")).data.order;
-  assert.equal(det.status, "PIT_REJECTED"); assert.equal(det.reject_code, "PRICE_STALE");
-  const x = await execute(o.data.order.id);
-  assert.equal(x.status, 409, "a stale order cannot be executed at the old price");
-  // an order already executed keeps its executed price; Market News in between does not change it
+  assert.equal(det.status, "EXCHANGE_REJECTED"); assert.equal(det.reject_code, "PRICE_STALE"); assert.match(det.reject_reason, /^MARKET PRICE CHANGED/);
+  assert.equal((await approve(o.data.order.id)).status, 409, "a closed order cannot be approved");
+  // an Exchange-approved order is closed at the Bank stage too — never settled at an obsolete price
   const e = await submit("TEAM-010", "SBIN", "BUY", 50);
-  ok(e); ok(await execute(e.data.order.id));
+  ok(e); ok(await approve(e.data.order.id));
   const n2 = await POST("/api/market-news", { symbol: "SBIN", mood: "POSITIVE", headline: "SBI posts record profit" }, "ADMIN");
-  ok(n2); assert.equal(n2.data.stale_orders, 0, "executed orders are not stale");
-  ok(await approve(e.data.order.id));
-  const s = await settle(e.data.order.id);
-  assert.equal(s.data.status, "BANK_SETTLED"); assert.equal(num(s.data.trade_value), 50 * 962);
+  ok(n2); assert.equal(n2.data.stale_orders, 1);
+  const ed = (await GET("/api/order?id=" + e.data.order.id, "ADMIN")).data.order;
+  assert.equal(ed.status, "BANK_REJECTED"); assert.equal(ed.reject_code, "PRICE_STALE");
+  // a fresh order at the new price settles at it
+  const f = await submit("TEAM-010", "SBIN", "BUY", 50);
+  ok(f); ok(await approve(f.data.order.id));
+  const s = await settle(f.data.order.id);
+  assert.equal(s.data.status, "BANK_SETTLED"); assert.equal(num(s.data.trade_value), round2(50 * num(n2.data.new_price)));
   assert.equal(await price("SBIN"), num(n2.data.new_price), "the Bank does not create a competing price change");
   const ph = (await GET("/api/export?sheet=prices&format=json", "ADMIN")).data.rows;
   assert.ok(ph.length > 0 && ph.every((r) => ["MARKET_NEWS", "LISTING", "UNDO", "REDO"].includes(r[2])), "no price history from trades");
@@ -599,12 +527,11 @@ test("institutional counterparty: participant buys at market +2%, sells at marke
   // the institution BUYS from TEAM-001 → TEAM-001 SELLS 50 INFY at 900 × 0.98 = ₹882 (a typed price is ignored)
   const o = await POST("/api/institutional-order", { counterparty_team: "TEAM-001", symbol: "INFY", side: "BUY", quantity: 50, price: 1, expected_price: p, idempotency_key: key() }, "INST-01");
   ok(o); const ord = o.data.order;
-  assert.equal(ord.status, "PIT_PENDING"); assert.match(ord.order_no, /^INS-/); assert.equal(ord.team_side, "SELL");
+  assert.equal(ord.status, "EXCHANGE_PENDING"); assert.match(ord.order_no, /^INS-\d+$/); assert.equal(ord.team_side, "SELL");
   assert.equal(num(ord.price), round2(p * 0.98)); assert.equal(num(ord.reference_price), p);
   assert.equal(num(ord.trade_value), round2(50 * p * 0.98)); assert.equal(num(ord.brokerage), round2(50 * p * 0.98 * 0.005));
   assert.equal(num(ord.brokerage_rate), 0.005); assert.equal(ord.broker, brokerOf["TEAM-001"], "the team's own broker handles it");
   assert.equal(num(ord.settlement_amount), round2(50 * p * 0.98 * 0.995));
-  const x = await execute(ord.id); ok(x, "the reference market price is unchanged, so the order is not stale"); assert.ok(x.data.slip_no);
   ok(await approve(ord.id));
   const cashBefore = num((await detail("TEAM-001")).team.cash);
   const s = await settle(ord.id);
@@ -647,7 +574,9 @@ test("institutional counterparty: participant buys at market +2%, sells at marke
   ok(st);
   ok(await POST("/api/market-news", { symbol: "NTPC", mood: "POSITIVE", headline: "NTPC commissions a new plant" }, "ADMIN"));
   const sd = (await GET("/api/order?id=" + st.data.order.id, "ADMIN")).data.order;
-  assert.equal(sd.status, "PIT_REJECTED"); assert.equal(sd.reject_code, "PRICE_STALE");
+  assert.equal(sd.status, "EXCHANGE_REJECTED"); assert.equal(sd.reject_code, "PRICE_STALE");
+  // the Institutional desk can publish Market News too (as on Hatchable)
+  ok(await POST("/api/market-news", { symbol: "NTPC", mood: "NORMAL" }, "INST-01"), "institutional Market News");
   const aud = (await GET("/api/audit?action=INSTITUTIONAL_ORDER_SUBMITTED&q=" + ord.order_no, "ADMIN")).data.rows[0];
   assert.ok(aud && num(aud.details.spread_pct) === 2 && num(aud.details.market_price) === p, JSON.stringify(aud));
   const trk = (await GET("/api/orders?page_size=100", "INST-01")).data;
@@ -676,8 +605,8 @@ test("assessment counts only settled listed-stock BUY and SELL trades; exactly o
   assert.equal(p.teams.filter((t) => t.award === "WINNER").length, 1); assert.equal(p.teams.filter((t) => t.award === "RUNNER_UP").length, 1);
   assert.equal(p.winner.code, eligible[0].code); assert.equal(p.runner_up.code, eligible[1].code);
   assert.equal(p.winner.code, "TEAM-012");
-  const cert = (await GET("/api/certificates", "ADMIN")).data.ranking;
-  assert.equal(cert.filter((r) => r.award === "WINNER").length, 1); assert.equal(cert.filter((r) => r.award === "RUNNER_UP").length, 1);
+  const win = (await GET("/api/export?sheet=winner&format=json", "ADMIN")).data;
+  assert.ok(win.rows.length >= 2, "Winner / Net Worth export");
 });
 
 test("undo / redo: settlement restores cash and holdings (never prices); Market News undo restores the price", async () => {
@@ -732,8 +661,6 @@ test("ledger, commissions and exports reconcile with the live records", async ()
   const trk = (await GET("/api/tracking?page_size=10", "ADMIN")).data.kpis;
   const orders = (await GET("/api/export?sheet=orders&format=json", "ADMIN")).data.rows;
   assert.equal(orders.length, trk.orders);
-  const slips = (await GET("/api/export?sheet=slips&format=json", "ADMIN")).data.rows;
-  assert.equal(slips.length, trk.executed);
 });
 
 test("CLOSE (password): ₹50K closing cash rule decides eligibility; Winner and Runner-Up final", async () => {
@@ -764,19 +691,16 @@ test("FINALIZE and the final exports: Event Excel, Event JSON, Winner CSV, IPO a
   assert.equal(x.status, 200); assert.ok(x.headers.get("content-type").includes("spreadsheetml"));
   const files = unzipSync(x.data);
   const ws = Object.keys(files).filter((k) => /^xl\/worksheets\/sheet\d+\.xml$/.test(k));
-  assert.equal(ws.length, 30, "every report sheet in one workbook");
+  assert.equal(ws.length, 27, "every report sheet in one workbook");
   const j = await GET("/api/export-event-json", "ADMIN");
   assert.equal(j.status, 200);
-  for (const k of ["winner", "assessment", "teams", "broker_roster", "slips", "instructions", "commission", "ipo_allotments", "ipo_applications", "news", "audit"]) assert.ok(j.data.sheets[k], k);
+  for (const k of ["winner", "assessment", "teams", "broker_roster", "commission", "ipo_allotments", "news", "audit"]) assert.ok(j.data.sheets[k], k);
   const csv = await GET("/api/export?sheet=winner", "ADMIN", { text: true });
   assert.equal(csv.status, 200); assert.ok(csv.data.includes("WINNER") && csv.data.includes("RUNNER-UP"));
   const allot = (await GET("/api/export?sheet=ipo_allotments&format=json", "ADMIN")).data;
   assert.deepEqual(allot.columns.slice(0, 5), ["Team", "IPO", "Lots", "Shares", "Amount"]);
   assert.ok(allot.rows.some((r) => r[0] === "TEAM-005" && r[1] === "VOLTRA" && r[2] === 2 && r[3] === 100 && num(r[4]) === 89000));
   tok["TEAM-012"] = await signIn("TEAM-012");
-  const sc = (await GET("/api/share-certificates?team=TEAM-001", "TEAM-012")).data;          // a participant always gets its own team
-  assert.equal(sc.team.code, "TEAM-012"); assert.ok(sc.certificates.some((c) => c.symbol === "TITAN" && c.quantity === 550));
-  assert.equal((await GET("/api/share-certificates?team=TEAM-012", brokerOf["TEAM-001"] === brokerOf["TEAM-012"] ? BROKERS.find((b) => b !== brokerOf["TEAM-012"]) : brokerOf["TEAM-001"])).status, 403);
 });
 
 test("reset restores the clean starting state, keeps IPO allotments, returns IPOs to the pre-market stage", async () => {
@@ -790,7 +714,7 @@ test("reset restores the clean starting state, keeps IPO allotments, returns IPO
   assert.ok(m.ipos.every((i) => !i.listed)); assert.equal(m.index.components, 50); assert.equal(num(m.index.change_pct), 0);
   assert.deepEqual(m.board.ipo_market, ["VOLTRA", "BLUEAI", "SHREEB", "AAROGYA"]);
   assert.equal((await GET("/api/tracking", "ADMIN")).data.kpis.orders, 0);
-  assert.equal((await GET("/api/slips", "ADMIN")).data.total, 0);
+  assert.equal((await GET("/api/tracking", "ADMIN")).data.kpis.orders, 0);
   assert.equal((await GET("/api/institutional-portfolio", "ADMIN")).data.stats.transactions, 0);
 });
 

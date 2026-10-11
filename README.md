@@ -1,10 +1,12 @@
-# JAIN STOCK EXCHANGE (JSE) — v3.12 (branch v272)
+# JAIN STOCK EXCHANGE (JSE) — v3.13 (branch v272)
 
 Educational stock-market trading simulation for **DALAL STREET 2026** (JAIN (Deemed-to-be University), CMS Business School):
-100 participant teams, 50 stocks, 4 IPOs, 10 brokers, an institutional counterparty desk, and a Broker → Pit Manager → Exchange → Bank
-workflow with one trading slip per executed order, the CMS 50 index, Market News as the only price engine, portfolios, loans, the
+100 participant teams, 50 stocks, 4 IPOs, 10 brokers, an institutional counterparty desk, and the Hatchable
+Create Order → Exchange → Bank workflow, the CMS 50 index, Market News as the only price engine, portfolios, loans, the
 5 BUY + 5 SELL assessment, the ₹50,000 closing cash criterion, Winner and Runner-Up, audit trail, cash ledger, broker commission,
-share certificates, reports and Excel export.
+reports and Excel export. Since v3.13 the site has exactly the 11 pages of the live Hatchable application (Market, Create Order,
+Exchange Settlement, Bank Settlement, Order Tracking, Institutional Investors, Broker Commission, Participant Portfolios, Event Admin,
+Audit Log, Cash Ledger); the earlier IPO, Pit Manager, Trading Slips and Certificates pages redirect to their Hatchable equivalents.
 
 The look follows the existing Hatchable application: Inter, a white horizontal tab bar with the active tab in dark navy, navy
 hero bands on the desks, white cards on #F4F6F9, primary blue #155EEF, green #16803C / red #C62828 for gains and losses.
@@ -15,7 +17,7 @@ holdings, brokerage, prices, loans and the winner are never calculated in the br
 ## Architecture
 
 ```
-Browser (16 static pages, Cloudflare Pages)
+Browser (12 static pages incl. sign-in, Cloudflare Pages)
    │  HTTPS + JSON, bearer session token, polling with ETag (market every 2.5 s while visible)
    ▼
 JSE API — Neon Function (Node.js 24, TypeScript bundle, per-process caches, rate limits)
@@ -59,7 +61,7 @@ npm run build               # bundles the API to backend/dist/app.mjs
 npm run dev                 # http://127.0.0.1:8788 — serves public/ and /api/* (migrations + seed run on first request)
 npm run db:local -- testpw  # LOCAL ONLY: known test passwords (tests/test-passwords.sql)
 npm test                    # API end-to-end suites (43 tests)
-npm run test:ui             # browser smoke test of every page (80 checks, screenshots in .local/shots)
+npm run test:ui             # browser smoke test of every page (75 checks, screenshots in .local/shots)
 ORDERS=8000 npm run stress  # 8,000-order stress test + integrity audit
 RPS=850 DURATION=60 npm run load
 ```
@@ -111,13 +113,12 @@ No password is stored in the repository. Every account starts with a random unkn
 Event day timing (shown on the Market, IPO and sign-in pages): **12:45 PM onwards** participant lobby · **by 1:00 PM** Guest of Honour ·
 **1:15 PM SHARP** event begins, IPO reveal, market goes live.
 
-Before the event: the IPO application window opens exactly 48 hours before the event start (24 hours long). After it closes, the organisers
-run the allotment and load it (Event Admin → IPO allotments, `team,ipo,lots`), optionally save confidential listing prices, issue passwords
+Before the event: the organisers run the IPO allotment and load it (Event Admin → IPO allotments, `team,ipo,lots`), optionally save confidential listing prices, issue passwords
 per role, then **Reset** with *Keep loaded IPO allotments* after the rehearsal. Put `https://…/?tv=1` on the projector.
 
 1:15 PM: **START EVENT** — every IPO lists (saved price, otherwise its issue price) and joins the CMS 50 (50 → 54 components); orders open.
-Participants tell their broker → the broker uses **Create Order** → the **Pit Manager** executes it (one trading slip) → **Exchange** approves →
-**Bank** settles. Market News from Event Admin is the only way prices move. **PAUSE · SETTLEMENT ONLY** stops new orders while queues clear.
+Participants tell their broker → the broker (or a Pit Manager, for any team) uses **Create Order** → **Exchange** approves →
+**Bank** settles. Market News (Event Admin or the Institutional desk) is the only way prices move. **PAUSE · SETTLEMENT ONLY** stops new orders while queues clear.
 At the end: **CLOSE EVENT** (the ₹50,000 closing cash criterion is applied) → **Reject open orders** (or settle them) → **FINALIZE EVENT** →
 *Final Event Excel* and certificates. Mistakes: *Undo last settlement* (only when safe), or the journal row's Undo.
 
@@ -126,16 +127,16 @@ At the end: **CLOSE EVENT** (the ₹50,000 closing cash criterion is applied) �
 | Rule | Value |
 |---|---|
 | Capital | ₹20,00,000 per team; loan sanctioned up to ₹5,00,000 (2% interest per draw, drawn automatically by the Bank only for the exact shortfall of a BUY) |
-| Orders | Placed only by the team's broker, always at the current market price; quantity in multiples of 50; one trading slip per executed order |
-| Stale price | An order waiting for the Pit Manager whose market price changed is PRICE STALE and cannot be executed |
-| Prices move only on | Market News (random % inside the severity band, max ±10%), IPO listing, and their undo / redo — never on orders or settlement |
+| Orders | Created in Create Order by the team's broker (Pit Managers: any team), always at the current market price; quantity in multiples of 50; participant self entry disabled |
+| Market price changed | An open order (at the Exchange or Bank) whose market price changed is closed as MARKET PRICE CHANGED — never settled at an obsolete price |
+| Prices move only on | Market News (random % inside the severity band, max ±10%, priced to the paisa), IPO listing, and their undo / redo — never on orders or settlement |
 | Brokerage | 0.50% on every settled trade (shown as “0.50%”): BUY pays trade value + brokerage, SELL receives trade value − brokerage; earned by the team's broker |
 | Institutional counterparty | Participant BUY from the institution = market + 2%, SELL to it = market − 2%; normal workflow and brokerage; no institutional cash or holdings restriction |
 | Assessment | At least 5 settled BUY and 5 settled SELL trades (IPO allotments, pending or rejected orders do not count) |
 | ₹50,000 closing cash criterion | At the close, the cash counted against a team's starting capital must not exceed ₹50,000 — a closing eligibility audit condition, not a starting requirement, not a minimum cash buffer and not a permanent floor (the old ₹20,000 buffer does not apply); trading profit cash is not counted |
 | Winner | Exactly one Winner and one Runner-Up: highest and second-highest Net Worth (cash + Σ quantity × closing price) among eligible teams; ties → lower team code |
 | CMS 50 | Sum of the 50 listed equity prices plus each IPO once listed (base = its listing price) |
-| Statuses | Event NOT_STARTED · LIVE · SETTLEMENT_ONLY · CLOSED · FINALIZED; orders PIT_PENDING → EXCHANGE_PENDING → EXCHANGE_APPROVED → SETTLED, or PIT_REJECTED / EXCHANGE_REJECTED / BANK_REJECTED |
+| Statuses | Event NOT_STARTED · LIVE · SETTLEMENT_ONLY · CLOSED · FINALIZED; orders EXCHANGE_PENDING → EXCHANGE_APPROVED → SETTLED, or EXCHANGE_REJECTED / BANK_REJECTED; numbers ORD-n / INS-n restart at reset |
 | Reset | ₹20,00,000 per team, base prices, IPOs back to pre-market, trading data cleared, audit log archived (`EVENT_RESET`) |
 
 ## Capacity and hosting plan

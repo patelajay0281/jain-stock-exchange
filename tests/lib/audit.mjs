@@ -1,5 +1,5 @@
-// Financial integrity audit through the export API (v311): ledger reconciliation, one settlement and one trading slip
-// per order, settlements at the executed slip price, brokerage at each order's configured rate, one broker commission per
+// Financial integrity audit through the export API (v3.13): ledger reconciliation, one settlement per order,
+// settlements at the order price, brokerage at each order's configured rate, one broker commission per
 // brokerage-bearing settlement, holdings = settled trades + IPO allotments, no negative cash or holdings, prices moved only
 // by Market News / listing / undo-redo (never by settlement), Market News inside its severity band, loans within the limit,
 // assessment = settled trades from each team's side (institutional counterparty trades included, IPO allotments
@@ -22,23 +22,18 @@ export async function audit(stats, adminToken) {
   const cash = (await call(stats, "GET /api/cash", "GET", "/api/cash?page_size=10", { token: adminToken, timeout: 60_000 })).data;
   ok("cash ledger reconciles with every team balance", cash.reconciliation.ok && cash.reconciliation.teams_checked === status.counts.teams, JSON.stringify(cash.reconciliation));
 
-  const [trades, holdings, orders, slips, commission, networth, loans, prices, news, allot, assessment, winner] = await Promise.all(
-    ["trades", "holdings", "orders", "slips", "commission", "networth", "loans", "prices", "news", "ipo_allotments", "assessment", "winner"].map(sheet));
+  const [trades, holdings, orders, commission, networth, loans, prices, news, allot, assessment, winner] = await Promise.all(
+    ["trades", "holdings", "orders", "commission", "networth", "loans", "prices", "news", "ipo_allotments", "assessment", "winner"].map(sheet));
   // orders: 0 Order ID · 1 Account · 2 Team · 4 Broker · 9 Side · 10 Qty · 11 Price · 12 Trade Value · 13 Brokerage Rate ("0.50%") · 14 Brokerage · 16 Status · 25 Executed At · 26 Slip No
   const byOrder = new Map(orders.map((o) => [o[0], o]));
   const settled = orders.filter((o) => o[16] === "BANK_SETTLED");
   ok("one settlement per settled order", settled.length === trades.length, settled.length + " settled orders, " + trades.length + " settlements");
   ok("no order settled twice", new Set(trades.map((t) => t[1])).size === trades.length);
-  const executed = orders.filter((o) => o[25]);
-  ok("one trading slip per executed order", slips.length === executed.length && new Set(slips.map((s) => s[1])).size === slips.length,
-    slips.length + " slips, " + executed.length + " executed orders");
-  ok("every settled order has its trading slip", settled.every((o) => o[26]));
-  const slipPrice = new Map(slips.map((s) => [s[1], N(s[13])]));
-  ok("settlements use the executed (slip) price", trades.every((t) => slipPrice.get(t[1]) === N(t[8])),
-    trades.filter((t) => slipPrice.get(t[1]) !== N(t[8])).slice(0, 5).map((t) => t[1]).join(", "));
+  ok("settlements use the order price (never an obsolete market price)", trades.every((t) => N(byOrder.get(t[1])[11]) === N(t[8])),
+    trades.filter((t) => N(byOrder.get(t[1])[11]) !== N(t[8])).slice(0, 5).map((t) => t[1]).join(", "));
   // trades: 1 Order · 2 Account · 3 Team · 5 Security · 6 Side · 7 Qty · 8 Price · 9 Trade Value · 10 Brokerage · 17 Market Price
   ok("trade value = quantity × price on every settlement", trades.every((t) => Math.abs(N(t[9]) - N(t[7]) * N(t[8])) < 0.006));
-  const badBrk = trades.filter((t) => { const o = byOrder.get(t[1]); return Math.abs(N(t[10]) - Math.round(N(t[9]) * parseFloat(o[13]) / 100 * 100) / 100) > 0.006; });
+  const badBrk = trades.filter((t) => { const o = byOrder.get(t[1]); return Math.abs(N(t[10]) - Math.round(N(t[9]) * parseFloat(o[13]) + 1e-6) / 100) > 0.006; });
   ok("brokerage = the order's configured rate × trade value", badBrk.length === 0, badBrk.slice(0, 5).map((t) => t[1]).join(", "));
   // commission: 3 Order · 4 Counterparty · 13 Commission · 14 Status — the team's broker earns the brokerage on every settled
   // trade of its team, institutional counterparty trades included
@@ -92,5 +87,5 @@ export async function audit(stats, adminToken) {
   const listedIpos = m.ipos.filter((i) => i.listed).length;
   ok("CMS 50 = the active listed equities + listed IPOs, each once", m.index.equity_components === m.stocks.length && m.index.ipo_components === listedIpos &&
     new Set(m.index.ipos_included).size === listedIpos, JSON.stringify({ components: m.index.components, ipos: m.index.ipos_included }));
-  return { checks, counts: { orders: orders.length, settled: settled.length, trades: trades.length, slips: slips.length, holdings_rows: holdings.length, news: news.length } };
+  return { checks, counts: { orders: orders.length, settled: settled.length, trades: trades.length, holdings_rows: holdings.length, news: news.length } };
 }

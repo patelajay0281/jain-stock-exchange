@@ -9,9 +9,9 @@ CREATE OR REPLACE FUNCTION jse_export_sheets() RETURNS jsonb LANGUAGE sql IMMUTA
     ["cash","Cash"],["holdings","Holdings"],["sold_stocks","Sold Stocks"],["sold_ipos","Sold IPOs"],
     ["networth","Net Worth & PL"],["loans","Loans & Interest"],["cash_rule","Cash Rule"],
     ["short_sell","Short Selling Attempts"],["cash_shortfall","Cash Shortfall Attempts"],["insufficient_balance","Insufficient Balance Rejections"],
-    ["orders","Order Tracking"],["rejected","Rejected Orders"],["slips","Trading Slips"],["instructions","Participant Instructions"],
+    ["orders","Order Tracking"],["rejected","Rejected Orders"],
     ["trades","Trade History"],["ledger","Cash Ledger"],["commission","Broker Commission"],["institutional","Institutional Investors"],
-    ["ipo_applications","IPO Applications"],["ipo_allotments","IPO Allotments"],
+    ["ipo_allotments","IPO Allotments"],
     ["news","Market News"],["prices","Price History"],["journal","Action Journal"],["audit","Audit Logs"]]'::jsonb
 $$;
 

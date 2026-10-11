@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Broker Commission · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .toolbar .input { width: 240px; }
@@ -15,16 +15,17 @@
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1 id="h1">Broker Commission</h1>
-      <p id="lead">Every Bank-settled trade creates one commission record for the team's assigned broker at the configured brokerage rate — trades with an institutional counterparty included. Totals reconcile to the settled transactions.</p></div>
-    <div class="tools"><span class="pill blue" id="rateTag">Commission rate —</span><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span></div>
+      <p id="lead">Monitor broker earnings generated from settled market transactions.</p></div>
+    <div class="tools"><span class="pill blue" id="rateTag">Commission rate —</span><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+      <button class="btn primary caps" type="button" id="csvTop">↓ Download commission CSV</button></div>
   </div>
   <div id="recon" style="margin-bottom:16px"></div>
   <div class="kpis k5" id="kpis"></div>
-  <section class="card" style="margin-bottom:18px"><div class="card-h bar"><h2 id="rankH">Broker ranking</h2><span class="meta">by commission earned</span></div>
+  <section class="card" style="margin-bottom:18px"><div class="card-h bar"><h2 id="rankH">Broker commission summary</h2><span class="meta">Settled transactions only</span></div>
     <div class="card-b flush"><div class="table-wrap"><table class="t">
     <thead><tr><th class="num">Rank</th><th>Broker</th><th class="num">Teams</th><th class="num">Settled trades</th><th class="num">Buy value</th><th class="num">Sell value</th><th class="num">Total trade value</th><th class="num">Commission earned</th><th style="width:16%">Share</th><th class="num">In workflow</th></tr></thead>
     <tbody id="rank"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div></section>
-  <section class="card"><div class="card-h bar navy"><h2>Commission report</h2>
+  <section class="card"><div class="card-h bar navy"><h2>Commission transaction ledger</h2>
       <div class="toolbar"><label class="sr-only" for="fBroker">Broker</label><select class="input sm hidden" id="fBroker"></select>
         <button class="btn sm hidden" type="button" id="csv">Download CSV</button></div></div>
     <div class="card-b flush"><div class="table-wrap"><table class="t">
@@ -32,8 +33,8 @@
     <tbody id="rows"><tr><td colspan="11" class="empty">Loading…</td></tr></tbody></table></div>
     <div class="pager" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--line-3)"><span class="small muted" id="info"></span><div class="row"><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div></div></div></section>
 </main>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   "use strict";
@@ -92,11 +93,11 @@
     if (!u) return;
     S.user = u;
     if (u.role === "BROKER") {
-      $("h1").textContent = "My Commission"; $("rankH").textContent = "Your position";
-      $("lead").textContent = "Commission earned on your assigned teams' Bank-settled orders, one record per settled transaction, at the configured brokerage rate.";
+      $("rankH").textContent = "Broker commission summary · " + (u.broker || "your desk"); $("csvTop").classList.add("hidden");
     } else {
       $("fBroker").classList.remove("hidden"); $("csv").classList.remove("hidden");
       $("fBroker").addEventListener("change", function () { S.broker = $("fBroker").value; S.page = 1; poller.now(); });
+      $("csvTop").addEventListener("click", function () { $("csv").click(); });
       $("csv").addEventListener("click", function () { JSE.download("/api/export?sheet=commission", "JSE_commission.csv").catch(function (e) { JSE.toast(e.message, "bad"); }); });
     }
     $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };

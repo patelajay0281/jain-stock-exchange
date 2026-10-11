@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Order Tracking · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
-  .trk-filters { display: grid; grid-template-columns: minmax(220px, 2.2fr) repeat(5, minmax(130px, 1fr)) auto; gap: 12px; align-items: center; }
+  .trk-filters { display: grid; grid-template-columns: minmax(240px, 2.4fr) repeat(4, minmax(140px, 1fr)) auto; gap: 12px; align-items: center; }
   @media (max-width: 1280px) { .trk-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } .trk-filters > :first-child { grid-column: 1 / -1; } }
   @media (max-width: 640px) { .trk-filters { grid-template-columns: minmax(0, 1fr); } }
   tr.row-main { cursor: pointer; }
@@ -31,52 +31,27 @@
   <div class="page-head">
     <div><h1 id="h1">Order Tracking</h1>
       <p id="sub">One source of truth for every participant order, from creation through Exchange and Bank settlement.</p></div>
-    <div class="tools"><span class="pill round" id="conn"><span class="dot"></span><span id="connText">Live tracking · refreshing every 4s</span></span>
-      <button class="btn" type="button" id="csv">Export CSV</button></div>
+    <div class="tools"><span class="pill round" id="conn"><span class="dot"></span><span id="connText">Live tracking · refreshing every 5s</span></span></div>
   </div>
 
-  <section id="mine" class="hidden" style="margin-bottom:18px">
-    <div class="idcard" id="idcard"></div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-h bar"><h2>Instruct my broker</h2><span class="meta">Your broker creates the order; participants do not place exchange orders directly.</span></div>
-      <div class="card-b">
-        <form class="ins-form" id="insForm" novalidate autocomplete="off">
-          <div class="field"><label for="insSec">Stock / IPO</label><select class="input" id="insSec"></select></div>
-          <div class="field"><label>Transaction side</label><div class="seg" role="group" aria-label="Side"><button type="button" data-iside="BUY" aria-pressed="true">BUY</button><button type="button" data-iside="SELL" aria-pressed="false">SELL</button></div></div>
-          <div class="field"><label for="insQty">Quantity</label><input class="input" id="insQty" type="number" min="50" step="50" value="50" inputmode="numeric"></div>
-          <div class="field"><label for="insNote">Note for the broker (optional)</label><input class="input" id="insNote" maxlength="200" placeholder="e.g. only if the price is still below ₹900"></div>
-          <button class="btn primary caps" type="submit" id="insGo">Send instruction</button>
-        </form>
-        <div class="small muted" id="insHint" style="margin-top:10px"></div>
-        <div class="table-wrap" style="margin-top:14px;max-height:300px"><table class="t"><thead><tr><th>Instruction</th><th>Sent</th><th>Trade</th><th>Status</th><th>Order</th><th class="actions"></th></tr></thead><tbody id="insRows"></tbody></table></div>
-      </div>
-    </div>
-  </section>
-
   <div class="steps" aria-label="Order workflow">
-    <span class="st"><span class="n">1</span>Participant Instruction</span><span class="arr">→</span>
-    <span class="st"><span class="n">2</span>Broker Submission</span><span class="arr">→</span>
-    <span class="st"><span class="n">3</span>Pit Manager Execution</span><span class="arr">→</span>
-    <span class="st"><span class="n">4</span>Exchange Review</span><span class="arr">→</span>
-    <span class="st"><span class="n">5</span>Bank Settlement</span><span class="arr">→</span>
-    <span class="st"><span class="n">6</span>Market / Cash Updated</span>
+    <span class="st"><span class="n">1</span>Order Created</span><span class="arr">→</span>
+    <span class="st"><span class="n">2</span>Exchange Review</span><span class="arr">→</span>
+    <span class="st"><span class="n">3</span>Bank Settlement</span><span class="arr">→</span>
+    <span class="st"><span class="n">4</span>Market / Cash Updated</span>
   </div>
   <div class="kpis k7" id="kpis"></div>
 
   <section class="card">
     <div class="card-b">
       <div class="trk-filters">
-        <div><label class="sr-only" for="fQ">Search</label><input class="input" id="fQ" type="search" placeholder="Search order, slip, team, broker or asset"></div>
+        <div><label class="sr-only" for="fQ">Search</label><input class="input" id="fQ" type="search" placeholder="Search order, team, broker or asset"></div>
         <div><label class="sr-only" for="fTeam">Team</label><select class="input" id="fTeam"></select></div>
         <div><label class="sr-only" for="fStatus">Status</label><select class="input" id="fStatus">
-          <option value="">All statuses</option><option value="PENDING">Open (not final)</option><option value="PIT_PENDING">Exchange Intake (Pit Manager)</option>
-          <option value="EXCHANGE_PENDING">Exchange Pending</option><option value="EXCHANGE_APPROVED">Exchange Approved</option>
-          <option value="BANK_PENDING">Bank Verifying</option><option value="BANK_SETTLED">Settled</option><option value="EXECUTED">Executed (trading slip issued)</option>
-          <option value="REJECTED">All rejected</option><option value="STALE">Price Stale</option><option value="PIT_REJECTED">Intake Rejected</option>
-          <option value="EXCHANGE_REJECTED">Exchange Rejected</option><option value="BANK_REJECTED">Bank Rejected</option></select></div>
+          <option value="">All statuses</option><option value="EXCHANGE_PENDING">Exchange Pending</option><option value="EXCHANGE_APPROVED">Exchange Approved</option>
+          <option value="BANK_SETTLED">Settled</option><option value="EXCHANGE_REJECTED">Exchange Rejected</option><option value="BANK_REJECTED">Bank Rejected</option></select></div>
         <div><label class="sr-only" for="fSide">Side</label><select class="input" id="fSide"><option value="">BUY + SELL</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
-        <div><label class="sr-only" for="fKind">Asset</label><select class="input" id="fKind"><option value="">Stocks + IPOs</option><option value="EQUITY">Stocks</option><option value="IPO">Listed IPOs</option></select></div>
-        <div><label class="sr-only" for="fAcct">Account</label><select class="input" id="fAcct"><option value="">All accounts</option><option value="TEAM">Participant orders</option><option value="INSTITUTION">Institutional</option></select></div>
+        <div><label class="sr-only" for="fKind">Asset</label><select class="input" id="fKind"><option value="">Stocks + IPOs</option><option value="EQUITY">Stocks</option><option value="IPO">IPOs</option></select></div>
         <button class="btn primary" type="button" id="refresh">Refresh</button>
       </div>
     </div>
@@ -87,19 +62,19 @@
     <div class="pager"><span class="small muted" id="pageInfo"></span><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div>
   </section>
 </main>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
   var S = { page: 1, size: 50, open: {}, details: {}, data: null, user: null, status: null, iside: "BUY", market: null, insKey: JSE.uuid(), autoOpen: null };
   var params = new URLSearchParams(location.search);
-  var LAST = { PIT_PENDING: "Order created", EXCHANGE_PENDING: "Pit executed", EXCHANGE_APPROVED: "Exchange approved", BANK_PENDING: "Bank verifying", BANK_SETTLED: "Bank settled",
-    PIT_REJECTED: "Pit rejected", EXCHANGE_REJECTED: "Exchange rejected", BANK_REJECTED: "Bank rejected" };
+  var LAST = { PIT_PENDING: "Order created", EXCHANGE_PENDING: "Order created", EXCHANGE_APPROVED: "Exchange approved", BANK_PENDING: "Bank verifying", BANK_SETTLED: "Bank settled",
+    PIT_REJECTED: "Rejected", EXCHANGE_REJECTED: "Exchange rejected", BANK_REJECTED: "Bank rejected" };
 
   function filters() {
-    return { team: $("fTeam").value, status: $("fStatus").value, side: $("fSide").value, kind: $("fKind").value, account: $("fAcct").value, q: $("fQ").value.trim(), page: S.page, page_size: S.size };
+    return { team: $("fTeam").value, status: $("fStatus").value, side: $("fSide").value, kind: $("fKind").value, q: $("fQ").value.trim(), page: S.page, page_size: S.size };
   }
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
 
@@ -107,14 +82,13 @@
     NA: ["na", "Not applicable"], IN_PERSON: ["done inperson", "In person"] };
   function flow(d) {
     var o = d.order;
-    return '<div class="flow six">' + d.flow.map(function (f, i) {
+    return '<div class="flow four">' + d.flow.map(function (f, i) {
       var st = STATE[f.state] || ["", f.state];
       return '<div class="step ' + st[0] + '"><div class="n">' + (i + 1) + " · " + esc(f.label) + '</div><div class="st">' + esc(st[1]) + "</div>" +
         (f.at ? '<div class="at">' + F.datetime(f.at) + " IST</div>" : "") + (f.by ? '<div class="meta">by ' + esc(f.by) + "</div>" : "") +
         (f.detail ? '<div class="meta">' + esc(f.detail) + "</div>" : "") + "</div>";
     }).join("") + "</div>" +
-    '<div class="detail-extra"><div><h4>Trading slip, settlement &amp; assessment</h4><ul>' +
-      "<li>" + (o.slip_no ? 'Trading slip <a class="mono" href="/slips.html?slip=' + encodeURIComponent(o.slip_no) + '">' + esc(o.slip_no) + "</a>" : "No trading slip (issued only when the Pit Manager executes the order)") + "</li>" +
+    '<div class="detail-extra"><div><h4>Settlement &amp; assessment</h4><ul>' +
       "<li>Status <b>" + esc(JSE.STATUS_TEXT[o.status] || o.status) + "</b> · stage " + esc(JSE.STAGE_OF[o.status] || "") + "</li>" +
       "<li>" + esc(d.assessment.explanation) + "</li>" +
       "<li>Trade value " + F.money(o.trade_value) + " · brokerage " + JSE.rate(o.brokerage_rate) + " = " + F.money(o.brokerage) + " · settlement " + F.money(o.settlement_amount) +
@@ -136,14 +110,14 @@
       kpi("Awaiting exchange", F.num(k.awaiting_exchange), "Intake + Exchange pending") +
       kpi("Awaiting bank", F.num(k.awaiting_bank), "Exchange approved") +
       kpi("Settled", F.num(k.settled), "Bank completed") +
-      kpi("Rejected", F.num(k.rejected), "Intake + Exchange + Bank" + (N(k.stale) ? " · " + F.num(k.stale) + " stale" : "")) +
+      kpi("Rejected", F.num(k.rejected), "Exchange + Bank") +
       kpi("Gross turnover", F.money(k.trade_value), "Trade value") +
-      kpi("Brokerage", F.money(k.brokerage), JSE.rate(S.rate || 0.005) + " event rate");
+      kpi("Brokerage", F.money(k.gross_brokerage), JSE.rate(S.rate || 0.005) + " event rate");
     $("matchLine").innerHTML = "<b>" + F.num(k.orders) + "</b> matching order" + (N(k.orders) === 1 ? "" : "s") + " · sorted by latest activity";
     $("rows").innerHTML = d.rows.length ? d.rows.map(function (o) {
       var open = S.open[o.id], side = o.team_side || o.side, buy = side === "BUY";
       var main = '<tr class="row-main' + (open ? " open" : "") + '" data-id="' + o.id + '" tabindex="0" aria-expanded="' + !!open + '">' +
-        '<td><span class="ord-no">' + esc(o.order_no) + '</span><span class="sub">' + F.datetime(o.created_at) + (o.slip_no ? " · " + esc(o.slip_no) : "") + "</span></td>" +
+        '<td><span class="ord-no">' + esc(o.order_no) + '</span><span class="sub">' + F.datetime(o.created_at) + "</span></td>" +
         "<td><b>" + esc(o.team) + '</b><span class="sub">' + esc(o.broker || "—") + (o.account_type === "INSTITUTION" ? " · institutional" : "") + "</span></td>" +
         "<td><b>" + esc(o.security) + '</b><span class="sub">' + (o.kind === "IPO" ? "IPO" : "STOCK") + "</span></td>" +
         '<td><span class="trade ' + (buy ? "buy" : "sell") + '">' + esc(side) + " · " + F.num(o.quantity) + " @ " + F.price(o.price) + "</span>" +
@@ -151,7 +125,7 @@
         '<td class="num">' + F.money(o.trade_value) + '</td><td class="num">' + F.money(o.brokerage) + "</td>" +
         '<td class="num"><b>' + F.money(o.settlement_amount) + '</b><span class="sub">' + (buy ? "cash out" : "cash in") + "</span></td>" +
         "<td>" + JSE.badge.status(o.status, o.reject_code) + "</td>" +
-        '<td class="last-act">' + F.datetime(o.updated_at) + '<span class="ev">' + esc(o.reject_code === "PRICE_STALE" ? "Price stale" : LAST[o.status] || o.status) + "</span></td></tr>";
+        '<td class="last-act">' + F.datetime(o.updated_at) + '<span class="ev">' + esc(o.reject_code === "PRICE_STALE" ? "Market price changed" : LAST[o.status] || o.status) + "</span></td></tr>";
       var exp = open ? '<tr class="expand"><td colspan="9">' + (S.details[o.id] ? flow(S.details[o.id]) : '<div class="empty"><span class="spinner"></span> Loading the processing flow…</div>') + "</td></tr>" : "";
       return main + exp;
     }).join("") : '<tr><td colspan="9" class="empty"><b>No orders match these filters.</b>Change the filters or wait for new orders.</td></tr>';
@@ -171,51 +145,8 @@
     if (S.autoOpen) { var hit = S.data.rows.filter(function (o) { return o.order_no === S.autoOpen; })[0]; if (hit) { S.open[hit.id] = true; } S.autoOpen = null; }
     Object.keys(S.open).forEach(function (id) { if (S.open[id]) detail(id); });
     render();
-    $("conn").className = "pill round"; $("connText").textContent = "Live tracking · refreshing every 4s";
+    $("conn").className = "pill round"; $("connText").textContent = "Live tracking · refreshing every 5s";
     $("updated").textContent = "Updated " + new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: true }).toLowerCase();
-  }
-
-  // ---- participant: identity, broker and instructions ----
-  async function loadMine() {
-    var r = await Promise.all([JSE.api.get("/api/instructions"), JSE.api.get("/api/portfolio-details"), S.market ? null : JSE.api.get("/api/market")]);
-    var ins = r[0], pd = r[1];
-    if (r[2]) {
-      S.market = r[2];
-      var list = S.market.stocks.concat(S.market.ipos).filter(function (s) { return s.tradable; });
-      $("insSec").innerHTML = '<option value="">Choose a listed stock or IPO…</option>' + list.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("");
-    }
-    var id = pd.identity, b = pd.broker;
-    $("idcard").innerHTML = '<div><div class="eyebrow">Your team</div><div class="big">' + esc(id.name) + '</div><div class="code">' + esc(id.code) + (id.section ? " · " + esc(id.section) : "") + "</div>" +
-      (id.name_meaning ? '<div class="meaning">' + esc(id.name_meaning) + "</div>" : "") + (id.members ? '<div class="small" style="margin-top:6px">' + esc(id.members) + "</div>" : "") + "</div>" +
-      '<div><div class="eyebrow">Your assigned broker</div><div class="big">' + esc(b ? b.name : "Not assigned yet") + '</div><div class="code">' + esc(b ? b.code : "") + "</div>" +
-      (b && (b.desk || b.contact) ? '<div class="small" style="margin-top:6px">' + esc([b.desk ? "Desk " + b.desk : "", b.contact].filter(Boolean).join(" · ")) + "</div>" : "") +
-      '<div class="small muted" style="margin-top:8px">Assessment: ' + JSE.badge.progress(pd.assessment.buy, pd.assessment.min_buy, "BUY") + " " + JSE.badge.progress(pd.assessment.sell, pd.assessment.min_sell, "SELL") + "</div></div>";
-    $("insRows").innerHTML = ins.rows.length ? ins.rows.map(function (i) {
-      return "<tr><td><b>" + esc(i.instruction_no) + "</b></td><td>" + F.time(i.created_at) + '</td><td><span class="side-txt ' + i.side.toLowerCase() + '">' + esc(i.side) + "</span> · " + F.num(i.quantity) + " <b>" + esc(i.symbol) + "</b>" + (i.note ? '<span class="sub">“' + esc(i.note) + '”</span>' : "") + "</td>" +
-        "<td>" + (i.status === "OPEN" ? '<span class="badge warn">Sent to broker</span>' : i.status === "SUBMITTED" ? '<span class="badge ok">Broker submitted</span>' : '<span class="badge prov">' + esc(i.status) + "</span>") +
-        (i.decline_reason ? '<span class="sub">' + esc(i.decline_reason) + "</span>" : "") + "</td>" +
-        "<td>" + (i.order_no ? '<a class="mono" href="/orders.html?order=' + encodeURIComponent(i.order_no) + '">' + esc(i.order_no) + "</a> " + JSE.badge.status(i.order_status) : '<span class="muted">—</span>') + "</td>" +
-        '<td class="actions">' + (i.status === "OPEN" ? '<button class="btn sm" type="button" data-cancel="' + esc(i.instruction_no) + '">Cancel</button>' : "") + "</td></tr>";
-    }).join("") : '<tr><td colspan="6" class="empty">No instructions yet. You can also give instructions to your broker in person.</td></tr>';
-    $("insRows").querySelectorAll("[data-cancel]").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        try { await JSE.api.post("/api/instructions", { action: "CANCEL", instruction_no: btn.getAttribute("data-cancel") }); JSE.toast("Instruction cancelled", "good"); mine.now(); }
-        catch (e) { JSE.toast(e.message, "bad"); }
-      });
-    });
-    var live = (S.market && S.market.status) === "LIVE";
-    $("insGo").disabled = !live;
-    $("insHint").textContent = live ? "Your broker sees the instruction immediately and submits it at the market price at that moment (multiples of 50 shares)." : "Instructions can be sent while the market is LIVE (event day, 1:15 PM sharp onwards).";
-  }
-  async function sendInstruction(e) {
-    e.preventDefault();
-    var sym = $("insSec").value, qty = N($("insQty").value);
-    if (!sym) return JSE.toast("Choose a listed stock or IPO.", "warn");
-    try {
-      var r = await JSE.api.post("/api/instructions", { symbol: sym, side: S.iside, quantity: qty, note: $("insNote").value.trim() || undefined, idempotency_key: S.insKey });
-      JSE.toast("Instruction " + r.instruction.instruction_no + " sent to your broker", "good");
-      S.insKey = JSE.uuid(); $("insNote").value = ""; mine.now();
-    } catch (ex) { JSE.toast(ex.message, "bad"); if (ex.status && ex.status < 500) S.insKey = JSE.uuid(); }
   }
 
   $("rows").addEventListener("click", function (e) {
@@ -225,40 +156,25 @@
     if (S.open[id]) detail(id); render();
   });
   $("rows").addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr.row-main")) { e.preventDefault(); e.target.click(); } });
-  ["fTeam", "fStatus", "fSide", "fKind", "fAcct"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; S.force = true; poller.now(); }); });
+  ["fTeam", "fStatus", "fSide", "fKind"].forEach(function (id) { $(id).addEventListener("change", function () { S.page = 1; S.force = true; poller.now(); }); });
   $("fQ").addEventListener("input", JSE.debounce(function () { S.page = 1; S.force = true; poller.now(); }, 300));
   $("refresh").onclick = function () { S.force = true; poller.now(); };
   $("prev").onclick = function () { if (S.page > 1) { S.page--; S.force = true; poller.now(); } };
   $("next").onclick = function () { S.page++; S.force = true; poller.now(); };
-  document.querySelectorAll("[data-iside]").forEach(function (b) { b.addEventListener("click", function () { S.iside = b.getAttribute("data-iside"); document.querySelectorAll("[data-iside]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); }); });
-  $("insForm").addEventListener("submit", sendInstruction);
-  $("csv").onclick = function () {
-    var d = S.data; if (!d) return;
-    var cols = ["Order ID", "Account", "Team", "Team name", "Broker", "Security", "Type", "Side (team)", "Quantity", "Price", "Trade Value", "Brokerage", "Settlement Amount", "Status", "Stage", "Submitted At", "Executed At", "Slip", "Exchange By", "Bank By", "Reject Reason"];
-    var rows = d.rows.map(function (o) { return [o.order_no, o.account_type, o.team, o.team_name, o.broker || "", o.symbol, o.kind, o.team_side || o.side, o.quantity, o.price, o.trade_value, o.brokerage, o.settlement_amount,
-      JSE.STATUS_TEXT[o.status] || o.status, JSE.STAGE_OF[o.status] || "", F.datetime(o.created_at), F.datetime(o.executed_at), o.slip_no || "", o.exchange_by || "", o.bank_by || "", o.reject_reason || ""]; });
-    var csv = "﻿" + [cols].concat(rows).map(function (r) { return r.map(function (v) { v = String(v === null || v === undefined ? "" : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(","); }).join("\r\n");
-    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "JSE_order_tracking_page" + S.page + ".csv"; a.click();
-  };
-
   var poller, mine;
   JSE.page({ id: "orders" }).then(function (user) {
     if (!user) return;
     S.user = user;
     $("fTeam").innerHTML = '<option value="">All teams</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
     if (user.role === "PARTICIPANT") {
-      $("h1").textContent = "My Orders";
-      $("sub").textContent = "Every order of your team, from your instruction through the broker, the Pit Manager, the Exchange and the Bank.";
       $("fTeam").innerHTML = "<option>" + esc(user.team) + "</option>"; $("fTeam").disabled = true;
-      $("mine").classList.remove("hidden");
-      mine = JSE.poll(loadMine, 5000, { onError: function () {} });
     }
     if (user.role === "BROKER") $("fTeam").innerHTML = '<option value="">All my teams</option>';
-    var map = { team: "fTeam", status: "fStatus", side: "fSide", kind: "fKind", account: "fAcct", q: "fQ" };
+    var map = { team: "fTeam", status: "fStatus", side: "fSide", kind: "fKind", q: "fQ" };
     Object.keys(map).forEach(function (k) { var v = params.get(k); if (v && $(map[k])) $(map[k]).value = v; });
     if (params.get("order")) { $("fQ").value = params.get("order"); S.autoOpen = params.get("order").toUpperCase(); }
     JSE.api.get("/api/event-status").then(function (st) { S.rate = st.config && st.config.brokerage_rate; render(); }).catch(function () {});
-    poller = JSE.poll(load, 4000, { onError: function (e) { $("conn").className = "pill round offline"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").className = "pill round offline"; $("connText").textContent = "Reconnecting… " + e.message; } });
     JSE.onStatus(function (s) { S.status = s; });
   });
 })();

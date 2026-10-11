@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Exchange Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=312">
+<link rel="stylesheet" href="/assets/jse.css?v=313">
 </head>
 <body>
 <main id="main" class="wrap wide">
   <section class="band">
-    <div><h1>JAIN STOCK EXCHANGE</h1><p>Review executed orders before they move into bank settlement. Approval never changes cash, holdings or prices — the Bank settles approved orders.</p></div>
+    <div><h1>JAIN STOCK EXCHANGE</h1><p>Review submitted orders before they move into bank settlement.</p></div>
     <span class="tag">Exchange control</span>
   </section>
   <div class="kpis k4" id="kpis"></div>
@@ -18,8 +18,8 @@
   <section class="card">
     <div class="card-h bar"><h2>Pending exchange transactions <span class="muted" id="pendCount" style="font-weight:600;letter-spacing:0"></span></h2>
       <div class="row">
-        <input class="input sm" id="q" type="search" placeholder="Filter by order, team, broker, stock" style="width:260px">
-        <button class="btn good sm caps" type="button" id="bulk" title="Approve every pending order that has no warnings">✓ Approve all clear</button>
+        <input class="input sm hidden" id="q" type="search" aria-hidden="true">
+        <button class="btn good sm caps hidden" type="button" id="bulk">✓ Approve all clear</button>
         <span class="meta" id="conn">Review queue</span>
       </div>
     </div>
@@ -32,8 +32,8 @@
       <tbody id="recent"></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=312"></script>
-<script src="/assets/jse.js?v=312"></script>
+<script src="/assets/config.js?v=313"></script>
+<script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   "use strict";
@@ -61,12 +61,8 @@
       field("Team / Investor", esc(o.team), esc(o.team_name || "")) +
       field("Broker", esc(o.broker || "—"), esc(o.broker_name || "")) +
       field("Stock / IPO", esc(o.security), esc(o.symbol)) +
-      field("Trading slip", o.slip_no ? '<a href="/slips.html?slip=' + encodeURIComponent(o.slip_no) + '">' + esc(o.slip_no) + "</a>" : "—",
-            (o.executed_by ? "executed by " + esc(o.executed_by) + " · " : "") + F.age(o.age_seconds) + " ago") +
       '<div class="txn-trio"><div><div class="k">Side</div><div class="v side-txt ' + side.toLowerCase() + '">' + esc(side) + '</div></div><div><div class="k">Quantity</div><div class="v">' + F.num(o.quantity) +
       '</div></div><div><div class="k">Price</div><div class="v">' + F.price(o.price) + "</div></div></div>" +
-      '<div class="txn-trio" style="margin-top:8px"><div><div class="k">Trade value</div><div class="v">' + F.money(o.trade_value) + '</div></div><div><div class="k">Brokerage ' + JSE.rate(o.brokerage_rate) +
-      '</div><div class="v">' + F.money(o.brokerage) + '</div></div><div><div class="k">' + (side === "BUY" ? "Total required" : "Net proceeds") + '</div><div class="v">' + F.money(o.settlement_amount) + "</div></div></div>" +
       (notes.length ? '<div class="txn-notes">' + notes.join("") + "</div>" : "") +
       (S.canAct ? '<div class="txn-a"><button class="btn approve" data-a="APPROVE">✓ Approve</button><button class="btn reject" data-a="REJECT">✕ Reject</button></div>'
                 : '<div class="txn-a one"><span class="muted small center">View only</span></div>') + "</article>";
@@ -80,12 +76,12 @@
     });
     var flagged = d.pending.filter(function (o) { return o.short_sell_risk || o.cash_risk; }).length;
     $("kpis").innerHTML = kpi("Pending", F.num(d.counts.pending), "executed · oldest first") +
-      kpi("Trade orders", F.num(d.counts.trade_orders || 0), F.num(d.counts.institutional_orders || 0) + " institutional · " + F.num(d.counts.awaiting_pit) + " at the Pit Manager") +
+      kpi("Trade orders", F.num(d.counts.trade_orders || 0), F.num(d.counts.institutional_orders || 0) + " institutional") +
       kpi("Short selling", F.num(d.counts.short_selling || 0), flagged + " flagged for review", (d.counts.short_selling || flagged) ? "bad" : "") +
       kpi("Action", d.counts.pending ? "REVIEW" : "CLEAR", F.num(d.counts.approved) + " approved · " + F.num(d.counts.rejected) + " rejected");
     $("pendCount").textContent = "(" + d.pending.length + ")";
     $("rows").innerHTML = pend.length ? pend.map(card).join("")
-      : '<div class="empty" style="grid-column:1/-1"><b>No executed orders waiting.</b>Orders appear here as soon as the Pit Manager executes them.</div>';
+      : '<div class="empty" style="grid-column:1/-1"><b>No pending exchange transactions.</b>New orders appear here as soon as they are created.</div>';
     $("recent").innerHTML = d.recent.length ? d.recent.map(function (o) {
       return "<tr><td>" + F.time(o.exchange_at) + "</td><td><b>" + esc(o.order_no) + "</b></td><td>" + esc(o.team) + "</td><td>" + esc(o.security) + '<span class="sub">' + esc(o.symbol) + "</span></td><td>" +
         JSE.badge.side(o.team_side || o.side) + '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + "</td><td>" + JSE.badge.status(o.status, o.reject_code) + "</td><td>" +
@@ -111,9 +107,9 @@
         body.reason = reason === true ? "" : reason;
       }
       if (action === "APPROVE" && o && o.short_sell_risk) {
-        var ok = await JSE.dialog({ title: "Short selling — Exchange override", danger: true, confirmText: "Approve as Exchange override",
-          html: "<p><b>" + esc(o.team) + "</b> can sell only <b>" + F.num(Math.max(0, o.available_qty)) + "</b> " + esc(o.symbol) + " shares (holding " + F.num(o.holding) + ", other open sell orders " + F.num(o.open_sell_other) + ") but this order sells <b>" + F.num(o.quantity) + "</b>.</p>" +
-                "<p>Normal participant short selling is prohibited. Approving it is an explicit Exchange override, recorded in the audit log as <b>SHORT SELLING — EXCHANGE APPROVED</b>. The Bank still checks the holding at settlement and rejects it if the shares are not there.</p>" });
+        var ok = await JSE.dialog({ eyebrow: "Exchange review required", title: "Short Selling Warning", danger: true, cancelText: "Cancel", confirmText: "Approve anyway",
+          html: "<p>This SELL order exceeds the participant holdings.</p><p class=\"small muted\">" + esc(o.team) + " holds " + F.num(Math.max(0, o.available_qty)) + " " + esc(o.symbol) + " available; this order sells " + F.num(o.quantity) +
+                ". Approving records SHORT SELLING — EXCHANGE APPROVED; the Bank still checks the holding at settlement.</p>" });
         if (!ok) return;
         body.confirm_short_sell = true;
       }
@@ -121,7 +117,7 @@
       try { r = await JSE.api.post("/api/exchange", body); }
       catch (e) {
         if (e.code !== "SHORT_SELL_CONFIRM_REQUIRED") throw e;
-        var ok2 = await JSE.dialog({ title: "Short selling — Exchange override", text: e.message, danger: true, confirmText: "Approve as Exchange override" });
+        var ok2 = await JSE.dialog({ eyebrow: "Exchange review required", title: "Short Selling Warning", text: "This SELL order exceeds the participant holdings.", danger: true, cancelText: "Cancel", confirmText: "Approve anyway" });
         if (!ok2) return;
         body.confirm_short_sell = true;
         r = await JSE.api.post("/api/exchange", body);
