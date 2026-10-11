@@ -510,7 +510,7 @@ BEGIN
   RETURN jsonb_build_object('success', true,
     'pending', coalesce((SELECT jsonb_agg(q.j ORDER BY q.id) FROM (
       SELECT o.id, jse_order_json(o.id) || jsonb_build_object(
-        'stale', coalesce(o.reference_price, o.price) <> s.price, 'age_seconds', extract(epoch FROM now() - o.created_at)::integer,
+        'stale', coalesce(o.reference_price, o.price) <> s.price, 'queued_at', o.created_at,
         'holding', av.holding, 'available_qty', av.available,
         'short_sell_risk', (jse_team_side(o.account_type, o.side) = 'SELL' AND o.quantity > av.available)) AS j
       FROM orders o JOIN securities s ON s.id = o.security_id
@@ -671,7 +671,7 @@ BEGIN
         'short_sell_risk', (jse_team_side(o.account_type, o.side) = 'SELL' AND o.quantity > av.available),
         'cash_risk', (jse_team_side(o.account_type, o.side) = 'BUY' AND o.settlement_amount > jse_available_cash(o.team_id, o.id) + jse_loan_room(o.team_id)),
         'loan_needed', (jse_team_side(o.account_type, o.side) = 'BUY' AND o.settlement_amount > jse_available_cash(o.team_id, o.id)),
-        'age_seconds', extract(epoch FROM now() - coalesce(o.executed_at, o.created_at))::integer) AS j
+        'queued_at', coalesce(o.executed_at, o.created_at)) AS j
       FROM orders o CROSS JOIN LATERAL jse_available_qty(o.team_id, o.security_id, o.id) av
       WHERE o.status = 'EXCHANGE_PENDING' ORDER BY o.id LIMIT 300) q), '[]'::jsonb),
     'recent', coalesce((SELECT jsonb_agg(jse_order_json(x.id) ORDER BY x.exchange_at DESC) FROM (
@@ -700,7 +700,7 @@ BEGIN
         'required', CASE WHEN jse_team_side(o.account_type, o.side) = 'BUY'
                          THEN o.trade_value + round(o.trade_value * coalesce(o.brokerage_rate, cfg.brokerage_rate), 2) END,
         'loan_room', CASE WHEN cfg.loans_enabled AND cfg.auto_loan_on_settlement THEN greatest(0, cfg.loan_max_principal - coalesce(l.original_principal, 0)) ELSE 0 END,
-        'age_seconds', extract(epoch FROM now() - coalesce(o.exchange_at, o.created_at))::integer) AS j
+        'queued_at', coalesce(o.exchange_at, o.created_at)) AS j
       FROM orders o JOIN teams t ON t.id = o.team_id
       LEFT JOIN holdings h ON h.team_id = o.team_id AND h.security_id = o.security_id
       LEFT JOIN loans l ON l.team_id = o.team_id

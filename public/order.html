@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create Order · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=314">
+<link rel="stylesheet" href="/assets/jse.css?v=315">
 <style>
   .ticket .card-b { display: grid; gap: 18px; }
   .done { border: 1px solid var(--green-line); background: var(--green-soft); border-radius: 10px; padding: 12px 14px; }
@@ -66,8 +66,8 @@
     </div>
   </form>
 </main>
-<script src="/assets/config.js?v=314"></script>
-<script src="/assets/jse.js?v=314"></script>
+<script src="/assets/config.js?v=315"></script>
+<script src="/assets/jse.js?v=315"></script>
 <script>
 (function () {
   "use strict";
@@ -184,8 +184,8 @@
     S.user = user; canAct = user.role === "BROKER" || user.role === "ADMIN" || user.role === "PIT_MANAGER";
     if (user.role === "ADMIN" || user.role === "VIEWER") S.broker = "ALL";
     if (!canAct) { ["team", "sec", "qty", "submit", "side", "asset", "txType"].forEach(function (id) { $(id).disabled = true; }); }
-    market = JSE.poll(loadMarket, 3000, { onError: function () { $("mktText").textContent = "Reconnecting…"; } });
-    desk = JSE.poll(loadDesk, 4000, { onError: function (e) { $("deskMeta").textContent = e.message; } });
+    market = JSE.poll(loadMarket, 10000, { onError: function () { $("mktText").textContent = "Reconnecting…"; } });
+    desk = JSE.poll(loadDesk, 8000, { onError: function (e) { $("deskMeta").textContent = e.message; } });
   });
 })();
 </script>

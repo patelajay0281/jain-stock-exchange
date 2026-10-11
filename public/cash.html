@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cash Ledger · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=314">
+<link rel="stylesheet" href="/assets/jse.css?v=315">
 <style>
   .cash-filters { display: grid; grid-template-columns: 240px 260px 160px auto; justify-content: start; gap: 12px; align-items: center; }
   @media (max-width: 900px) { .cash-filters { grid-template-columns: 1fr 1fr; } }
@@ -35,8 +35,8 @@
     <div class="pager" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line-3)"><button class="btn sm" id="prev">← Newer</button><button class="btn sm" id="next">Older →</button></div>
   </section>
 </main>
-<script src="/assets/config.js?v=314"></script>
-<script src="/assets/jse.js?v=314"></script>
+<script src="/assets/config.js?v=315"></script>
+<script src="/assets/jse.js?v=315"></script>
 <script>
 (function () {
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
@@ -77,7 +77,7 @@
     $("fTeam").innerHTML = u.role === "PARTICIPANT" ? "<option>" + esc(u.team) + "</option>" : '<option value="">All teams</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
     if (u.role === "PARTICIPANT") $("fTeam").disabled = true;
     var t = new URLSearchParams(location.search).get("team"); if (t && u.role !== "PARTICIPANT") $("fTeam").value = t.toUpperCase();
-    poller = JSE.poll(load, 8000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    poller = JSE.poll(load, 15000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
   });
 })();
 </script>

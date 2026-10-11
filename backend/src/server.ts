@@ -8,7 +8,7 @@ import { ApiError, call, ensureMigrated, rawQuery } from "./db";
 import { verifyGithubOidc } from "./oidc";
 import { buildXlsx, readCsv, readXlsx, toCsv, type Sheet } from "./xlsx";
 
-export const VERSION = "3.13.0";
+export const VERSION = "3.13.1";
 const STARTED = Date.now();
 
 // ---------------------------------------------------------------------------
@@ -68,9 +68,13 @@ function respond(ctx: Ctx, status: number, payload: Payload, extra: Record<strin
   const headers: Record<string, string> = {
     "content-type": "application/json; charset=utf-8",
     "x-jse-version": VERSION, "x-request-id": ctx.reqId,
-    "cache-control": cacheSeconds > 0 ? `public, max-age=${cacheSeconds}, must-revalidate` : "no-store",
+    // public reads: shared 1 s cache; signed-in reads: the browser keeps a private copy and revalidates every poll with
+    // If-None-Match, so an unchanged queue / desk / portfolio costs a ~200-byte 304 instead of the full body (data budget)
+    "cache-control": cacheSeconds > 0 ? `public, max-age=${cacheSeconds}, must-revalidate`
+      : status === 200 && ctx.method === "GET" ? "private, no-cache" : "no-store",
     etag: payload.etag, ...corsHeaders(ctx), ...extra,
   };
+  if (cacheSeconds === 0) headers.vary = (headers.vary ? headers.vary + ", " : "") + "Authorization";
   if (status === 200 && ctx.method === "GET" && ctx.req.headers.get("if-none-match") === payload.etag) {
     delete headers["content-type"];
     return new Response(null, { status: 304, headers });

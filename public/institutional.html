@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Institutional Investors · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=314">
+<link rel="stylesheet" href="/assets/jse.css?v=315">
 <style>
   .inst-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
   .moods { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
@@ -99,8 +99,8 @@
       <tbody id="orders"><tr><td colspan="10" class="empty">Loading institutional transaction desk…</td></tr></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=314"></script>
-<script src="/assets/jse.js?v=314"></script>
+<script src="/assets/config.js?v=315"></script>
+<script src="/assets/jse.js?v=315"></script>
 <script>
 (function () {
   "use strict";
@@ -260,8 +260,8 @@
     S.canSwitch = user.role !== "INSTITUTIONAL";
     if (!S.canTrade) { $("go").disabled = true; $("nGo").disabled = true; }
     JSE.onStatus(applyStatus);
-    poller = JSE.poll(load, 5000, { onError: function (e) { $("orders").innerHTML = '<tr><td colspan="10" class="empty">Reconnecting… ' + esc(e.message) + "</td></tr>"; } });
-    JSE.poll(loadNews, 6000);
+    poller = JSE.poll(load, 10000, { onError: function (e) { $("orders").innerHTML = '<tr><td colspan="10" class="empty">Reconnecting… ' + esc(e.message) + "</td></tr>"; } });
+    JSE.poll(loadNews, 15000);
   });
 })();
 </script>

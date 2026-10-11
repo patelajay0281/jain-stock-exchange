@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Order Tracking · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=314">
+<link rel="stylesheet" href="/assets/jse.css?v=315">
 <style>
   .trk-filters { display: grid; grid-template-columns: minmax(240px, 2.4fr) repeat(4, minmax(140px, 1fr)) auto; gap: 12px; align-items: center; }
   @media (max-width: 1280px) { .trk-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } .trk-filters > :first-child { grid-column: 1 / -1; } }
@@ -62,8 +62,8 @@
     <div class="pager"><span class="small muted" id="pageInfo"></span><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div>
   </section>
 </main>
-<script src="/assets/config.js?v=314"></script>
-<script src="/assets/jse.js?v=314"></script>
+<script src="/assets/config.js?v=315"></script>
+<script src="/assets/jse.js?v=315"></script>
 <script>
 (function () {
   "use strict";
@@ -174,7 +174,7 @@
     Object.keys(map).forEach(function (k) { var v = params.get(k); if (v && $(map[k])) $(map[k]).value = v; });
     if (params.get("order")) { $("fQ").value = params.get("order"); S.autoOpen = params.get("order").toUpperCase(); }
     JSE.api.get("/api/event-status").then(function (st) { S.rate = st.config && st.config.brokerage_rate; render(); }).catch(function () {});
-    poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").className = "pill round offline"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    poller = JSE.poll(load, 10000, { onError: function (e) { $("conn").className = "pill round offline"; $("connText").textContent = "Reconnecting… " + e.message; } });
     JSE.onStatus(function (s) { S.status = s; });
   });
 })();

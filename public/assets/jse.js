@@ -470,7 +470,7 @@
     ticker = poll(async function () {
       var s = await api.get("/api/event-status", null, { retries: 1, timeout: 10000 });
       applyStatus(s.status, s.index);
-    }, 5000, { onError: offlinePill });
+    }, 10000, { onError: offlinePill });
   }
 
   function homeFor(role) { return HOME[role] || "/"; }

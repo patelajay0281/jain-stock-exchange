@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=314">
+<link rel="stylesheet" href="/assets/jse.css?v=315">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -168,8 +168,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=314"></script>
-<script src="/assets/jse.js?v=314"></script>
+<script src="/assets/config.js?v=315"></script>
+<script src="/assets/jse.js?v=315"></script>
 <script>
 (function () {
   "use strict";
@@ -555,10 +555,10 @@
     if (!user) return;
     S.admin = user.role === "ADMIN";
     if (!S.admin) document.querySelectorAll(".admin-only").forEach(function (x) { x.classList.add("hidden"); });
-    poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
-    JSE.poll(loadIntel, 5000, { onError: function () {} });
-    JSE.poll(loadNews, 10000);
-    JSE.poll(loadSecs, 15000);
+    poller = JSE.poll(load, 10000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    JSE.poll(loadIntel, 10000, { onError: function () {} });
+    JSE.poll(loadNews, 20000);
+    JSE.poll(loadSecs, 30000);
     loadNames().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
     if (location.hash === "#intelligence") setTimeout(function () { $("intelligence").scrollIntoView(); }, 400);

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bank Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=314">
+<link rel="stylesheet" href="/assets/jse.css?v=315">
 <style>
   .lp-grid { display: grid; grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(0, 1fr)); gap: 12px; align-items: end; }
   .lp-act { display: flex; gap: 12px; align-items: end; margin-top: 14px; flex-wrap: wrap; }
@@ -61,8 +61,8 @@
       <tbody id="recent"></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=314"></script>
-<script src="/assets/jse.js?v=314"></script>
+<script src="/assets/config.js?v=315"></script>
+<script src="/assets/jse.js?v=315"></script>
 <script>
 (function () {
   "use strict";
@@ -98,7 +98,7 @@
       '<div class="txn-notes">' + (c.note || "") +
       '<div class="small muted">' + (buy ? "Pays " + F.money(o.required) + " = trade value " + F.money(o.trade_value) + " + brokerage " + JSE.rate(o.brokerage_rate)
                                           : "Receives " + F.money(o.settlement_amount) + " = trade value " + F.money(o.trade_value) + " − brokerage " + JSE.rate(o.brokerage_rate)) +
-        (o.claimed_by ? " · verifying: " + esc(o.claimed_by) : "") + " · " + F.age(o.age_seconds) + " ago</div></div>" +
+        (o.claimed_by ? " · verifying: " + esc(o.claimed_by) : "") + " · " + F.age(Math.max(0, (Date.now() - Date.parse(o.queued_at)) / 1000)) + " ago</div></div>" +
       (S.canAct ? '<div class="txn-a"><button class="btn approve" data-a="SETTLE">✓ Approve</button><button class="btn reject" data-a="REJECT">✕ Reject</button></div>'
                 : '<div class="txn-a one"><span class="muted small center">View only</span></div>') + "</article>";
   }
@@ -207,8 +207,8 @@
       n.classList.toggle("hidden", open);
       n.innerHTML = open ? "" : "<b>Market is " + esc((JSE.STATUS[s] || {}).text || s) + ".</b> Settlement is possible only while the market is LIVE or paused for settlement" + (s === "CLOSED" ? "; loan repayments are still accepted until FINALIZE." : ".");
     });
-    poller = JSE.poll(load, 2500, { onError: function (e) { $("conn").textContent = "Reconnecting… " + e.message; } });
-    loanPoll = JSE.poll(loadLoans, 6000);
+    poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").textContent = "Reconnecting… " + e.message; } });
+    loanPoll = JSE.poll(loadLoans, 15000);
   });
 })();
 </script>

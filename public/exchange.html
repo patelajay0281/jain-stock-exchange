@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Exchange Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=314">
+<link rel="stylesheet" href="/assets/jse.css?v=315">
 </head>
 <body>
 <main id="main" class="wrap wide">
@@ -32,8 +32,8 @@
       <tbody id="recent"></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=314"></script>
-<script src="/assets/jse.js?v=314"></script>
+<script src="/assets/config.js?v=315"></script>
+<script src="/assets/jse.js?v=315"></script>
 <script>
 (function () {
   "use strict";
@@ -159,7 +159,7 @@
       n.classList.toggle("hidden", open);
       n.innerHTML = open ? "" : "<b>Market is " + esc((JSE.STATUS[s] || {}).text || s) + ".</b> Exchange decisions are possible only while the market is LIVE or paused for settlement.";
     });
-    poller = JSE.poll(load, 2500, { onError: function (e) { $("conn").textContent = "Reconnecting… " + e.message; } });
+    poller = JSE.poll(load, 5000, { onError: function (e) { $("conn").textContent = "Reconnecting… " + e.message; } });
   });
 })();
 </script>
