@@ -25,7 +25,7 @@
       "viewers": 800
     }
   ],
-  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 10: health only (does not touch event data \u2014 the staging market is open/LIVE) \u2014 checks the Final Event CSV route is deployed.",
+  "note": "Edit this file on the v272 branch to start a staging run. Run 11: health only (event data untouched) \u2014 v3.13.1 data saver deployed.",
   "stress": {
     "orders": 1500,
     "workers": 16
