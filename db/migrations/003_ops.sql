@@ -58,12 +58,12 @@ BEGIN
   END IF;
   IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
     RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
-      MESSAGE = 'The market price of ' || v_sec.symbol || ' changed from ₹' || v_expected || ' to ₹' || v_sec.price || ' (Market News). Review and submit again.';
+      MESSAGE = 'The market price of ' || v_sec.symbol || ' changed from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) || ' (Market News). Review and submit again.';
   END IF;
   v_tv := round(v_qty * v_sec.price, 2);
   IF cfg.institution_brokerage THEN v_rate := cfg.brokerage_rate; v_brk := round(v_tv * v_rate, 2); END IF;
   IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
-    PERFORM jse_fail('ORDER_VALUE_LIMIT', 'Order value must be between ₹' || cfg.min_order_value || ' and ₹' || cfg.max_order_value || ' per order.', 400);
+    PERFORM jse_fail('ORDER_VALUE_LIMIT', 'Order value must be between ' || jse_inr(cfg.min_order_value) || ' and ' || jse_inr(cfg.max_order_value) || ' per order.', 400);
   END IF;
 
   IF v_side = 'BUY' THEN
@@ -88,7 +88,7 @@ BEGIN
           v_rate, CASE WHEN v_side = 'SELL' THEN v_tv + v_brk ELSE v_tv - v_brk END, v_sec.price, 'PIT_PENDING', left(p->>'notes', 300), v_key,
           nullif(a->>'id', '')::integer, jse_actor_name(a), a->>'role');
   PERFORM jse_order_event(v_id, 'INSTITUTION_SUBMITTED', NULL, 'PIT_PENDING', a,
-    'Institutional order at the market price ₹' || v_sec.price || '; counterparty ' || v_team.code,
+    'Institutional order at the market price ' || jse_inr(v_sec.price) || '; counterparty ' || v_team.code,
     jsonb_build_object('price', v_sec.price, 'trade_value', v_tv, 'institution', v_inst.code));
   PERFORM jse_audit(a, 'ORDER_SUBMITTED', 'order', v_no, v_team.id, v_id, NULL,
     jsonb_build_object('status', 'PIT_PENDING', 'side', v_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_sec.price),
@@ -129,7 +129,7 @@ BEGIN
     IF NOT cfg.loans_enabled THEN PERFORM jse_fail('LOANS_DISABLED', 'Borrowing is not permitted right now.', 409); END IF;
     v_room := greatest(0, cfg.loan_max_principal - ln.original_principal);
     IF v_amount > v_room THEN
-      PERFORM jse_fail('LOAN_LIMIT', 'Only ₹' || v_room || ' of the ₹' || cfg.loan_max_principal || ' loan limit is left for ' || t.code || '.', 409);
+      PERFORM jse_fail('LOAN_LIMIT', 'Only ' || jse_inr(v_room) || ' of the ' || jse_inr(cfg.loan_max_principal) || ' loan limit is left for ' || t.code || '.', 409);
     END IF;
     v_interest := round(v_amount * cfg.loan_interest_rate, 2);
     v_bal := t.cash + v_amount;
@@ -139,7 +139,7 @@ BEGIN
            draws = draws + 1, status = 'OUTSTANDING', updated_at = now() WHERE team_id = t.id;
     PERFORM jse_ledger(t.id, NULL, NULL, 'LOAN_DRAW', 0, v_amount, v_bal, 'Loan draw by the Bank', a);
     PERFORM jse_ledger(t.id, NULL, NULL, 'INTEREST_CHARGE', 0, 0, v_bal,
-      'Loan interest charged ₹' || v_interest || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on ₹' || v_amount || ') — added to the loan balance, no cash moved', a);
+      'Loan interest charged ' || jse_inr(v_interest) || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on ' || jse_inr(v_amount) || ') — added to the loan balance, no cash moved', a);
     INSERT INTO loan_transactions(team_id, kind, amount, automatic, note, actor_id, actor_name)
     VALUES (t.id, 'DRAW', v_amount, false, 'Loan draw', nullif(a->>'id', '')::integer, jse_actor_name(a)),
            (t.id, 'INTEREST_CHARGE', v_interest, false, jse_rate_text(cfg.loan_interest_rate) || ' interest on draw', nullif(a->>'id', '')::integer, jse_actor_name(a));
@@ -152,10 +152,10 @@ BEGIN
     v_due := ln.principal_outstanding + ln.interest_outstanding;
     IF v_due <= 0 THEN PERFORM jse_fail('NO_LOAN', t.code || ' has no outstanding loan.', 409); END IF;
     IF v_amount > v_due THEN
-      PERFORM jse_fail('REPAYMENT_EXCEEDS_DUE', 'Repayment is more than the amount due (₹' || v_due || ').', 409);
+      PERFORM jse_fail('REPAYMENT_EXCEEDS_DUE', 'Repayment is more than the amount due (' || jse_inr(v_due) || ').', 409);
     END IF;
     IF v_amount > t.cash THEN
-      PERFORM jse_fail('REPAYMENT_CASH_LIMIT', t.code || ' has only ₹' || t.cash || ' in cash.', 409);
+      PERFORM jse_fail('REPAYMENT_CASH_LIMIT', t.code || ' has only ' || jse_inr(t.cash) || ' in cash.', 409);
     END IF;
     v_int_pay := least(v_amount, ln.interest_outstanding);
     v_prin_pay := least(v_amount - v_int_pay, ln.principal_outstanding);
@@ -170,17 +170,17 @@ BEGIN
     IF v_prin_pay > 0 THEN
       v_bal := v_bal - v_prin_pay;
       PERFORM jse_ledger(t.id, NULL, NULL, 'LOAN_REPAYMENT', v_prin_pay, 0, v_bal,
-        'Loan principal repaid' || CASE WHEN v_prin_left > 0 THEN ' (₹' || v_prin_left || ' principal remains)' ELSE ' (principal cleared)' END, a);
+        'Loan principal repaid' || CASE WHEN v_prin_left > 0 THEN ' (' || jse_inr(v_prin_left) || ' principal remains)' ELSE ' (principal cleared)' END, a);
       INSERT INTO loan_transactions(team_id, kind, amount, note, actor_id, actor_name)
       VALUES (t.id, 'PRINCIPAL_REPAYMENT', v_prin_pay, 'Principal repayment', nullif(a->>'id', '')::integer, jse_actor_name(a));
       IF v_prin_left > 0 THEN
         v_fresh := round(v_prin_left * cfg.loan_interest_rate, 2);
         IF v_fresh > 0 THEN
           PERFORM jse_ledger(t.id, NULL, NULL, 'INTEREST_CHARGE', 0, 0, v_bal,
-            'Fresh interest ₹' || v_fresh || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on the remaining principal ₹' || v_prin_left ||
+            'Fresh interest ' || jse_inr(v_fresh) || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on the remaining principal ' || jse_inr(v_prin_left) ||
             ' after a partial repayment) — added to the loan balance, no cash moved', a);
           INSERT INTO loan_transactions(team_id, kind, amount, note, actor_id, actor_name)
-          VALUES (t.id, 'INTEREST_CHARGE', v_fresh, jse_rate_text(cfg.loan_interest_rate) || ' fresh interest on remaining principal ₹' || v_prin_left,
+          VALUES (t.id, 'INTEREST_CHARGE', v_fresh, jse_rate_text(cfg.loan_interest_rate) || ' fresh interest on remaining principal ' || jse_inr(v_prin_left),
                   nullif(a->>'id', '')::integer, jse_actor_name(a));
         END IF;
       END IF;
@@ -233,7 +233,7 @@ BEGIN
     jsonb_build_object('company', s.name, 'symbol', s.symbol, 'headline', p_headline, 'severity', p_mood, 'requested_pct', p_req,
                        'applied_pct', v_applied, 'previous_price', s.price, 'new_price', p_new, 'news_id', v_news, 'stale_orders', v_stale,
                        'source', 'MARKET_NEWS'));
-  PERFORM jse_journal('MARKET_NEWS', v_news, s.symbol || ' ' || replace(p_mood, '_', ' ') || ' ' || CASE WHEN v_applied > 0 THEN '+' ELSE '' END || to_char(v_applied, 'FM990.00') || '% (₹' || s.price || ' → ₹' || p_new || ')',
+  PERFORM jse_journal('MARKET_NEWS', v_news, s.symbol || ' ' || replace(p_mood, '_', ' ') || ' ' || CASE WHEN v_applied > 0 THEN '+' ELSE '' END || to_char(v_applied, 'FM990.00') || '% (' || jse_inr(s.price) || ' → ' || jse_inr(p_new) || ')',
                       jsonb_build_object('news_id', v_news, 'security_id', s.id), a);
   RETURN jsonb_build_object('success', true, 'news_id', v_news, 'symbol', s.symbol, 'name', s.name, 'mood', p_mood, 'headline', p_headline,
     'requested_pct', p_req, 'applied_pct', v_applied, 'previous_price', s.price, 'new_price', p_new, 'stale_orders', v_stale, 'source', 'MARKET_NEWS');
@@ -578,7 +578,7 @@ BEGIN
   v_amount := v_lots * s.lot_size * s.base_price;
   SELECT coalesce(sum(amount), 0) INTO v_other FROM ipo_applications WHERE team_id = t.id AND status = 'APPLIED' AND security_id <> s.id;
   IF v_other + v_amount > t.cash THEN
-    PERFORM jse_fail('APPLICATION_CASH', 'All IPO applications together (₹' || (v_other + v_amount) || ') cannot exceed the team''s cash (₹' || t.cash || ').', 409);
+    PERFORM jse_fail('APPLICATION_CASH', 'All IPO applications together (' || jse_inr((v_other + v_amount)) || ') cannot exceed the team''s cash (' || jse_inr(t.cash) || ').', 409);
   END IF;
   INSERT INTO ipo_applications(team_id, security_id, lots, quantity, price, amount, status, created_by_name, updated_by_name)
   VALUES (t.id, s.id, v_lots, v_lots * s.lot_size, s.base_price, v_amount, 'APPLIED', jse_actor_name(a), jse_actor_name(a))
@@ -645,7 +645,7 @@ BEGIN
   UPDATE teams SET cash = cash - p_allot.amount, updated_at = now() WHERE id = p_allot.team_id RETURNING cash INTO v_bal;
   IF v_bal < 0 THEN PERFORM jse_fail('ALLOTMENT_CASH', 'Allotment exceeds the team''s cash.', 409); END IF;
   PERFORM jse_ledger(p_allot.team_id, NULL, NULL, 'IPO_ALLOTMENT', p_allot.amount, 0, v_bal,
-    'IPO allotment: ' || p_allot.lots || ' IPO lot(s) = ' || p_allot.quantity || ' ' || v_sym || ' @ ₹' || p_allot.price || ' (no brokerage; not an assessment trade)', a);
+    'IPO allotment: ' || p_allot.lots || ' IPO lot(s) = ' || p_allot.quantity || ' ' || v_sym || ' @ ' || jse_inr(p_allot.price) || ' (no brokerage; not an assessment trade)', a);
   INSERT INTO holdings(team_id, security_id, quantity, cost_basis, trade_cost) VALUES (p_allot.team_id, p_allot.security_id, p_allot.quantity, p_allot.amount, p_allot.amount)
   ON CONFLICT (team_id, security_id) DO UPDATE SET quantity = holdings.quantity + EXCLUDED.quantity,
     cost_basis = holdings.cost_basis + EXCLUDED.cost_basis, trade_cost = holdings.trade_cost + EXCLUDED.trade_cost, updated_at = now();
@@ -682,7 +682,7 @@ BEGIN
       v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Shares ' || (r->>'shares') || ' ≠ ' || v_lots || ' lots × ' || v_sec.lot_size || ' = ' || v_shares); CONTINUE;
     END IF;
     IF nullif(trim(coalesce(r->>'amount', '')), '') IS NOT NULL AND round((r->>'amount')::numeric, 2) <> v_amt THEN
-      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Amount ' || (r->>'amount') || ' ≠ ' || v_shares || ' × ₹' || v_sec.base_price || ' = ₹' || v_amt); CONTINUE;
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Amount ' || (r->>'amount') || ' ≠ ' || v_shares || ' × ' || jse_inr(v_sec.base_price) || ' = ' || jse_inr(v_amt)); CONTINUE;
     END IF;
     -- when the portal application process was used for this IPO, an allotment cannot exceed the team's application
     IF EXISTS (SELECT 1 FROM ipo_applications ap WHERE ap.security_id = v_sec.id AND ap.status = 'APPLIED') THEN
@@ -710,7 +710,7 @@ BEGIN
              WHERE al2.team_id = x.team_id AND al2.reversed_at IS NULL), 0) ELSE 0 END)
     INTO v_total FROM teams t2 WHERE t2.id = x.team_id;
     IF x.need > v_total THEN
-      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' does not have enough cash for ₹' || x.need || ' of allotments (available ₹' || v_total || ')');
+      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' does not have enough cash for ' || jse_inr(x.need) || ' of allotments (available ' || jse_inr(v_total) || ')');
     END IF;
   END LOOP;
   v_total := 0;
@@ -795,7 +795,7 @@ BEGIN
     jsonb_build_object('issue_price', s.base_price, 'listing_price', v_price, 'listed_at_issue_price', s.listing_price IS NULL,
                        'change_pct', round(v_pct, 2), 'cms_index_components', v_n, 'source', 'LISTING'));
   PERFORM jse_journal('IPO_LISTING', s.id,
-    s.symbol || ' listed at ₹' || v_price || ' (issue ₹' || s.base_price || ', ' || CASE WHEN v_pct > 0 THEN '+' ELSE '' END || to_char(round(v_pct, 2), 'FM990.00') || '%) · CMS INDEX ' || v_n || ' components',
+    s.symbol || ' listed at ' || jse_inr(v_price) || ' (issue ' || jse_inr(s.base_price) || ', ' || CASE WHEN v_pct > 0 THEN '+' ELSE '' END || to_char(round(v_pct, 2), 'FM990.00') || '%) · CMS INDEX ' || v_n || ' components',
     jsonb_build_object('security_id', s.id, 'from_price', s.price, 'from_previous', s.previous_price, 'listing_price', v_price), a);
   RETURN jsonb_build_object('symbol', s.symbol, 'name', s.name, 'issue_price', s.base_price, 'listing_price', v_price,
                             'change_pct', round(v_pct, 2), 'at_issue_price', s.listing_price IS NULL, 'index_components', v_n);
@@ -846,10 +846,10 @@ BEGIN
         v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': enter a positive price'); CONTINUE;
       END IF;
       IF v_price <> jse_round_tick(v_price, cfg.price_tick) THEN
-        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': use whole rupees (price step ₹' || cfg.price_tick || ')'); CONTINUE;
+        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': use whole rupees (price step ' || jse_inr(cfg.price_tick) || ')'); CONTINUE;
       END IF;
       IF v_price < s.base_price * 0.5 OR v_price > s.base_price * 2 THEN
-        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': the listing price must be between 50% and 200% of the issue price ₹' || s.base_price);
+        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', s.symbol || ': the listing price must be between 50% and 200% of the issue price ' || jse_inr(s.base_price));
         CONTINUE;
       END IF;
       v_rows := v_rows || jsonb_build_object('id', s.id, 'symbol', s.symbol, 'price', v_price);
@@ -1011,7 +1011,7 @@ BEGIN
     UPDATE loans SET status = CASE WHEN original_principal = 0 THEN 'NONE' WHEN principal_outstanding + interest_outstanding = 0 THEN 'REPAID' ELSE 'OUTSTANDING' END WHERE team_id = t.id;
     INSERT INTO loan_transactions(team_id, kind, amount, order_id, settlement_id, note, actor_id, actor_name)
     VALUES (t.id, 'REVERSAL', st.loan_drawn, o.id, st.id, 'Automatic draw and its interest reversed (undo)', nullif(a->>'id', '')::integer, jse_actor_name(a));
-    PERFORM jse_ledger(t.id, o.id, st.id, 'INTEREST_CHARGE', 0, 0, v_bal, 'Loan interest ₹' || st.loan_interest || ' on the reversed draw cancelled (undo)', a);
+    PERFORM jse_ledger(t.id, o.id, st.id, 'INTEREST_CHARGE', 0, 0, v_bal, 'Loan interest ' || jse_inr(st.loan_interest) || ' on the reversed draw cancelled (undo)', a);
   END IF;
   -- institution side
   IF st.institution_id IS NOT NULL THEN

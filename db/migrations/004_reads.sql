@@ -76,7 +76,7 @@ SELECT m.*,
     CASE WHEN settled_buys < min_buy_trades THEN 'BUY ' || settled_buys || ' / ' || min_buy_trades END,
     CASE WHEN settled_sells < min_sell_trades THEN 'SELL ' || settled_sells || ' / ' || min_sell_trades END,
     CASE WHEN loan_repayment_required AND NOT loan_repaid THEN 'Loan not fully repaid' END,
-    CASE WHEN final_evaluation AND NOT cash_rule_met THEN 'Closing cash above ₹' || cash_rule_limit::bigint || ' (base cash rule)' END], NULL) AS eligibility_gaps,
+    CASE WHEN final_evaluation AND NOT cash_rule_met THEN 'Closing cash above ' || jse_inr(cash_rule_limit::bigint) || ' (base cash rule)' END], NULL) AS eligibility_gaps,
   CASE WHEN assessment_met AND (NOT loan_repayment_required OR loan_repaid) AND (NOT final_evaluation OR cash_rule_met)
        THEN CASE WHEN final_evaluation THEN 'ELIGIBLE' ELSE 'ELIGIBLE · PROVISIONAL' END
        ELSE CASE WHEN final_evaluation THEN 'NOT ELIGIBLE' ELSE 'NOT YET ELIGIBLE' END END AS eligibility_status,
@@ -238,7 +238,7 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'event_status', v_status, 'final', v_status IN ('CLOSED', 'FINALIZED'),
     'criterion', 'Net Worth = liquid cash + holdings × closing price (loans are not deducted). Winner = highest eligible Net Worth; Runner-Up = second highest. Ties go to the lower team code.',
     'eligibility_rule', 'Eligible = at least ' || cfg.min_buy_trades || ' settled BUY and ' || cfg.min_sell_trades || ' settled SELL listed-stock trades (IPO allotments do not count)' ||
-                        CASE WHEN cfg.loan_repayment_required THEN ' + loan fully repaid' ELSE '' END || ' + closing cash rule (base cash ≤ ₹' || cfg.cash_rule_limit::bigint || ', evaluated at close).',
+                        CASE WHEN cfg.loan_repayment_required THEN ' + loan fully repaid' ELSE '' END || ' + closing cash rule (base cash ≤ ' || jse_inr(cfg.cash_rule_limit::bigint) || ', evaluated at close).',
     'initial_capital', cfg.initial_capital, 'cash_rule_limit', cfg.cash_rule_limit, 'min_buy_trades', cfg.min_buy_trades, 'min_sell_trades', cfg.min_sell_trades,
     'loan_repayment_required', cfg.loan_repayment_required,
     'stats', (SELECT jsonb_build_object('teams', count(*), 'total_net_worth', sum(net_worth), 'average_net_worth', round(avg(net_worth), 2),
@@ -425,16 +425,16 @@ CREATE OR REPLACE FUNCTION jse_order_flow(p_id bigint) RETURNS jsonb LANGUAGE sq
       'at', ins.created_at, 'by', CASE WHEN ins.id IS NOT NULL THEN t.name || ' (' || t.code || ')' END,
       'detail', CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional desk order (counterparty ' || t.code || ')'
                      WHEN ins.id IS NOT NULL THEN ins.instruction_no || ': ' || ins.side || ' ' || ins.quantity || ' ' || s.symbol ||
-                          coalesce(' · market price seen ₹' || ins.price_seen, '') || coalesce(' · note: ' || ins.note, '')
+                          coalesce(' · market price seen ' || jse_inr(ins.price_seen), '') || coalesce(' · note: ' || ins.note, '')
                      ELSE 'Instruction given to the broker in person at the desk' END),
     jsonb_build_object('step', 'BROKER_SUBMISSION', 'label', CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional Submission' ELSE 'Broker Submission' END,
       'state', 'DONE', 'at', o.created_at, 'by', o.created_by_name || coalesce(' · ' || b.name || ' (' || b.code || ')', ''),
-      'detail', o.side || ' ' || o.quantity || ' ' || s.symbol || ' at the market price ₹' || o.price || ' · trade value ₹' || o.trade_value ||
-                ' · brokerage ' || jse_rate_text(coalesce(o.brokerage_rate, CASE WHEN o.trade_value > 0 THEN o.brokerage / o.trade_value END)) || ' = ₹' || o.brokerage),
+      'detail', o.side || ' ' || o.quantity || ' ' || s.symbol || ' at the market price ' || jse_inr(o.price) || ' · trade value ' || jse_inr(o.trade_value) ||
+                ' · brokerage ' || jse_rate_text(coalesce(o.brokerage_rate, CASE WHEN o.trade_value > 0 THEN o.brokerage / o.trade_value END)) || ' = ' || jse_inr(o.brokerage)),
     jsonb_build_object('step', 'PIT_EXECUTION', 'label', 'Pit Manager Execution',
       'state', CASE WHEN o.executed_at IS NOT NULL THEN 'DONE' WHEN o.status = 'PIT_PENDING' THEN 'CURRENT' WHEN o.status = 'PIT_REJECTED' THEN 'REJECTED' ELSE 'NA' END,
       'at', coalesce(o.executed_at, o.pit_at), 'by', coalesce(o.executed_by_name, o.pit_by_name),
-      'detail', CASE WHEN o.executed_at IS NOT NULL THEN 'Executed ' || o.executed_quantity || ' @ ₹' || o.executed_price || ' · trading slip ' || coalesce(sl.slip_no, '—')
+      'detail', CASE WHEN o.executed_at IS NOT NULL THEN 'Executed ' || o.executed_quantity || ' @ ' || jse_inr(o.executed_price) || ' · trading slip ' || coalesce(sl.slip_no, '—')
                      WHEN o.status = 'PIT_PENDING' THEN 'Waiting for the Pit Manager to execute'
                      WHEN o.status = 'PIT_REJECTED' THEN coalesce(o.reject_reason, 'Rejected by the Pit Manager')
                      ELSE 'Recorded before the Pit Manager stage existed' END),
@@ -451,17 +451,17 @@ CREATE OR REPLACE FUNCTION jse_order_flow(p_id bigint) RETURNS jsonb LANGUAGE sq
                     WHEN o.status IN ('EXCHANGE_APPROVED', 'BANK_PENDING') THEN 'CURRENT'
                     WHEN o.status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED') THEN 'SKIPPED' ELSE 'WAITING' END,
       'at', o.bank_at, 'by', coalesce(o.bank_by_name, o.bank_claimed_name),
-      'detail', CASE WHEN o.status = 'BANK_SETTLED' THEN 'Settled ₹' || o.settlement_amount || CASE WHEN o.side = 'BUY' AND o.account_type = 'TEAM' THEN ' (trade value + brokerage)'
+      'detail', CASE WHEN o.status = 'BANK_SETTLED' THEN 'Settled ' || jse_inr(o.settlement_amount) || CASE WHEN o.side = 'BUY' AND o.account_type = 'TEAM' THEN ' (trade value + brokerage)'
                                                                                               WHEN o.account_type = 'TEAM' THEN ' (trade value − brokerage)' ELSE '' END ||
-                                                     CASE WHEN st.loan_drawn > 0 THEN ' · automatic loan ₹' || st.loan_drawn || ' (interest ₹' || st.loan_interest || ')' ELSE '' END
+                                                     CASE WHEN st.loan_drawn > 0 THEN ' · automatic loan ' || jse_inr(st.loan_drawn) || ' (interest ' || jse_inr(st.loan_interest) || ')' ELSE '' END
                      WHEN o.status = 'BANK_REJECTED' THEN coalesce(o.reject_reason, 'Rejected by the Bank')
                      WHEN o.status = 'BANK_PENDING' THEN 'Being verified by ' || coalesce(o.bank_claimed_name, 'the Bank')
                      WHEN o.status = 'EXCHANGE_APPROVED' THEN 'Waiting for the Bank' ELSE NULL END),
     jsonb_build_object('step', 'UPDATES', 'label', 'Market / Cash / Holdings Updated',
       'state', CASE WHEN o.status = 'BANK_SETTLED' THEN 'DONE' WHEN o.status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED') THEN 'SKIPPED' ELSE 'WAITING' END,
       'at', st.settled_at, 'by', st.settled_by_name,
-      'detail', CASE WHEN st.id IS NOT NULL THEN t.code || ' cash ₹' || st.team_cash_before || ' → ₹' || st.team_cash_after || ' · ' || s.symbol || ' holding ' ||
-                     st.holding_before || ' → ' || st.holding_after || ' · market price unchanged (₹' || st.price_before || '; prices move only on Market News)'
+      'detail', CASE WHEN st.id IS NOT NULL THEN t.code || ' cash ' || jse_inr(st.team_cash_before) || ' → ' || jse_inr(st.team_cash_after) || ' · ' || s.symbol || ' holding ' ||
+                     st.holding_before || ' → ' || st.holding_after || ' · market price unchanged (' || jse_inr(st.price_before) || '; prices move only on Market News)'
                      WHEN o.status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED') THEN 'No cash or holding change (order rejected)' ELSE NULL END))
   FROM orders o JOIN teams t ON t.id = o.team_id JOIN securities s ON s.id = o.security_id
   LEFT JOIN brokers b ON b.id = o.broker_id

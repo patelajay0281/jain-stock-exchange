@@ -43,9 +43,11 @@ async function cleanup() {
   };
   const st = (await (await fetch(BASE + "/api/event-status")).json()).status;
   const steps = {};
-  if (st === "LIVE" || st === "SETTLEMENT_ONLY") { steps.reject = (await post("/api/reject-open-orders", {})).status; steps.close = (await post("/api/event", { action: "CLOSE" })).status; }
-  steps.reset = (await post("/api/reset-event", { confirm: "RESET", keep_allotments: false })).status;
-  steps.clear_listing = (await post("/api/ipo-listing", { action: "CLEAR" })).status;
+  const pw = { admin_password: "ci-session" };   // CI sessions are exempt from the administrator password; the field keeps the real request shape
+  if (st === "LIVE" || st === "SETTLEMENT_ONLY") { steps.reject = (await post("/api/reject-open-orders", pw)).status; steps.close = (await post("/api/event", { action: "CLOSE", ...pw })).status; }
+  steps.reset = (await post("/api/reset-event", { confirm: "RESET", keep_allotments: false, ...pw })).status;
+  steps.clear_listing = (await post("/api/ipo-listing", { action: "CLEAR", ...pw })).status;
+  steps.clear_applications = (await post("/api/ipo-applications", { action: "CLEAR", ...pw })).status;
   results.suites.cleanup = steps;
 }
 
@@ -87,6 +89,9 @@ for (const s of cfg.suites) {
       const { signIn } = await import("../lib/client.mjs");
       const tokens = {};
       for (const u of ["ADMIN", "PIT-01", "EXCHANGE-01", "BANK-01", "TEAM-031"]) tokens[u] = await signIn(u);
+      // the broker assigned to TEAM-031 (teams.broker_id) drives the Broker Desk part of the browser test
+      const names = await (await fetch(BASE + "/api/team-names", { headers: { authorization: "Bearer " + tokens.ADMIN } })).json();
+      tokens.BROKER = await signIn(names.teams.find((t) => t.team === "TEAM-031").broker);
       await run("ui", "python3", ["tests/ui_staging.py"], { SITE: cfg.site, API: BASE, UI_TOKENS: JSON.stringify(tokens) }, 20);
     }
     else if (s === "api") await run("api", "node", ["--test", "--test-concurrency=1", "tests/api.test.mjs"]);

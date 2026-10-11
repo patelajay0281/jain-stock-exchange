@@ -1,6 +1,6 @@
-// Open-loop load generator modelled on Dalal Street traffic: hundreds of screens polling the market,
-// participants checking portfolios, desks polling queues, and a steady stream of orders going
-// through Exchange and Bank.
+// Open-loop load generator modelled on Dalal Street traffic (v311): hundreds of screens polling the market,
+// participants checking their portfolio, orders and trading slips, brokers / Pit Managers / Exchange / Bank polling
+// their desks, and a steady stream of orders going broker → Pit Manager → Exchange → Bank.
 //   BASE=http://127.0.0.1:8788 RPS=850 DURATION=60 WRITE_RPS=1 node tests/load.mjs
 //   (DURATION in seconds; OUT=path.json writes the summary; AUDIT=1 checks the ledger at the end)
 import { randomUUID } from "node:crypto";
@@ -23,22 +23,29 @@ const N = Number;
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const tok = {};
 const teams = Array.from({ length: 100 }, (_, i) => "TEAM-" + String(i + 1).padStart(3, "0"));
-const brokers = Array.from({ length: 10 }, (_, i) => "PIT-" + String(i + 1).padStart(2, "0"));
+const brokers = Array.from({ length: 10 }, (_, i) => "BROKER-" + String(i + 1).padStart(2, "0"));
+const pits = Array.from({ length: 10 }, (_, i) => "PIT-" + String(i + 1).padStart(2, "0"));
+const brokerOf = {};
+const A = { admin_password: process.env.PW_ADMIN || "admin-pass-1" };
 const exchanges = ["EXCHANGE-01", "EXCHANGE-02", "EXCHANGE-03", "EXCHANGE-04"], banks = ["BANK-01", "BANK-02", "BANK-03", "BANK-04"];
 const viewerTags = new Array(VIEWERS).fill(null);
 let prices = new Map(), symbols = [];
 
 // weighted read mix (per request)
 const MIX = [
-  [62, "GET market", () => { const v = Math.floor(Math.random() * VIEWERS); return ["/api/market", null, v]; }],
+  [60, "GET market", () => { const v = Math.floor(Math.random() * VIEWERS); return ["/api/market", null, v]; }],
   [12, "GET event-status", () => ["/api/event-status", null]],
-  [4, "GET insights", () => ["/api/insights", null]],
-  [3, "GET market-news", () => ["/api/market-news?limit=15", null]],
+  [3, "GET market-news", () => ["/api/market-news?limit=4", null]],
+  [2, "GET ipo", () => ["/api/ipo", null]],
   [6, "GET portfolio-details", () => { const t = pick(teams); return ["/api/portfolio-details", tok[t]]; }],
-  [4, "GET tracking", () => ["/api/tracking?page_size=50", tok[pick(brokers)]]],
-  [3, "GET exchange queue", () => ["/api/exchange", tok[pick(exchanges)]]],
-  [3, "GET bank queue", () => ["/api/bank", tok[pick(banks)]]],
-  [3, "GET portfolios", () => ["/api/portfolios", tok.ADMIN]],
+  [3, "GET my orders", () => { const t = pick(teams); return ["/api/orders?page_size=50", tok[t]]; }],
+  [1, "GET my slips", () => { const t = pick(teams); return ["/api/slips", tok[t]]; }],
+  [3, "GET broker desk", () => ["/api/broker-desk", tok[pick(brokers)]]],
+  [3, "GET pit queue", () => ["/api/pit", tok[pick(pits)]]],
+  [2, "GET exchange queue", () => ["/api/exchange", tok[pick(exchanges)]]],
+  [2, "GET bank queue", () => ["/api/bank", tok[pick(banks)]]],
+  [2, "GET admin-state", () => ["/api/admin-state", tok.ADMIN]],
+  [1, "GET insights", () => ["/api/insights", tok.ADMIN]],
 ];
 const WSUM = MIX.reduce((s, m) => s + m[0], 0);
 function chooseRead() { let r = Math.random() * WSUM; for (const m of MIX) { if ((r -= m[0]) < 0) return m; } return MIX[0]; }
@@ -51,23 +58,26 @@ async function fireRead() {
   try {
     const r = await call(stats, name, "GET", path, { token, etag: viewer !== undefined ? viewerTags[viewer] : undefined, extra: inSteady ? steady : null });
     if (viewer !== undefined && r.etag) viewerTags[viewer] = r.etag;
-    if (name === "GET market" && r.status === 200 && r.data?.stocks) { const all = [...r.data.ipos, ...r.data.stocks]; prices = new Map(all.map((s) => [s.symbol, N(s.price)])); symbols = all.map((s) => s.symbol); }
+    if (name === "GET market" && r.status === 200 && r.data?.stocks) { const all = [...r.data.stocks, ...r.data.ipos.filter((x) => x.listed)]; prices = new Map(all.map((s) => [s.symbol, N(s.price)])); symbols = all.map((s) => s.symbol); }
   } finally { inflight--; }
 }
 
-const flow = { pipelines: 0, settled: 0, rejected: 0, failed: 0 };
+const flow = { pipelines: 0, executed: 0, stale: 0, settled: 0, rejected: 0, failed: 0 };
 async function firePipeline() {
   if (!symbols.length) return;
   flow.pipelines++;
   const sym = pick(symbols), team = pick(teams), p = prices.get(sym) || 100;
   const side = Math.random() < 0.7 ? "BUY" : "SELL";
   const qty = 50 * (1 + Math.floor(Math.random() * Math.max(1, Math.min(4, Math.floor(150000 / (p * 50))))));
-  const body = { team, symbol: sym, side, quantity: qty, price: Math.max(1, Math.round(p * (1 + (Math.random() - 0.5) * 0.08))), idempotency_key: randomUUID() };
+  const body = { team, symbol: sym, side, quantity: qty, expected_price: p, idempotency_key: randomUUID() };
   inflight++;
   try {
     const x = inSteady ? steady : null;
-    const o = await call(stats, "POST orders", "POST", "/api/orders", { token: tok[pick(brokers)], body, extra: x });
+    const o = await call(stats, "POST orders", "POST", "/api/orders", { token: tok[brokerOf[team]], body, extra: x });
     if (o.status !== 200) { if (o.status >= 500 || o.status === 0) flow.failed++; return; }
+    const e = await call(stats, "POST pit", "POST", "/api/pit", { token: tok[pick(pits)], body: { order_id: o.data.order.id, action: "EXECUTE" }, extra: x });
+    if (e.status !== 200) { if (e.status >= 500 || e.status === 0) flow.failed++; else flow.stale++; return; }
+    flow.executed++;
     const a = await call(stats, "POST exchange", "POST", "/api/exchange", { token: tok[pick(exchanges)], body: { order_id: o.data.order.id, action: "APPROVE", confirm_short_sell: true }, extra: x });
     if (a.status !== 200) { if (a.status >= 500 || a.status === 0) flow.failed++; return; }
     const b = await call(stats, "POST bank", "POST", "/api/bank", { token: tok[pick(banks)], body: { order_id: o.data.order.id, action: "SETTLE" }, extra: x });
@@ -76,10 +86,11 @@ async function firePipeline() {
 }
 
 async function main() {
-  const users = ["ADMIN", ...brokers, ...exchanges, ...banks, ...teams];
+  const users = ["ADMIN", ...brokers, ...pits, ...exchanges, ...banks, ...teams];
   for (let i = 0; i < users.length; i += 10) await Promise.all(users.slice(i, i + 10).map(async (u) => { tok[u] = await signIn(u); }));
+  for (const t of (await call(null, "", "GET", "/api/team-names", { token: tok.ADMIN })).data.teams) brokerOf[t.team] = t.broker;
   if (RESET) {
-    const adm = (path, body) => call(stats, "admin", "POST", path, { token: tok.ADMIN, body });
+    const adm = (path, body) => call(stats, "admin", "POST", path, { token: tok.ADMIN, body: { ...body, ...A } });
     const st = (await call(null, "", "GET", "/api/event-status")).data.status;
     if (st === "LIVE" || st === "SETTLEMENT_ONLY") { await adm("/api/reject-open-orders", {}); await adm("/api/event", { action: "CLOSE" }); }
     await adm("/api/reset-event", { confirm: "RESET", keep_allotments: false });

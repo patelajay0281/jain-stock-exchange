@@ -28,7 +28,7 @@ function pct(a, q) { if (!a.length) return 0; const s = Float64Array.from(a).sor
 async function run(target, rps, seconds, viewers) {
   const tags = new Array(viewers).fill(null), lat = [], codes = {};
   let sent = 0, inflight = 0, maxInflight = 0, errors = 0;
-  const mix = [[70, () => { const v = Math.floor(Math.random() * viewers); return ["/api/market", v]; }], [20, () => ["/api/event-status"]], [5, () => ["/api/insights"]], [5, () => ["/api/market-news?limit=15"]]];
+  const mix = [[70, () => { const v = Math.floor(Math.random() * viewers); return ["/api/market", v]; }], [20, () => ["/api/event-status"]], [5, () => ["/api/ipo"]], [5, () => ["/api/market-news?limit=15"]]];
   const one = async () => {
     let r = Math.random() * 100, pick = mix[0][1];
     for (const m of mix) { if ((r -= m[0]) < 0) { pick = m[1]; break; } }

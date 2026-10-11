@@ -194,14 +194,24 @@ function params(ctx: Ctx, keys: string[]): Record<string, string> {
   return p;
 }
 
+/** true while the bucket still has a token (does not consume one) */
+function hasTokens(key: string, perSecond: number, burst: number): boolean {
+  const b = buckets.get(key);
+  if (!b) return true;
+  return Math.min(burst, b.tokens + ((Date.now() - b.at) / 1000) * perSecond) >= 1;
+}
+// wrong administrator passwords: 8 attempts, then one more every 20 seconds (per account, per process)
+const ADMIN_PW_FAIL = { perSecond: 0.05, burst: 8 };
+
 // mutation helper: call the engine, then clear caches that could now be stale
 async function mutate(ctx: Ctx, fn: string, body: unknown, clear?: string[]): Promise<Response> {
   if (!rateLimit("w:" + (ctx.user?.id ?? ctx.ip), 15, 40)) {
     throw new ApiError(429, "TOO_MANY_REQUESTS", "Too many actions in a short time. Please wait a moment.");
   }
-  if (body && typeof body === "object" && "admin_password" in (body as any) && ctx.user
-      && !rateLimit("adminpw:" + ctx.user.id, 0.1, 12)) {
-    throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Too many password confirmations. Wait a minute and try again.");
+  const failKey = ctx.user ? "adminpw-fail:" + ctx.user.id : "";
+  if (failKey && body && typeof body === "object" && "admin_password" in (body as any)
+      && !hasTokens(failKey, ADMIN_PW_FAIL.perSecond, ADMIN_PW_FAIL.burst)) {
+    throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Too many incorrect administrator passwords. Wait a minute and try again.");
   }
   try {
     const out = await call(fn, actor(ctx), body);
@@ -210,10 +220,11 @@ async function mutate(ctx: Ctx, fn: string, body: unknown, clear?: string[]): Pr
   } catch (e) {
     // engine results that commit before reporting a problem (e.g. PRICE STALE) still change state
     if (e instanceof ApiError && (e.code === "PRICE_STALE")) invalidate(clear);
+    if (failKey && e instanceof ApiError && e.code === "ADMIN_PASSWORD_INVALID") rateLimit(failKey, ADMIN_PW_FAIL.perSecond, ADMIN_PW_FAIL.burst);
     throw e;
   }
 }
-const ORDER_CACHES = ["trk:", "staff:", "pd:", "q:", "bd:", "ins:", "slips:", "pub:status"];
+const ORDER_CACHES = ["trk:", "staff:", "pd:", "q:", "bd:", "ins:", "slips:", "pub:status", "admin:", "audit:", "inst:"];
 
 // ---- public ----
 get("/api/health", async (ctx) => {

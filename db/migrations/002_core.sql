@@ -62,6 +62,26 @@ CREATE OR REPLACE FUNCTION jse_rate_text(p_rate numeric) RETURNS text LANGUAGE s
   SELECT trim(to_char(coalesce(p_rate, 0) * 100, 'FM9990.00')) || '%'
 $$;
 
+-- Indian rupee text for messages and records: ₹19,11,000 · ₹1,445.50 · −₹250 (paise only when present)
+CREATE OR REPLACE FUNCTION jse_inr(p numeric) RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE v_abs numeric; v_int text; v_dec text; v_head text; v_out text;
+BEGIN
+  IF p IS NULL THEN RETURN NULL; END IF;
+  v_abs := abs(round(p, 2));
+  v_int := trunc(v_abs)::text;
+  v_dec := lpad(round((v_abs - trunc(v_abs)) * 100)::integer::text, 2, '0');
+  IF length(v_int) > 3 THEN
+    v_out := right(v_int, 3); v_head := left(v_int, length(v_int) - 3);
+    WHILE length(v_head) > 2 LOOP
+      v_out := right(v_head, 2) || ',' || v_out; v_head := left(v_head, length(v_head) - 2);
+    END LOOP;
+    v_out := v_head || ',' || v_out;
+  ELSE
+    v_out := v_int;
+  END IF;
+  RETURN CASE WHEN p < 0 THEN '−' ELSE '' END || '₹' || v_out || CASE WHEN v_dec <> '00' THEN '.' || v_dec ELSE '' END;
+END $$;
+
 CREATE OR REPLACE FUNCTION jse_audit(a jsonb, p_action text, p_entity text, p_entity_id text, p_team integer,
                                      p_order bigint, p_before jsonb, p_after jsonb, p_details jsonb)
 RETURNS void LANGUAGE sql AS $$
@@ -203,7 +223,7 @@ CREATE OR REPLACE FUNCTION jse__mark_stale(a jsonb, o orders, p_market numeric, 
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE v_reason text;
 BEGIN
-  v_reason := 'PRICE STALE: the market price moved from ₹' || o.price || ' to ₹' || p_market || ' (' || replace(p_source, '_', ' ') ||
+  v_reason := 'PRICE STALE: the market price moved from ' || jse_inr(o.price) || ' to ' || jse_inr(p_market) || ' (' || replace(p_source, '_', ' ') ||
               ') before the Pit Manager executed this order. The broker must submit a fresh order at the new market price.';
   UPDATE orders SET status = 'PIT_REJECTED', reject_code = 'PRICE_STALE', reject_reason = v_reason,
          pit_at = now(), pit_by_name = 'SYSTEM · ' || replace(p_source, '_', ' '), updated_at = now()
@@ -462,7 +482,7 @@ BEGIN
   -- the broker's screen showed a price; if Market News moved it since, ask the broker to review (no silent re-quote)
   IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
     RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
-      MESSAGE = 'The market price of ' || v_sec.symbol || ' changed from ₹' || v_expected || ' to ₹' || v_sec.price ||
+      MESSAGE = 'The market price of ' || v_sec.symbol || ' changed from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
                 ' (Market News). Review the new value with the participant and submit again.';
   END IF;
 
@@ -471,8 +491,8 @@ BEGIN
   v_brk := round(v_tv * v_rate, 2);
   v_amount := CASE WHEN v_side = 'BUY' THEN v_tv + v_brk ELSE v_tv - v_brk END;
   IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
-    PERFORM jse_fail('ORDER_VALUE_LIMIT', 'Order value must be between ₹' || cfg.min_order_value || ' and ₹' || cfg.max_order_value ||
-      ' per order (this order: ₹' || v_tv || ').', 400);
+    PERFORM jse_fail('ORDER_VALUE_LIMIT', 'Order value must be between ' || jse_inr(cfg.min_order_value) || ' and ' || jse_inr(cfg.max_order_value) ||
+      ' per order (this order: ' || jse_inr(v_tv) || ').', 400);
   END IF;
 
   -- risk checks (recorded and shown to the Pit Manager, Exchange and Bank; the Bank enforces them)
@@ -490,11 +510,11 @@ BEGIN
     IF v_amount > v_free_cash + v_room THEN
       v_shortfall := true;
       v_warnings := v_warnings || jsonb_build_object('code', 'CASH_SHORTFALL', 'message',
-        'Cash shortfall: this BUY needs ₹' || v_amount || ' but ' || v_team.code || ' has ₹' || greatest(v_free_cash, 0) ||
-        ' free cash and ₹' || v_room || ' of loan room. The attempt has been recorded; the Bank will reject it unless funds are available.');
+        'Cash shortfall: this BUY needs ' || jse_inr(v_amount) || ' but ' || v_team.code || ' has ' || jse_inr(greatest(v_free_cash, 0)) ||
+        ' free cash and ' || jse_inr(v_room) || ' of loan room. The attempt has been recorded; the Bank will reject it unless funds are available.');
     ELSIF v_amount > v_free_cash THEN
       v_warnings := v_warnings || jsonb_build_object('code', 'LOAN_NEEDED', 'message',
-        'This BUY needs about ₹' || round(v_amount - greatest(v_free_cash, 0), 2) || ' more than the free cash. The Bank will draw that amount as a loan at settlement (' ||
+        'This BUY needs about ' || jse_inr(round(v_amount - greatest(v_free_cash, 0), 2)) || ' more than the free cash. The Bank will draw that amount as a loan at settlement (' ||
         jse_rate_text(cfg.loan_interest_rate) || ' interest).');
     END IF;
   END IF;
@@ -512,7 +532,7 @@ BEGIN
     PERFORM jse_order_event(v_id, 'INSTRUCTION_RECEIVED', NULL, NULL, jsonb_build_object('username', v_ins.created_by_name, 'role', 'PARTICIPANT'),
       v_ins.instruction_no || ': ' || v_ins.side || ' ' || v_ins.quantity || ' ' || v_sec.symbol, jsonb_build_object('at', v_ins.created_at));
   END IF;
-  PERFORM jse_order_event(v_id, 'BROKER_SUBMITTED', NULL, 'PIT_PENDING', a, 'Submitted at the market price ₹' || v_sec.price,
+  PERFORM jse_order_event(v_id, 'BROKER_SUBMITTED', NULL, 'PIT_PENDING', a, 'Submitted at the market price ' || jse_inr(v_sec.price),
     jsonb_build_object('price', v_sec.price, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'instruction_no', v_ins.instruction_no));
   PERFORM jse_audit(a, 'ORDER_SUBMITTED', 'order', v_no, v_team.id, v_id, NULL,
     jsonb_build_object('status', 'PIT_PENDING', 'side', v_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_sec.price),
@@ -578,7 +598,7 @@ BEGIN
   IF o.price <> s.price THEN
     PERFORM jse__mark_stale(a, o, s.price, 'PRICE_CHECK_AT_EXECUTION');
     RETURN jsonb_build_object('success', false, 'http', 409, 'code', 'PRICE_STALE',
-      'error', o.order_no || ' is PRICE STALE: it was submitted at ₹' || o.price || ' but the market price is now ₹' || s.price ||
+      'error', o.order_no || ' is PRICE STALE: it was submitted at ' || jse_inr(o.price) || ' but the market price is now ' || jse_inr(s.price) ||
                '. It cannot be executed; the broker must submit a fresh order at the new market price.',
       'order', jse_order_json(o.id));
   END IF;
@@ -595,7 +615,7 @@ BEGIN
   INSERT INTO trading_slips(id, slip_no, order_id, issued_at, issued_by, issued_by_name)
   VALUES (v_slip_id, v_slip_no, o.id, clock_timestamp(), nullif(a->>'id', '')::integer, jse_actor_name(a));
   PERFORM jse_order_event(o.id, 'PIT_EXECUTED', 'PIT_PENDING', 'EXCHANGE_PENDING', a,
-    'Executed ' || o.side || ' ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price || ' · trading slip ' || v_slip_no,
+    'Executed ' || o.side || ' ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' · trading slip ' || v_slip_no,
     jsonb_build_object('slip_no', v_slip_no, 'price', o.price, 'quantity', o.quantity, 'trade_value', o.trade_value, 'brokerage', o.brokerage));
   PERFORM jse_audit(a, 'PIT_EXECUTED', 'order', o.order_no, o.team_id, o.id, jsonb_build_object('status', 'PIT_PENDING'),
     jsonb_build_object('status', 'EXCHANGE_PENDING', 'executed_price', o.price, 'executed_quantity', o.quantity),
@@ -805,7 +825,7 @@ BEGIN
   END IF;
   v_tv := round(o.quantity * o.price, 2);
   IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
-    RETURN jse__bank_reject(a, o, 'ORDER_VALUE_LIMIT', 'Order value ₹' || v_tv || ' is outside the allowed ₹' || cfg.min_order_value || ' to ₹' || cfg.max_order_value || '.', '{}'::jsonb);
+    RETURN jse__bank_reject(a, o, 'ORDER_VALUE_LIMIT', 'Order value ' || jse_inr(v_tv) || ' is outside the allowed ' || jse_inr(cfg.min_order_value) || ' to ' || jse_inr(cfg.max_order_value) || '.', '{}'::jsonb);
   END IF;
   -- the brokerage rate is fixed on the order when the broker submits it (shown on the trading slip)
   v_rate := coalesce(o.brokerage_rate, CASE WHEN o.account_type = 'TEAM' OR cfg.institution_brokerage THEN cfg.brokerage_rate ELSE 0 END);
@@ -827,13 +847,13 @@ BEGIN
       IF NOT (cfg.loans_enabled AND cfg.auto_loan_on_settlement) OR v_draw > v_room THEN
         IF o.account_type = 'TEAM' THEN
           PERFORM jse_risk(t.id, o.id, s.id, 'INSUFFICIENT_BALANCE_REJECTION', 'BANK', o.side, o.quantity, v_hold, v_req, v_cash,
-                           'Loan room ₹' || v_room);
+                           'Loan room ' || jse_inr(v_room));
           PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_REJECTED', 'order', o.order_no, t.id, o.id, NULL, NULL,
             jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room));
         END IF;
         RETURN jse__bank_reject(a, o, 'INSUFFICIENT_BALANCE',
-          'Insufficient balance: ₹' || v_req || ' is needed but ' || t.code || ' has ₹' || v_cash ||
-          CASE WHEN cfg.loans_enabled AND cfg.auto_loan_on_settlement THEN ' plus ₹' || v_room || ' of loan room' ELSE '' END || '.',
+          'Insufficient balance: ' || jse_inr(v_req) || ' is needed but ' || t.code || ' has ' || jse_inr(v_cash) ||
+          CASE WHEN cfg.loans_enabled AND cfg.auto_loan_on_settlement THEN ' plus ' || jse_inr(v_room) || ' of loan room' ELSE '' END || '.',
           jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room));
       END IF;
       v_interest := round(v_draw * cfg.loan_interest_rate, 2);
@@ -852,7 +872,7 @@ BEGIN
         'Counterparty ' || t.code || ' holds only ' || v_hold || ' ' || s.symbol || ' shares.', jsonb_build_object('holding', v_hold, 'quantity', o.quantity));
     END IF;
     IF o.account_type = 'INSTITUTION' AND NOT cfg.institution_overdraft AND inst.cash < v_tv THEN
-      RETURN jse__bank_reject(a, o, 'INSTITUTION_INSUFFICIENT_FUNDS', 'The institution has only ₹' || inst.cash || ' available.',
+      RETURN jse__bank_reject(a, o, 'INSTITUTION_INSUFFICIENT_FUNDS', 'The institution has only ' || jse_inr(inst.cash) || ' available.',
         jsonb_build_object('cash', inst.cash, 'required', v_tv));
     END IF;
   END IF;
@@ -873,7 +893,7 @@ BEGIN
       PERFORM jse_ledger(t.id, o.id, v_settle_id, 'LOAN_DRAW', 0, v_draw, v_bal,
         'Automatic loan draw for the cash shortfall on ' || o.order_no, a);
       PERFORM jse_ledger(t.id, o.id, v_settle_id, 'INTEREST_CHARGE', 0, 0, v_bal,
-        'Loan interest charged ₹' || v_interest || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on ₹' || v_draw || ') — added to the loan balance, no cash moved', a);
+        'Loan interest charged ' || jse_inr(v_interest) || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on ' || jse_inr(v_draw) || ') — added to the loan balance, no cash moved', a);
       UPDATE loans SET original_principal = original_principal + v_draw, principal_outstanding = principal_outstanding + v_draw,
              interest_outstanding = interest_outstanding + v_interest, interest_charged = interest_charged + v_interest,
              draws = draws + 1, status = 'OUTSTANDING', updated_at = now()
@@ -885,8 +905,8 @@ BEGIN
         jsonb_build_object('amount', v_draw, 'interest', v_interest, 'automatic', true, 'order_no', o.order_no));
     END IF;
     v_bal := v_bal - v_tv;
-    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price || ' from ' || inst.code
-                   ELSE 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price END;
+    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' from ' || inst.code
+                   ELSE 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) END;
     PERFORM jse_ledger(t.id, o.id, v_settle_id, 'BUY', v_tv, 0, v_bal, v_note, a);
     IF v_brk > 0 THEN
       v_bal := v_bal - v_brk;
@@ -906,7 +926,7 @@ BEGIN
       v_inst_before := inst.cash; v_inst_after := inst.cash + v_tv;
       UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
       PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'SELL', 0, v_tv, v_inst_after,
-        'Sold ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price || ' to ' || t.code, a);
+        'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' to ' || t.code, a);
     END IF;
   ELSE
     v_cost_moved := CASE WHEN v_hold = o.quantity THEN v_cost ELSE round(v_cost * o.quantity / v_hold, 4) END;
@@ -917,8 +937,8 @@ BEGIN
     DELETE FROM holdings WHERE team_id = t.id AND security_id = s.id AND quantity = 0;
     v_hold_after := v_hold - o.quantity;
     v_bal := v_bal + v_tv;
-    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price || ' to ' || inst.code
-                   ELSE 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price END;
+    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' to ' || inst.code
+                   ELSE 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) END;
     PERFORM jse_ledger(t.id, o.id, v_settle_id, 'SELL', 0, v_tv, v_bal, v_note, a);
     IF v_brk > 0 THEN
       v_bal := v_bal - v_brk;
@@ -934,7 +954,7 @@ BEGIN
       v_inst_before := inst.cash; v_inst_after := inst.cash - v_tv;
       UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
       PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'BUY', v_tv, 0, v_inst_after,
-        'Bought ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price || ' from ' || t.code, a);
+        'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' from ' || t.code, a);
     END IF;
   END IF;
 
@@ -969,15 +989,15 @@ BEGIN
     jsonb_build_object('trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'cash_before', v_cash, 'cash_after', v_cash_after,
                        'loan_drawn', v_draw, 'loan_interest', v_interest));
   PERFORM jse_order_event(o.id, 'HOLDINGS_UPDATED', 'BANK_SETTLED', 'BANK_SETTLED', a,
-    t.code || ' cash ₹' || v_cash || ' → ₹' || v_cash_after || '; ' || s.symbol || ' holding ' || v_hold || ' → ' || v_hold_after ||
-    '; market price unchanged at ₹' || s.price || ' (prices move only on Market News)',
+    t.code || ' cash ' || jse_inr(v_cash) || ' → ' || jse_inr(v_cash_after) || '; ' || s.symbol || ' holding ' || v_hold || ' → ' || v_hold_after ||
+    '; market price unchanged at ' || jse_inr(s.price) || ' (prices move only on Market News)',
     jsonb_build_object('holding_before', v_hold, 'holding_after', v_hold_after, 'market_price', s.price));
   PERFORM jse_audit(a, 'BANK_SETTLED', 'order', o.order_no, t.id, o.id,
     jsonb_build_object('status', o.status, 'cash', v_cash, 'holding', v_hold),
     jsonb_build_object('status', 'BANK_SETTLED', 'cash', v_cash_after, 'holding', v_hold_after),
     jsonb_build_object('account_type', o.account_type, 'side', o.side, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate,
                        'loan_drawn', v_draw, 'interest', v_interest, 'realized_pnl', v_realized, 'market_price', s.price, 'source', p_source));
-  PERFORM jse_journal('BANK_SETTLE', v_settle_id, o.order_no || ' settled (' || o.side || ' ' || o.quantity || ' ' || s.symbol || ' @ ₹' || o.price || ')',
+  PERFORM jse_journal('BANK_SETTLE', v_settle_id, o.order_no || ' settled (' || o.side || ' ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ')',
                       jsonb_build_object('order_id', o.id, 'settlement_id', v_settle_id), a);
 
   RETURN jsonb_build_object('success', true, 'status', 'BANK_SETTLED', 'settlement_id', v_settle_id,
