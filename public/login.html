@@ -7,7 +7,7 @@
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/jse.css?v=316">
 <style>
-  .login { max-width: 440px; margin: 36px auto; }
+  .login { max-width: 440px; margin: 20px auto 28px; }
   .login .card-b { padding: 28px 28px 24px; }
   .login h1 { margin: 0; font-size: 24px; color: var(--navy); font-weight: 800; }
   .login p { margin: 6px 0 18px; color: var(--muted); }
@@ -15,12 +15,18 @@
   .login .logo { display: block; max-width: 260px; margin: 0 auto 18px; opacity: .95; }
   .login h1 { margin-bottom: 18px; }
   .event-credit { text-align: center; margin: 4px auto 24px; font-size: 20px; font-weight: 800; letter-spacing: .02em; color: var(--navy); }
+  .ds-logo { display: block; width: 190px; height: auto; margin: 0 auto 10px; }
+  .partner-logos { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 28px 44px; margin: 0 auto 36px; max-width: 980px; }
+  .partner-logos img { height: auto; display: block; }
+  .pl-jse { width: 210px; } .pl-fig { width: 200px; } .pl-fox { width: 210px; border-radius: 12px; background: #0b1220; padding: 8px 10px; box-sizing: content-box; }
+  @media (max-width: 640px) { .pl-jse, .pl-fig, .pl-fox { width: 150px; } .ds-logo { width: 150px; } }
   .event-credit span { font-weight: 600; color: var(--muted); }
 </style>
 </head>
 <body>
 <main id="main" class="wrap">
   <div class="login">
+    <img class="ds-logo" src="/assets/img/dalal-street-2026.webp" width="272" height="180" alt="Dalal Street 2026">
     <img class="logo" src="/assets/img/jain-cms-logo.png" alt="JAIN (Deemed-to-be University) · CMS Business School">
     <form class="card" id="f" novalidate>
       <div class="card-b">
@@ -34,6 +40,11 @@
     </form>
   </div>
   <p class="event-credit">Dalal Street 2026 <span>by Finance Interest Group</span></p>
+  <div class="partner-logos" aria-label="Event partners">
+    <img src="/assets/img/jse-logo.webp" width="520" height="260" alt="JAIN Stock Exchange" class="pl-jse">
+    <img src="/assets/img/fig-logo.webp" width="440" height="145" alt="FIG · Finance Interest Group" class="pl-fig">
+    <img src="/assets/img/fox-market-desk.webp" width="440" height="232" alt="FOX Market Desk — Every story has a market" class="pl-fox">
+  </div>
 </main>
 <script src="/assets/config.js?v=316"></script>
 <script src="/assets/jse.js?v=316"></script>
