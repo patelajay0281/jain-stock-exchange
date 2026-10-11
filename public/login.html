@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=313">
+<link rel="stylesheet" href="/assets/jse.css?v=314">
 <style>
   .login { max-width: 440px; margin: 36px auto; }
   .login .card-b { padding: 28px 28px 24px; }
@@ -36,8 +36,8 @@
   </div>
   <div class="login-timing" id="timingBox"></div>
 </main>
-<script src="/assets/config.js?v=313"></script>
-<script src="/assets/jse.js?v=313"></script>
+<script src="/assets/config.js?v=314"></script>
+<script src="/assets/jse.js?v=314"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -46,7 +46,7 @@
     if (/^\/[A-Za-z0-9._\-\/?=&%]*$/.test(n) && n.indexOf("//") !== 0 && n.indexOf("/login") !== 0 && JSE.canOpen(n, user.role)) return n;
     return JSE.homeFor(user.role);
   }
-  document.getElementById("timingBox").innerHTML = JSE.timingHtml();
+  document.getElementById("timingBox").innerHTML = JSE.cashRuleCard();
   JSE.page({ id: "login", roles: "*" }).then(function (user) {
     if (user) { location.replace(next(user)); return; }
     if (params.get("expired")) { var i = document.getElementById("info"); i.textContent = "Your session ended. Please sign in again."; i.classList.remove("hidden"); }

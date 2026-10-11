@@ -110,13 +110,12 @@ No password is stored in the repository. Every account starts with a random unkn
 
 ## Event-day runbook
 
-Event day timing (shown on the Market, IPO and sign-in pages): **12:45 PM onwards** participant lobby · **by 1:00 PM** Guest of Honour ·
-**1:15 PM SHARP** event begins, IPO reveal, market goes live.
+No fixed start time: the market opens when the Controller presses **START EVENT**. The sign-in page shows the closing cash rule.
 
 Before the event: the organisers run the IPO allotment and load it (Event Admin → IPO allotments, `team,ipo,lots`), optionally save confidential listing prices, issue passwords
 per role, then **Reset** with *Keep loaded IPO allotments* after the rehearsal. Put `https://…/?tv=1` on the projector.
 
-1:15 PM: **START EVENT** — every IPO lists (saved price, otherwise its issue price) and joins the CMS 50 (50 → 54 components); orders open.
+**START EVENT** — every IPO lists (saved price, otherwise its issue price) and joins the CMS 50 (50 → 54 components); orders open.
 Participants tell their broker → the broker (or a Pit Manager, for any team) uses **Create Order** → **Exchange** approves →
 **Bank** settles. Market News (Event Admin or the Institutional desk) is the only way prices move. **PAUSE · SETTLEMENT ONLY** stops new orders while queues clear.
 At the end: **CLOSE EVENT** (the ₹50,000 closing cash criterion is applied) → **Reject open orders** (or settle them) → **FINALIZE EVENT** →
@@ -133,7 +132,7 @@ At the end: **CLOSE EVENT** (the ₹50,000 closing cash criterion is applied) �
 | Brokerage | 0.50% on every settled trade (shown as “0.50%”): BUY pays trade value + brokerage, SELL receives trade value − brokerage; earned by the team's broker |
 | Institutional counterparty | Participant BUY from the institution = market + 2%, SELL to it = market − 2%; normal workflow and brokerage; no institutional cash or holdings restriction |
 | Assessment | At least 5 settled BUY and 5 settled SELL trades (IPO allotments, pending or rejected orders do not count) |
-| ₹50,000 closing cash criterion | At the close, the cash counted against a team's starting capital must not exceed ₹50,000 — a closing eligibility audit condition, not a starting requirement, not a minimum cash buffer and not a permanent floor (the old ₹20,000 buffer does not apply); trading profit cash is not counted |
+| ₹50,000 closing cash criterion | At market closing, each team can hold a maximum of 5% of the initial virtual capital (₹50,000 out of ₹20 lakh) as cash. Cash generated from profits earned during trading is exempt, provided the initial capital has been fully invested (e.g. ₹5 lakh profit with ₹4 lakh of it held as cash → not counted). Counted cash = cash − realised trading profit. |
 | Winner | Exactly one Winner and one Runner-Up: highest and second-highest Net Worth (cash + Σ quantity × closing price) among eligible teams; ties → lower team code |
 | CMS 50 | Sum of the 50 listed equity prices plus each IPO once listed (base = its listing price) |
 | Statuses | Event NOT_STARTED · LIVE · SETTLEMENT_ONLY · CLOSED · FINALIZED; orders EXCHANGE_PENDING → EXCHANGE_APPROVED → SETTLED, or EXCHANGE_REJECTED / BANK_REJECTED; numbers ORD-n / INS-n restart at reset |

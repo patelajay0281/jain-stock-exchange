@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Institutional Investors · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=313">
+<link rel="stylesheet" href="/assets/jse.css?v=314">
 <style>
   .inst-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
   .moods { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
@@ -99,8 +99,8 @@
       <tbody id="orders"><tr><td colspan="10" class="empty">Loading institutional transaction desk…</td></tr></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=313"></script>
-<script src="/assets/jse.js?v=313"></script>
+<script src="/assets/config.js?v=314"></script>
+<script src="/assets/jse.js?v=314"></script>
 <script>
 (function () {
   "use strict";
@@ -140,7 +140,7 @@
   function fillSecs() {
     var v = $("sec").value;
     var l = list().slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; });
-    $("sec").innerHTML = '<option value="">' + ($("asset").value === "IPO" && !l.length ? "IPOs open at 1:15 PM (START EVENT)" : "Select security…") + "</option>" +
+    $("sec").innerHTML = '<option value="">' + ($("asset").value === "IPO" && !l.length ? "IPOs list when the market opens" : "Select security…") + "</option>" +
       l.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.name) + "</option>"; }).join("");
     if (v && l.some(function (s) { return s.symbol === v; })) $("sec").value = v;
   }

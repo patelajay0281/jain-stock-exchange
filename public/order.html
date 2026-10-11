@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create Order · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=313">
+<link rel="stylesheet" href="/assets/jse.css?v=314">
 <style>
   .ticket .card-b { display: grid; gap: 18px; }
   .done { border: 1px solid var(--green-line); background: var(--green-soft); border-radius: 10px; padding: 12px 14px; }
@@ -66,8 +66,8 @@
     </div>
   </form>
 </main>
-<script src="/assets/config.js?v=313"></script>
-<script src="/assets/jse.js?v=313"></script>
+<script src="/assets/config.js?v=314"></script>
+<script src="/assets/jse.js?v=314"></script>
 <script>
 (function () {
   "use strict";
@@ -90,7 +90,7 @@
   function fillSecs() {
     var el = $("sec"), v = el.value, kind = $("asset").value;
     var list = (kind === "IPO" ? S.market.ipos : S.market.stocks).filter(function (s) { return s.tradable; });
-    el.innerHTML = '<option value="">' + (kind === "IPO" ? (list.length ? "Select IPO…" : "IPOs open at 1:15 PM (START EVENT)") : "Select stock…") + "</option>" +
+    el.innerHTML = '<option value="">' + (kind === "IPO" ? (list.length ? "Select IPO…" : "IPOs list when the market opens") : "Select stock…") + "</option>" +
       list.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.name) + "</option>"; }).join("");
     if (v && list.some(function (s) { return s.symbol === v; })) el.value = v;
   }

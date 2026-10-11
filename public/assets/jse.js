@@ -175,25 +175,22 @@
     SETTLEMENT_ONLY: { cls: "settlement", text: "Paused · settlement only" }, CLOSED: { cls: "closed", text: "Market closed" },
     FINALIZED: { cls: "finalized", text: "Event finalized" },
   };
-  // event-day timing (shown wherever participants need it)
-  var TIMING = [
-    { t: "12:45 PM", label: "onwards", d: "Participant lobby · arrival" },
-    { t: "1:00 PM", label: "by", d: "Guest of Honour" },
-    { t: "1:15 PM", label: "SHARP", d: "Event begins · IPO reveal · market goes live", key: true },
-  ];
-  function timingHtml() {
-    return '<section class="timing" aria-label="Event day timing"><div class="h"><b>Event day</b><span>Dalal Street 2026 · IST</span></div>' +
-      TIMING.map(function (x) {
-        return '<div class="slot' + (x.key ? " key" : "") + '"><div class="t">' + (x.label === "by" ? '<small style="color:var(--muted-2);margin:0 6px 0 0">BY</small>' : "") + esc(x.t) +
-          (x.label === "onwards" ? '<small style="color:var(--muted-2)">ONWARDS</small>' : x.label === "SHARP" ? "<small>SHARP</small>" : "") + '</div><div class="d">' + esc(x.d) + "</div></div>";
-      }).join("") + "</section>";
+  // the closing cash rule card (login page)
+  function cashRuleCard(limit) {
+    var l = fmt.money(limit === undefined ? 50000 : limit);
+    return '<section class="cash-rule-card" aria-label="Closing cash rule"><div class="h"><b>Closing cash rule</b><span>5% of initial capital</span></div><div class="b">' +
+      "<p>At market closing, each team can hold a maximum of 5% of the initial virtual capital (" + esc(l) + " out of ₹20 lakh) as cash in their portfolio. " +
+      "Cash generated from profits earned during trading is exempt from this limit.</p>" +
+      "<p><b><i>Example:</i></b> If a team earns a profit of ₹5 lakh and holds ₹4 lakh in cash from the profits earned, this amount will not be counted under the 5% cash limit, " +
+      "provided the initial virtual capital has been fully invested.</p></div></section>";
   }
   // the ₹50,000 closing cash criterion — one wording everywhere
   function cashRuleText(limit) {
     var l = fmt.money(limit === undefined ? 50000 : limit);
-    return "Closing cash criterion: at the close, a team's cash counted against its starting capital must not exceed " + l + ". " +
-      "It is a closing / final eligibility audit condition — not a starting requirement, not a minimum cash buffer and not a permanent cash floor " +
-      "(there is no minimum cash buffer; the old ₹20,000 buffer does not apply). Cash generated as trading profit is not counted against it.";
+    return "At market closing, each team can hold a maximum of 5% of the initial virtual capital (" + l + " out of ₹20 lakh) as cash in their portfolio. " +
+      "Cash generated from profits earned during trading is exempt from this limit. " +
+      "Example: if a team earns a profit of ₹5 lakh and holds ₹4 lakh in cash from the profits earned, this amount will not be counted under the 5% cash limit, " +
+      "provided the initial virtual capital has been fully invested.";
   }
   var DISCLAIMER = "Market rumours, simulated chatter and surprise announcements are part of the Dalal Street event experience — they are not real investment advice. " +
     "Prices change only when the Event Admin publishes Market News.";
@@ -491,7 +488,7 @@
     config: CFG, api: api, session: session, fmt: fmt, esc: esc, el: el, poll: poll, toast: toast, dialog: dialog, badge: badge,
     uuid: uuid, debounce: debounce, download: download, page: page, applyStatus: applyStatus, offline: offlinePill, changePassword: changePassword,
     adminConfirm: adminConfirm, homeFor: homeFor, canOpen: canOpen, rate: rate, apiUrl: function (path) { return BASE + path; }, DISCLAIMER: DISCLAIMER, STATUS_TEXT: STATUS_TEXT, STAGE: STAGE,
-    STATUS_HINT: STATUS_HINT, STAGE_OF: STAGE_OF, TIMING: TIMING, timingHtml: timingHtml, cashRuleText: cashRuleText,
+    STATUS_HINT: STATUS_HINT, STAGE_OF: STAGE_OF, cashRuleCard: cashRuleCard, cashRuleText: cashRuleText,
     onStatus: function (cb) { shellState.statusCbs.push(cb); if (shellState.status) cb(shellState.status); },
     get status() { return shellState.status; }, teamSort: teamSort, teamCodes: teamCodes, ROLE_LABEL: ROLE_LABEL, STATUS: STATUS, toNum: toNum,
   };

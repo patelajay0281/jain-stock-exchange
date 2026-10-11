@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=313">
+<link rel="stylesheet" href="/assets/jse.css?v=314">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -168,8 +168,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=313"></script>
-<script src="/assets/jse.js?v=313"></script>
+<script src="/assets/config.js?v=314"></script>
+<script src="/assets/jse.js?v=314"></script>
 <script>
 (function () {
   "use strict";
@@ -186,7 +186,7 @@
   var CFG = [["max_price_move_pct", "Maximum price move % (cap ±10%)", "number"], ["brokerage_rate", "Brokerage %", "pct"], ["max_order_value", "Maximum order value (₹)", "number"],
     ["cash_rule_limit", "Closing cash limit (₹) — closing criterion", "number"], ["initial_capital", "Starting capital per team (₹)", "number"], ["loan_max_principal", "Maximum loan principal (₹)", "number"],
     ["loan_interest_rate", "Loan interest %", "pct"], ["min_buy_trades", "Minimum settled BUY trades", "int"], ["min_sell_trades", "Minimum settled SELL trades", "int"],
-    ["min_order_value", "Minimum order value (₹) — no minimum", "number"], ["event_name", "Event name", "text"], ["event_start_at", "Event start (IST) — 1:15 PM sharp", "datetime"],
+    ["min_order_value", "Minimum order value (₹) — no minimum", "number"], ["event_name", "Event name", "text"],
     ["loans_enabled", "Borrowing", "bool"], ["auto_loan_on_settlement", "Auto Bank Loan", "bool"], ["_self_entry", "Participant Self Entry: disabled (orders are created by brokers)", "fixed"], ["_inst_restr", "Institutional Restrictions: none", "fixed"], ["loan_repayment_required", "Full loan repayment required for eligibility", "bool"],
     ["auto_list_ipos", "IPOs list at START EVENT (IPO reveal)", "bool"]];
 
@@ -220,7 +220,7 @@
     var meta = JSE.STATUS[d.status] || { cls: "closed", text: d.status };
     $("stPill").className = "pill " + meta.cls; $("stText").textContent = meta.text;
     var w = d.ipo_window || {};
-    $("stInfo").textContent = "Event start " + F.datetime(d.event_start_at) + " IST · " + (d.started_at ? "started " + F.datetime(d.started_at) : "not started") + (d.closed_at ? " · closed " + F.datetime(d.closed_at) : "") + (d.finalized_at ? " · finalized " + F.datetime(d.finalized_at) : "") + " · resets: " + d.reset_count;
+    $("stInfo").textContent = (d.started_at ? "started " + F.datetime(d.started_at) : "not started") + (d.closed_at ? " · closed " + F.datetime(d.closed_at) : "") + (d.finalized_at ? " · finalized " + F.datetime(d.finalized_at) : "") + " · resets: " + d.reset_count;
     $("stChanged").textContent = "Changed " + F.datetime(d.status_changed_at);
     var allowed = { START: d.status === "NOT_STARTED", PAUSE: d.status === "LIVE", RESUME: d.status === "SETTLEMENT_ONLY", CLOSE: d.status === "LIVE" || d.status === "SETTLEMENT_ONLY", REOPEN: d.status === "CLOSED", FINALIZE: d.status === "CLOSED" };
     $("pauseBtn").setAttribute("data-ev", d.status === "SETTLEMENT_ONLY" ? "RESUME" : "PAUSE");

@@ -361,16 +361,14 @@ table.t.compact td { padding: 9px 12px; } table.t.compact th { padding: 9px 12px
 .sec-h .note { font-size: 12px; color: var(--muted-2); }
 .disc { font-size: 12px; color: var(--muted); background: #fff; border: 1px solid var(--line-3); border-radius: var(--radius); padding: 10px 14px; }
 
-/* event-day timing (12:45 lobby · 1:00 Guest of Honour · 1:15 PM SHARP start) */
-.timing { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); align-items: stretch; background: #fff; border: 1px solid var(--line-3); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
-.timing .h { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 14px 20px; background: var(--navy); color: #fff; min-width: 170px; }
-.timing .h b { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; }
-.timing .h span { font-size: 11.5px; color: #c9d4e4; }
-.timing .slot { padding: 13px 18px; border-left: 1px solid var(--line-3); min-width: 0; }
-.timing .slot .t { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; white-space: nowrap; }
-.timing .slot .t small { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--red); margin-left: 6px; }
-.timing .slot .d { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-.timing .slot.key { background: var(--soft); }
+/* closing cash rule card (login page) */
+.cash-rule-card { display: grid; grid-template-columns: auto minmax(0, 1fr); background: #fff; border: 1px solid var(--line-3); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+.cash-rule-card .h { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 14px 20px; background: var(--navy); color: #fff; min-width: 170px; }
+.cash-rule-card .h b { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; }
+.cash-rule-card .h span { font-size: 12px; opacity: .8; }
+.cash-rule-card .b { padding: 14px 20px; font-size: 14px; line-height: 1.55; color: var(--ink); }
+.cash-rule-card .b p { margin: 0; } .cash-rule-card .b p + p { margin-top: 8px; }
+@media (max-width: 640px) { .cash-rule-card { grid-template-columns: minmax(0, 1fr); } }
 
 /* identity card (participant team name) */
 .idcard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--line-3); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow); overflow: hidden; }
@@ -416,8 +414,6 @@ table.t.compact td { padding: 9px 12px; } table.t.compact th { padding: 9px 12px
 @media (max-width: 1100px) {
   .split, .split.left, .cols-2, .cols-3 { grid-template-columns: minmax(0, 1fr); }
   .flow, .flow.six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .timing { grid-template-columns: repeat(3, minmax(0, 1fr)); } .timing .h { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 10px; }
-  .timing .slot:nth-child(2) { border-left: 0; }
 }
 @media (max-width: 900px) {
   .nav { padding-top: 12px; }
@@ -441,7 +437,6 @@ table.t.compact td { padding: 9px 12px; } table.t.compact th { padding: 9px 12px
   .cols-4 { grid-template-columns: minmax(0, 1fr); }
   .flow, .flow.six { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .band { padding: 22px 18px; } .band h1 { font-size: 23px; }
-  .timing { grid-template-columns: minmax(0, 1fr); } .timing .slot { border-left: 0; border-top: 1px solid var(--line-3); }
   .filters { grid-template-columns: minmax(0, 1fr); }
   .steps { padding: 12px 14px; } .steps .st { font-size: 12.5px; } .steps .arr { display: none; }
   .txn-grid { grid-template-columns: minmax(0, 1fr); padding: 14px; }

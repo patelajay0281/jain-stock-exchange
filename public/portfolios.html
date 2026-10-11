@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Participant Portfolios · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=313">
+<link rel="stylesheet" href="/assets/jse.css?v=314">
 <style>
   .controls { display: grid; grid-template-columns: 260px minmax(0, 1fr) 260px auto; gap: 12px; align-items: end; }
   @media (max-width: 1000px) { .controls { grid-template-columns: 1fr 1fr; } }
@@ -30,7 +30,6 @@
   </div>
 
   <section class="rules" id="rules" style="margin-bottom:18px"></section>
-  <div id="timingBox" class="hidden" style="margin-bottom:18px"></div>
 
   <section id="listView">
     <div class="awards" id="awards" style="margin-bottom:16px"></div>
@@ -59,8 +58,8 @@
 
   <section id="detail" class="hidden" style="margin-top:18px" aria-live="polite"></section>
 </main>
-<script src="/assets/config.js?v=313"></script>
-<script src="/assets/jse.js?v=313"></script>
+<script src="/assets/config.js?v=314"></script>
+<script src="/assets/jse.js?v=314"></script>
 <script>
 (function () {
   "use strict";
@@ -74,7 +73,7 @@
     var minB = c.min_buy_trades || 5, minS = c.min_sell_trades || 5;
     $("rules").innerHTML =
       '<div class="rule key wide"><b>Official winner criterion</b>Net Worth = Liquid Cash + (Shares Held × Closing Price). Assessment: minimum ' + minB + " settled BUY and " + minS + " settled SELL trades per participant. " +
-        "Closing cash limit: " + F.money(c.cash_rule_limit || 50000) + " maximum (5% of " + F.money(c.initial_capital || 2000000) + "). Profit-generated cash is exempt after the initial capital is deployed; cash is never locked. " +
+        "Closing cash limit: at market closing a team can hold at most " + F.money(c.cash_rule_limit || 50000) + " (5% of " + F.money(c.initial_capital || 2000000) + ") as cash. Cash generated from trading profits is exempt, provided the initial capital has been fully invested. " +
         "Exactly one Winner and one Runner-Up among eligible teams.</div>";
   }
 
@@ -220,7 +219,6 @@
     S.view = b.getAttribute("data-v"); document.querySelectorAll("[data-v]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
     render(); }); });
   $("exportBtn").onclick = function () { JSE.download("/api/export?sheet=networth", "JSE_networth.csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
-  $("timingBox").innerHTML = JSE.timingHtml();
 
   JSE.page({ id: "portfolios" }).then(function (user) {
     if (!user) return;
@@ -229,7 +227,6 @@
     if (user.role === "PARTICIPANT") {
       $("listView").classList.add("hidden"); $("title").textContent = "My Portfolio";
       $("poolRule").textContent = (user.team_name || "") + " · " + user.team + " — your cash, holdings, loan, assessment and final eligibility.";
-      JSE.onStatus(function (s) { $("timingBox").classList.toggle("hidden", s !== "NOT_STARTED"); });
       S.team = user.team;
       JSE.poll(loadDetail, 5000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
       $("conn").className = "conn"; $("connText").textContent = "Live";
