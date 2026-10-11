@@ -9,318 +9,131 @@
 <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/jse.css?v=313">
 <style>
-  /* CMS 50 two-part card: identity (left) · value, status and movement (right) */
-  .cms { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-hero); border: 1px solid #10233a; }
-  .cms-id { background: linear-gradient(100deg, var(--hero) 0%, #14283f 60%, var(--hero-2) 100%); color: #fff; padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-  .cms-id .e { font-size: 10.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #9fb3cc; }
-  .cms-id h1 { margin: 6px 0 0; font-size: 34px; line-height: 1.05; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
-  .cms-id .sub { margin-top: 10px; font-size: 14px; color: #c9d5e5; }
-  .cms-id .sub b { color: #fff; letter-spacing: .08em; }
-  .cms-v { background: #fff; padding: 20px 26px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 18px; align-items: center; min-width: 0; }
-  .cms-v .lbl { font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-  .cms-v .val { font-size: 38px; font-weight: 800; color: #0b1220; line-height: 1.05; letter-spacing: -.02em; white-space: nowrap; }
-  .cms-v .chg { font-size: 16px; font-weight: 800; white-space: nowrap; }
-  .cms-v .ref { font-size: 12px; color: var(--muted-2); margin-top: 2px; }
-  .cms-v .st { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; text-align: right; }
-  .cms-v .st .pill { font-size: 13px; padding: 8px 14px; }
-  .cms-v .comp { font-size: 11.5px; color: var(--muted-2); font-weight: 600; }
-  .breadth { font-size: 12.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
-  .breadth span { margin-left: 8px; }
-  .mstats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
-  .mstats .kpi { padding: 13px 16px 12px; } .mstats .kpi .v { font-size: 22px; margin-top: 5px; } .mstats .kpi .s { margin-top: 3px; }
-  .mstats .kpi .v.mover { font-size: 17px; line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
-  .news .card-b { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 0; }
-  .news .news-item { border-bottom: 0; border-right: 1px solid var(--line-3); min-width: 0; }
-  .news .news-item:last-child { border-right: 0; }
-  .news .news-item .hl { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 5px; }
-  /* market wall */
-  .wall { margin-top: 16px; }
-  .wall-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; padding: 20px 22px 14px; }
-  .wall-head h2 { margin: 4px 0 0; font-size: 20px; line-height: 1.2; font-weight: 700; color: var(--ink); }
-  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 16px; }
-  .legend li { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-2); }
-  .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-  .sw-up { background: var(--green); } .sw-down { background: var(--red); } .sw-flat { background: #fff; border: 1.5px solid #b8c4d2; }
-  .wall .filters { padding: 0 22px 16px; grid-template-columns: minmax(220px, 2.2fr) repeat(3, minmax(150px, 1fr)) auto auto; }
-  .mgrid { list-style: none; margin: 0; padding: 18px 22px 22px; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; }
-  .mgrid.ipo { padding-top: 6px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .tile { position: relative; min-width: 0; padding: 13px 14px 11px; border: 1px solid var(--line); border-radius: 12px; background: #fff; display: flex; flex-direction: column; }
-  .tile.up { background: var(--green-soft); border-color: #cfe7d6; }
-  .tile.down { background: var(--red-soft); border-color: #f2d2d6; }
-  .tile.ipo-pre { background: #fff; border-color: var(--line); }
-  .tile-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .tile-name { font-size: 15px; font-weight: 700; color: #0b1220; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
-  .tile-meta { margin-top: 3px; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--faint); }
-  .tile-meta .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tile-price { margin-top: 10px; font-size: 23px; line-height: 1.15; font-weight: 800; color: #0b1220; letter-spacing: -.01em; white-space: nowrap; }
-  .tile-chg { margin-top: 3px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 13px; font-weight: 800; }
-  .tile.up .tile-chg { color: var(--green); } .tile.down .tile-chg { color: var(--red); } .tile.flat .tile-chg, .tile.ipo-pre .tile-chg { color: var(--muted); }
-  .tile-chg .amt { font-weight: 600; }
-  .tile-foot { margin-top: 9px; padding-top: 7px; border-top: 1px solid rgba(20, 33, 61, .08); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px;
-    font-size: 11.5px; color: var(--muted-2); white-space: nowrap; }
+  /* Market wall — as on the live Hatchable application */
+  body.market-page .hd .wordmark { display: none; }
+  body.market-page .hd-in { padding: 10px 16px 0; max-width: none; }
+  body.market-page .nav { padding-left: 16px; padding-right: 16px; max-width: none; }
+  body.market-page .wrap { padding-left: 16px; padding-right: 16px; max-width: none; }
+  .ver-pill { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); background: #fff; border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px; white-space: nowrap; }
+  .cmsbar { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(16, 24, 40, .06); min-height: 84px; margin-top: 14px; }
+  .cmsbar::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px; border-radius: 0 4px 4px 0; background: var(--blue); }
+  .cmsbar .id { padding: 18px 24px; border-right: 1px solid var(--line-3); }
+  .cmsbar .id h1 { margin: 0; font-size: 23px; font-weight: 900; letter-spacing: .06em; color: #0b1220; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cmsbar .ix { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 22px 14px 30px; min-width: 0; }
+  .cmsbar .ix .lbl { font-size: 18px; font-weight: 800; letter-spacing: .04em; color: #0b1220; text-transform: uppercase; white-space: nowrap; }
+  .cmsbar .ix .num { display: flex; align-items: baseline; gap: 12px; white-space: nowrap; }
+  .cmsbar .ix .val { font-size: 38px; font-weight: 800; color: #0b1220; letter-spacing: -.02em; line-height: 1; }
+  .cmsbar .ix .chg { font-size: 13px; font-weight: 800; color: #0b1220; }
+  .cmsbar .live { position: absolute; right: 22px; top: -13px; font-size: 12px; font-weight: 800; letter-spacing: .06em; padding: 4px 11px; border-radius: 999px; border: 1px solid #b9dfc6; background: #edf8f0; color: #0b1220; text-transform: uppercase; }
+  .cmsbar .live.not-started { background: #f2f4f7; border-color: var(--line); color: var(--muted); }
+  .cmsbar .live.settlement { background: #fdf6e7; border-color: #ecd9a8; color: #92400e; }
+  .cmsbar .live.closed, .cmsbar .live.finalized { background: #fff0f1; border-color: #f2c6cb; color: var(--red); }
+  .cmsbar .live.offline { background: #fff0f1; border-color: #f2c6cb; color: var(--red); }
+  .mgrid { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 11px; }
+  .tile { position: relative; overflow: hidden; min-width: 0; padding: 13px 15px 12px; border: 1px solid #e5eaf0; border-radius: 9px; background: #fff; box-shadow: 0 1px 3px rgba(16, 24, 40, .04); }
+  .tile.up { background: #e9f6ed; border-color: #cfe9d8; }
+  .tile.down { background: #fdecef; border-color: #f4cfd5; }
+  .tile.up::after, .tile.down::after { content: ""; position: absolute; right: -18px; bottom: -22px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255, 255, 255, .35); }
+  .tile-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+  .tile-name { font-size: 18px; font-weight: 600; color: #0b1220; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+  .tile-kind { font-size: 7.5px; font-weight: 800; letter-spacing: .08em; color: #344054; text-transform: uppercase; padding-top: 5px; flex: none; }
+  .tile-price { margin-top: 8px; font-size: 24px; font-weight: 800; color: #0b1220; letter-spacing: -.005em; line-height: 1.15; white-space: nowrap; }
+  .tile-foot { margin-top: 11px; font-size: 12.5px; font-weight: 800; color: #0b1220; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
   .tile.flash-up { animation: flash-up 1.8s ease-out; } .tile.flash-down { animation: flash-down 1.8s ease-out; }
   @keyframes flash-up { from { box-shadow: 0 0 0 3px rgba(22, 128, 60, .5); } to { box-shadow: 0 0 0 3px rgba(22, 128, 60, 0); } }
   @keyframes flash-down { from { box-shadow: 0 0 0 3px rgba(198, 40, 40, .45); } to { box-shadow: 0 0 0 3px rgba(198, 40, 40, 0); } }
-  .ipo-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding: 4px 22px 0; }
-  .ipo-head h3 { margin: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); font-weight: 800; }
   .grid-msg { grid-column: 1 / -1; }
-  #timingBox { margin-top: 16px; }
-  body.tv .nav, body.tv .wall .filters, body.tv .hd-right .tb-user, body.tv #timingBox, body.tv .mstats, body.tv .news, body.tv .disc { display: none; }
-  body.tv .wrap { max-width: none; padding: 14px 18px; }
-  body.tv .tile-name { font-size: 16px; } body.tv .tile-price { font-size: 26px; } body.tv .footer { display: none; }
-  @media (max-width: 1500px) { .mgrid { grid-template-columns: repeat(6, minmax(0, 1fr)); } .mstats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 1200px) { .mgrid { grid-template-columns: repeat(5, minmax(0, 1fr)); } .news .card-b { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wall .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } .wall .filters > :first-child { grid-column: 1 / -1; } }
-  @media (max-width: 1000px) { .cms { grid-template-columns: minmax(0, 1fr); } .mgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .mgrid.ipo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 760px) { .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .mstats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wall .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  body.tv .nav, body.tv .hd-right .tb-user { display: none; }
+  body.tv .wrap { max-width: none; padding: 12px 16px; }
+  @media (max-width: 1500px) { .mgrid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  @media (max-width: 1200px) { .mgrid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  @media (max-width: 1000px) { .mgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .cmsbar { grid-template-columns: minmax(0, 1fr); } .cmsbar .id { border-right: 0; border-bottom: 1px solid var(--line-3); } .cmsbar .ix { padding-left: 24px; } }
+  @media (max-width: 760px) { .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 640px) {
-    .cms-id { padding: 18px; } .cms-id h1 { font-size: 24px; } .cms-v { padding: 16px 18px; grid-template-columns: minmax(0, 1fr); } .cms-v .st { align-items: flex-start; text-align: left; }
-    .cms-v .val { font-size: 30px; } .news .card-b { grid-template-columns: minmax(0, 1fr); } .news .news-item { border-right: 0; border-bottom: 1px solid var(--line-3); }
-    .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px; } .mgrid.ipo { grid-template-columns: minmax(0, 1fr); }
-    .tile { padding: 11px 11px 9px; } .tile-price { font-size: 19px; } .wall-head, .wall .filters, .ipo-head { padding-left: 14px; padding-right: 14px; }
-    .wall .filters { grid-template-columns: minmax(0, 1fr); }
+    .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .tile { padding: 11px 12px 10px; } .tile-name { font-size: 15px; } .tile-price { font-size: 20px; }
+    .cmsbar .id h1 { font-size: 19px; } .cmsbar .ix .val { font-size: 30px; } .cmsbar .ix .lbl { font-size: 15px; }
   }
 </style>
 </head>
 <body>
 <main id="main" class="wrap wide">
-  <section class="cms" aria-label="CMS 50">
-    <div class="cms-id">
-      <div class="e" id="evName">JSE System • Version v3.13</div>
-      <h1>Jain Stock Exchange</h1>
-      <div class="sub"><b>CMS 50</b> · live market wall · prices move only on official Market News</div>
-    </div>
-    <div class="cms-v" aria-live="polite">
-      <div>
-        <div class="lbl">CMS 50</div>
-        <div class="val" id="idxVal">—</div>
-        <div class="chg flat" id="idxChg">—</div>
-        <div class="ref" id="idxRef">&nbsp;</div>
-      </div>
-      <div class="st">
-        <span class="pill not-started" id="mPill"><span class="dot"></span><span id="mPillText">Connecting…</span></span>
-        <div class="comp" id="idxComp">&nbsp;</div>
-        <div class="breadth" id="breadth">&nbsp;</div>
-      </div>
+  <section class="cmsbar" aria-label="CMS INDEX">
+    <span class="live not-started" id="mPill"><span id="mPillText">—</span></span>
+    <div class="id"><h1>Jain Stock Exchange</h1></div>
+    <div class="ix" aria-live="polite">
+      <span class="lbl">CMS INDEX</span>
+      <span class="num"><span class="val" id="idxVal">—</span><span class="chg" id="idxChg"></span></span>
+      <span class="sr-only" id="idxComp"></span>
     </div>
   </section>
-
-  <div id="timingBox" class="hidden"></div>
-
-  <section class="mstats" aria-label="Market summary">
-    <article class="kpi"><div class="k">Securities</div><div class="v" id="sCount">—</div><div class="s" id="sCountSub">Listed market</div></article>
-    <article class="kpi"><div class="k">Gainers</div><div class="v up" id="sUp">—</div><div class="s">Trading above base</div></article>
-    <article class="kpi"><div class="k">Losers</div><div class="v down" id="sDown">—</div><div class="s">Trading below base</div></article>
-    <article class="kpi"><div class="k">Unchanged</div><div class="v" id="sFlat">—</div><div class="s">At base price</div></article>
-    <article class="kpi"><div class="k">Top gainer</div><div class="v mover" id="sTopUp">—</div><div class="s" id="sTopUpSub">No gainers yet</div></article>
-    <article class="kpi"><div class="k">Top loser</div><div class="v mover" id="sTopDown">—</div><div class="s" id="sTopDownSub">No losers yet</div></article>
-  </section>
-
-  <section class="card wall" aria-labelledby="wallTitle">
-    <div class="wall-head">
-      <div><div class="eyebrow">Market wall</div><h2 id="wallTitle">Stocks &amp; IPOs</h2></div>
-      <ul class="legend" aria-label="Colour key">
-        <li><span class="sw sw-up" aria-hidden="true"></span>Gainers</li>
-        <li><span class="sw sw-down" aria-hidden="true"></span>Losers</li>
-        <li><span class="sw sw-flat" aria-hidden="true"></span>Unchanged</li>
-      </ul>
-    </div>
-    <div class="filters" role="search">
-      <div><label class="sr-only" for="q">Search the market</label><input class="input" id="q" type="search" placeholder="Search stock, symbol or IPO" autocomplete="off" spellcheck="false"></div>
-      <div><label class="sr-only" for="fType">Show</label>
-        <select class="input" id="fType"><option value="all">Stocks + IPOs</option><option value="EQUITY">Stocks only</option><option value="IPO">IPOs only</option></select></div>
-      <div><label class="sr-only" for="fMove">Movement</label>
-        <select class="input" id="fMove"><option value="all">All movements</option><option value="up">Gainers</option><option value="down">Losers</option><option value="flat">Unchanged</option></select></div>
-      <div><label class="sr-only" for="sort">Sort</label>
-        <select class="input" id="sort">
-          <option value="default">Latest price change first</option>
-          <option value="gainers">Biggest gainers first</option>
-          <option value="losers">Biggest losers first</option>
-          <option value="price">Price: high to low</option>
-          <option value="name">Name: A to Z</option>
-        </select></div>
-      <button class="btn primary" type="button" id="refreshBtn">Refresh</button>
-      <button class="btn" type="button" id="tvBtn" title="Projector view (full screen)">Projector</button>
-    </div>
-    <div class="meta-row">
-      <span id="countLine">Loading market data…</span>
-      <span class="conn" id="conn"><span class="dot"></span><span id="connText">Connecting to the market feed</span></span>
-    </div>
-    <div id="ipoSection" class="hidden">
-      <div class="ipo-head" style="padding-top:16px"><h3>IPO market · not yet tradable</h3><span class="small muted" id="ipoNote"></span></div>
-      <ul class="mgrid ipo" id="ipoGrid" aria-label="IPO market"></ul>
-    </div>
-    <ul class="mgrid" id="grid" aria-live="off" aria-label="Listed market"></ul>
-  </section>
-  <section class="card news" aria-label="FOX Market Desk" style="margin-top:16px">
-    <div class="card-h"><div class="fox-h"><span class="fox-mark">FOX</span><h2>FOX Market Desk · Market News</h2></div><span class="meta" id="newsMeta">Official market-moving announcements</span></div>
-    <div class="card-b" id="news"><div class="news-item muted">No market news yet.</div></div>
-  </section>
-
-  <p class="disc" style="margin-top:14px" id="disc"></p>
+  <ul class="mgrid" id="grid" aria-live="off" aria-label="Market wall"></ul>
+  <p class="sr-only" id="disc"></p>
 </main>
-<footer class="footer">JAIN STOCK EXCHANGE · Dalal Street 2026 · JAIN (Deemed-to-be University), CMS Business School · Educational simulation — all prices are virtual</footer>
 <script src="/assets/config.js?v=313"></script>
 <script src="/assets/jse.js?v=313"></script>
 <script>
 (function () {
   "use strict";
-  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum;
+  var esc = JSE.esc, N = JSE.toNum;
   var REFRESH_MS = 2500;
-  var nf2 = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  var state = { data: null, type: "all", move: "all", sort: "default", q: "", last: {}, lastOk: null };
-  try { var saved = JSON.parse(localStorage.getItem("jse-market-view") || "{}"); state.type = saved.type || "all"; state.move = saved.move || "all"; state.sort = saved.sort || "default"; } catch (e) {}
-  var grid = document.getElementById("grid"), ipoGrid = document.getElementById("ipoGrid");
+  var nf0 = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+  var state = { data: null, last: {} };
+  var grid = document.getElementById("grid");
+  document.body.classList.add("market-page");
   document.getElementById("disc").textContent = JSE.DISCLAIMER;
-  document.getElementById("timingBox").innerHTML = JSE.timingHtml();
+  var ver = "v" + ((window.JSE_CONFIG && JSE_CONFIG.version) || "").split(".").slice(0, 2).join(".");
+  function rupees(v) { return "₹" + nf0.format(Math.round(N(v))); }
+  function pctTxt(p) { var n = N(p); return (n > 0 ? "▲ " : n < 0 ? "▼ " : "") + Math.abs(n).toFixed(2) + "%"; }
+  function dir(p) { var n = N(p); return n > 0 ? "up" : n < 0 ? "down" : "flat"; }
 
-  function save() { try { localStorage.setItem("jse-market-view", JSON.stringify({ type: state.type, move: state.move, sort: state.sort })); } catch (e) {} }
-  function bySymbol() { var m = {}; state.data.ipos.concat(state.data.stocks).forEach(function (s) { m[s.symbol] = s; }); return m; }
-  function dayDir(s) { return F.dir(s.day_change_pct); }
-
-  // the listed market in server order (the latest real price change first) unless another sort is chosen
-  function listed() {
-    var d = state.data, m = bySymbol();
-    var list = (d.board && d.board.listed_market ? d.board.listed_market : []).map(function (sym) { return m[sym]; }).filter(Boolean);
-    if (state.type !== "all") list = list.filter(function (s) { return s.type === state.type; });
-    if (state.move !== "all") list = list.filter(function (s) { return dayDir(s) === state.move; });
-    if (state.q) { var q = state.q.toLowerCase(); list = list.filter(function (s) { return s.name.toLowerCase().indexOf(q) >= 0 || s.symbol.toLowerCase().indexOf(q) >= 0; }); }
-    if (state.sort === "gainers") list = list.slice().sort(function (a, b) { return N(b.day_change_pct) - N(a.day_change_pct); });
-    else if (state.sort === "losers") list = list.slice().sort(function (a, b) { return N(a.day_change_pct) - N(b.day_change_pct); });
-    else if (state.sort === "price") list = list.slice().sort(function (a, b) { return N(b.price) - N(a.price); });
-    else if (state.sort === "name") list = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-    return list;
+  // board order: the security whose price changed last comes first; IPOs not yet listed follow the listed market
+  function wall() {
+    var d = state.data, m = {};
+    d.ipos.concat(d.stocks).forEach(function (s) { m[s.symbol] = s; });
+    var b = d.board || {};
+    return (b.listed_market || []).concat(b.ipo_market || []).map(function (sym) { return m[sym]; }).filter(Boolean);
   }
-
-  // heat tile: colour = movement against the base (day) price; black typography
   function tileHtml(s, flash) {
-    var dir = dayDir(s), ipo = s.type === "IPO", dayAbs = N(s.day_change);
-    return '<li class="tile ' + dir + (flash ? " flash-" + flash : "") + '" data-sym="' + esc(s.symbol) + '" title="' +
-      esc(s.name + " · " + s.symbol + (s.sector ? " · " + s.sector : "") + " · last move " + F.pct(s.change_pct)) + '">' +
-      '<div class="tile-top"><div class="tile-name">' + esc(s.name) + "</div>" + (ipo ? '<span class="badge ipo">IPO</span>' : "") + "</div>" +
-      '<div class="tile-meta"><span class="sym">' + esc(s.symbol) + "</span></div>" +
-      '<div class="tile-price">' + F.price(s.price) + "</div>" +
-      '<div class="tile-chg"><span>' + F.arrowPct(s.day_change_pct) + '</span><span class="amt">' + (dayAbs > 0 ? "+" : dayAbs < 0 ? "−" : "") + "₹" + nf2.format(Math.abs(dayAbs)) + "</span></div>" +
-      '<div class="tile-foot"><span>Prev ' + F.price(s.previous_price) + "</span><span>Lot " + esc(s.lot_size) + "</span></div></li>";
+    var pre = s.type === "IPO" && !s.listed, pct = pre ? 0 : s.day_change_pct, dd = pre ? "flat" : dir(pct);
+    return '<li class="tile ' + dd + (flash ? " flash-" + flash : "") + '" data-sym="' + esc(s.symbol) + '" title="' + esc(s.name + " · " + s.symbol) + '">' +
+      '<div class="tile-top"><div class="tile-name">' + esc(s.name) + '</div><span class="tile-kind">' + (s.type === "IPO" ? "IPO" : "EQUITY") + "</span></div>" +
+      '<div class="tile-price">' + rupees(pre ? s.base_price : s.price) + "</div>" +
+      '<div class="tile-foot">' + esc(s.symbol) + " · " + pctTxt(pct) + "</div></li>";
   }
-  function ipoTileHtml(s) {
-    return '<li class="tile ipo-pre" data-sym="' + esc(s.symbol) + '">' +
-      '<div class="tile-top"><div class="tile-name">' + esc(s.name) + '</div><span class="badge ipo">' + esc(s.ipo_code || "IPO") + "</span></div>" +
-      '<div class="tile-meta"><span class="sym">' + esc(s.symbol) + "</span>" + JSE.badge.stage(s.stage) + "</div>" +
-      '<div class="tile-price">' + F.price(s.base_price) + '</div><div class="tile-chg"><span>Issue price · 1 lot = ' + esc(s.lot_size) + " shares</span></div>" +
-      '<div class="tile-foot"><span>Lot value ' + F.money(N(s.base_price) * N(s.lot_size)) + '</span><span>IPO lot 50 shares</span></div></li>';
-  }
-
   function render() {
-    var d = state.data, m = bySymbol();
-    // IPO market: IPOs before their official listing (stage-aware; they join the wall and the CMS 50 when they list)
-    var pre = (d.board && d.board.ipo_market ? d.board.ipo_market : []).map(function (sym) { return m[sym]; }).filter(Boolean);
-    if (state.type === "EQUITY") pre = [];
-    if (state.q) { var q = state.q.toLowerCase(); pre = pre.filter(function (s) { return s.name.toLowerCase().indexOf(q) >= 0 || s.symbol.toLowerCase().indexOf(q) >= 0; }); }
-    document.getElementById("ipoSection").classList.toggle("hidden", !pre.length);
-    ipoGrid.innerHTML = pre.map(ipoTileHtml).join("");
-    var w = d.ipo_window || {};
-    document.getElementById("ipoNote").textContent = w.opens_at ? "Applications " + F.datetime(w.opens_at) + " → " + F.datetime(w.closes_at) + " IST · revealed and listed at 1:15 PM on event day" : "";
-    var list = listed(), flashes = {};
-    list.forEach(function (s) {
-      var prev = state.last[s.symbol];
-      if (prev !== undefined && prev !== N(s.price)) flashes[s.symbol] = N(s.price) > prev ? "up" : "down";
-    });
-    grid.innerHTML = list.length ? list.map(function (s) { return tileHtml(s, flashes[s.symbol]); }).join("")
-      : '<li class="grid-msg"><div class="empty"><b>No securities match.</b>Clear the search or filters to see the full market wall.</div></li>';
-    d.ipos.concat(d.stocks).forEach(function (s) { state.last[s.symbol] = N(s.price); });
-    var ix = d.index || {}, total = (d.board && d.board.listed_market ? d.board.listed_market.length : 0);
-    document.getElementById("countLine").innerHTML = "<b>" + list.length + "</b> of " + total + " listed securities · " + (ix.equity_components || 0) + " CMS stocks" +
-      (ix.ipo_components ? " + " + ix.ipo_components + " listed IPO" + (ix.ipo_components > 1 ? "s" : "") : "") + " · the latest real price change moves to the top";
+    var list = wall(), flashes = {};
+    list.forEach(function (s) { var prev = state.last[s.symbol]; if (prev !== undefined && prev !== N(s.price)) flashes[s.symbol] = N(s.price) > prev ? "up" : "down"; });
+    grid.innerHTML = list.length ? list.map(function (s) { return tileHtml(s, flashes[s.symbol]); }).join("") : '<li class="grid-msg"><div class="empty">No securities.</div></li>';
+    list.forEach(function (s) { state.last[s.symbol] = N(s.price); });
   }
-
   function renderHead(d) {
     var ix = d.index || {};
-    document.getElementById("idxVal").textContent = nf2.format(N(ix.value));
-    var c = document.getElementById("idxChg");
-    c.textContent = F.arrowPct(ix.change_pct) + "  (" + (N(ix.change) >= 0 ? "+" : "−") + nf2.format(Math.abs(N(ix.change))) + ")";
-    c.className = "chg " + F.dir(ix.change_pct);
-    document.getElementById("idxRef").textContent = "Reference " + nf2.format(N(ix.base_value)) + " · sum of component prices";
-    document.getElementById("idxComp").textContent = (ix.components || 0) + " components · " + (ix.equity_components || 0) + " stocks" +
-      (ix.ipo_components ? " + " + ix.ipo_components + " listed IPO" + (ix.ipo_components > 1 ? "s" : "") : "");
-    var meta = JSE.STATUS[d.status] || { cls: "closed", text: d.status };
-    document.getElementById("mPill").className = "pill " + meta.cls;
-    document.getElementById("mPillText").textContent = meta.text;
-    var b = d.breadth || {};
-    document.getElementById("breadth").innerHTML = '<span class="up">▲ ' + (b.advances || 0) + '</span><span class="down">▼ ' + (b.declines || 0) + '</span><span class="flat">■ ' + (b.unchanged || 0) + "</span>";
-    document.getElementById("evName").textContent = "JSE System • Version v" + ((window.JSE_CONFIG && JSE_CONFIG.version) || "").split(".").slice(0, 2).join(".");
-    document.getElementById("timingBox").classList.toggle("hidden", d.status !== "NOT_STARTED");
-    // summary cards
-    var m = bySymbol(), lst = (d.board && d.board.listed_market ? d.board.listed_market : []).map(function (s) { return m[s]; }).filter(Boolean);
-    document.getElementById("sCount").textContent = lst.length;
-    document.getElementById("sCountSub").textContent = (d.board && d.board.ipo_market && d.board.ipo_market.length ? d.board.ipo_market.length + " IPO(s) awaiting listing" : "Listed market");
-    document.getElementById("sUp").textContent = b.advances || 0;
-    document.getElementById("sDown").textContent = b.declines || 0;
-    document.getElementById("sFlat").textContent = b.unchanged || 0;
-    var up = lst.filter(function (s) { return N(s.day_change_pct) > 0; }).sort(function (a, z) { return N(z.day_change_pct) - N(a.day_change_pct); })[0];
-    var dn = lst.filter(function (s) { return N(s.day_change_pct) < 0; }).sort(function (a, z) { return N(a.day_change_pct) - N(z.day_change_pct); })[0];
-    document.getElementById("sTopUp").textContent = up ? up.name : "—";
-    document.getElementById("sTopUpSub").innerHTML = up ? '<span class="up">' + F.arrowPct(up.day_change_pct) + "</span> · " + F.price(up.price) : "No gainers yet";
-    document.getElementById("sTopDown").textContent = dn ? dn.name : "—";
-    document.getElementById("sTopDownSub").innerHTML = dn ? '<span class="down">' + F.arrowPct(dn.day_change_pct) + "</span> · " + F.price(dn.price) : "No losers yet";
+    document.getElementById("idxVal").textContent = nf0.format(Math.round(N(ix.value)));
+    document.getElementById("idxChg").textContent = pctTxt(ix.change_pct);
+    document.getElementById("idxComp").textContent = (ix.components || 0) + " components";
+    var cls = { LIVE: "live", NOT_STARTED: "not-started", SETTLEMENT_ONLY: "settlement", CLOSED: "closed", FINALIZED: "finalized" }[d.status] || "closed";
+    var txt = { LIVE: "LIVE", NOT_STARTED: "NOT STARTED", SETTLEMENT_ONLY: "PAUSED", CLOSED: "CLOSED", FINALIZED: "FINALIZED" }[d.status] || d.status;
+    document.getElementById("mPill").className = "live " + cls;
+    document.getElementById("mPillText").textContent = txt;
     JSE.applyStatus(d.status, ix);
   }
-
-  function setConn(kind, text) {
-    var c = document.getElementById("conn");
-    c.className = "conn" + (kind === "ok" ? "" : kind === "stale" ? " stale" : " down");
-    document.getElementById("connText").textContent = text;
-  }
-
   async function load() {
     var d = await JSE.api.get("/api/market", null, { timeout: 9000, retries: 1 });
-    state.data = d; state.lastOk = new Date();
-    renderHead(d); render();
-    setConn("ok", "Live · refreshing every " + (REFRESH_MS / 1000) + "s · updated " + F.time(state.lastOk));
+    state.data = d; renderHead(d); render();
   }
-  async function loadNews() {
-    var r = await JSE.api.get("/api/market-news", { limit: 4 }, { retries: 0 });
-    var box = document.getElementById("news");
-    box.innerHTML = r.news.length ? r.news.map(function (n) {
-      var dir = F.dir(n.applied_pct);
-      return '<div class="news-item"><div class="row between"><span class="badge ' + (dir === "up" ? "ok" : dir === "down" ? "no" : "prov") + '">' + esc(n.mood) + '</span><span class="tiny muted">' + F.time(n.created_at) + "</span></div>" +
-        '<div class="hl">' + esc(n.headline) + '</div><div class="small" style="margin-top:3px"><b>' + esc(n.name) + "</b> · " + F.price(n.previous_price) + " → " + F.price(n.new_price) +
-        ' <span class="mv ' + dir + '">' + F.pct(n.applied_pct) + "</span>" + (n.reversed ? ' <span class="badge prov">reversed</span>' : "") + "</div></div>";
-    }).join("") : '<div class="news-item muted">No market news yet. Prices move only when the Event Admin publishes official Market News.</div>';
-  }
-
   function onError(e) {
-    if (!state.data) {
-      grid.innerHTML = '<li class="grid-msg"><div class="empty"><b>The market feed can’t be loaded right now.</b>' + esc(e.message) +
-        '<div style="margin-top:12px"><button class="btn primary" type="button" id="retry">Try again now</button></div></div></li>';
-      var r = document.getElementById("retry"); if (r) r.onclick = function () { poller.now(); };
-      setConn("down", "Feed unavailable — retrying automatically");
-      JSE.offline();
-    } else {
-      setConn("stale", "Connection lost · showing prices from " + F.time(state.lastOk) + " · retrying");
-      JSE.offline();
-    }
+    if (!state.data) grid.innerHTML = '<li class="grid-msg"><div class="empty"><b>The market feed can’t be loaded right now.</b>' + esc(e.message) + "</div></li>";
+    document.getElementById("mPill").className = "live offline"; document.getElementById("mPillText").textContent = "RECONNECTING";
+    JSE.offline();
   }
-
-  var tSel = document.getElementById("fType"), mSel = document.getElementById("fMove"), sortSel = document.getElementById("sort");
-  tSel.value = state.type; mSel.value = state.move; sortSel.value = state.sort;
-  tSel.addEventListener("change", function () { state.type = tSel.value; save(); if (state.data) render(); });
-  mSel.addEventListener("change", function () { state.move = mSel.value; save(); if (state.data) render(); });
-  sortSel.addEventListener("change", function () { state.sort = sortSel.value; save(); if (state.data) render(); });
-  document.getElementById("q").addEventListener("input", JSE.debounce(function (e) { state.q = e.target.value.trim(); if (state.data) render(); }, 150));
-  document.getElementById("refreshBtn").addEventListener("click", function () { if (poller) poller.now(); });
-  document.getElementById("tvBtn").addEventListener("click", function () {
-    document.body.classList.toggle("tv");
-    var el = document.documentElement;
-    if (document.body.classList.contains("tv") && el.requestFullscreen) el.requestFullscreen().catch(function () {});
-    else if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
-  });
-  document.addEventListener("fullscreenchange", function () { if (!document.fullscreenElement) document.body.classList.remove("tv"); });
   if (/[?&]tv=1/.test(location.search)) document.body.classList.add("tv");
-
   var poller;
   JSE.page({ id: "market", statusFromPage: true }).then(function () {
+    var right = document.querySelector(".hd-right");
+    if (right) right.insertAdjacentHTML("afterbegin", '<span class="ver-pill">JSE System • Version ' + esc(ver) + "</span>");
     poller = JSE.poll(load, REFRESH_MS, { onError: onError });
-    JSE.poll(loadNews, 10000, { onError: function () {} });
   });
 })();
 </script>

@@ -88,12 +88,9 @@ with sync_playwright() as pwr:
     ctx, page, errors = new_page(1920, 1080)
     page.goto(BASE + "/"); page.wait_for_selector("#grid .tile"); time.sleep(0.8)
     page.screenshot(path=os.path.join(SHOTS, "market-before-start.png"), full_page=True)
-    check("market (pre-START): IPO Market section shown first", page.is_visible("#ipoSection") and
-          page.evaluate("document.getElementById('ipoSection').getBoundingClientRect().top < document.getElementById('grid').getBoundingClientRect().top"))
-    check("market (pre-START): 4 IPOs in the IPO market", page.locator("#ipoGrid > *").count() == 4, str(page.locator("#ipoGrid > *").count()))
-    check("market (pre-START): 50 listed equity tiles", page.locator("#grid .tile").count() == 50, str(page.locator("#grid .tile").count()))
+    check("market (pre-START): 54 tiles — 50 equities + 4 IPOs", page.locator("#grid .tile").count() == 54, str(page.locator("#grid .tile").count()))
+    check("market (pre-START): IPO tiles marked IPO", page.locator("#grid .tile .tile-kind", has_text="IPO").count() == 4)
     check("market (pre-START): CMS INDEX of 50 components", "50" in page.inner_text("#idxComp"), page.inner_text("#idxComp"))
-    check("market: rumour / not-advice disclaimer shown", "not real investment advice" in page.inner_text("#disc"))
     check("market: no JS errors (pre-START)", not errors, "; ".join(errors)[:300])
     ctx.close()
 
@@ -115,7 +112,6 @@ with sync_playwright() as pwr:
     n = page.locator("#grid .tile").count()
     check("market (LIVE): 54 listed tiles (50 equities + 4 listed IPOs), each once", n == 54 and
           len(set(page.eval_on_selector_all("#grid .tile", "els => els.map(e => e.dataset.sym)"))) == 54, str(n))
-    check("market (LIVE): IPO section hidden after listing", not page.is_visible("#ipoSection"))
     check("market (LIVE): CMS INDEX of 54 components", "54" in page.inner_text("#idxComp"), page.inner_text("#idxComp"))
     cols = page.evaluate("getComputedStyle(document.getElementById('grid')).gridTemplateColumns.split(' ').length")
     check("market: 8 tiles per row on a projector", cols == 8, str(cols))

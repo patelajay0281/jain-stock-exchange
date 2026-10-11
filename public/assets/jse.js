@@ -165,6 +165,7 @@
     BANK: "/bank.html", INSTITUTIONAL: "/institutional.html", ADMIN: "/admin.html", VIEWER: "/admin.html" };
   function allowed(page, user) {
     if (page.roles === "*") return true;
+    if (!user) return true;   // signed out: the full Hatchable tab bar; each desk asks for its sign-in
     return !!user && page.roles.indexOf(user.role) >= 0;
   }
   var ROLE_LABEL = { ADMIN: "Event Admin", EXCHANGE: "Exchange Operator", BANK: "Bank Operator", BROKER: "Broker", PIT_MANAGER: "Pit Manager",
