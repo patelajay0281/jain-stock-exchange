@@ -1,0 +1,247 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-11T09:16:28.114Z",
+  "run_id": "38127752094",
+  "commit": "a76fb985d0b200d91f843ad4f54f22038d24c7bd",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+    "suites": [
+      "health",
+      "api",
+      "listing",
+      "ui",
+      "stress",
+      "cleanup"
+    ],
+    "probes": [
+      {
+        "rps": 200,
+        "seconds": 15,
+        "viewers": 300,
+        "pause_s": 5
+      },
+      {
+        "rps": 850,
+        "seconds": 60,
+        "viewers": 600,
+        "pause_s": 10
+      },
+      {
+        "rps": 1200,
+        "seconds": 30,
+        "viewers": 800
+      }
+    ],
+    "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 9: v3.13.0 (exactly the Hatchable application: Create Order → Exchange → Bank) — API, listing and browser suites, 1,500-order stress with integrity audit, then cleanup.",
+    "stress": {
+      "orders": 1500,
+      "workers": 16
+    }
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "3.13.0",
+        "db": "ok",
+        "db_ms": 2,
+        "uptime_s": 1,
+        "node": "v24.16.0",
+        "time": "2026-10-11T09:16:30.447Z"
+      },
+      "ms": 2429
+    },
+    "api": {
+      "exit_code": 0,
+      "duration_s": 103,
+      "pass": 32,
+      "fail": 0,
+      "tail": "# Subtest: ledger, commissions and exports reconcile with the live records\nok 29 - ledger, commissions and exports reconcile with the live records\n  ---\n  duration_ms: 2490.761894\n  type: 'test'\n  ...\n# Subtest: CLOSE (password): ₹50K closing cash rule decides eligibility; Winner and Runner-Up final\nok 30 - CLOSE (password): ₹50K closing cash rule decides eligibility; Winner and Runner-Up final\n  ---\n  duration_ms: 1412.544683\n  type: 'test'\n  ...\n# Subtest: FINALIZE and the final exports: Event Excel, Event JSON, Winner CSV, IPO allotments\nok 31 - FINALIZE and the final exports: Event Excel, Event JSON, Winner CSV, IPO allotments\n  ---\n  duration_ms: 2383.464524\n  type: 'test'\n  ...\n# Subtest: reset restores the clean starting state, keeps IPO allotments, returns IPOs to the pre-market stage\nok 32 - reset restores the clean starting state, keeps IPO allotments, returns IPOs to the pre-market stage\n  ---\n  duration_ms: 1280.180949\n  type: 'test'\n  ...\n# Subtest: cleanup: clean event, no allotments, original event start\nok 33 - cleanup: clean event, no allotments, original event start\n  ---\n  duration_ms: 673.722188\n  type: 'test'\n  ...\n1..33\n# tests 33\n# suites 0\n# pass 32\n# fail 0\n# cancelled 0\n# skipped 1\n# todo 0\n# duration_ms 103147.410439\n"
+    },
+    "listing": {
+      "exit_code": 0,
+      "duration_s": 18,
+      "pass": 10,
+      "fail": 0,
+      "tail": "# Subtest: reset returns IPOs to the IPO market (issue prices) and keeps saved listing prices; manual listing\nok 7 - reset returns IPOs to the IPO market (issue prices) and keeps saved listing prices; manual listing\n  ---\n  duration_ms: 2950.899004\n  type: 'test'\n  ...\n# Subtest: password change: wrong current password, weak password, success\nok 8 - password change: wrong current password, weak password, success\n  ---\n  duration_ms: 1680.76097\n  type: 'test'\n  ...\n# Subtest: console bootstrap forces a password change at next sign-in\nok 9 - console bootstrap forces a password change at next sign-in # SKIP set PGURL to run (local database only)\n  ---\n  duration_ms: 0.27853\n  type: 'test'\n  ...\n# Subtest: CI sign-in: absent locally, rejects forged tokens on staging\nok 10 - CI sign-in: absent locally, rejects forged tokens on staging\n  ---\n  duration_ms: 900.740079\n  type: 'test'\n  ...\n# Subtest: cleanup: closed, reset and no saved listing prices\nok 11 - cleanup: closed, reset and no saved listing prices\n  ---\n  duration_ms: 1325.63271\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 1\n# todo 0\n# duration_ms 17682.901538\n"
+    },
+    "ui": {
+      "exit_code": 0,
+      "duration_s": 48,
+      "tail": "PASS reset\nPASS event started (all four IPOs listed)\nPASS market: 54 listed tiles from the staging API\nPASS market: CMS INDEX of 54 components and LIVE status\nPASS market: staging badge shown\nPASS market: no JS / CORS / CSP errors (CSP enforced)\nPASS participant navigation\nPASS participant pages: no JS errors\nPASS broker: order created → Exchange Pending\nPASS broker pages: no JS errors\nPASS exchange: approved from the queue\nPASS exchange page: no JS errors\nPASS bank: settled, market price unchanged\nPASS bank page: no JS errors\nPASS settlement does not move the market price\nPASS participant: four-step flow\nPASS participant follow-up pages: no JS errors\nPASS admin opens / (CSP enforced, no errors)\nPASS admin opens /order.html (CSP enforced, no errors)\nPASS admin opens /exchange.html (CSP enforced, no errors)\nPASS admin opens /bank.html (CSP enforced, no errors)\nPASS admin opens /orders.html (CSP enforced, no errors)\nPASS admin opens /institutional.html (CSP enforced, no errors)\nPASS admin opens /commissions.html (CSP enforced, no errors)\nPASS admin opens /portfolios.html (CSP enforced, no errors)\nPASS admin opens /admin.html (CSP enforced, no errors)\nPASS admin opens /audit.html (CSP enforced, no errors)\nPASS admin opens /cash.html (CSP enforced, no errors)\nPASS old insights page redirects to Market Intelligence in Event Admin\n\n29/29 staging UI checks passed\n"
+    },
+    "stress": {
+      "exit_code": 0,
+      "duration_s": 62,
+      "tail": "      \"name\": \"CMS 50 = the active listed equities + listed IPOs, each once\",\n      \"pass\": true,\n      \"detail\": \"{\\\"components\\\":54,\\\"ipos\\\":[\\\"VOLTRA\\\",\\\"BLUEAI\\\",\\\"SHREEB\\\",\\\"AAROGYA\\\"]}\"\n    }\n  ],\n  \"all_checks_passed\": true,\n  \"http\": {\n    \"requests\": 4976,\n    \"failed\": 0,\n    \"status_codes\": {\n      \"200\": 4662,\n      \"409\": 314\n    },\n    \"errors\": {},\n    \"p50_ms\": 181.7,\n    \"p95_ms\": 213.9,\n    \"p99_ms\": 545.7\n  },\n  \"total_runtime_s\": 61.7\n}\nPASS cash ledger reconciles with every team balance\nPASS one settlement per settled order\nPASS no order settled twice\nPASS settlements use the order price (never an obsolete market price)\nPASS trade value = quantity × price on every settlement\nPASS brokerage = the order's configured rate × trade value\nPASS one broker commission per brokerage-bearing settlement\nPASS holdings match settled trades and IPO allotments exactly\nPASS no negative holdings\nPASS no negative cash\nPASS market prices change only through Market News, IPO listing or undo / redo (never settlement)\nPASS every market price equals its last recorded price change (or the base price)\nPASS every Market News move stays inside its severity band and the ±10% cap\nPASS loan principal never above the configured limit\nPASS interest charged is at least the configured rate on every draw\nPASS loan liability = principal + interest outstanding\nPASS assessment counts only settled participant BUY / SELL trades\nPASS exactly one Winner and one Runner-Up (among eligible teams)\nPASS CMS 50 = the active listed equities + listed IPOs, each once\n",
+      "report": {
+        "tool": "tests/stress.mjs",
+        "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+        "at": "2026-10-11T09:20:23.603Z",
+        "orders_requested": 1500,
+        "workers": 16,
+        "news_every_ms": 1500,
+        "duration_s": 55,
+        "calls": 4976,
+        "calls_per_s": 90.5,
+        "orders_per_s": 27.2,
+        "executions_per_s": 27.2,
+        "settlements_per_s": 26.1,
+        "tally": {
+          "rate_limited": 0,
+          "created": 1494,
+          "replays_checked": 75,
+          "replay_mismatch": 0,
+          "price_changed_at_submit": 6,
+          "executed": 1494,
+          "stale": 5,
+          "dup_exec_attempts": 75,
+          "dup_exec_extra": 0,
+          "approved": 1489,
+          "exch_rejected": 0,
+          "settled": 1433,
+          "bank_rejected": {
+            "SHORT_SELLING_NOT_ALLOWED": 54,
+            "HTTP_409_NOT_AWAITING_BANK": 2
+          },
+          "dup_attempts": 75,
+          "dup_extra_success": 0,
+          "news": 31,
+          "news_failed": 0,
+          "create_rejected": {},
+          "http_errors": 0
+        },
+        "audit_counts": {
+          "orders": 1494,
+          "settled": 1433,
+          "trades": 1433,
+          "holdings_rows": 568,
+          "news": 31
+        },
+        "integrity": [
+          {
+            "name": "cash ledger reconciles with every team balance",
+            "pass": true,
+            "detail": "{\"ok\":true,\"mismatches\":0,\"teams_checked\":100,\"mismatched_teams\":[]}"
+          },
+          {
+            "name": "one settlement per settled order",
+            "pass": true,
+            "detail": "1433 settled orders, 1433 settlements"
+          },
+          {
+            "name": "no order settled twice",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "settlements use the order price (never an obsolete market price)",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "trade value = quantity × price on every settlement",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "brokerage = the order's configured rate × trade value",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "one broker commission per brokerage-bearing settlement",
+            "pass": true,
+            "detail": "1433 commissions, 1433 brokerage-bearing settlements"
+          },
+          {
+            "name": "holdings match settled trades and IPO allotments exactly",
+            "pass": true,
+            "detail": "0 mismatches "
+          },
+          {
+            "name": "no negative holdings",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "no negative cash",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "market prices change only through Market News, IPO listing or undo / redo (never settlement)",
+            "pass": true,
+            "detail": "MARKET_NEWS"
+          },
+          {
+            "name": "every market price equals its last recorded price change (or the base price)",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "every Market News move stays inside its severity band and the ±10% cap",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "loan principal never above the configured limit",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "interest charged is at least the configured rate on every draw",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "loan liability = principal + interest outstanding",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "assessment counts only settled participant BUY / SELL trades",
+            "pass": true,
+            "detail": ""
+          },
+          {
+            "name": "exactly one Winner and one Runner-Up (among eligible teams)",
+            "pass": true,
+            "detail": "winner 1, runner-up 1, eligible 63"
+          },
+          {
+            "name": "CMS 50 = the active listed equities + listed IPOs, each once",
+            "pass": true,
+            "detail": "{\"components\":54,\"ipos\":[\"VOLTRA\",\"BLUEAI\",\"SHREEB\",\"AAROGYA\"]}"
+          }
+        ],
+        "all_checks_passed": true,
+        "http": {
+          "requests": 4976,
+          "failed": 0,
+          "status_codes": {
+            "200": 4662,
+            "409": 314
+          },
+          "errors": {},
+          "p50_ms": 181.7,
+          "p95_ms": 213.9,
+          "p99_ms": 545.7
+        },
+        "total_runtime_s": 61.7
+      }
+    },
+    "cleanup": {
+      "reject": 200,
+      "close": 200,
+      "reset": 200,
+      "clear_listing": 200
+    }
+  },
+  "finished_at": "2026-10-11T09:20:25.774Z"
+}
