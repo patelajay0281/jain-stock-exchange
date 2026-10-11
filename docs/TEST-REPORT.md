@@ -1,4 +1,23 @@
-# JSE v272 — test, stress and load report
+# JSE — test, stress and load report
+
+## v3.12.0 (11 October 2026) — Hatchable look and rules
+
+Code: branch `v272`, commit `258f0c7`, API bundle SHA-256 `c2437d14…9f211`, deployed to staging (`jsestage` deployment 7). Staging CI run 38125079060.
+
+| Test | Where | Result |
+|---|---|---|
+| API end-to-end, full Broker → Pit Manager → Exchange → Bank workflow and every rule, incl. institutional counterparty at market ±2% | local · staging | **43 pass, 0 fail (1 local-only skip) · 32/32 + 10/10** |
+| Browser smoke test, all 16 pages and every role | local | **80/80** |
+| Browser test of the deployed site (Cloudflare Pages + Neon Function), CSP enforced | staging | **37/37** |
+| Stress: 8,000 orders with integrity audit (ledger reconciliation, one slip and one settlement per order, slip price, 0.50% brokerage, holdings, no negative cash or holdings, prices only from Market News / listing, loans, assessment, Winner / Runner-Up, CMS 50) | local | **21/21 integrity checks** |
+| Stress: 1,500 orders, 6,499 requests | staging | **all integrity checks passed, 0 failed requests**, p95 213 ms from the US runner |
+| Visual check of 15 pages at 1920×1080, 1600×900, 1440×900, 1366×768, 1280×720, 1024×768, 768×1024, 390×844 | local | **no horizontal scroll, no console errors** at any size |
+
+Cleanup after the staging run: open orders rejected, event closed and reset, listing prices and IPO applications cleared.
+
+---
+
+## v2.72 – v3.11 (10–11 October 2026)
 
 Date: 10–11 October 2026. Code: branch `v272`. API bundle SHA-256 `8fab060c…7025016` (staging and production run the same bundle).
 
