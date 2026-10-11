@@ -4,12 +4,7 @@
   "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
   "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
   "suites": [
-    "health",
-    "api",
-    "listing",
-    "ui",
-    "stress",
-    "cleanup"
+    "health"
   ],
   "probes": [
     {
@@ -30,7 +25,7 @@
       "viewers": 800
     }
   ],
-  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 9: v3.13.0 (exactly the Hatchable application: Create Order \u2192 Exchange \u2192 Bank) \u2014 API, listing and browser suites, 1,500-order stress with integrity audit, then cleanup.",
+  "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 10: health only (does not touch event data \u2014 the staging market is open/LIVE) \u2014 checks the Final Event CSV route is deployed.",
   "stress": {
     "orders": 1500,
     "workers": 16

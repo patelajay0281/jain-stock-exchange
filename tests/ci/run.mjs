@@ -54,7 +54,8 @@ async function health() {
   const t0 = Date.now();
   const r = await fetch(BASE + "/api/health");
   const d = await r.json();
-  results.suites.health = { status: r.status, body: d, ms: Date.now() - t0 };
+  const ev = await fetch(BASE + "/api/export-event-csv");   // signed out: 401 when the route exists, 404 when it does not
+  results.suites.health = { status: r.status, body: d, ms: Date.now() - t0, event_csv_route: ev.status };
 }
 
 for (const s of cfg.suites) {
