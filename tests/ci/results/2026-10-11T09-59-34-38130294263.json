@@ -1,0 +1,57 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-11T09:59:34.554Z",
+  "run_id": "38130294263",
+  "commit": "beda0fb0090bb4df70d2d3dc3738aeb00a73ab81",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+    "suites": [
+      "health"
+    ],
+    "probes": [
+      {
+        "rps": 200,
+        "seconds": 15,
+        "viewers": 300,
+        "pause_s": 5
+      },
+      {
+        "rps": 850,
+        "seconds": 60,
+        "viewers": 600,
+        "pause_s": 10
+      },
+      {
+        "rps": 1200,
+        "seconds": 30,
+        "viewers": 800
+      }
+    ],
+    "note": "Edit this file on the v272 branch to start a staging run (.github/workflows/staging-tests.yml). Run 10: health only (does not touch event data — the staging market is open/LIVE) — checks the Final Event CSV route is deployed.",
+    "stress": {
+      "orders": 1500,
+      "workers": 16
+    }
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "3.13.0",
+        "db": "ok",
+        "db_ms": 29,
+        "uptime_s": 73,
+        "node": "v24.16.0",
+        "time": "2026-10-11T09:59:35.507Z"
+      },
+      "ms": 1605,
+      "event_csv_route": 401
+    }
+  },
+  "finished_at": "2026-10-11T09:59:36.159Z"
+}
