@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install Node dependencies (the API suite reads Excel files with fflate)
+        run: npm ci --no-audit --no-fund
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

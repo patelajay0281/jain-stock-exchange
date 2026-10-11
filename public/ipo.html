@@ -6,42 +6,43 @@
 <title>IPO · JAIN STOCK EXCHANGE</title>
 <meta name="description" content="The four Dalal Street 2026 IPOs: prospectus, issue details, application window, allotment and listing status.">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=311">
+<link rel="stylesheet" href="/assets/jse.css?v=312">
 <style>
   .window { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .lifecycle { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--ink-2); }
   .lifecycle .arrow { color: var(--faint); }
   .ipo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .ipo-top { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 4px; }
-  .ipo-top .kpi { box-shadow: none; background: var(--surface-2); padding: 9px 11px; }
+  .ipo-top .kpi { box-shadow: none; background: var(--soft); padding: 10px 12px; }
   .ipo-top .kpi .v { font-size: 17px; }
-  .apply { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .apply { margin-top: 16px; border-top: 1px solid var(--line-3); padding-top: 14px; }
   .apply .row .input { width: 110px; }
   @media (max-width: 1100px) { .ipo-grid { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 640px) { .window, .ipo-top { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 </head>
 <body>
-<main id="main" class="wrap">
+<main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">IPO round</div><h1>Initial Public Offerings</h1>
-      <p>Read each company's prospectus, then decide which IPO shares to apply for. Application, allotment, listing and secondary-market trading are separate stages.</p></div>
+    <div><h1>Initial Public Offerings</h1>
+      <p>Read each company's prospectus, then decide which IPO shares to apply for. Application, allotment, listing and secondary-market trading are separate stages. One IPO lot = 50 shares.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
+  <div id="timingBox" style="margin-bottom:16px"></div>
 
   <div class="window" id="window"></div>
   <div class="card" style="margin-top:14px"><div class="card-b">
     <div class="lifecycle">
       <b>Stages:</b> <span class="badge stage-pre_ipo">Pre-IPO</span><span class="arrow">→</span><span class="badge stage-application_open">Open for application</span><span class="arrow">→</span>
       <span class="badge stage-application_closed">Application closed</span><span class="arrow">→</span><span class="badge stage-allotment_completed">Allotment completed</span><span class="arrow">→</span>
-      <span class="badge stage-listed">Listed · in CMS INDEX</span><span class="arrow">→</span><span>secondary-market trading through your broker</span>
+      <span class="badge stage-listed">Listed · in CMS 50</span><span class="arrow">→</span><span>secondary-market trading through your broker</span>
     </div>
-    <p class="small muted" style="margin:8px 0 0"><b>IPO lot sizing:</b> applications and allotments are in whole IPO lots (the lot size is shown for each IPO). This is separate from the CMS INDEX,
-      whose “50” is the number of base equity components. IPO allotments do not count as BUY trades for the assessment.</p>
+    <p class="small muted" style="margin:10px 0 0"><b>IPO lot sizing:</b> applications and allotments are in whole IPO lots of 50 shares (shares = lots × 50; amount = shares × issue price). The IPOs are revealed and list at 1:15 PM sharp on event day, joining the CMS 50 once each.
+      IPO allotments do not count toward the 5 settled BUY + 5 settled SELL assessment.</p>
   </div></div>
 
   <div class="card hidden" id="minePanel" style="margin-top:14px">
-    <div class="card-h"><h2>Your applications</h2><span class="small muted" id="mineMeta"></span></div>
+    <div class="card-h bar"><h2>Your applications</h2><span class="meta" id="mineMeta"></span></div>
     <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO</th><th>Application</th><th class="num">Amount</th><th>Allotment</th></tr></thead><tbody id="mineRows"></tbody></table></div></div>
   </div>
 
@@ -49,8 +50,8 @@
   <p class="disc" style="margin-top:14px" id="disc"></p>
 </main>
 <footer class="footer">JAIN STOCK EXCHANGE · Dalal Street 2026 · JAIN (Deemed-to-be University), CMS Business School · FIG</footer>
-<script src="/assets/config.js?v=311"></script>
-<script src="/assets/jse.js?v=311"></script>
+<script src="/assets/config.js?v=312"></script>
+<script src="/assets/jse.js?v=312"></script>
 <script>
 (function () {
   "use strict";
@@ -58,6 +59,7 @@
   var S = { user: null, page: null, mine: null, busy: false };
   var $ = function (id) { return document.getElementById(id); };
   $("disc").textContent = JSE.DISCLAIMER + " Prospectus information comes from the event organisers.";
+  $("timingBox").innerHTML = JSE.timingHtml();
   var SECTIONS = [["company_description", "Company description"], ["issue_details", "Issue details"], ["business_overview", "Business overview"],
     ["financial_information", "Financial information"], ["risk_factors", "Risk information"], ["use_of_proceeds", "Use of proceeds"],
     ["promoters_management", "Promoters and management"], ["other_information", "Other prospectus information"]];
@@ -69,10 +71,10 @@
   function renderWindow(w, st) {
     var phase = { PRE_IPO: "Pre-IPO", OPEN: "Open for application", CLOSED: "Application closed" }[w.phase] || w.phase;
     $("window").innerHTML =
-      '<div class="kpi ' + (w.phase === "OPEN" ? "good" : "info") + '"><div class="k">Application window</div><div class="v">' + esc(phase) + '</div><div class="s">' + esc(w.phase === "PRE_IPO" ? "opens " + countdown(w.opens_at) : w.phase === "OPEN" ? "closes " + countdown(w.closes_at) : "allotment by the organisers") + "</div></div>" +
+      '<div class="kpi ' + (w.phase === "OPEN" ? "good" : "info") + '"><div class="k">Application window</div><div class="v">' + esc(phase) + '</div><div class="s">' + esc(w.phase === "PRE_IPO" ? "opens " + countdown(w.opens_at) : w.phase === "OPEN" ? "closes " + countdown(w.closes_at) : w.event_started ? "the event has started · IPOs listed at START EVENT" : "allotment by the organisers") + "</div></div>" +
       '<div class="kpi"><div class="k">Opens</div><div class="v">' + F.datetime(w.opens_at) + '</div><div class="s">exactly 48 hours before the event start</div></div>' +
       '<div class="kpi"><div class="k">Deadline</div><div class="v">' + F.datetime(w.closes_at) + '</div><div class="s">' + esc(N(w.hours)) + "-hour application window</div></div>" +
-      '<div class="kpi accent"><div class="k">Event start</div><div class="v">' + F.datetime(w.event_start_at) + '</div><div class="s">market ' + esc((JSE.STATUS[st] || {}).text || st) + "</div></div>";
+      '<div class="kpi accent"><div class="k">Event start</div><div class="v">' + F.datetime(w.event_start_at) + '</div><div class="s">status now: ' + esc((JSE.STATUS[st] || {}).text || st) + "</div></div>";
   }
 
   function mineFor(sym) { return S.mine ? (S.mine.items.filter(function (x) { return x.symbol === sym; })[0] || {}) : {}; }
@@ -104,7 +106,7 @@
       '<div class="kpi"><div class="k">IPO lot size</div><div class="v">' + F.num(i.lot_size) + ' sh</div></div>' +
       '<div class="kpi"><div class="k">Value of one lot</div><div class="v">' + F.money(i.lot_value) + "</div></div>" +
       '<div class="kpi"><div class="k">' + (i.listed ? "Listed at" : "Market price") + '</div><div class="v">' + (i.listed ? F.price(i.listing_price) : "after listing") + "</div></div></div>" +
-      '<div class="row" style="margin-top:8px">' + doc + (i.listed ? '<span class="badge stage-listed">In CMS INDEX since ' + F.datetime(i.listed_at) + "</span>" : "") + "</div>" +
+      '<div class="row" style="margin-top:8px">' + doc + (i.listed ? '<span class="badge stage-listed">In CMS 50 since ' + F.datetime(i.listed_at) + "</span>" : "") + "</div>" +
       SECTIONS.map(function (s) {
         var v = p[s[0]];
         return "<h4>" + esc(s[1]) + '</h4><p class="pv' + (v ? "" : " empty-pv") + '">' + (v ? esc(v) : "To be published by the event organisers.") + "</p>";

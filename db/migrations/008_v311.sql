@@ -26,6 +26,11 @@ FROM (VALUES ('VOLTRA', 'IPO-01', 'Voltra Motors Ltd'), ('BLUEAI', 'IPO-02', 'Bl
              ('SHREEB', 'IPO-03', 'Shreebuild Industries Ltd'), ('AAROGYA', 'IPO-04', 'Aarogya Lifesciences Ltd')) AS v(sym, code, nm)
 WHERE securities.symbol = v.sym AND securities.kind = 'IPO' AND securities.ipo_code IS NULL;
 
+-- Current IPO names as the live system shows them (IPO-01 VOLTRA MOTORS LTD …); a later admin rename is kept
+UPDATE securities SET name = upper(name), updated_at = now()
+WHERE kind = 'IPO' AND symbol IN ('VOLTRA', 'BLUEAI', 'SHREEB', 'AAROGYA')
+  AND name IN ('Voltra Motors Ltd', 'Blue Orbit AI Ltd', 'Shreebuild Industries Ltd', 'Aarogya Lifesciences Ltd');
+
 UPDATE securities SET sector = v.sector
 FROM (VALUES
   ('RELIANCE','Energy'),('HDFCBANK','Banking'),('ICICIBANK','Banking'),('INFY','Information Technology'),('TCS','Information Technology'),

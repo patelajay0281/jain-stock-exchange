@@ -8,7 +8,7 @@ import { ApiError, call, ensureMigrated, rawQuery } from "./db";
 import { verifyGithubOidc } from "./oidc";
 import { buildXlsx, readCsv, readXlsx, toCsv, type Sheet } from "./xlsx";
 
-export const VERSION = "3.11.0";
+export const VERSION = "3.12.0";
 const STARTED = Date.now();
 
 // ---------------------------------------------------------------------------
@@ -439,7 +439,7 @@ get("/api/cash", async (ctx) => {
 });
 get("/api/audit", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
-  const p = params(ctx, ["action", "team", "q", "page", "page_size"]);
+  const p = params(ctx, ["action", "team", "role", "risk", "q", "page", "page_size"]);
   return respond(ctx, 200, await cached("audit:" + JSON.stringify(p), 1500, () => call("jse_audit_log", actor(ctx), p)));
 });
 get("/api/commissions", async (ctx) => {

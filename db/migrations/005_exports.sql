@@ -94,19 +94,19 @@ BEGIN
     FROM risk_events r JOIN teams t ON t.id = r.team_id LEFT JOIN orders o ON o.id = r.order_id LEFT JOIN securities s ON s.id = r.security_id
     WHERE r.kind = CASE v_sheet WHEN 'short_sell' THEN 'SHORT_SELL_ATTEMPT' WHEN 'cash_shortfall' THEN 'CASH_SHORTFALL_ATTEMPT' ELSE 'INSUFFICIENT_BALANCE_REJECTION' END;
   ELSIF v_sheet IN ('orders', 'rejected') THEN
-    v_cols := '["Order ID","Account","Team","Team name","Broker","Institution","Instruction","Security","Type","Side","Quantity","Price","Trade Value","Brokerage %","Brokerage","Settlement Amount","Status","Stage","Reject Code","Reject Reason","Short Sell Flag","Cash Shortfall Flag","Submitted By","Submitted At","Executed By","Executed At","Slip No","Exchange By","Exchange At","Bank By","Bank At"]';
+    v_cols := '["Order ID","Account","Team","Team name","Broker","Institution","Instruction","Security","Type","Side","Quantity","Price","Trade Value","Brokerage Rate","Brokerage","Settlement Amount","Status","Stage","Reject Code","Reject Reason","Short Sell Flag","Cash Shortfall Flag","Submitted By","Submitted At","Executed By","Executed At","Slip No","Exchange By","Exchange At","Bank By","Bank At"]';
     SELECT jsonb_agg(jsonb_build_array(o.order_no, o.account_type, t.code, t.name, b.code, i.code, ins.instruction_no, s.symbol, CASE WHEN s.kind = 'IPO' THEN 'IPO' ELSE 'EQUITY' END, o.side,
-             o.quantity, o.price, o.trade_value, round(coalesce(o.brokerage_rate, 0) * 100, 4), o.brokerage, o.settlement_amount, o.status, jse_stage_label(o.status, o.reject_code),
+             o.quantity, o.price, o.trade_value, jse_rate_text(o.brokerage_rate), o.brokerage, o.settlement_amount, o.status, jse_stage_label(o.status, o.reject_code),
              o.reject_code, o.reject_reason, o.short_sell_flag, o.cash_shortfall_flag, o.created_by_name, o.created_at, o.executed_by_name, o.executed_at, sl.slip_no,
              o.exchange_by_name, o.exchange_at, o.bank_by_name, o.bank_at) ORDER BY o.id) INTO v_rows
     FROM orders o JOIN teams t ON t.id = o.team_id JOIN securities s ON s.id = o.security_id LEFT JOIN brokers b ON b.id = o.broker_id
     LEFT JOIN institutions i ON i.id = o.institution_id LEFT JOIN instructions ins ON ins.id = o.instruction_id LEFT JOIN trading_slips sl ON sl.order_id = o.id
     WHERE v_sheet = 'orders' OR o.status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED');
   ELSIF v_sheet = 'slips' THEN
-    v_cols := '["Slip No","Order ID","Executed At","Team","Team name","Broker","Broker name","Institution","Security","Name","Asset type","Side","Quantity","Execution Price","Trade Value","Brokerage %","Brokerage","Settlement Value","Pit Manager","Exchange","Bank","Status"]';
+    v_cols := '["Slip No","Order ID","Executed At","Team","Team name","Broker","Broker name","Institution","Security","Name","Asset type","Side","Quantity","Execution Price","Trade Value","Brokerage Rate","Brokerage","Settlement Value","Pit Manager","Exchange","Bank","Status"]';
     SELECT jsonb_agg(jsonb_build_array(x->>'slip_no', x->>'order_no', x->>'executed_at', x->>'team', x->>'team_name', x->>'broker', x->>'broker_name', x->>'institution',
              x->>'symbol', x->>'security', x->>'asset_type', x->>'side', (x->>'quantity')::integer, (x->>'price')::numeric, (x->>'trade_value')::numeric,
-             round(coalesce((x->>'brokerage_rate')::numeric, 0) * 100, 4), (x->>'brokerage')::numeric, (x->>'settlement_value')::numeric, x->>'executed_by',
+             jse_rate_text((x->>'brokerage_rate')::numeric), (x->>'brokerage')::numeric, (x->>'settlement_value')::numeric, x->>'executed_by',
              x->>'exchange_status', x->>'bank_status', x->>'stage') ORDER BY x->>'slip_no') INTO v_rows
     FROM (SELECT jse_slip_json(sl) AS x FROM trading_slips sl) q;
   ELSIF v_sheet = 'instructions' THEN
@@ -126,17 +126,18 @@ BEGIN
     SELECT jsonb_agg(jsonb_build_array(c.created_at, t.code, o.order_no, c.entry_type, c.debit, c.credit, c.balance_after, c.note, c.actor_name) ORDER BY c.id) INTO v_rows
     FROM cash_ledger c JOIN teams t ON t.id = c.team_id LEFT JOIN orders o ON o.id = c.order_id;
   ELSIF v_sheet = 'commission' THEN
-    v_cols := '["Date/time","Broker","Broker name","Order","Team","Team name","Security","Side","Quantity","Price","Trade value","Brokerage rate %","Commission","Status"]';
-    SELECT jsonb_agg(jsonb_build_array(bc.created_at, b.code, b.name, o.order_no, t.code, t.name, s.symbol, bc.side, o.quantity, o.price, bc.trade_value,
-             round(bc.rate * 100, 4), bc.amount, CASE WHEN bc.reversed_at IS NULL THEN 'SETTLED' ELSE 'REVERSED' END) ORDER BY bc.id) INTO v_rows
+    v_cols := '["Date/time","Broker","Broker name","Order","Counterparty","Team","Team name","Security","Side","Quantity","Price","Trade value","Brokerage rate","Commission","Status"]';
+    SELECT jsonb_agg(jsonb_build_array(bc.created_at, b.code, b.name, o.order_no, CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional investor' ELSE 'Market' END,
+             t.code, t.name, s.symbol, bc.side, o.quantity, o.price, bc.trade_value,
+             jse_rate_text(bc.rate), bc.amount, CASE WHEN bc.reversed_at IS NULL THEN 'SETTLED' ELSE 'REVERSED' END) ORDER BY bc.id) INTO v_rows
     FROM broker_commissions bc JOIN brokers b ON b.id = bc.broker_id JOIN teams t ON t.id = bc.team_id JOIN orders o ON o.id = bc.order_id
     JOIN securities s ON s.id = o.security_id;
   ELSIF v_sheet = 'institutional' THEN
-    v_cols := '["Order ID","Institution","Counterparty Team","Security","Side","Quantity","Price","Trade Value","Status","Reject Reason","Submitted At","Executed At","Slip No","Bank At"]';
-    SELECT jsonb_agg(jsonb_build_array(o.order_no, i.code, t.code, s.symbol, o.side, o.quantity, o.price, o.trade_value, o.status, o.reject_reason, o.created_at,
-             o.executed_at, sl.slip_no, o.bank_at) ORDER BY o.id) INTO v_rows
+    v_cols := '["Order ID","Institution","Institution Side","Counterparty Team","Team Side","Broker","Security","Quantity","Market Price","Institutional Price","Trade Value","Brokerage","Settlement Amount","Status","Reject Reason","Submitted At","Executed At","Slip No","Bank At"]';
+    SELECT jsonb_agg(jsonb_build_array(o.order_no, i.code, o.side, t.code, jse_team_side(o.account_type, o.side), b.code, s.symbol, o.quantity, o.reference_price, o.price,
+             o.trade_value, o.brokerage, o.settlement_amount, o.status, o.reject_reason, o.created_at, o.executed_at, sl.slip_no, o.bank_at) ORDER BY o.id) INTO v_rows
     FROM orders o JOIN institutions i ON i.id = o.institution_id JOIN teams t ON t.id = o.team_id JOIN securities s ON s.id = o.security_id
-    LEFT JOIN trading_slips sl ON sl.order_id = o.id;
+    LEFT JOIN brokers b ON b.id = o.broker_id LEFT JOIN trading_slips sl ON sl.order_id = o.id;
   ELSIF v_sheet = 'ipo_applications' THEN
     v_cols := '["Team","IPO","Lots","Shares","Amount","Team name","IPO code","IPO name","Status","Updated At"]';
     SELECT jsonb_agg(jsonb_build_array(t.code, s.symbol, ap.lots, ap.quantity, ap.amount, t.name, s.ipo_code, s.name, ap.status, ap.updated_at) ORDER BY t.seq, s.display_order) INTO v_rows

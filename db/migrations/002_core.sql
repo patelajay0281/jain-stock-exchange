@@ -143,23 +143,38 @@ BEGIN
   RETURN v_new;
 END $$;
 
--- Quantity the team can still sell: holding minus quantity already committed to other open SELL orders.
+-- The participant team's side of an order. An institutional order stores the INSTITUTION's side:
+-- institution BUY = the team sells to the institution; institution SELL = the team buys from the institution.
+CREATE OR REPLACE FUNCTION jse_team_side(p_account text, p_side text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE WHEN p_account = 'INSTITUTION' THEN CASE p_side WHEN 'BUY' THEN 'SELL' WHEN 'SELL' THEN 'BUY' END ELSE p_side END
+$$;
+
+-- Institutional counterparty price (broker rules): a participant BUYS from an institution at 2% ABOVE the
+-- prevailing market price and SELLS to an institution at 2% BELOW it. p_inst_side is the institution's side.
+CREATE OR REPLACE FUNCTION jse_inst_spread_pct() RETURNS numeric LANGUAGE sql IMMUTABLE AS $$ SELECT 2.00::numeric $$;
+CREATE OR REPLACE FUNCTION jse_inst_price(p_market numeric, p_inst_side text) RETURNS numeric LANGUAGE sql IMMUTABLE AS $$
+  SELECT round(p_market * (1 + CASE WHEN p_inst_side = 'SELL' THEN 1 ELSE -1 END * jse_inst_spread_pct() / 100), 2)
+$$;
+
+-- Quantity the team can still sell: holding minus quantity already committed to other open orders in which the
+-- team sells (its own SELL orders and institutional orders where the institution buys from it).
 CREATE OR REPLACE FUNCTION jse_available_qty(p_team integer, p_security integer, p_exclude_order bigint DEFAULT NULL)
 RETURNS TABLE(holding integer, open_sell integer, available integer) LANGUAGE sql STABLE AS $$
   WITH h AS (SELECT coalesce((SELECT quantity FROM holdings WHERE team_id = p_team AND security_id = p_security), 0) AS q),
        s AS (SELECT coalesce(sum(quantity), 0)::integer AS q FROM orders
-             WHERE team_id = p_team AND security_id = p_security AND side = 'SELL' AND account_type = 'TEAM'
+             WHERE team_id = p_team AND security_id = p_security
+               AND ((account_type = 'TEAM' AND side = 'SELL') OR (account_type = 'INSTITUTION' AND side = 'BUY'))
                AND status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')
                AND (p_exclude_order IS NULL OR id <> p_exclude_order))
   SELECT h.q, s.q, h.q - s.q FROM h, s
 $$;
 
--- Cash the team still has free: cash minus the full amount of its other open BUY orders.
+-- Cash the team still has free: cash minus the full amount of its other open orders in which the team buys.
 CREATE OR REPLACE FUNCTION jse_available_cash(p_team integer, p_exclude_order bigint DEFAULT NULL)
 RETURNS numeric LANGUAGE sql STABLE AS $$
   SELECT (SELECT cash FROM teams WHERE id = p_team) - coalesce((
     SELECT sum(settlement_amount) FROM orders
-    WHERE team_id = p_team AND side = 'BUY' AND account_type = 'TEAM'
+    WHERE team_id = p_team AND ((account_type = 'TEAM' AND side = 'BUY') OR (account_type = 'INSTITUTION' AND side = 'SELL'))
       AND status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')
       AND (p_exclude_order IS NULL OR id <> p_exclude_order)), 0)
 $$;
@@ -190,7 +205,12 @@ CREATE OR REPLACE FUNCTION jse_order_json(p_id bigint) RETURNS jsonb LANGUAGE sq
     'team', t.code, 'team_name', t.name, 'broker', b.code, 'broker_name', b.name,
     'institution', i.code, 'institution_name', i.name,
     'security_id', s.id, 'symbol', s.symbol, 'security', s.name, 'kind', s.kind,
-    'side', o.side, 'quantity', o.quantity, 'price', o.price,
+    'side', o.side, 'team_side', jse_team_side(o.account_type, o.side),
+    'counterparty', CASE WHEN o.account_type = 'INSTITUTION' THEN coalesce(i.name, 'Institutional Investor') ELSE 'Market' END,
+    'quantity', o.quantity, 'price', o.price,
+    'price_basis', CASE WHEN o.account_type = 'INSTITUTION' AND o.price IS DISTINCT FROM o.reference_price THEN 'Market ' || jse_inr(o.reference_price) ||
+                          CASE WHEN o.side = 'SELL' THEN ' + ' ELSE ' − ' END || to_char(jse_inst_spread_pct(), 'FM990.##') || '% (institutional counterparty)'
+                        ELSE 'Market price' END,
     'trade_value', o.trade_value, 'brokerage_rate', coalesce(o.brokerage_rate, CASE WHEN o.trade_value > 0 THEN round(o.brokerage / o.trade_value, 6) END),
     'brokerage', o.brokerage, 'settlement_amount', o.settlement_amount,
     'reference_price', o.reference_price, 'market_price', s.price, 'status', o.status, 'stage', jse_stage_label(o.status, o.reject_code),
@@ -219,27 +239,30 @@ $$;
 -- waiting for the Pit Manager at the old price as PRICE STALE.
 -- The caller must hold the security row FOR UPDATE.
 -- ---------------------------------------------------------------------------
+-- An order is priced from the market price it was submitted against (reference_price; for institutional orders
+-- the order price is that market price ± the institutional spread).
 CREATE OR REPLACE FUNCTION jse__mark_stale(a jsonb, o orders, p_market numeric, p_source text)
 RETURNS void LANGUAGE plpgsql AS $$
-DECLARE v_reason text;
+DECLARE v_reason text; v_ref numeric := coalesce(o.reference_price, o.price);
 BEGIN
-  v_reason := 'PRICE STALE: the market price moved from ' || jse_inr(o.price) || ' to ' || jse_inr(p_market) || ' (' || replace(p_source, '_', ' ') ||
+  v_reason := 'MARKET PRICE CHANGED — PRICE STALE: the market price moved from ' || jse_inr(v_ref) || ' to ' || jse_inr(p_market) || ' (' || replace(p_source, '_', ' ') ||
               ') before the Pit Manager executed this order. The broker must submit a fresh order at the new market price.';
   UPDATE orders SET status = 'PIT_REJECTED', reject_code = 'PRICE_STALE', reject_reason = v_reason,
          pit_at = now(), pit_by_name = 'SYSTEM · ' || replace(p_source, '_', ' '), updated_at = now()
   WHERE id = o.id AND status = 'PIT_PENDING';
   PERFORM jse_order_event(o.id, 'PRICE_STALE', 'PIT_PENDING', 'PIT_REJECTED', a, v_reason,
-    jsonb_build_object('order_price', o.price, 'market_price', p_market, 'source', p_source));
+    jsonb_build_object('order_price', o.price, 'reference_price', v_ref, 'market_price', p_market, 'source', p_source));
   PERFORM jse_audit(a, 'ORDER_PRICE_STALE', 'order', o.order_no, o.team_id, o.id, jsonb_build_object('status', 'PIT_PENDING'),
     jsonb_build_object('status', 'PIT_REJECTED', 'reject_code', 'PRICE_STALE'),
-    jsonb_build_object('order_price', o.price, 'market_price', p_market, 'source', p_source));
+    jsonb_build_object('order_price', o.price, 'reference_price', v_ref, 'market_price', p_market, 'source', p_source));
 END $$;
 
 CREATE OR REPLACE FUNCTION jse__stale_orders(a jsonb, p_security integer, p_new_price numeric, p_source text)
 RETURNS integer LANGUAGE plpgsql AS $$
 DECLARE o orders%ROWTYPE; v_n integer := 0;
 BEGIN
-  FOR o IN SELECT * FROM orders WHERE security_id = p_security AND status = 'PIT_PENDING' AND price <> p_new_price ORDER BY id FOR UPDATE LOOP
+  FOR o IN SELECT * FROM orders WHERE security_id = p_security AND status = 'PIT_PENDING' AND coalesce(reference_price, price) <> p_new_price
+           ORDER BY id FOR UPDATE LOOP
     PERFORM jse__mark_stale(a, o, p_new_price, p_source);
     v_n := v_n + 1;
   END LOOP;
@@ -482,8 +505,8 @@ BEGIN
   -- the broker's screen showed a price; if Market News moved it since, ask the broker to review (no silent re-quote)
   IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
     RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
-      MESSAGE = 'The market price of ' || v_sec.symbol || ' changed from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
-                ' (Market News). Review the new value with the participant and submit again.';
+      MESSAGE = 'MARKET PRICE CHANGED: ' || v_sec.symbol || ' moved from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
+                ' (Market News). The order was not submitted — review the new value with the participant and submit again.';
   END IF;
 
   v_rate := cfg.brokerage_rate;
@@ -534,7 +557,7 @@ BEGIN
   END IF;
   PERFORM jse_order_event(v_id, 'BROKER_SUBMITTED', NULL, 'PIT_PENDING', a, 'Submitted at the market price ' || jse_inr(v_sec.price),
     jsonb_build_object('price', v_sec.price, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'instruction_no', v_ins.instruction_no));
-  PERFORM jse_audit(a, 'ORDER_SUBMITTED', 'order', v_no, v_team.id, v_id, NULL,
+  PERFORM jse_audit(a, 'ORDER_CREATED', 'order', v_no, v_team.id, v_id, NULL,
     jsonb_build_object('status', 'PIT_PENDING', 'side', v_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_sec.price),
     jsonb_build_object('trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'settlement_amount', v_amount,
                        'broker', (SELECT code FROM brokers WHERE id = v_team.broker_id), 'instruction_no', v_ins.instruction_no));
@@ -595,11 +618,11 @@ BEGIN
   END IF;
 
   -- EXECUTE
-  IF o.price <> s.price THEN
+  IF coalesce(o.reference_price, o.price) <> s.price THEN
     PERFORM jse__mark_stale(a, o, s.price, 'PRICE_CHECK_AT_EXECUTION');
     RETURN jsonb_build_object('success', false, 'http', 409, 'code', 'PRICE_STALE',
-      'error', o.order_no || ' is PRICE STALE: it was submitted at ' || jse_inr(o.price) || ' but the market price is now ' || jse_inr(s.price) ||
-               '. It cannot be executed; the broker must submit a fresh order at the new market price.',
+      'error', 'MARKET PRICE CHANGED — ' || o.order_no || ' is PRICE STALE: it was submitted at the market price ' || jse_inr(coalesce(o.reference_price, o.price)) ||
+               ' but the market price is now ' || jse_inr(s.price) || '. It cannot be executed; the broker must submit a fresh order at the new market price.',
       'order', jse_order_json(o.id));
   END IF;
   IF NOT s.active THEN PERFORM jse_fail('SECURITY_INACTIVE', s.symbol || ' is not tradable.', 409); END IF;
@@ -635,7 +658,6 @@ DECLARE
   v_reason text := nullif(left(trim(coalesce(p->>'reason', '')), 300), '');
   v_avail record;
   v_to text;
-  v_inst_qty integer;
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN', 'EXCHANGE');
   IF v_action NOT IN ('APPROVE', 'REJECT') THEN PERFORM jse_fail('INVALID_ACTION', 'Use APPROVE or REJECT.', 400); END IF;
@@ -654,24 +676,21 @@ BEGIN
   IF v_action = 'REJECT' AND v_reason IS NULL THEN v_reason := 'Rejected by Exchange'; END IF;
 
   IF v_action = 'APPROVE' THEN
-    IF o.account_type = 'TEAM' AND o.side = 'SELL' THEN
+    -- the participant team sells (its own SELL, or a sale to an institution): it may sell only shares it owns.
+    -- The Exchange may explicitly approve it (recorded as SHORT SELLING — EXCHANGE APPROVED); the Bank still
+    -- checks the holding at settlement. Institutions have no cash or holdings restriction.
+    IF jse_team_side(o.account_type, o.side) = 'SELL' THEN
       SELECT * INTO v_avail FROM jse_available_qty(o.team_id, o.security_id, o.id);
       IF o.quantity > v_avail.available THEN
         IF NOT v_confirm THEN
           RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_CONFIRM_REQUIRED', HINT = '409',
-            MESSAGE = 'Short-selling warning: the team can sell only ' || greatest(v_avail.available, 0) || ' shares (holding ' || v_avail.holding ||
-                      '). Short selling is not permitted; forwarding it is recorded and the Bank will reject it unless holdings are sufficient.';
+            MESSAGE = 'SHORT SELLING: the team can sell only ' || greatest(v_avail.available, 0) || ' shares (holding ' || v_avail.holding ||
+                      '). Normal participant short selling is prohibited. Approve it explicitly only as an Exchange override — it is recorded as SHORT SELLING — EXCHANGE APPROVED and the Bank still rejects it unless the holding is sufficient at settlement.';
         END IF;
         UPDATE orders SET short_sell_flag = true, short_sell_approved = true WHERE id = o.id;
-        PERFORM jse_risk(o.team_id, o.id, o.security_id, 'SHORT_SELL_ATTEMPT', 'EXCHANGE', o.side, o.quantity, v_avail.holding, NULL, NULL, NULL);
-        PERFORM jse_audit(a, 'SHORT_SELLING_FORWARDED', 'order', o.order_no, o.team_id, o.id, NULL, NULL,
-          jsonb_build_object('holding', v_avail.holding, 'quantity', o.quantity, 'open_sell_other', v_avail.open_sell));
-      END IF;
-    ELSIF o.account_type = 'INSTITUTION' AND o.side = 'SELL' THEN
-      SELECT coalesce((SELECT quantity FROM institutional_holdings WHERE institution_id = o.institution_id AND security_id = o.security_id), 0) INTO v_inst_qty;
-      IF v_inst_qty < o.quantity AND NOT v_confirm THEN
-        RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_CONFIRM_REQUIRED', HINT = '409',
-          MESSAGE = 'The institution holds only ' || v_inst_qty || ' shares. Confirm to forward it anyway — the Bank will reject it unless holdings are sufficient.';
+        PERFORM jse_risk(o.team_id, o.id, o.security_id, 'SHORT_SELL_ATTEMPT', 'EXCHANGE', jse_team_side(o.account_type, o.side), o.quantity, v_avail.holding, NULL, NULL, NULL);
+        PERFORM jse_audit(a, 'SHORT_SELLING_APPROVED', 'order', o.order_no, o.team_id, o.id, NULL, NULL,
+          jsonb_build_object('holding', v_avail.holding, 'quantity', o.quantity, 'open_sell_other', v_avail.open_sell, 'account_type', o.account_type));
       END IF;
     END IF;
     v_to := 'EXCHANGE_APPROVED';
@@ -773,7 +792,6 @@ DECLARE
   inst institutions%ROWTYPE;
   ln loans%ROWTYPE;
   v_hold integer := 0; v_cost numeric := 0; v_tcost numeric := 0;
-  v_ihold integer := 0; v_icost numeric := 0;
   v_tv numeric; v_brk numeric; v_rate numeric; v_req numeric;
   v_cash numeric; v_cash_after numeric;
   v_draw numeric := 0; v_interest numeric := 0; v_room numeric;
@@ -808,10 +826,10 @@ BEGIN
   SELECT * INTO ln FROM loans WHERE team_id = o.team_id FOR UPDATE;
   SELECT quantity, cost_basis, trade_cost INTO v_hold, v_cost, v_tcost FROM holdings WHERE team_id = o.team_id AND security_id = o.security_id FOR UPDATE;
   v_hold := coalesce(v_hold, 0); v_cost := coalesce(v_cost, 0); v_tcost := coalesce(v_tcost, 0);
+  -- institutions are transaction-based counterparties: no cash or holdings restriction and no portfolio;
+  -- the institution ledger only records each settled transaction (running net settlement flow)
   IF o.account_type = 'INSTITUTION' THEN
     SELECT * INTO inst FROM institutions WHERE id = o.institution_id FOR UPDATE;
-    SELECT quantity, cost_basis INTO v_ihold, v_icost FROM institutional_holdings WHERE institution_id = o.institution_id AND security_id = o.security_id FOR UPDATE;
-    v_ihold := coalesce(v_ihold, 0); v_icost := coalesce(v_icost, 0);
   END IF;
 
   -- independent re-validation (never trust earlier desks alone)
@@ -827,30 +845,25 @@ BEGIN
   IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
     RETURN jse__bank_reject(a, o, 'ORDER_VALUE_LIMIT', 'Order value ' || jse_inr(v_tv) || ' is outside the allowed ' || jse_inr(cfg.min_order_value) || ' to ' || jse_inr(cfg.max_order_value) || '.', '{}'::jsonb);
   END IF;
-  -- the brokerage rate is fixed on the order when the broker submits it (shown on the trading slip)
-  v_rate := coalesce(o.brokerage_rate, CASE WHEN o.account_type = 'TEAM' OR cfg.institution_brokerage THEN cfg.brokerage_rate ELSE 0 END);
+  -- the brokerage rate is fixed on the order when it is submitted (shown on the trading slip). The participant team
+  -- pays it on every trade, including trades with an institutional counterparty; its broker earns the commission.
+  v_rate := coalesce(o.brokerage_rate, cfg.brokerage_rate);
   v_brk := round(v_tv * v_rate, 2);
 
   v_cash := t.cash;
-  v_team_buys := (o.account_type = 'TEAM' AND o.side = 'BUY') OR (o.account_type = 'INSTITUTION' AND o.side = 'SELL');
+  v_team_buys := jse_team_side(o.account_type, o.side) = 'BUY';
 
   IF v_team_buys THEN
-    IF o.account_type = 'INSTITUTION' AND v_ihold < o.quantity THEN
-      RETURN jse__bank_reject(a, o, 'INSTITUTION_INSUFFICIENT_HOLDINGS', 'The institution holds only ' || v_ihold || ' ' || s.symbol || ' shares.',
-        jsonb_build_object('holding', v_ihold, 'quantity', o.quantity));
-    END IF;
     v_req := v_tv + v_brk;
     IF v_cash < v_req THEN
       -- own money first: only the shortfall is borrowed, automatically, within the loan limit
       v_room := CASE WHEN cfg.loans_enabled THEN greatest(0, cfg.loan_max_principal - ln.original_principal) ELSE 0 END;
       v_draw := v_req - v_cash;
       IF NOT (cfg.loans_enabled AND cfg.auto_loan_on_settlement) OR v_draw > v_room THEN
-        IF o.account_type = 'TEAM' THEN
-          PERFORM jse_risk(t.id, o.id, s.id, 'INSUFFICIENT_BALANCE_REJECTION', 'BANK', o.side, o.quantity, v_hold, v_req, v_cash,
-                           'Loan room ' || jse_inr(v_room));
-          PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_REJECTED', 'order', o.order_no, t.id, o.id, NULL, NULL,
-            jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room));
-        END IF;
+        PERFORM jse_risk(t.id, o.id, s.id, 'INSUFFICIENT_BALANCE_REJECTION', 'BANK', 'BUY', o.quantity, v_hold, v_req, v_cash,
+                         'Loan room ' || jse_inr(v_room));
+        PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_REJECTED', 'order', o.order_no, t.id, o.id, NULL, NULL,
+          jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room, 'account_type', o.account_type));
         RETURN jse__bank_reject(a, o, 'INSUFFICIENT_BALANCE',
           'Insufficient balance: ' || jse_inr(v_req) || ' is needed but ' || t.code || ' has ' || jse_inr(v_cash) ||
           CASE WHEN cfg.loans_enabled AND cfg.auto_loan_on_settlement THEN ' plus ' || jse_inr(v_room) || ' of loan room' ELSE '' END || '.',
@@ -860,20 +873,13 @@ BEGIN
     END IF;
   ELSE
     IF v_hold < o.quantity THEN
-      IF o.account_type = 'TEAM' THEN
-        PERFORM jse_risk(t.id, o.id, s.id, 'SHORT_SELL_ATTEMPT', 'BANK', o.side, o.quantity, v_hold, NULL, NULL, 'Rejected at Bank');
-        PERFORM jse_audit(a, 'SHORT_SELLING_ATTEMPT', 'order', o.order_no, t.id, o.id, NULL, NULL,
-          jsonb_build_object('quantity', o.quantity, 'holding', v_hold, 'stage', 'BANK'));
-        RETURN jse__bank_reject(a, o, 'SHORT_SELLING_NOT_ALLOWED',
-          'Short selling is not allowed: ' || t.code || ' holds ' || v_hold || ' ' || s.symbol || ' shares but the order sells ' || o.quantity || '.',
-          jsonb_build_object('holding', v_hold, 'quantity', o.quantity));
-      END IF;
-      RETURN jse__bank_reject(a, o, 'COUNTERPARTY_INSUFFICIENT_HOLDINGS',
-        'Counterparty ' || t.code || ' holds only ' || v_hold || ' ' || s.symbol || ' shares.', jsonb_build_object('holding', v_hold, 'quantity', o.quantity));
-    END IF;
-    IF o.account_type = 'INSTITUTION' AND NOT cfg.institution_overdraft AND inst.cash < v_tv THEN
-      RETURN jse__bank_reject(a, o, 'INSTITUTION_INSUFFICIENT_FUNDS', 'The institution has only ' || jse_inr(inst.cash) || ' available.',
-        jsonb_build_object('cash', inst.cash, 'required', v_tv));
+      PERFORM jse_risk(t.id, o.id, s.id, 'SHORT_SELL_ATTEMPT', 'BANK', 'SELL', o.quantity, v_hold, NULL, NULL, 'Rejected at Bank');
+      PERFORM jse_audit(a, 'SHORT_SELLING_ATTEMPT', 'order', o.order_no, t.id, o.id, NULL, NULL,
+        jsonb_build_object('quantity', o.quantity, 'holding', v_hold, 'stage', 'BANK', 'exchange_approved', coalesce(o.short_sell_approved, false),
+                           'account_type', o.account_type));
+      RETURN jse__bank_reject(a, o, 'SHORT_SELLING_NOT_ALLOWED',
+        'Short selling is not allowed: ' || t.code || ' holds ' || v_hold || ' ' || s.symbol || ' shares but the order sells ' || o.quantity || '.',
+        jsonb_build_object('holding', v_hold, 'quantity', o.quantity));
     END IF;
   END IF;
 
@@ -903,6 +909,9 @@ BEGIN
              (t.id, 'INTEREST_CHARGE', v_interest, o.id, v_settle_id, true, jse_rate_text(cfg.loan_interest_rate) || ' interest on draw', nullif(a->>'id', '')::integer, jse_actor_name(a));
       PERFORM jse_audit(a, 'LOAN_DRAW', 'loan', t.code, t.id, o.id, NULL, NULL,
         jsonb_build_object('amount', v_draw, 'interest', v_interest, 'automatic', true, 'order_no', o.order_no));
+      PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_SETTLED', 'order', o.order_no, t.id, o.id, NULL, NULL,
+        jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_drawn', v_draw, 'interest', v_interest, 'symbol', s.symbol,
+                           'account_type', o.account_type));
     END IF;
     v_bal := v_bal - v_tv;
     v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' from ' || inst.code
@@ -919,10 +928,6 @@ BEGIN
     v_cost_moved := v_tv + v_brk; v_tcost_moved := v_tv;
     v_team_delta := v_draw - v_tv - v_brk;
     IF o.account_type = 'INSTITUTION' THEN
-      v_icost_moved := CASE WHEN v_ihold = o.quantity THEN v_icost ELSE round(v_icost * o.quantity / v_ihold, 4) END;
-      UPDATE institutional_holdings SET quantity = quantity - o.quantity, cost_basis = greatest(0, cost_basis - v_icost_moved), updated_at = now()
-      WHERE institution_id = inst.id AND security_id = s.id;
-      DELETE FROM institutional_holdings WHERE institution_id = inst.id AND security_id = s.id AND quantity = 0;
       v_inst_before := inst.cash; v_inst_after := inst.cash + v_tv;
       UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
       PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'SELL', 0, v_tv, v_inst_after,
@@ -947,10 +952,6 @@ BEGIN
     v_realized := round(v_tv - v_brk - v_cost_moved, 2);
     v_team_delta := v_tv - v_brk;
     IF o.account_type = 'INSTITUTION' THEN
-      INSERT INTO institutional_holdings(institution_id, security_id, quantity, cost_basis) VALUES (inst.id, s.id, o.quantity, v_tv)
-      ON CONFLICT (institution_id, security_id) DO UPDATE SET quantity = institutional_holdings.quantity + EXCLUDED.quantity,
-        cost_basis = institutional_holdings.cost_basis + EXCLUDED.cost_basis, updated_at = now();
-      v_icost_moved := v_tv;
       v_inst_before := inst.cash; v_inst_after := inst.cash - v_tv;
       UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
       PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'BUY', v_tv, 0, v_inst_after,
@@ -965,9 +966,11 @@ BEGIN
   UPDATE teams SET cash = v_cash_after, realized_pnl = realized_pnl + v_realized, brokerage_paid = brokerage_paid + v_brk, updated_at = now()
   WHERE id = t.id;
 
-  IF v_brk > 0 AND o.broker_id IS NOT NULL AND o.account_type = 'TEAM' THEN
+  -- the team's broker earns the brokerage on every settled trade of its team (institutional counterparty trades too);
+  -- the commission register records the team's side of the trade
+  IF v_brk > 0 AND o.broker_id IS NOT NULL THEN
     INSERT INTO broker_commissions(order_id, settlement_id, broker_id, team_id, side, trade_value, rate, amount)
-    VALUES (o.id, v_settle_id, o.broker_id, t.id, o.side, v_tv, v_rate, v_brk);
+    VALUES (o.id, v_settle_id, o.broker_id, t.id, jse_team_side(o.account_type, o.side), v_tv, v_rate, v_brk);
   END IF;
 
   -- trade statistics only: settlement never changes the market price (Market News is the only price engine)

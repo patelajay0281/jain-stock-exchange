@@ -5,15 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Share Certificates · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=311">
+<link rel="stylesheet" href="/assets/jse.css?v=312">
 <style>
   .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
-  .tabs button { border: 1px solid var(--line-2); background: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 800; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+  .page-head .row .input { width: 250px; }
+  @media (max-width: 640px) { .page-head .row, .page-head .row .input { width: 100%; } }
+  .tabs button { border: 1px solid var(--line-3); background: #fff; border-radius: 8px; padding: 9px 14px; font-weight: 650; font-size: 13px; cursor: pointer; color: var(--ink); }
   .tabs button[aria-selected="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
   .cert { width: 100%; max-width: 1050px; aspect-ratio: 297 / 210; margin: 0 auto 24px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow); position: relative; padding: 4% 6%; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .cert::before { content: ""; position: absolute; inset: 14px; border: 3px double #172b4d; pointer-events: none; }
   .cert .logo { max-width: 40%; margin-bottom: 2%; }
-  .cert .kind { font-size: clamp(12px, 1.9vw, 19px); letter-spacing: 6px; font-weight: 900; color: #8a6d1d; text-transform: uppercase; }
+  .cert .kind { font-size: clamp(12px, 1.9vw, 19px); letter-spacing: 6px; font-weight: 900; color: var(--navy); text-transform: uppercase; }
   .cert h2 { font-size: clamp(22px, 3.8vw, 40px); margin: 1.2% 0 .8%; color: var(--navy); letter-spacing: 2px; }
   .cert .lead { font-size: clamp(11px, 1.5vw, 15px); color: var(--ink-2); }
   .cert .who { font-size: clamp(20px, 3.2vw, 34px); font-weight: 900; color: var(--ink); margin: 1.6% 0 .4%; border-bottom: 2px solid var(--line-2); padding: 0 4% 1%; }
@@ -37,7 +39,7 @@
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head no-print">
-    <div><div class="eyebrow" id="eyebrow">Settled share ownership</div><h1 id="h1">Share Certificates</h1>
+    <div><div class="eyebrow hidden" id="eyebrow">Settled share ownership</div><h1 id="h1">Share Certificates</h1>
       <p id="lead">A share certificate documents the shares a team owns after Bank settlement or IPO allotment. It is separate from the trading slip, which proves an executed order.</p></div>
     <div class="row"><select class="input hidden" id="team" style="max-width:280px" aria-label="Team"></select>
       <select class="input hidden" id="which" style="max-width:280px" aria-label="Certificates to show"><option value="awards">Winner and Runner-Up</option><option value="all">Participation — all teams</option><option value="team">Single team…</option></select>
@@ -50,12 +52,12 @@
   </div>
   <div id="shareInfo" class="no-print" style="margin-bottom:14px"></div>
   <div id="awardInfo" class="no-print hidden" style="margin-bottom:14px"></div>
-  <div class="card no-print hidden" id="rankCard" style="margin-bottom:18px"><div class="card-h"><h2>Final ranking</h2><span class="small muted">Eligible teams ranked by Net Worth</span></div><div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
+  <div class="card no-print hidden" id="rankCard" style="margin-bottom:18px"><div class="card-h bar"><h2>Final ranking</h2><span class="meta">Eligible teams ranked by Net Worth</span></div><div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
     <thead><tr><th class="num">Rank</th><th>Team</th><th>Team name</th><th>Award</th><th class="num">Net Worth</th><th class="num">Return</th><th>Assessment</th><th>Loan repaid</th><th>₹50K rule</th><th>Eligibility</th></tr></thead><tbody id="rank"></tbody></table></div></div></div>
   <div id="certs"></div>
 </main>
-<script src="/assets/config.js?v=311"></script>
-<script src="/assets/jse.js?v=311"></script>
+<script src="/assets/config.js?v=312"></script>
+<script src="/assets/jse.js?v=312"></script>
 <script>
 (function () {
   "use strict";
@@ -84,7 +86,7 @@
     if (!d) { $("certs").innerHTML = ""; return; }
     var t = d.team, list = d.certificates || [];
     $("shareInfo").innerHTML = '<div class="alert info"><b>' + esc(teamLabel(t)) + "</b> · " + list.length + " certificate(s) for settled holdings" +
-      (t.broker ? " · broker " + esc(t.broker) : "") + ". Market status: " + esc(F.statusText(d.status)) + ".</div>";
+      (t.broker ? " · broker " + esc(t.broker) : "") + ". Market status: " + esc((JSE.STATUS[d.status] || {}).text || F.statusText(d.status)) + ".</div>";
     $("certs").innerHTML = list.length ? list.map(function (c) { return shareCert(t, c, d); }).join("")
       : '<div class="alert info no-print">No settled holdings yet. A share certificate appears after a BUY is settled by the Bank or IPO shares are allotted.</div>';
   }

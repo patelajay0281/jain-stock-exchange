@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Trading Slips · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=311">
+<link rel="stylesheet" href="/assets/jse.css?v=312">
 <style>
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
   .toolbar .input { width: 240px; }
@@ -15,9 +15,9 @@
 </style>
 </head>
 <body>
-<main id="main" class="wrap">
+<main id="main" class="wrap wide">
   <div class="page-head no-print">
-    <div><div class="eyebrow">Executed-order documents</div><h1 id="h1">Trading Slips</h1>
+    <div><h1 id="h1">Trading Slips</h1>
       <p>One official trading slip is issued when the Pit Manager executes an order. It proves the executed order record and is different from a share certificate.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
@@ -31,7 +31,7 @@
       <label class="sr-only" for="q">Search</label><input class="input" id="q" type="search" placeholder="Slip, order, team or symbol">
       <label class="sr-only" for="team">Team</label><input class="input hidden" id="team" placeholder="Team code (e.g. TEAM-001)" style="width:200px">
     </div>
-    <div class="card"><div class="card-b flush"><div class="table-wrap"><table class="t">
+    <div class="card"><div class="card-h bar"><h2>Official trading slips</h2><span class="meta">One immutable slip per executed order</span></div><div class="card-b flush"><div class="table-wrap"><table class="t">
       <thead><tr><th>Slip</th><th>Executed</th><th>Order</th><th>Team</th><th>Broker</th><th>Trade</th><th class="num">Price</th><th class="num">Trade value</th>
         <th class="num">Brokerage</th><th class="num">Settlement</th><th>Pit Manager</th><th>Exchange</th><th>Bank</th></tr></thead>
       <tbody id="rows"><tr><td colspan="13" class="empty">Loading…</td></tr></tbody></table></div></div></div>
@@ -39,8 +39,8 @@
       <div class="row"><button class="btn sm" id="prev" type="button">← Newer</button><button class="btn sm" id="next" type="button">Older →</button></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=311"></script>
-<script src="/assets/jse.js?v=311"></script>
+<script src="/assets/config.js?v=312"></script>
+<script src="/assets/jse.js?v=312"></script>
 <script>
 (function () {
   "use strict";

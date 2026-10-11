@@ -5,58 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bank Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=311">
-<style>
-  .chk { display: flex; flex-direction: column; gap: 3px; } .chk .badge { align-self: flex-start; }
-  tr.bad-row td { background: #fff7f8; } tr.loan-row td { background: #fffaf2; } tr.claimed td { box-shadow: inset 3px 0 0 var(--amber); }
-  .loans .t td, .loans .t th { padding: 7px 8px; }
-</style>
+<link rel="stylesheet" href="/assets/jse.css?v=312">
 </head>
 <body>
 <main id="main" class="wrap wide">
-  <div class="page-head">
-    <div><div class="eyebrow">CMS Bank · settlement desk</div><h1>Bank Settlement</h1><p>The Bank is the final authority for cash. Every Exchange-approved order is re-checked here (status, cash, allowed financing, holdings, brokerage) before cash and holdings change. Settlement never changes the market price.</p></div>
-    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
-  </div>
-  <div class="kpis" id="kpis"></div>
-  <div class="alert warn hidden" id="closedNote" style="margin-bottom:14px"></div>
-  <div class="split">
-    <div class="stack">
-      <div class="card">
-        <div class="card-h"><h2>Approved by Exchange — awaiting Bank <span class="muted" id="pendCount"></span></h2>
-          <input class="input" id="q" type="search" placeholder="Filter by order, team, symbol" style="max-width:240px;min-height:34px"></div>
-        <div class="card-b flush"><div class="table-wrap" style="max-height:64vh"><table class="t">
-          <thead><tr><th>Order</th><th>Age</th><th>Team</th><th>Security</th><th>Team side</th><th class="num">Qty @ Price</th><th class="num">Amount</th><th class="num">Team cash</th><th>Bank checks</th><th class="actions">Settlement</th></tr></thead>
-          <tbody id="rows"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div>
-      </div>
-      <div class="card">
-        <div class="card-h"><h2>Recent Bank actions</h2></div>
-        <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
-          <thead><tr><th>Time</th><th>Order</th><th>Team</th><th>Security</th><th>Side</th><th class="num">Qty @ Price</th><th class="num">Brokerage</th><th class="num">Loan drawn</th><th>Status</th><th>Reason</th></tr></thead>
-          <tbody id="recent"></tbody></table></div></div>
-      </div>
+  <section class="band green">
+    <div><h1>CMS BANK LTD</h1><p>Approve or reject exchange-approved transactions based on available participant cash and settlement requirements. Every order is re-checked here; settlement never changes the market price.</p></div>
+    <span class="tag">CMS Bank Ltd · Bank control</span>
+  </section>
+  <div class="kpis k5" id="kpis"></div>
+  <div class="alert warn hidden" id="closedNote" style="margin-bottom:16px"></div>
+  <section class="card">
+    <div class="card-h bar green"><h2>Pending bank transactions <span class="muted" id="pendCount" style="font-weight:600;letter-spacing:0"></span></h2>
+      <div class="row"><input class="input sm" id="q" type="search" placeholder="Filter by order, team, stock" style="width:240px"><span class="meta" id="conn">Settlement queue</span></div>
     </div>
-    <aside class="stack">
-      <div class="card loans">
-        <div class="card-h"><h2>Loans &amp; repayment</h2><span class="small muted" id="loanRule"></span></div>
-        <div class="card-b">
-          <form id="loanForm" class="form-grid" autocomplete="off">
-            <div class="field span-2"><label for="lTeam">Team</label><select class="input" id="lTeam"></select></div>
-            <div class="field"><label for="lAction">Action</label><select class="input" id="lAction"><option value="REPAY">Repay (interest first)</option><option value="DRAW">Draw loan</option></select></div>
-            <div class="field"><label for="lAmt">Amount (₹)</label><input class="input" id="lAmt" type="number" min="1" step="1"></div>
-            <div class="span-2"><button class="btn primary block" type="submit" id="lGo">Submit</button></div>
-          </form>
-          <div class="small muted" style="margin-top:10px" id="loanRules">Interest is charged on every draw. Repayment pays interest first, then principal; after a partial repayment, fresh interest is charged on the remaining principal. The full loan must be repaid for eligibility.</div>
-        </div>
-        <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t">
-          <thead><tr><th>Team</th><th class="num">Cash</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Room</th></tr></thead>
-          <tbody id="loans"></tbody></table></div></div>
+    <div class="txn-grid green" id="rows"><div class="empty">Loading…</div></div>
+  </section>
+
+  <div class="split" style="margin-top:18px">
+    <section class="card">
+      <div class="card-h bar navy"><h2>Recent bank actions</h2><span class="meta">Latest 25</span></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:420px"><table class="t">
+        <thead><tr><th>Time</th><th>Order</th><th>Team</th><th>Stock / IPO</th><th>Side</th><th class="num">Qty @ Price</th><th class="num">Brokerage</th><th class="num">Loan drawn</th><th>Status</th><th>Reason</th></tr></thead>
+        <tbody id="recent"></tbody></table></div></div>
+    </section>
+    <aside class="card loans">
+      <div class="card-h bar green"><h2>Participant loans</h2><span class="meta" id="loanRule"></span></div>
+      <div class="card-b">
+        <form id="loanForm" class="form-grid" autocomplete="off">
+          <div class="field span-2"><label for="lTeam">Participant / team</label><select class="input" id="lTeam"></select></div>
+          <div class="field"><label for="lAction">Action</label><select class="input" id="lAction"><option value="REPAY">Repay (interest first)</option><option value="DRAW">Draw loan</option></select></div>
+          <div class="field"><label for="lAmt">Amount (₹)</label><input class="input" id="lAmt" type="number" min="1" step="1"></div>
+          <div class="span-2"><button class="btn primary block caps" type="submit" id="lGo">Submit to bank</button></div>
+        </form>
+        <div class="small muted" style="margin-top:12px" id="loanRules">Interest is charged on every draw. Repayment pays interest first, then principal; after a partial repayment, fresh interest is charged on the remaining principal. The loan is a credit facility, not starting capital.</div>
       </div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t compact">
+        <thead><tr><th>Team</th><th class="num">Cash</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Available</th></tr></thead>
+        <tbody id="loans"></tbody></table></div></div>
     </aside>
   </div>
 </main>
-<script src="/assets/config.js?v=311"></script>
-<script src="/assets/jse.js?v=311"></script>
+<script src="/assets/config.js?v=312"></script>
+<script src="/assets/jse.js?v=312"></script>
 <script>
 (function () {
   "use strict";
@@ -64,49 +55,54 @@
   var S = { data: null, loans: null, canAct: false, busy: {}, q: "", me: null };
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
 
-  function checks(o, d) {
-    var r = [], cls = "";
+  // the Bank's own pre-check of what settlement will do (the server re-checks everything at settlement)
+  function check(o, d) {
     if (o.team_side === "BUY") {
       var after = N(o.cash) - N(o.required);
-      if (after >= 0) r.push('<span class="badge ok">Cash OK · leaves ' + F.short(after) + "</span>");
-      else {
-        var need = N(o.required) - N(o.cash);
-        if (d.auto_loan && need <= N(o.loan_room)) { r.push('<span class="badge warn">Auto loan ' + F.money(need) + " (" + JSE.rate(d.loan_rate) + ")</span>"); cls = "loan-row"; }
-        else { r.push('<span class="badge no">Insufficient balance</span>'); cls = "bad-row"; }
-      }
-      if (o.account_type === "INSTITUTION") r.push(N(o.institution_holding) >= o.quantity ? '<span class="badge ok">Institution holds ' + F.num(o.institution_holding) + "</span>" : '<span class="badge no">Institution holds ' + F.num(o.institution_holding) + "</span>");
-    } else {
-      if (N(o.holding) >= o.quantity) r.push('<span class="badge ok">Holds ' + F.num(o.holding) + "</span>");
-      else { r.push('<span class="badge no">Short: holds ' + F.num(o.holding) + "</span>"); cls = "bad-row"; }
+      if (after >= 0) return { chip: '<span class="tag clear">Clear</span>', note: "", cls: "" };
+      var need = N(o.required) - N(o.cash);
+      if (d.auto_loan && need <= N(o.loan_room)) return { chip: '<span class="tag amber">Loan ' + F.short(need) + "</span>",
+        note: '<div class="alert warn"><b>Insufficient balance — loan used:</b> the Bank draws ' + F.money(need) + " automatically (" + JSE.rate(d.loan_rate) + " interest = " + F.money(Math.round(need * N(d.loan_rate) * 100) / 100) + ").</div>", cls: "warn" };
+      return { chip: '<span class="tag red">Insufficient</span>', note: '<div class="alert bad"><b>Insufficient balance:</b> needs ' + F.money(need) + " more; loan room " + F.money(o.loan_room) + ".</div>", cls: "risk" };
     }
-    if (o.account_type === "INSTITUTION") r.push('<span class="badge inst">Institutional ' + esc(o.side) + "</span>");
-    if (o.claimed_by) r.push('<span class="badge s-bank">Verifying: ' + esc(o.claimed_by) + "</span>");
-    if (o.slip_no) r.push('<span class="badge prov" title="Trading slip">' + esc(o.slip_no) + "</span>");
-    return { html: '<div class="chk">' + r.join("") + "</div>", cls: cls };
+    if (N(o.holding) >= o.quantity) return { chip: '<span class="tag clear">Clear</span>', note: "", cls: "" };
+    return { chip: '<span class="tag red">Short selling</span>', note: '<div class="alert bad"><b>Short selling:</b> ' + esc(o.team) + " holds " + F.num(o.holding) + " " + esc(o.symbol) + " — the Bank rejects it.</div>", cls: "risk" };
+  }
+  function field(k, v, sub) { return '<div class="txn-f"><div class="k">' + k + '</div><div class="v">' + v + (sub ? ' <span class="sub">' + sub + "</span>" : "") + "</div></div>"; }
+
+  function card(o, d) {
+    var c = check(o, d), inst = o.account_type === "INSTITUTION", buy = o.team_side === "BUY";
+    var req = buy ? F.money(o.required) : F.num(o.quantity) + " sh", avail = buy ? F.money(o.cash) : F.num(o.holding) + " sh";
+    return '<article class="txn bank' + (c.cls ? " " + c.cls : "") + '" data-id="' + o.id + '" data-order="' + esc(o.order_no) + '">' +
+      '<div class="txn-h"><div class="l"><span class="no">' + esc(o.order_no) + '</span><span class="tag">' + (inst ? "Institutional" : "Participant") + "</span></div>" + c.chip + "</div>" +
+      field("Team / Investor", esc(o.team), esc(o.team_name || "") + (inst ? " · with " + esc(o.counterparty || "institution") : "")) +
+      field("Broker", esc(o.broker || "—"), esc(o.broker_name || "")) +
+      field("Stock / IPO", esc(o.security), esc(o.symbol) + " · " + F.num(o.quantity) + " @ " + F.price(o.price)) +
+      '<div class="txn-trio dark"><div><div class="k">Side</div><div class="v ' + (buy ? "buy" : "sell") + '">' + esc(o.team_side) + '</div></div><div><div class="k">Required</div><div class="v">' + req +
+      '</div></div><div><div class="k">Available</div><div class="v">' + avail + "</div></div></div>" +
+      '<div class="txn-notes">' + (c.note || "") +
+      '<div class="small muted">' + (buy ? "Pays " + F.money(o.required) + " = trade value " + F.money(o.trade_value) + " + brokerage " + JSE.rate(o.brokerage_rate)
+                                          : "Receives " + F.money(o.settlement_amount) + " = trade value " + F.money(o.trade_value) + " − brokerage " + JSE.rate(o.brokerage_rate)) +
+        (o.slip_no ? " · slip " + esc(o.slip_no) : "") + (o.claimed_by ? " · verifying: " + esc(o.claimed_by) : "") + " · " + F.age(o.age_seconds) + " ago</div></div>" +
+      (S.canAct ? '<div class="txn-a"><button class="btn approve" data-a="SETTLE">✓ Approve</button><button class="btn reject" data-a="REJECT">✕ Reject</button></div>'
+                : '<div class="txn-a one"><span class="muted small center">View only</span></div>') + "</article>";
   }
 
   function render() {
     var d = S.data; if (!d) return;
     var st = d.stats;
-    $("kpis").innerHTML = kpi("Awaiting Bank", F.num(d.pending.length), "approved by Exchange", "accent") +
-      kpi("Settled", F.num(st.settled), F.short(st.settled_value) + " traded", "good") +
-      kpi("Bank rejected", F.num(st.rejected), F.num(st.insufficient_balance) + " insufficient balance", "bad") +
-      kpi("Brokerage collected", F.money(st.brokerage), "at each order's configured rate", "info") +
-      kpi("Loans outstanding", F.short(st.loans_outstanding), "interest due " + F.money(st.interest_outstanding), "warn");
-    $("loanRule").textContent = "Limit " + F.short(d.loan_limit) + " · interest " + JSE.rate(d.loan_rate);
-    var list = d.pending.filter(function (o) { if (!S.q) return true; return (o.order_no + " " + o.team + " " + o.symbol).toLowerCase().indexOf(S.q.toLowerCase()) >= 0; });
+    $("kpis").innerHTML = kpi("Pending", F.num(d.pending.length), "approved by the Exchange") +
+      kpi("Buy requests", F.num(st.buy_requests || 0), "participant pays") +
+      kpi("Sell requests", F.num(st.sell_requests || 0), "participant receives") +
+      kpi("Warnings", F.num(st.warnings || 0), F.num(st.insufficient_balance) + " insufficient-balance rejections", "bad") +
+      kpi("Interest earned", F.money(st.interest_earned), "loans outstanding " + F.short(st.loans_outstanding));
+    $("loanRule").textContent = "Limit " + F.money(d.loan_limit) + " · interest " + JSE.rate(d.loan_rate);
+    var list = d.pending.filter(function (o) { if (!S.q) return true; return (o.order_no + " " + o.team + " " + o.symbol + " " + o.security).toLowerCase().indexOf(S.q.toLowerCase()) >= 0; });
     $("pendCount").textContent = "(" + d.pending.length + ")";
-    $("rows").innerHTML = list.length ? list.map(function (o) {
-      var c = checks(o, d);
-      var amt = o.team_side === "BUY" ? '<b class="down">−' + F.money(o.required) + '</b><div class="tiny muted">pays incl. brokerage</div>'
-                                      : '<b class="up">+' + F.money(N(o.settlement_amount)) + '</b><div class="tiny muted">receives after brokerage</div>';
-      return '<tr class="' + c.cls + (o.claimed_by ? " claimed" : "") + '" data-id="' + o.id + '"><td class="mono"><b>' + esc(o.order_no) + "</b></td><td>" + F.age(o.age_seconds) + "</td>" +
-        "<td><b>" + esc(o.team) + '</b><div class="tiny muted">' + esc(o.team_name || "") + (o.account_type === "INSTITUTION" ? " · counterparty" : "") + "</div></td><td>" + esc(o.symbol) + " " + JSE.badge.kind(o.kind) + "</td>" +
-        "<td>" + JSE.badge.side(o.team_side) + '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + '</td><td class="num">' + amt + '</td><td class="num">' + F.money(o.cash) + "</td>" +
-        "<td>" + c.html + '</td><td class="actions">' + (S.canAct ? '<button class="btn good sm" data-a="SETTLE">Settle</button> <button class="btn bad sm" data-a="REJECT">Reject</button>' : '<span class="muted small">view only</span>') + "</td></tr>";
-    }).join("") : '<tr><td colspan="10" class="empty"><b>Nothing waiting for the Bank.</b>Exchange-approved orders appear here automatically.</td></tr>';
+    $("rows").innerHTML = list.length ? list.map(function (o) { return card(o, d); }).join("")
+      : '<div class="empty" style="grid-column:1/-1"><b>Nothing waiting for the Bank.</b>Exchange-approved orders appear here automatically.</div>';
     $("recent").innerHTML = d.recent.length ? d.recent.map(function (o) {
-      return "<tr><td>" + F.time(o.bank_at) + '</td><td class="mono">' + esc(o.order_no) + "</td><td>" + esc(o.team) + "</td><td>" + esc(o.symbol) + "</td><td>" + JSE.badge.side(o.side) +
+      return "<tr><td>" + F.time(o.bank_at) + "</td><td><b>" + esc(o.order_no) + "</b></td><td>" + esc(o.team) + "</td><td>" + esc(o.security) + '<span class="sub">' + esc(o.symbol) + "</span></td><td>" + JSE.badge.side(o.team_side || o.side) +
         '</td><td class="num">' + F.num(o.quantity) + " @ " + F.price(o.price) + '</td><td class="num">' + F.money(o.brokerage) + '</td><td class="num">' + (N(o.loan_drawn) ? F.money(o.loan_drawn) : "—") +
         "</td><td>" + JSE.badge.status(o.status, o.reject_code) + '</td><td class="small">' + esc(o.reject_reason || "") + "</td></tr>";
     }).join("") : '<tr><td colspan="10" class="empty">No settlements yet.</td></tr>';
@@ -115,15 +111,15 @@
   function renderLoans() {
     var l = S.loans; if (!l) return;
     $("loans").innerHTML = l.loans.length ? l.loans.map(function (x) {
-      return "<tr><td><b>" + esc(x.team) + '</b> ' + (x.status === "REPAID" ? '<span class="badge ok">repaid</span>' : '<span class="badge warn">outstanding</span>') + '<div class="tiny muted">' + esc(x.team_name || "") + '</div></td><td class="num">' + F.money(x.cash) + '</td><td class="num">' + F.money(x.principal) +
-        '</td><td class="num">' + F.money(x.interest) + '</td><td class="num">' + F.short(x.remaining_limit) + "</td></tr>";
+      return "<tr><td><b>" + esc(x.team) + '</b> ' + (x.status === "REPAID" ? '<span class="badge ok">Repaid</span>' : '<span class="badge warn">Outstanding</span>') + '<span class="sub">' + esc(x.team_name || "") + '</span></td><td class="num">' + F.money(x.cash) + '</td><td class="num">' + F.money(x.principal) +
+        '</td><td class="num">' + F.money(x.interest) + '</td><td class="num">' + F.money(x.remaining_limit) + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="empty">No loans yet.</td></tr>';
   }
 
   async function load() {
     S.data = await JSE.api.get("/api/bank");
     render();
-    $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
+    $("conn").textContent = "Settlement queue · " + new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase();
   }
   async function loadLoans() { S.loans = await JSE.api.get("/api/loan"); if (S.loans.rules) $("loanRules").textContent = S.loans.rules; renderLoans(); }
 
@@ -151,7 +147,7 @@
 
   $("rows").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-a]"); if (!b) return;
-    act(Number(b.closest("tr").getAttribute("data-id")), b.getAttribute("data-a"));
+    act(Number(b.closest(".txn").getAttribute("data-id")), b.getAttribute("data-a"));
   });
   $("q").addEventListener("input", JSE.debounce(function (e) { S.q = e.target.value.trim(); render(); }, 150));
   $("lTeam").innerHTML = '<option value="">Select team…</option>' + JSE.teamCodes().map(function (c) { return "<option>" + c + "</option>"; }).join("");
@@ -178,9 +174,9 @@
     JSE.onStatus(function (s) {
       var open = s === "LIVE" || s === "SETTLEMENT_ONLY", n = $("closedNote");
       n.classList.toggle("hidden", open);
-      n.innerHTML = open ? "" : "<b>Market is " + esc(F.statusText(s)) + ".</b> Settlement is possible only while the market is LIVE or SETTLEMENT ONLY" + (s === "CLOSED" ? "; loan repayments are still accepted until FINALIZE." : ".");
+      n.innerHTML = open ? "" : "<b>Market is " + esc((JSE.STATUS[s] || {}).text || s) + ".</b> Settlement is possible only while the market is LIVE or paused for settlement" + (s === "CLOSED" ? "; loan repayments are still accepted until FINALIZE." : ".");
     });
-    poller = JSE.poll(load, 2500, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    poller = JSE.poll(load, 2500, { onError: function (e) { $("conn").textContent = "Reconnecting… " + e.message; } });
     loanPoll = JSE.poll(loadLoans, 6000);
   });
 })();

@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=311">
+<link rel="stylesheet" href="/assets/jse.css?v=312">
 <style>
-  .login { max-width: 420px; margin: 48px auto; }
-  .login .card-b { padding: 26px 26px 22px; }
-  .login h1 { margin: 0; font-size: 20px; color: var(--navy); letter-spacing: 1px; }
+  .login { max-width: 440px; margin: 36px auto; }
+  .login .card-b { padding: 28px 28px 24px; }
+  .login h1 { margin: 0; font-size: 24px; color: var(--navy); font-weight: 800; }
   .login p { margin: 6px 0 18px; color: var(--muted); }
   .login .field + .field { margin-top: 12px; }
   .login .logo { display: block; max-width: 260px; margin: 0 auto 18px; opacity: .95; }
   .roles { margin-top: 16px; font-size: 12px; color: var(--muted); }
+  .login-timing { max-width: 980px; margin: 0 auto 8px; }
 </style>
 </head>
 <body>
@@ -28,14 +29,15 @@
         <div class="alert info hidden" id="info"></div>
         <div class="field"><label for="u">Username</label><input class="input lg" id="u" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required placeholder="e.g. TEAM-001 or BROKER-01"></div>
         <div class="field"><label for="p">Password</label><input class="input lg" id="p" name="password" type="password" autocomplete="current-password" required></div>
-        <div style="margin-top:18px"><button class="btn primary lg block" id="go" type="submit">Sign in</button></div>
+        <div style="margin-top:20px"><button class="btn primary lg block caps" id="go" type="submit">Sign in</button></div>
         <div class="roles">The Market and IPO pages are public — no sign-in needed. Participants follow their orders, trading slips and portfolio after signing in; orders are placed through the assigned broker.</div>
       </div>
     </form>
   </div>
+  <div class="login-timing" id="timingBox"></div>
 </main>
-<script src="/assets/config.js?v=311"></script>
-<script src="/assets/jse.js?v=311"></script>
+<script src="/assets/config.js?v=312"></script>
+<script src="/assets/jse.js?v=312"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -44,6 +46,7 @@
     if (/^\/[A-Za-z0-9._\-\/?=&%]*$/.test(n) && n.indexOf("//") !== 0 && n.indexOf("/login") !== 0 && JSE.canOpen(n, user.role)) return n;
     return JSE.homeFor(user.role);
   }
+  document.getElementById("timingBox").innerHTML = JSE.timingHtml();
   JSE.page({ id: "login", roles: "*" }).then(function (user) {
     if (user) { location.replace(next(user)); return; }
     if (params.get("expired")) { var i = document.getElementById("info"); i.textContent = "Your session ended. Please sign in again."; i.classList.remove("hidden"); }

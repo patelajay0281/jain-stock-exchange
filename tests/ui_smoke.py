@@ -17,7 +17,7 @@ pw = lambda u: KNOWN.get(u, u.lower() + "-pw")
 A = {"admin_password": KNOWN["ADMIN"]}
 NAV = {
     "PARTICIPANT": ["Market", "IPO", "My Orders", "My Trading Slips", "My Portfolio"],
-    "BROKER": ["Market", "IPO", "Broker Desk", "Order Tracking", "Broker Commission"],
+    "BROKER": ["Market", "IPO", "Create Order", "Order Tracking", "Broker Commission"],
     "PIT_MANAGER": ["Market", "IPO", "Pit Manager", "Order Tracking", "Trading Slips"],
     "EXCHANGE": ["Market", "IPO", "Exchange Settlement", "Order Tracking"],
     "BANK": ["Market", "IPO", "Bank Settlement", "Order Tracking", "Cash Ledger"],
@@ -155,7 +155,7 @@ with sync_playwright() as pwr:
 
     # ---- 6. broker: only its teams; submits the instruction and a manual ticket at the market price ----
     ctx, page, errors = new_page(user=B1)
-    check("broker lands on Broker Desk", page.url.endswith("/order.html"), page.url)
+    check("broker lands on Create Order", page.url.endswith("/order.html"), page.url)
     check("broker navigation", nav(page) == NAV["BROKER"], str(nav(page)))
     page.wait_for_function("document.querySelectorAll('#team option').length > 1")
     opts = page.eval_on_selector_all("#team option", "els => els.map(e => e.value).filter(Boolean)")
@@ -188,8 +188,8 @@ with sync_playwright() as pwr:
     check("Pit Manager lands on the execution queue", page.url.endswith("/pit.html"), page.url)
     check("Pit Manager navigation", nav(page) == NAV["PIT_MANAGER"], str(nav(page)))
     for o in (ord1, ord2):
-        page.wait_for_selector(f"#rows tr:has-text('{o}') [data-exec]")
-        page.locator("#rows tr", has_text=o).locator("[data-exec]").click()
+        page.wait_for_selector(f"#rows .txn:has-text('{o}') [data-exec]")
+        page.locator("#rows .txn", has_text=o).locator("[data-exec]").click()
         page.wait_for_function(f"document.getElementById('last').innerText.includes('{o}')", timeout=10000)
     check("execution shows the trading slip", "TS-" in page.inner_text("#last"))
     page.screenshot(path=os.path.join(SHOTS, "pit.png"), full_page=True)
@@ -200,21 +200,21 @@ with sync_playwright() as pwr:
     ctx, page, errors = new_page(user="EXCHANGE-01")
     check("Exchange navigation", nav(page) == NAV["EXCHANGE"], str(nav(page)))
     for o in (ord1, ord2):
-        page.wait_for_selector(f"#rows tr:has-text('{o}') button[data-a=APPROVE]")
-        page.locator("#rows tr", has_text=o).locator("button[data-a=APPROVE]").click()
+        page.wait_for_selector(f"#rows .txn:has-text('{o}') button[data-a=APPROVE]")
+        page.locator("#rows .txn", has_text=o).locator("button[data-a=APPROVE]").click()
         page.wait_for_function(f"!document.getElementById('rows').innerText.includes('{o}')", timeout=10000)
     check("Exchange approves the executed orders", True)
     check("exchange page: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()
     ctx, page, errors = new_page(user="BANK-01")
     check("Bank navigation", nav(page) == NAV["BANK"], str(nav(page)))
-    page.wait_for_selector(f"#rows tr:has-text('{ord1}') button[data-a=SETTLE]")
-    page.locator("#rows tr", has_text=ord1).locator("button[data-a=SETTLE]").click()
+    page.wait_for_selector(f"#rows .txn:has-text('{ord1}') button[data-a=SETTLE]")
+    page.locator("#rows .txn", has_text=ord1).locator("button[data-a=SETTLE]").click()
     page.wait_for_selector(".toast.good", timeout=10000)
     t = page.inner_text(".toasts")
     check("Bank settlement toast: cash, holding, price unchanged", "settled" in t and "market price unchanged" in t, t[:200])
-    page.wait_for_selector(f"#rows tr:has-text('{ord2}') button[data-a=SETTLE]")
-    page.locator("#rows tr", has_text=ord2).locator("button[data-a=SETTLE]").click()
+    page.wait_for_selector(f"#rows .txn:has-text('{ord2}') button[data-a=SETTLE]")
+    page.locator("#rows .txn", has_text=ord2).locator("button[data-a=SETTLE]").click()
     page.wait_for_function(f"!document.getElementById('rows').innerText.includes('{ord2}')", timeout=10000)
     check("bank page: no JS errors", not errors, "; ".join(errors)[:300])
     ctx.close()

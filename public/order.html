@@ -3,104 +3,95 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Broker Desk · JAIN STOCK EXCHANGE</title>
+<title>Create Order · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=311">
+<link rel="stylesheet" href="/assets/jse.css?v=312">
 <style>
-  .ticket .card-b { display: grid; gap: 14px; }
-  .preview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  .preview .kpi { box-shadow: none; background: var(--surface-2); }
-  .preview .kpi .v { font-size: 18px; }
-  .qty-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: stretch; }
-  .qty-row .btn { min-width: 52px; }
-  .mprice { border: 1px dashed var(--line-2); border-radius: var(--radius-sm); padding: 9px 12px; background: var(--surface-2); min-height: 46px; display: flex; flex-direction: column; justify-content: center; }
-  .mprice b { font-size: 18px; color: var(--navy); }
-  .done { border: 2px solid #c4e6cf; background: var(--green-soft); border-radius: 10px; padding: 12px 14px; }
-  .from-ins { background: #eef0ff; border: 1px solid #cfd3fb; border-radius: 9px; padding: 9px 12px; font-size: 13px; }
-  .team-card { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; background: #fff; cursor: pointer; }
+  .ticket .card-b { display: grid; gap: 18px; }
+  .done { border: 1px solid var(--green-line); background: var(--green-soft); border-radius: 10px; padding: 12px 14px; }
+  .from-ins { background: var(--blue-soft); border: 1px solid var(--blue-line); border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+  .lockline { display: flex; align-items: center; gap: 6px; }
+  .submit-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--line-3); }
+  .team-card { border: 1px solid var(--line-3); border-radius: 10px; padding: 11px 13px; background: #fff; cursor: pointer; }
   .team-card + .team-card { margin-top: 8px; }
-  .team-card:hover { border-color: var(--blue); }
-  .team-card.sel { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(23,43,77,.12); }
+  .team-card:hover { border-color: #c9d3df; }
+  .team-card.sel { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(23, 43, 77, .1); }
   .team-card .tn { font-weight: 800; color: var(--navy); }
-  .team-card .tm { font-size: 12px; color: var(--muted); }
-  .team-card .nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; font-size: 12px; }
-  .team-card .nums b { display: block; font-size: 13px; color: var(--ink); }
-  @media (max-width: 640px) { .preview { grid-template-columns: 1fr 1fr; } }
+  .team-card .tm { font-size: 11.5px; color: var(--muted-2); }
+  .team-card .nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 7px; font-size: 11px; color: var(--muted-2); }
+  .team-card .nums b { display: block; font-size: 12.5px; color: var(--ink); }
 </style>
 </head>
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><div class="eyebrow">Broker Desk</div><h1 id="title">Broker Desk</h1>
-      <p id="brokerLine">Submit orders for your assigned teams. Orders go to the Pit Manager for execution, then Exchange review and Bank settlement.</p></div>
-    <div class="row">
+    <div><h1>Create Order</h1><p id="brokerLine">Enter the participant's instruction as an order. It goes to the Pit Manager for execution, then Exchange review and Bank settlement.</p></div>
+    <div class="tools">
       <label class="sr-only" for="brokerSel">Broker</label>
-      <select class="input hidden" id="brokerSel" style="width:auto"></select>
-      <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
+      <select class="input sm hidden" id="brokerSel" style="width:auto"></select>
+      <span class="pill not-started" id="mkt"><span class="dot"></span><span id="mktText">Market</span></span>
     </div>
   </div>
-  <div class="kpis k5" id="kpis"></div>
-  <div class="split">
+
+  <form class="card ticket" id="ticket" novalidate autocomplete="off">
+    <div class="card-h"><h2>Order Entry</h2><span class="meta" id="deskMeta">Participant trading</span></div>
+    <div class="card-b">
+      <div class="alert warn hidden" id="notLive"></div>
+      <div class="from-ins hidden" id="fromIns"></div>
+      <div class="form-grid">
+        <div class="field"><label for="txType">Transaction type</label><select class="input" id="txType"><option value="TRADE">Trade Order</option></select></div>
+        <div class="field"><label for="team">Participant / team</label><select class="input" id="team" required></select></div>
+        <div class="form-sec">Security &amp; order</div>
+        <div class="field"><label for="asset">Asset type</label><select class="input" id="asset"><option value="EQUITY">Listed Stock</option><option value="IPO">IPO (listed)</option></select></div>
+        <div class="field"><label for="sec">Stock / IPO</label><select class="input" id="sec" required></select></div>
+        <div class="field"><label for="side">Transaction side</label><select class="input" id="side"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+        <div class="field"><label for="qty">Quantity</label><input class="input" id="qty" type="number" inputmode="numeric" min="50" step="50" value="50" required>
+          <span class="hint" id="lotHint">Multiples of 50 shares</span></div>
+        <div class="field"><label for="mp">Price per share</label><input class="input locked" id="mp" type="text" readonly tabindex="-1" value="—" aria-describedby="mpNote">
+          <span class="hint lockline" id="mpNote">🔒 Locked to the live market price — changes only on official Market News</span></div>
+        <div class="field"><label>Team position</label><div class="mini white" style="padding:10px 14px"><div class="v" id="pvPos" style="margin-top:0;font-size:15px">—</div><div class="s" id="pvPosS">&nbsp;</div></div></div>
+        <div class="form-sec">Settlement preview</div>
+        <div class="span-2"><div class="minis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+          <div class="mini"><div class="k">Total shares</div><div class="v" id="pvSh">—</div></div>
+          <div class="mini"><div class="k">Trade value</div><div class="v" id="pvTv">—</div></div>
+          <div class="mini"><div class="k" id="pvBrkK">Brokerage</div><div class="v" id="pvBrk">—</div></div>
+          <div class="mini"><div class="k" id="pvAmtK">Total required</div><div class="v" id="pvAmt">—</div></div>
+        </div></div>
+      </div>
+      <div id="checks"></div>
+      <div class="submit-row">
+        <button class="btn primary lg caps" type="submit" id="submit">Submit order</button>
+        <span class="small muted" id="submitNote">BUY settles at trade value + brokerage · SELL at trade value − brokerage · max ₹25,00,000 per order</span>
+      </div>
+      <div id="result" aria-live="polite"></div>
+    </div>
+  </form>
+
+  <div class="split" style="margin-top:18px">
     <div class="stack">
-      <form class="card ticket" id="ticket" novalidate autocomplete="off">
-        <div class="card-h"><h2>Order ticket</h2><span class="small muted">Market price only — nobody chooses a price</span></div>
-        <div class="card-b">
-          <div class="alert warn hidden" id="notLive"></div>
-          <div class="from-ins hidden" id="fromIns"></div>
-          <div class="form-grid">
-            <div class="field span-2"><label for="team">Assigned team</label><select class="input lg" id="team" required></select></div>
-            <div class="span-2"><div class="side-toggle" role="group" aria-label="Side">
-              <button type="button" class="buy" data-side="BUY" aria-pressed="true">BUY</button>
-              <button type="button" class="sell" data-side="SELL" aria-pressed="false">SELL</button>
-            </div></div>
-            <div class="field span-2"><label for="sec">Listed security</label><select class="input lg" id="sec" required></select></div>
-            <div class="field">
-              <label for="qty">Quantity (shares)</label>
-              <div class="qty-row"><button class="btn" type="button" id="qMinus" aria-label="Decrease by one lot">−</button>
-                <input class="input lg" id="qty" type="number" inputmode="numeric" min="50" step="50" value="50" required>
-                <button class="btn" type="button" id="qPlus" aria-label="Increase by one lot">+</button></div>
-              <span class="hint" id="lotHint">Multiples of 50 shares</span>
-            </div>
-            <div class="field">
-              <label>Canonical market price</label>
-              <div class="mprice"><b id="mp">—</b><span class="tiny muted" id="mpNote">Set by the Market News engine</span></div>
-            </div>
-          </div>
-          <div class="preview">
-            <div class="kpi"><div class="k">Trade value</div><div class="v" id="pvTv">—</div><div class="s">quantity × market price</div></div>
-            <div class="kpi"><div class="k" id="pvBrkK">Brokerage</div><div class="v" id="pvBrk">—</div><div class="s">configured rate</div></div>
-            <div class="kpi"><div class="k" id="pvAmtK">Total payable</div><div class="v" id="pvAmt">—</div><div class="s" id="pvAmtS">trade value + brokerage</div></div>
-            <div class="kpi"><div class="k">Team position</div><div class="v" id="pvPos">—</div><div class="s" id="pvPosS">&nbsp;</div></div>
-          </div>
-          <div id="checks"></div>
-          <button class="btn primary lg block" type="submit" id="submit">Submit order to the Pit Manager</button>
-          <div id="result" aria-live="polite"></div>
-        </div>
-      </form>
-
-      <div class="card">
-        <div class="card-h"><h2>Participant instructions</h2><span class="small muted" id="insMeta"></span></div>
-        <div class="card-b flush"><div class="table-wrap" style="max-height:420px"><table class="t">
-          <thead><tr><th>Instruction</th><th>Team</th><th>Instruction</th><th class="num">Price seen → now</th><th>Status</th><th class="actions"></th></tr></thead>
+      <section class="card">
+        <div class="card-h bar"><h2>Participant instructions</h2><span class="meta" id="insMeta"></span></div>
+        <div class="card-b flush"><div class="table-wrap" style="max-height:440px"><table class="t">
+          <thead><tr><th>Instruction</th><th>Team</th><th>Trade</th><th class="num">Price seen → now</th><th>Status</th><th class="actions"></th></tr></thead>
           <tbody id="insRows"></tbody></table></div></div>
-      </div>
-
-      <div class="card">
-        <div class="card-h"><h2>Submitted orders</h2><a class="small" href="/orders.html">Order Tracking →</a></div>
+      </section>
+      <section class="card">
+        <div class="card-h bar navy"><h2>Submitted orders</h2><a class="small" href="/orders.html">Order Tracking →</a></div>
         <div class="card-b flush"><div class="table-wrap" style="max-height:520px"><table class="t">
-          <thead><tr><th>Order</th><th>Team</th><th>Trade</th><th class="num">Value</th><th>Status</th><th>Slip</th></tr></thead>
+          <thead><tr><th>Order</th><th>Team / Broker</th><th>Trade</th><th class="num">Trade value</th><th>Status</th><th>Trading slip</th></tr></thead>
           <tbody id="orders"></tbody></table></div></div>
-      </div>
+      </section>
     </div>
     <aside class="card">
-      <div class="card-h"><h3>Assigned teams</h3><span class="small muted" id="teamCount"></span></div>
+      <div class="card-h bar green"><h2>Assigned teams</h2><span class="meta" id="teamCount"></span></div>
+      <div class="card-b" id="kpis" style="padding-bottom:0"></div>
       <div class="card-b" id="teams"><span class="muted">Loading…</span></div>
     </aside>
   </div>
 </main>
-<footer class="footer">Brokers act only for the teams assigned to them (teams.broker_id). Orders are placed at the canonical market price; if Market News moves the price before execution the order becomes PRICE STALE and must be submitted again.</footer>
-<script src="/assets/config.js?v=311"></script>
-<script src="/assets/jse.js?v=311"></script>
+<footer class="footer">Brokers act only for the teams assigned to them. Orders are placed at the live market price; if Market News moves the price before execution the order becomes PRICE STALE and must be submitted again. No approval, no trade.</footer>
+<script src="/assets/config.js?v=312"></script>
+<script src="/assets/jse.js?v=312"></script>
 <script>
 (function () {
   "use strict";
@@ -112,7 +103,6 @@
   function secs() { return S.market ? S.market.stocks.concat(S.market.ipos).filter(function (s) { return s.tradable; }) : []; }
   function sec() { var sym = $("sec").value; return secs().filter(function (s) { return s.symbol === sym; })[0]; }
   function team() { var c = $("team").value; return S.desk ? S.desk.teams.filter(function (t) { return t.code === c; })[0] : null; }
-  function lot() { var s = sec(); return s ? s.lot_size : 50; }
 
   function fillTeams() {
     var el = $("team"), v = el.value;
@@ -122,63 +112,61 @@
     if (v) el.value = v;
   }
   function fillSecs() {
-    var el = $("sec"), v = el.value;
-    var eq = S.market.stocks.filter(function (s) { return s.tradable; }), ip = S.market.ipos.filter(function (s) { return s.tradable; });
-    var g = function (title, list) { return list.length ? '<optgroup label="' + title + '">' + list.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("") + "</optgroup>" : ""; };
-    el.innerHTML = '<option value="">Select a listed security…</option>' + g("Listed equities", eq) + g("Listed IPOs", ip);
-    if (v) el.value = v;
+    var el = $("sec"), v = el.value, kind = $("asset").value;
+    var list = (kind === "IPO" ? S.market.ipos : S.market.stocks).filter(function (s) { return s.tradable; });
+    el.innerHTML = '<option value="">' + (kind === "IPO" ? (list.length ? "Select a listed IPO…" : "No IPO has listed yet") : "Select a listed stock…") + "</option>" +
+      list.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.symbol) + " — " + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("");
+    if (v && list.some(function (s) { return s.symbol === v; })) el.value = v;
   }
 
   function preview() {
-    var s = sec(), t = team(), q = N($("qty").value), rate = N(S.desk ? S.desk.rules.brokerage_rate : 0.005);
+    var s = sec(), t = team(), q = N($("qty").value), rate = N(S.desk ? S.desk.rules.brokerage_rate : 0.005), sell = S.side === "SELL";
     $("pvBrkK").textContent = "Brokerage " + JSE.rate(rate);
-    $("mp").textContent = s ? F.price(s.price) : "—";
-    $("mpNote").textContent = s ? "as of " + F.time(s.last_price_change_at || s.updated_at) + " · changes only on Market News" : "Set by the Market News engine";
+    $("mp").value = s ? N(s.price).toFixed(2) : "—";
+    $("mpNote").textContent = s ? "🔒 Live market price as of " + F.time(s.last_price_change_at || s.updated_at) + " — changes only on official Market News" : "🔒 Locked to the live market price — changes only on official Market News";
     if (s) $("lotHint").textContent = "Multiples of " + s.lot_size + " shares · " + (q && q % s.lot_size === 0 ? (q / s.lot_size) + " lot(s)" : "not a whole lot");
-    var p = s ? N(s.price) : 0, tv = q > 0 && p > 0 ? q * p : 0, brk = Math.round(tv * rate * 100) / 100, sell = S.side === "SELL";
+    var p = s ? N(s.price) : 0, tv = q > 0 && p > 0 ? q * p : 0, brk = Math.round(tv * rate * 100) / 100;
+    $("pvSh").textContent = q > 0 ? F.num(q) : "—";
     $("pvTv").textContent = tv ? F.money(tv) : "—";
     $("pvBrk").textContent = tv ? F.money(brk) : "—";
-    $("pvAmtK").textContent = sell ? "Net receivable" : "Total payable";
+    $("pvAmtK").textContent = sell ? "Net proceeds" : "Total required";
     $("pvAmt").textContent = tv ? F.money(sell ? tv - brk : tv + brk) : "—";
-    $("pvAmtS").textContent = sell ? "trade value − brokerage" : "trade value + brokerage";
     if (t && s) {
       var h = (t.holdings || []).filter(function (x) { return x.symbol === s.symbol; })[0];
-      $("pvPos").textContent = sell ? F.num(h ? h.available : 0) + " sh" : F.money(t.free_cash);
-      $("pvPosS").textContent = sell ? "available to sell (holding " + F.num(h ? h.quantity : 0) + ")" : "free cash · loan room " + F.money(t.loan_room);
-    } else { $("pvPos").textContent = "—"; $("pvPosS").innerHTML = "&nbsp;"; }
+      $("pvPos").textContent = sell ? F.num(h ? h.available : 0) + " shares available" : F.money(t.free_cash) + " free cash";
+      $("pvPosS").textContent = sell ? "holding " + F.num(h ? h.quantity : 0) + " · open sells reserved" : "loan available " + F.money(t.loan_room) + " · drawn only if needed";
+    } else { $("pvPos").textContent = "—"; $("pvPosS").innerHTML = "Select a team and a security"; }
     checks(s, t, q, tv, brk);
   }
 
   function checks(s, t, q, tv, brk) {
     var out = [], r = S.desk ? S.desk.rules : {};
-    if (s && q && q % s.lot_size !== 0) out.push(["bad", s.symbol + " trades in multiples of " + s.lot_size + " shares."]);
-    if (tv && (tv < N(r.min_order_value) || tv > N(r.max_order_value))) out.push(["bad", "Order value must be between " + F.money(r.min_order_value) + " and " + F.money(r.max_order_value) + " per order."]);
+    if (s && q && q % s.lot_size !== 0) out.push(["bad", s.symbol + " trades in multiples of " + s.lot_size + " shares (50, 100, 150 …)."]);
+    if (tv && (tv < N(r.min_order_value) || tv > N(r.max_order_value))) out.push(["bad", "Order value must not exceed " + F.money(r.max_order_value) + " per order."]);
     if (t && s && tv) {
       var h = (t.holdings || []).filter(function (x) { return x.symbol === s.symbol; })[0];
       var avail = h ? N(h.available) : 0;
       if (S.side === "SELL" && q > avail) out.push(["warn", "Short selling is not allowed: " + t.code + " can sell only " + F.num(avail) + " " + s.symbol + " shares. The attempt is recorded and the Bank will reject it."]);
       if (S.side === "BUY") {
         var need = tv + brk, free = N(t.free_cash), room = N(t.loan_room);
-        if (need > free + room) out.push(["warn", "Cash shortfall: needs " + F.money(need) + "; " + t.code + " has " + F.money(free) + " free cash and " + F.money(room) + " loan room. The attempt is recorded and the Bank will reject it."]);
-        else if (need > free) out.push(["info", "The Bank will draw about " + F.money(need - free) + " as a loan at settlement (" + JSE.rate(r.loan_interest_rate) + " interest). The loan must be repaid for eligibility."]);
+        if (need > free + room) out.push(["warn", "Insufficient balance: needs " + F.money(need) + "; " + t.code + " has " + F.money(free) + " free cash and " + F.money(room) + " of loan available. The attempt is recorded and the Bank will reject it."]);
+        else if (need > free) out.push(["info", "The Bank will automatically draw about " + F.money(need - free) + " as a loan at settlement (" + JSE.rate(r.loan_interest_rate) + " interest on the draw). The loan must be repaid for eligibility."]);
       }
     }
     $("checks").innerHTML = out.map(function (x) { return '<div class="alert ' + x[0] + '" style="margin-bottom:8px">' + esc(x[1]) + "</div>"; }).join("");
   }
 
-  function setSide(side) {
-    S.side = side;
-    document.querySelectorAll("[data-side]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-side") === side)); });
-    preview();
-  }
-  function clearInstruction() { S.ins = null; $("fromIns").classList.add("hidden"); ["team", "sec", "qty"].forEach(function (id) { $(id).disabled = !canAct; }); document.querySelectorAll("[data-side]").forEach(function (b) { b.disabled = !canAct; }); }
+  function setSide(side) { S.side = side; $("side").value = side; preview(); }
+  function lockFields(on) { ["team", "sec", "qty", "side", "asset"].forEach(function (id) { $(id).disabled = on || !canAct; }); }
+  function clearInstruction() { S.ins = null; $("fromIns").classList.add("hidden"); lockFields(false); }
   function loadInstruction(i) {
     S.ins = i;
+    var s = secs().filter(function (x) { return x.symbol === i.symbol; })[0];
+    $("asset").value = s && s.type === "IPO" ? "IPO" : "EQUITY"; fillSecs();
     $("team").value = i.team; $("sec").value = i.symbol; $("qty").value = i.quantity; setSide(i.side);
-    ["team", "sec", "qty"].forEach(function (id) { $(id).disabled = true; });
-    document.querySelectorAll("[data-side]").forEach(function (b) { b.disabled = true; });
+    lockFields(true);
     $("fromIns").innerHTML = "<b>From " + esc(i.instruction_no) + "</b> · " + esc(i.team) + " " + esc(i.team_name) + " asked to " + esc(i.side) + " " + F.num(i.quantity) + " " + esc(i.symbol) +
-      (i.note ? ' · “' + esc(i.note) + '”' : "") + (N(i.price_seen) !== N(i.market_price) ? '<div class="small" style="color:var(--amber);margin-top:3px">The price has moved since the instruction (' + F.price(i.price_seen) + " → " + F.price(i.market_price) + "). Confirm with the participant before submitting.</div>" : "") +
+      (i.note ? ' · “' + esc(i.note) + '”' : "") + (N(i.price_seen) !== N(i.market_price) ? '<div class="small" style="color:var(--amber);margin-top:3px">MARKET PRICE CHANGED since the instruction (' + F.price(i.price_seen) + " → " + F.price(i.market_price) + "). Confirm with the participant before submitting.</div>" : "") +
       ' <button class="btn sm" type="button" id="clearIns">Clear</button>';
     $("fromIns").classList.remove("hidden");
     $("clearIns").onclick = clearInstruction;
@@ -191,7 +179,8 @@
     if (S.busy || !canAct) return;
     var s = sec(), q = N($("qty").value), res = $("result"); res.innerHTML = "";
     if (!$("team").value) return JSE.toast("Choose one of your assigned teams.", "warn");
-    if (!s) return JSE.toast("Choose a listed security.", "warn");
+    if (!s) return JSE.toast("Choose a listed stock or IPO.", "warn");
+    if (q <= 0 || q % s.lot_size !== 0) return JSE.toast(s.symbol + " trades in multiples of " + s.lot_size + " shares.", "warn");
     var body = { team: $("team").value, symbol: s.symbol, side: S.side, quantity: q, expected_price: N(s.price), idempotency_key: S.key };
     if (S.ins) body.instruction_no = S.ins.instruction_no;
     S.busy = true; var btn = $("submit"); btn.disabled = true; var label = btn.textContent; btn.innerHTML = '<span class="spinner"></span> Submitting…';
@@ -200,8 +189,8 @@
       res.innerHTML = '<div class="done"><div><b>' + esc(o.order_no) + "</b> " + JSE.badge.side(o.side) + " " + esc(o.team) + " · " + esc(o.team_name) + " · " + F.num(o.quantity) + " " + esc(o.symbol) +
         " @ " + F.price(o.price) + " · " + JSE.badge.status(o.status) + (r.replayed ? ' <span class="badge prov">already submitted</span>' : "") + "</div>" +
         (r.warnings || []).map(function (w) { return '<div class="small" style="color:var(--amber);margin-top:3px">⚠ ' + esc(w.message) + "</div>"; }).join("") +
-        '<div class="small muted" style="margin-top:6px">Sent to the Pit Manager for execution. The participant can follow it on My Orders.</div></div>';
-      JSE.toast("Order " + o.order_no + " submitted to the Pit Manager", "good");
+        '<div class="small muted" style="margin-top:6px">Sent to the trading floor — awaiting Pit Manager execution, then Exchange review and Bank settlement. The participant can follow it on My Orders.</div></div>';
+      JSE.toast("Order " + o.order_no + " created · sent to the Pit Manager", "good");
       S.key = JSE.uuid(); clearInstruction(); desk.now();
     } catch (ex) {
       res.innerHTML = '<div class="alert bad"><b>Not submitted.</b> ' + esc(ex.message) + "</div>";
@@ -220,40 +209,42 @@
 
   function renderDesk() {
     var d = S.desk, c = d.counts || {};
-    $("title").textContent = "Broker Desk · " + d.broker.name;
     $("brokerLine").innerHTML = "<b>" + esc(d.broker.code) + "</b> · " + esc(d.broker.name) + (d.broker.desk ? " · desk " + esc(d.broker.desk) : "") + (d.broker.contact ? " · " + esc(d.broker.contact) : "") +
       " — orders go to the Pit Manager, then Exchange review and Bank settlement.";
-    $("kpis").innerHTML = [["Assigned teams", c.teams, "accent"], ["Open instructions", c.open_instructions, c.open_instructions ? "warn" : ""], ["Awaiting Pit Manager", c.pit_pending, "info"],
-      ["Awaiting Exchange / Bank", N(c.awaiting_exchange) + " / " + N(c.awaiting_bank), ""], ["Settled · rejected", N(c.settled) + " · " + N(c.rejected), "good"]]
-      .map(function (k) { return '<div class="kpi ' + k[2] + '"><div class="k">' + k[0] + '</div><div class="v">' + esc(k[1] === undefined ? 0 : k[1]) + "</div></div>"; }).join("");
+    $("deskMeta").textContent = "Participant trading · " + d.broker.code + " desk";
+    $("kpis").innerHTML = '<div class="minis" style="grid-template-columns:repeat(2,minmax(0,1fr))">' +
+      [["Open instructions", c.open_instructions], ["At the Pit Manager", c.pit_pending], ["Exchange / Bank", N(c.awaiting_exchange) + " / " + N(c.awaiting_bank)],
+       ["Settled", c.settled], ["Rejected", c.rejected], ["Teams", c.teams]]
+      .map(function (k) { return '<div class="mini"><div class="k">' + k[0] + '</div><div class="v">' + esc(k[1] === undefined ? 0 : k[1]) + "</div></div>"; }).join("") + "</div>";
     fillTeams();
     $("teamCount").textContent = d.teams.length + " team(s)";
     $("teams").innerHTML = d.teams.length ? d.teams.map(function (t) {
-      return '<div class="team-card' + ($("team").value === t.code ? " sel" : "") + '" data-team="' + esc(t.code) + '"><div class="row between"><span class="tn">' + esc(t.name) + '</span><span class="mono small">' + esc(t.code) + "</span></div>" +
+      return '<div class="team-card' + ($("team").value === t.code ? " sel" : "") + '" data-team="' + esc(t.code) + '"><div class="row between"><span class="tn">' + esc(t.name) + '</span><span class="tag">' + esc(t.code) + "</span></div>" +
         '<div class="tm">' + esc([t.section, t.members].filter(Boolean).join(" · ") || "Members not entered yet") + "</div>" +
         '<div class="nums"><div>Cash<b>' + F.short(t.cash) + "</b></div><div>Free cash<b>" + F.short(t.free_cash) + "</b></div><div>Net worth<b>" + F.short(t.net_worth) + "</b></div></div>" +
-        '<div class="row" style="margin-top:6px">' + JSE.badge.progress(t.settled_buys, d.rules.min_buy_trades, "BUY") + JSE.badge.progress(t.settled_sells, d.rules.min_sell_trades, "SELL") +
-        (N(t.loan_liability) > 0 ? '<span class="badge warn">loan ' + F.short(t.loan_liability) + "</span>" : "") + "</div>" +
-        (t.holdings && t.holdings.length ? '<div class="tiny muted" style="margin-top:5px">' + t.holdings.slice(0, 6).map(function (h) { return esc(h.symbol) + " " + F.num(h.quantity); }).join(" · ") + "</div>" : "") + "</div>";
+        '<div class="row" style="margin-top:7px;gap:6px">' + JSE.badge.progress(t.settled_buys, d.rules.min_buy_trades, "BUY") + JSE.badge.progress(t.settled_sells, d.rules.min_sell_trades, "SELL") +
+        (N(t.loan_liability) > 0 ? '<span class="badge warn">Loan ' + F.short(t.loan_liability) + "</span>" : "") + "</div>" +
+        (t.holdings && t.holdings.length ? '<div class="tiny muted" style="margin-top:6px">' + t.holdings.slice(0, 6).map(function (h) { return esc(h.symbol) + " " + F.num(h.quantity); }).join(" · ") + "</div>" : "") + "</div>";
     }).join("") : '<div class="empty"><b>No teams assigned.</b>The Event Admin assigns teams to brokers.</div>';
     $("teams").querySelectorAll("[data-team]").forEach(function (el) { el.addEventListener("click", function () { if (S.ins) return; $("team").value = el.getAttribute("data-team"); renderDesk(); preview(); }); });
     var open = d.instructions.filter(function (i) { return i.status === "OPEN"; });
     $("insMeta").textContent = open.length + " open";
     $("insRows").innerHTML = d.instructions.length ? d.instructions.map(function (i) {
       var moved = N(i.price_seen) !== N(i.market_price);
-      return "<tr><td><span class=\"mono\">" + esc(i.instruction_no) + '</span><div class="tiny muted">' + F.time(i.created_at) + "</div></td><td><b>" + esc(i.team) + '</b><div class="tiny muted">' + esc(i.team_name) + "</div></td>" +
-        "<td>" + JSE.badge.side(i.side) + " " + F.num(i.quantity) + " <b>" + esc(i.symbol) + "</b>" + (i.note ? '<div class="tiny muted">“' + esc(i.note) + '”</div>' : "") + "</td>" +
+      return "<tr><td><b>" + esc(i.instruction_no) + '</b><span class="sub">' + F.time(i.created_at) + "</span></td><td><b>" + esc(i.team) + '</b><span class="sub">' + esc(i.team_name) + "</span></td>" +
+        '<td><span class="side-txt ' + i.side.toLowerCase() + '">' + esc(i.side) + "</span> · " + F.num(i.quantity) + " <b>" + esc(i.symbol) + "</b>" + (i.note ? '<span class="sub">“' + esc(i.note) + '”</span>' : "") + "</td>" +
         '<td class="num">' + F.price(i.price_seen) + (moved ? ' → <b class="' + (N(i.market_price) > N(i.price_seen) ? "up" : "down") + '">' + F.price(i.market_price) + "</b>" : "") + "</td>" +
-        "<td>" + (i.status === "OPEN" ? '<span class="badge warn">Open</span>' : i.status === "SUBMITTED" ? '<span class="badge ok">Submitted</span> <span class="mono tiny">' + esc(i.order_no || "") + "</span>" + (i.order_status ? " " + JSE.badge.status(i.order_status) : "")
-          : '<span class="badge prov">' + esc(i.status) + "</span>" + (i.decline_reason ? '<div class="tiny muted">' + esc(i.decline_reason) + "</div>" : "")) + "</td>" +
-        '<td class="actions">' + (i.status === "OPEN" && canAct ? '<button class="btn sm primary" type="button" data-load="' + esc(i.instruction_no) + '">Load into ticket</button> <button class="btn sm" type="button" data-decline="' + esc(i.instruction_no) + '">Decline</button>' : "") + "</td></tr>";
-    }).join("") : '<tr><td colspan="6" class="empty">No instructions from your teams yet. Participants can also give instructions in person.</td></tr>';
+        "<td>" + (i.status === "OPEN" ? '<span class="badge warn">Open</span>' : i.status === "SUBMITTED" ? '<span class="badge ok">Submitted</span> <span class="tiny strong">' + esc(i.order_no || "") + "</span>" + (i.order_status ? " " + JSE.badge.status(i.order_status) : "")
+          : '<span class="badge prov">' + esc(i.status) + "</span>" + (i.decline_reason ? '<span class="sub">' + esc(i.decline_reason) + "</span>" : "")) + "</td>" +
+        '<td class="actions">' + (i.status === "OPEN" && canAct ? '<button class="btn sm primary" type="button" data-load="' + esc(i.instruction_no) + '">Load into order</button> <button class="btn sm" type="button" data-decline="' + esc(i.instruction_no) + '">Decline</button>' : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="6" class="empty">No instructions from your teams yet. Participants can also give instructions in person at the desk.</td></tr>';
     $("insRows").querySelectorAll("[data-load]").forEach(function (b) { b.addEventListener("click", function () { loadInstruction(d.instructions.filter(function (i) { return i.instruction_no === b.getAttribute("data-load"); })[0]); }); });
     $("insRows").querySelectorAll("[data-decline]").forEach(function (b) { b.addEventListener("click", function () { decline(d.instructions.filter(function (i) { return i.instruction_no === b.getAttribute("data-decline"); })[0]); }); });
     $("orders").innerHTML = d.orders.length ? d.orders.map(function (o) {
-      return '<tr><td><a class="mono" href="/orders.html?order=' + encodeURIComponent(o.order_no) + '">' + esc(o.order_no) + '</a><div class="tiny muted">' + F.time(o.created_at) + (o.instruction_no ? " · " + esc(o.instruction_no) : "") + "</div></td>" +
-        "<td><b>" + esc(o.team) + '</b><div class="tiny muted">' + esc(o.team_name) + "</div></td><td>" + JSE.badge.side(o.side) + " " + F.num(o.quantity) + " <b>" + esc(o.symbol) + "</b> @ " + F.price(o.price) + "</td>" +
-        '<td class="num">' + F.money(o.trade_value) + "</td><td>" + JSE.badge.status(o.status, o.reject_code) + (o.reject_reason ? '<div class="tiny muted" style="max-width:280px">' + esc(o.reject_reason) + "</div>" : "") + "</td>" +
+      return '<tr><td><a class="mono" href="/orders.html?order=' + encodeURIComponent(o.order_no) + '">' + esc(o.order_no) + '</a><span class="sub">' + F.datetime(o.created_at) + (o.instruction_no ? " · " + esc(o.instruction_no) : "") + "</span></td>" +
+        "<td><b>" + esc(o.team) + '</b><span class="sub">' + esc(o.broker || "") + (o.account_type === "INSTITUTION" ? " · institutional" : "") + "</span></td>" +
+        '<td><span class="side-txt ' + (o.team_side || o.side).toLowerCase() + '">' + esc(o.team_side || o.side) + "</span> · " + F.num(o.quantity) + " @ " + F.price(o.price) + '<span class="sub">' + esc(o.security) + "</span></td>" +
+        '<td class="num">' + F.money(o.trade_value) + "</td><td>" + JSE.badge.status(o.status, o.reject_code) + (o.reject_reason ? '<span class="sub" style="max-width:280px;white-space:normal">' + esc(o.reject_reason) + "</span>" : "") + "</td>" +
         "<td>" + (o.slip_no ? '<a class="mono" href="/slips.html?slip=' + encodeURIComponent(o.slip_no) + '">' + esc(o.slip_no) + "</a>" : '<span class="muted">—</span>') + "</td></tr>";
     }).join("") : '<tr><td colspan="6" class="empty">No orders submitted yet.</td></tr>';
   }
@@ -266,33 +257,32 @@
       $("brokerSel").value = S.desk.broker.code; $("brokerSel").classList.remove("hidden");
     }
     renderDesk(); preview();
-    $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date()) + " IST";
   }
   async function loadMarket() {
     S.market = await JSE.api.get("/api/market");
     fillSecs();
-    var live = S.market.status === "LIVE";
+    var live = S.market.status === "LIVE", meta = JSE.STATUS[S.market.status] || { cls: "closed", text: S.market.status };
+    $("mkt").className = "pill " + meta.cls; $("mktText").textContent = meta.text;
     $("notLive").classList.toggle("hidden", live);
-    $("notLive").innerHTML = live ? "" : "<b>Market is " + esc(F.statusText(S.market.status)) + ".</b> New orders are accepted only while the market is LIVE.";
+    $("notLive").innerHTML = live ? "" : "<b>Market is " + esc(meta.text) + ".</b> New orders are accepted only while the market is LIVE.";
     $("submit").disabled = !live || !canAct;
     preview();
   }
 
-  document.querySelectorAll("[data-side]").forEach(function (b) { b.addEventListener("click", function () { setSide(b.getAttribute("data-side")); }); });
+  $("side").addEventListener("change", function () { setSide($("side").value); });
+  $("asset").addEventListener("change", function () { $("sec").value = ""; fillSecs(); preview(); });
   $("team").addEventListener("change", function () { renderDesk(); preview(); });
   $("sec").addEventListener("change", function () { var s = sec(); if (s) { $("qty").step = s.lot_size; $("qty").min = s.lot_size; } preview(); });
   $("qty").addEventListener("input", preview);
-  $("qPlus").addEventListener("click", function () { $("qty").value = Math.max(0, N($("qty").value) + lot()); preview(); });
-  $("qMinus").addEventListener("click", function () { $("qty").value = Math.max(lot(), N($("qty").value) - lot()); preview(); });
   $("ticket").addEventListener("submit", submit);
   $("brokerSel").addEventListener("change", function () { S.broker = $("brokerSel").value; clearInstruction(); $("team").value = ""; desk.now(); });
 
   JSE.page({ id: "order" }).then(function (user) {
     if (!user) return;
     S.user = user; canAct = user.role === "BROKER" || user.role === "ADMIN";
-    if (!canAct) { ["team", "sec", "qty", "submit", "qPlus", "qMinus"].forEach(function (id) { $(id).disabled = true; }); }
-    market = JSE.poll(loadMarket, 3000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
-    desk = JSE.poll(loadDesk, 3000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = e.message; } });
+    if (!canAct) { ["team", "sec", "qty", "submit", "side", "asset", "txType"].forEach(function (id) { $(id).disabled = true; }); }
+    market = JSE.poll(loadMarket, 3000, { onError: function (e) { $("mktText").textContent = "Reconnecting…"; } });
+    desk = JSE.poll(loadDesk, 3000, { onError: function (e) { $("insMeta").textContent = e.message; } });
   });
 })();
 </script>

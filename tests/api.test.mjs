@@ -102,7 +102,7 @@ test("clean event with the standard v311 rules", async () => {
   ok(await POST("/api/config", { brokerage_rate: 0.005, loan_interest_rate: 0.02, initial_capital: 2000000, loan_max_principal: 500000,
     min_order_value: 0, max_order_value: 2500000, cash_rule_limit: 50000, min_buy_trades: 5, min_sell_trades: 5, max_price_move_pct: 10,
     ipo_application_hours: 24, loans_enabled: true, auto_loan_on_settlement: true, loan_repayment_required: true, auto_list_ipos: true,
-    institution_overdraft: true, institution_brokerage: false, ...A }, "ADMIN"), "standard rules");
+    ...A }, "ADMIN"), "standard rules");
   const r = await POST("/api/reset-event", { confirm: "RESET", keep_allotments: false, ...A }, "ADMIN");
   ok(r); assert.equal(r.data.status, "NOT_STARTED");
 });
@@ -172,7 +172,7 @@ test("Rules & Configuration save needs the administrator password", { skip: CI &
   const yes = await POST("/api/config", { brokerage_rate_pct: 0.6, ...A }, "ADMIN");
   ok(yes); assert.equal(num(yes.data.config.brokerage_rate), 0.006);
   ok(await POST("/api/config", { brokerage_rate: 0.005, ...A }, "ADMIN"));
-  const aud = (await GET("/api/audit?action=CONFIG_UPDATED", "ADMIN")).data.rows[0];
+  const aud = (await GET("/api/audit?action=CONFIGURATION_UPDATED", "ADMIN")).data.rows[0];
   assert.ok(aud && aud.details.changed.includes("brokerage_rate"));
   const invalid = await POST("/api/config", { max_price_move_pct: 15, ...A }, "ADMIN");
   assert.equal(invalid.status, 400, "the ±10% cap cannot be exceeded");
@@ -452,7 +452,7 @@ test("Exchange receives the executed order; the Bank settles it — cash, holdin
   const led = (await GET("/api/cash?team=TEAM-001", "ADMIN")).data.rows.filter((x) => x.order_no === S.o1.order_no);
   assert.deepEqual(led.map((x) => x.type).sort(), ["BROKERAGE", "BUY"]);
   const aud = (await GET("/api/audit?page_size=100&q=" + S.o1.order_no, "ADMIN")).data.rows.map((x) => x.action);
-  for (const want of ["ORDER_SUBMITTED", "PIT_EXECUTED", "EXCHANGE_APPROVED", "BANK_SETTLED"]) assert.ok(aud.includes(want), want + " in " + aud.join(","));
+  for (const want of ["ORDER_CREATED", "PIT_EXECUTED", "EXCHANGE_APPROVED", "BANK_SETTLED"]) assert.ok(aud.includes(want), want + " in " + aud.join(","));
   const insAudit = (await GET("/api/audit?action=INSTRUCTION_CREATED&q=" + S.ins, "ADMIN")).data.rows;
   assert.equal(insAudit.length, 1);
 });
@@ -487,6 +487,13 @@ test("short selling: flagged at submission, Exchange confirmation, Bank rejects"
   const d = await detail("TEAM-003");
   assert.equal(d.team.short_sell_attempts, 1, "one attempt per order"); assert.equal(d.short_sell_history.length, 1);
   assert.equal(num(d.team.cash), 2000000); assert.equal(d.assessment.sell, 0, "rejected orders do not count");
+  // the audit log keeps every stage visibly distinguishable (risk indicators)
+  const risks = (await GET("/api/audit?page_size=50&q=" + o.data.order.order_no, "ADMIN")).data.rows.filter((r) => r.risk).map((r) => r.action + ":" + r.risk);
+  for (const want of ["SHORT_SELLING_ATTEMPT:SHORT SELLING ATTEMPT", "SHORT_SELLING_APPROVED:SHORT SELLING — EXCHANGE APPROVED",
+                      "SHORT_SELLING_ATTEMPT:SHORT SELLING — REJECTED AT BANK"]) assert.ok(risks.includes(want), want + " in " + risks.join(" | "));
+  const riskOnly = (await GET("/api/audit?risk=true&page_size=200", "ADMIN")).data;
+  assert.ok(riskOnly.rows.length >= 3 && riskOnly.rows.every((r) => r.risk), "the risk filter returns only flagged rows");
+  assert.ok(riskOnly.rows.some((r) => r.security === "TCS" && r.team === "TEAM-003"), "rows carry the order's security and team");
 });
 
 test("cash shortfall attempt and insufficient-balance rejection", async () => {
@@ -499,12 +506,16 @@ test("cash shortfall attempt and insufficient-balance rejection", async () => {
   const d = await detail("TEAM-004");
   assert.equal(d.team.cash_shortfall_attempts, 1); assert.equal(d.team.insufficient_balance_rejections, 1);
   assert.equal(num(d.team.cash), 2000000); assert.equal(num(d.loan?.original_principal || 0), 0, "no loan drawn for a rejected order");
+  const r = (await GET("/api/audit?action=INSUFFICIENT_BALANCE_REJECTED&q=" + o.data.order.order_no, "ADMIN")).data.rows[0];
+  assert.ok(r && r.risk === "INSUFFICIENT BALANCE — REJECTED", JSON.stringify(r));
 });
 
 test("loans: shortfall-only automatic draw, 2% interest, ₹5 L limit, interest first, fresh interest, full repayment", async () => {
   // 700 LT = ₹20,28,600 + ₹10,143 → shortfall ₹38,743 borrowed automatically; interest 2% = ₹774.86
   const { settle: s } = await fullTrade("TEAM-008", "LT", "BUY", 700);
   assert.equal(s.status, "BANK_SETTLED"); assert.equal(num(s.loan_drawn), 38743); assert.equal(num(s.loan_interest), 774.86); assert.equal(num(s.cash_after), 0);
+  const used = (await GET("/api/audit?action=INSUFFICIENT_BALANCE_SETTLED&team=TEAM-008", "ADMIN")).data.rows[0];
+  assert.ok(used && used.risk === "INSUFFICIENT BALANCE — LOAN USED" && num(used.details.loan_drawn) === 38743, JSON.stringify(used));
   let d = await detail("TEAM-008");
   assert.equal(num(d.loan.original_principal), 38743); assert.equal(num(d.loan.interest), 774.86);
   assert.equal(num(d.team.net_worth), 700 * 2898, "loans are not deducted from Net Worth");
@@ -581,28 +592,67 @@ test("Market News: severity bands, ±10% cap, headline, random within band, boar
   assert.equal((await POST("/api/market-news", { symbol: "BEL", mood: "HUGE" }, "ADMIN")).data.code, "INVALID_MOOD");
 });
 
-test("institutional orders: counterparty team, market price, Pit Manager → Exchange → Bank, slip issued", async () => {
-  const p = await price("INFY");
+test("institutional counterparty: participant buys at market +2%, sells at market −2%; brokerage to its broker; counts toward the 5+5", async () => {
+  const p = await price("INFY");                                                  // ₹900
   const bad = await POST("/api/institutional-order", { counterparty_team: "TEAM-001", symbol: "INFY", side: "BUY", quantity: 50, expected_price: p + 1, idempotency_key: key() }, "INST-01");
-  assert.equal(bad.data.code, "PRICE_CHANGED");
+  assert.equal(bad.data.code, "PRICE_CHANGED"); assert.match(bad.data.error, /^MARKET PRICE CHANGED/);
+  // the institution BUYS from TEAM-001 → TEAM-001 SELLS 50 INFY at 900 × 0.98 = ₹882 (a typed price is ignored)
   const o = await POST("/api/institutional-order", { counterparty_team: "TEAM-001", symbol: "INFY", side: "BUY", quantity: 50, price: 1, expected_price: p, idempotency_key: key() }, "INST-01");
-  ok(o); assert.equal(o.data.order.status, "PIT_PENDING"); assert.equal(num(o.data.order.price), p); assert.match(o.data.order.order_no, /^INS-/);
-  const x = await execute(o.data.order.id); ok(x); assert.ok(x.data.slip_no);
-  ok(await approve(o.data.order.id));
-  const s = await settle(o.data.order.id);
-  assert.equal(s.data.status, "BANK_SETTLED", JSON.stringify(s.data)); assert.equal(num(s.data.brokerage), 0);
-  const inst = (await GET("/api/institutional-portfolio", "INST-01")).data;
-  assert.equal(inst.holdings.find((h) => h.symbol === "INFY").quantity, 50); assert.equal(num(inst.account.cash), 20000000 - 50 * p);
-  assert.ok(inst.teams.length === 100 && inst.teams[0].code === "TEAM-001", "counterparty list (code and name only)");
+  ok(o); const ord = o.data.order;
+  assert.equal(ord.status, "PIT_PENDING"); assert.match(ord.order_no, /^INS-/); assert.equal(ord.team_side, "SELL");
+  assert.equal(num(ord.price), round2(p * 0.98)); assert.equal(num(ord.reference_price), p);
+  assert.equal(num(ord.trade_value), round2(50 * p * 0.98)); assert.equal(num(ord.brokerage), round2(50 * p * 0.98 * 0.005));
+  assert.equal(num(ord.brokerage_rate), 0.005); assert.equal(ord.broker, brokerOf["TEAM-001"], "the team's own broker handles it");
+  assert.equal(num(ord.settlement_amount), round2(50 * p * 0.98 * 0.995));
+  const x = await execute(ord.id); ok(x, "the reference market price is unchanged, so the order is not stale"); assert.ok(x.data.slip_no);
+  ok(await approve(ord.id));
+  const cashBefore = num((await detail("TEAM-001")).team.cash);
+  const s = await settle(ord.id);
+  assert.equal(s.data.status, "BANK_SETTLED", JSON.stringify(s.data)); assert.equal(num(s.data.brokerage), round2(50 * p * 0.98 * 0.005));
   const d1 = await detail("TEAM-001");
-  assert.equal(holding(d1, "INFY"), 0); assert.equal(d1.assessment.sell, 1, "institutional trades do not count for the team");
+  assert.equal(holding(d1, "INFY"), 0); assert.equal(num(d1.team.cash), round2(cashBefore + 50 * p * 0.98 * 0.995));
+  assert.equal(d1.assessment.sell, 2, "a settled institutional trade counts as the team's SELL");
+  assert.equal(d1.sold[0].counterparty, "Institutional investor");
+  const com = (await GET("/api/commissions?page_size=50", "ADMIN")).data;
+  const c = com.transactions.find((t) => t.order_no === ord.order_no);
+  assert.ok(c && c.broker === brokerOf["TEAM-001"] && c.side === "SELL" && c.account_type === "INSTITUTION" && num(c.amount) === round2(50 * p * 0.98 * 0.005), JSON.stringify(c));
+  assert.equal(com.reconciliation.ok, true, JSON.stringify(com.reconciliation));
+  // the desk: ticket inputs, current market with institutional prices, history — no institutional cash or holdings dashboard
+  const desk = (await GET("/api/institutional-portfolio", "INST-01")).data;
+  assert.equal(num(desk.rules.spread_pct), 2); assert.equal(num(desk.rules.brokerage_rate), 0.005);
+  const mk = desk.market.find((m) => m.symbol === "INFY");
+  assert.equal(num(mk.participant_buy_price), round2(p * 1.02)); assert.equal(num(mk.participant_sell_price), round2(p * 0.98));
+  assert.ok(desk.teams.length === 100 && desk.teams[0].code === "TEAM-001" && desk.teams[0].broker, "counterparty list: code, name, broker");
+  assert.equal(desk.account, undefined); assert.equal(desk.holdings, undefined);
+  assert.ok(desk.orders.some((r) => r.order_no === ord.order_no)); assert.equal(desk.stats.settled, 1);
+  // the institution SELLS to TEAM-002 → TEAM-002 BUYS 50 INFY at 900 × 1.02 = ₹918, paying trade value + brokerage
+  const before2 = await detail("TEAM-002");
   const o2 = await POST("/api/institutional-order", { counterparty_team: "TEAM-002", symbol: "INFY", side: "SELL", quantity: 50, expected_price: p, idempotency_key: key() }, "INST-01");
-  ok(o2); ok(await execute(o2.data.order.id)); ok(await approve(o2.data.order.id));
+  ok(o2); assert.equal(num(o2.data.order.price), round2(p * 1.02)); assert.equal(o2.data.order.team_side, "BUY");
+  ok(await execute(o2.data.order.id)); ok(await approve(o2.data.order.id));
   assert.equal((await settle(o2.data.order.id)).data.status, "BANK_SETTLED");
-  assert.equal(holding(await detail("TEAM-002"), "INFY"), 100);
+  const d2 = await detail("TEAM-002");
+  assert.equal(holding(d2, "INFY"), 100); assert.equal(num(d2.team.cash), round2(num(before2.team.cash) - 50 * p * 1.02 * 1.005));
+  assert.equal(d2.assessment.buy, before2.assessment.buy + 1, "a settled institutional trade counts as the team's BUY");
+  // no institutional holdings restriction (the institution sold shares it never bought); the participant cannot short-sell
+  const sh = await POST("/api/institutional-order", { counterparty_team: "TEAM-030", symbol: "TCS", side: "BUY", quantity: 100, expected_price: await price("TCS"), idempotency_key: key() }, "INST-01");
+  ok(sh); assert.ok(sh.data.warnings.some((w) => w.code === "SHORT_SELL"));
+  ok(await execute(sh.data.order.id));
+  assert.equal((await approve(sh.data.order.id)).data.code, "SHORT_SELL_CONFIRM_REQUIRED");
+  ok(await approve(sh.data.order.id, { confirm_short_sell: true }));
+  const sr = await settle(sh.data.order.id);
+  assert.equal(sr.data.status, "BANK_REJECTED"); assert.equal(sr.data.code, "SHORT_SELLING_NOT_ALLOWED");
+  // stale-price rule uses the market price the institutional price was derived from
+  const st = await POST("/api/institutional-order", { counterparty_team: "TEAM-030", symbol: "NTPC", side: "SELL", quantity: 50, expected_price: await price("NTPC"), idempotency_key: key() }, "INST-01");
+  ok(st);
+  ok(await POST("/api/market-news", { symbol: "NTPC", mood: "POSITIVE", headline: "NTPC commissions a new plant" }, "ADMIN"));
+  const sd = (await GET("/api/order?id=" + st.data.order.id, "ADMIN")).data.order;
+  assert.equal(sd.status, "PIT_REJECTED"); assert.equal(sd.reject_code, "PRICE_STALE");
+  const aud = (await GET("/api/audit?action=INSTITUTIONAL_ORDER_SUBMITTED&q=" + ord.order_no, "ADMIN")).data.rows[0];
+  assert.ok(aud && num(aud.details.spread_pct) === 2 && num(aud.details.market_price) === p, JSON.stringify(aud));
   const trk = (await GET("/api/orders?page_size=100", "INST-01")).data;
-  assert.ok(trk.rows.length >= 2 && trk.rows.every((r) => r.account_type === "INSTITUTION"));
-  assert.equal(num((await price("INFY"))), p, "institutions never change prices");
+  assert.ok(trk.rows.length >= 4 && trk.rows.every((r) => r.account_type === "INSTITUTION"));
+  assert.equal(num(await price("INFY")), p, "institutional trades never change prices");
 });
 
 test("assessment counts only settled listed-stock BUY and SELL trades; exactly one Winner and one Runner-Up", async () => {
@@ -672,6 +722,10 @@ test("concurrent settlements for one team: loans drawn exactly as needed, balanc
 test("ledger, commissions and exports reconcile with the live records", async () => {
   const cash = (await GET("/api/cash?page_size=10", "ADMIN")).data;
   assert.equal(cash.reconciliation.ok, true, JSON.stringify(cash.reconciliation)); assert.equal(cash.reconciliation.teams_checked, 100);
+  const one = (await GET("/api/cash?team=TEAM-001&page_size=10", "ADMIN")).data.summary;
+  assert.equal(round2(num(one.net_movement)), round2(num(one.credits) - num(one.debits)));
+  assert.equal(num(one.current_cash), num((await detail("TEAM-001")).team.cash), "net movement of the whole ledger = current cash");
+  assert.equal(round2(num(one.net_movement)), num(one.current_cash));
   assert.equal((await GET("/api/commissions?page_size=10", "ADMIN")).data.reconciliation.ok, true);
   const { checks } = await audit(new Stats(), tok.ADMIN);
   for (const c of checks) assert.ok(c.pass, c.name + " — " + c.detail);
@@ -737,7 +791,7 @@ test("reset restores the clean starting state, keeps IPO allotments, returns IPO
   assert.deepEqual(m.board.ipo_market, ["VOLTRA", "BLUEAI", "SHREEB", "AAROGYA"]);
   assert.equal((await GET("/api/tracking", "ADMIN")).data.kpis.orders, 0);
   assert.equal((await GET("/api/slips", "ADMIN")).data.total, 0);
-  assert.equal(num((await GET("/api/institutional-portfolio", "ADMIN")).data.account.cash), 20000000);
+  assert.equal((await GET("/api/institutional-portfolio", "ADMIN")).data.stats.transactions, 0);
 });
 
 test("cleanup: clean event, no allotments, original event start", async () => {
