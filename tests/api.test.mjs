@@ -707,6 +707,12 @@ test("FINALIZE and the final exports: Event Excel, Event JSON, Winner CSV, IPO a
   const allot = (await GET("/api/export?sheet=ipo_allotments&format=json", "ADMIN")).data;
   assert.deepEqual(allot.columns.slice(0, 5), ["Team", "IPO", "Lots", "Shares", "Amount"]);
   assert.ok(allot.rows.some((r) => r[0] === "TEAM-005" && r[1] === "VOLTRA" && r[2] === 2 && r[3] === 100 && num(r[4]) === 89000));
+  // the market can be reopened even after FINALIZE, and finalized again
+  const ro = await POST("/api/event", { action: "REOPEN", ...A }, "ADMIN"); ok(ro); assert.equal(ro.data.status, "LIVE", "REOPEN after FINALIZE");
+  const pf = (await GET("/api/portfolios", "ADMIN")).data;
+  assert.ok(JSON.stringify(pf).includes("PROVISIONAL"), "results are provisional again after reopening");
+  ok(await POST("/api/event", { action: "CLOSE", ...A }, "ADMIN"));
+  const f2 = await POST("/api/event", { action: "FINALIZE", ...A }, "ADMIN"); ok(f2); assert.equal(f2.data.status, "FINALIZED");
   tok["TEAM-012"] = await signIn("TEAM-012");
 });
 

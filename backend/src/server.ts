@@ -8,7 +8,7 @@ import { ApiError, call, ensureMigrated, rawQuery } from "./db";
 import { verifyGithubOidc } from "./oidc";
 import { buildXlsx, readCsv, readXlsx, toCsv, type Sheet } from "./xlsx";
 
-export const VERSION = "3.13.1";
+export const VERSION = "3.13.2";
 const STARTED = Date.now();
 
 // ---------------------------------------------------------------------------

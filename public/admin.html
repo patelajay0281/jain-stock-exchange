@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=315">
+<link rel="stylesheet" href="/assets/jse.css?v=316">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -168,8 +168,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=315"></script>
-<script src="/assets/jse.js?v=315"></script>
+<script src="/assets/config.js?v=316"></script>
+<script src="/assets/jse.js?v=316"></script>
 <script>
 (function () {
   "use strict";
@@ -222,7 +222,7 @@
     var w = d.ipo_window || {};
     $("stInfo").textContent = (d.started_at ? "started " + F.datetime(d.started_at) : "not started") + (d.closed_at ? " · closed " + F.datetime(d.closed_at) : "") + (d.finalized_at ? " · finalized " + F.datetime(d.finalized_at) : "") + " · resets: " + d.reset_count;
     $("stChanged").textContent = "Changed " + F.datetime(d.status_changed_at);
-    var allowed = { START: d.status === "NOT_STARTED", PAUSE: d.status === "LIVE", RESUME: d.status === "SETTLEMENT_ONLY", CLOSE: d.status === "LIVE" || d.status === "SETTLEMENT_ONLY", REOPEN: d.status === "CLOSED", FINALIZE: d.status === "CLOSED" };
+    var allowed = { START: d.status === "NOT_STARTED", PAUSE: d.status === "LIVE", RESUME: d.status === "SETTLEMENT_ONLY", CLOSE: d.status === "LIVE" || d.status === "SETTLEMENT_ONLY", REOPEN: d.status === "CLOSED" || d.status === "FINALIZED", FINALIZE: d.status === "CLOSED" };
     $("pauseBtn").setAttribute("data-ev", d.status === "SETTLEMENT_ONLY" ? "RESUME" : "PAUSE");
     $("pauseBtn").textContent = d.status === "SETTLEMENT_ONLY" ? "Resume trading" : "Pause / Resume";
     document.querySelectorAll("[data-ev]").forEach(function (b) { b.disabled = !allowed[b.getAttribute("data-ev")] || !S.admin; });
@@ -333,7 +333,7 @@
     var d = S.st || {};
     var text = { START: "Start the market? Trading becomes LIVE, team names are locked for the event and IPO allotments can no longer change.",
       PAUSE: "Pause trading? New orders stop; the Exchange and Bank can still clear queued orders.", RESUME: "Resume LIVE trading?",
-      CLOSE: "Close the market? New orders stop and the closing cash rule becomes final for eligibility.", REOPEN: "Reopen the market for trading?",
+      CLOSE: "Close the market? New orders stop and the closing cash rule becomes final for eligibility.", REOPEN: "Reopen the market for trading? If the event was finalized, the Winner / Runner-Up and the closing cash rule become provisional again until you close and finalize once more.",
       FINALIZE: "Finalize the event? Results are frozen. Every open order must be settled or rejected first." }[action];
     if (action === "START") {
       var unlisted = (d.ipo_listing || []).filter(function (x) { return !x.listed; });
