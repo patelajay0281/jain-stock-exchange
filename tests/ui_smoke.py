@@ -234,7 +234,7 @@ with sync_playwright() as pwr:
     page.wait_for_function("document.querySelectorAll('#nSec option').length > 50")
     tcs = page.evaluate("[...document.querySelectorAll('#nSec option')].find(o => o.textContent.startsWith('TCS')).value")
     page.select_option("#nSec", tcs); page.click("[data-mood=POSITIVE]")
-    check("Market News headline is generated", "TCS" in page.input_value("#nHead"), page.input_value("#nHead"))
+    check("Market News has no headline field", page.locator("#nHead").count() == 0)
     page.click("#nGo")
     page.wait_for_selector(".modal .btn.primary"); page.click(".modal .btn.primary")
     page.wait_for_function("document.querySelector('.toasts').innerText.includes('TCS')", timeout=10000)

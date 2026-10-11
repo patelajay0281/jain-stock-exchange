@@ -51,8 +51,8 @@
       <div class="row" style="margin-top:14px"><button class="btn primary caps" type="button" id="nGo">Apply random move</button><span class="small muted" id="nStatus">Market-news control ready.</span></div>
     </div>
     <div class="card-b flush"><div class="table-wrap" style="max-height:320px"><table class="t">
-      <thead><tr><th>Time</th><th>Company</th><th>Mood</th><th>Headline</th><th class="num">Move</th><th class="num">New price</th></tr></thead>
-      <tbody id="news"><tr><td colspan="6" class="empty">No market news applied yet.</td></tr></tbody></table></div></div>
+      <thead><tr><th>Time</th><th>Company</th><th>Mood</th><th class="num">Move</th><th class="num">New price</th></tr></thead>
+      <tbody id="news"><tr><td colspan="5" class="empty">No market news applied yet.</td></tr></tbody></table></div></div>
     <div class="card-b small muted" style="padding-top:10px">Prices are controlled through Market News only.</div>
   </section>
 
@@ -193,8 +193,8 @@
     $("news").innerHTML = items.length ? items.map(function (x) {
       var pct = N(x.applied_pct);
       return '<tr><td class="nowrap">' + F.time(x.created_at || x.at) + "</td><td><b>" + esc(x.security || x.name || x.symbol) + '</b><span class="sub">' + esc(x.symbol || "") + "</span></td><td>" + esc(String(x.mood || x.severity || "").replace(/_/g, " ")) +
-        '</td><td class="small">' + esc(x.headline || "") + '</td><td class="num ' + (pct > 0 ? "up" : pct < 0 ? "down" : "") + '">' + F.signedPct(pct) + '</td><td class="num"><b>' + F.price(x.new_price) + "</b></td></tr>";
-    }).join("") : '<tr><td colspan="6" class="empty">No market news applied yet.</td></tr>';
+        '</td><td class="num ' + (pct > 0 ? "up" : pct < 0 ? "down" : "") + '">' + F.signedPct(pct) + '</td><td class="num"><b>' + F.price(x.new_price) + "</b></td></tr>";
+    }).join("") : '<tr><td colspan="5" class="empty">No market news applied yet.</td></tr>';
   }
   function applyStatus(s) {
     S.status = s;

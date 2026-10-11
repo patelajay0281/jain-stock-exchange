@@ -67,11 +67,10 @@
     </section>
 
     <section class="card">
-      <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · mood generates a price move · max ±10%</span></div>
+      <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · choose company + mood · max ±10%</span></div>
       <div class="card-b">
         <div class="form-grid">
           <div class="field span-2"><label for="nSec">Company</label><select class="input" id="nSec"></select></div>
-          <div class="field span-2"><label for="nHead">Generated headline</label><input class="input" id="nHead" maxlength="240" placeholder="Choose a company and a mood"></div>
         </div>
         <div class="label" style="margin:12px 0 6px">Selected mood</div>
         <div class="moods" id="moods"></div>
@@ -305,7 +304,7 @@
   async function loadNews() {
     var n = await JSE.api.get("/api/market-news", { limit: 15 });
     $("news").innerHTML = n.news.length ? n.news.map(function (x) {
-      return "<tr" + (x.reversed ? ' class="j-undone"' : "") + "><td>" + F.time(x.created_at) + "</td><td><b>" + esc(x.name || x.symbol) + '</b><div class="tiny muted">' + esc(x.headline) + "</div></td><td>" + esc(x.mood) + '</td><td class="num ' + F.dir(x.applied_pct) + '">' + F.pct(x.applied_pct) + '</td><td class="num"><b>' + F.price(x.new_price) + "</b></td></tr>";
+      return "<tr" + (x.reversed ? ' class="j-undone"' : "") + "><td>" + F.time(x.created_at) + "</td><td><b>" + esc(x.name || x.symbol) + "</b></td><td>" + esc(x.mood) + '</td><td class="num ' + F.dir(x.applied_pct) + '">' + F.pct(x.applied_pct) + '</td><td class="num"><b>' + F.price(x.new_price) + "</b></td></tr>";
     }).join("") : '<tr><td colspan="5" class="empty">No news published.</td></tr>';
   }
   async function loadSecs() {
@@ -363,26 +362,16 @@
 
   // ---- Market News ----
   $("moods").innerHTML = MOODS.map(function (m) { return '<button type="button" class="' + m[3] + '" data-mood="' + m[0] + '" aria-pressed="false">' + m[1] + "<small>" + m[2] + "</small></button>"; }).join("");
-  var HEAD = { VERY_SEVERE: "faces a severe regulatory crisis", SEVERE: "reports a sharp fall in profits", NEGATIVE: "misses market expectations", NORMAL: "holds its annual general meeting",
-    POSITIVE: "beats quarterly estimates", VERY_POSITIVE: "wins a major new contract", SUPER_POSITIVE: "announces a record-breaking order book" };
-  function genHead() {
-    var o = $("nSec").selectedOptions[0]; if (!o || !o.value || !S.mood) return;
-    var name = o.textContent.split(" · ")[0].split(" — ").pop();
-    if (!$("nHead").dataset.edited) $("nHead").value = name + " " + HEAD[S.mood];
-  }
-  $("nHead").addEventListener("input", function () { $("nHead").dataset.edited = $("nHead").value ? "1" : ""; });
-  $("nSec").addEventListener("change", genHead);
   $("moods").addEventListener("click", function (e) { var b = e.target.closest("[data-mood]"); if (!b) return; S.mood = b.getAttribute("data-mood");
-    document.querySelectorAll("[data-mood]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); genHead(); });
+    document.querySelectorAll("[data-mood]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); });
   $("nGo").addEventListener("click", async function () {
-    var sec = $("nSec").value, head = $("nHead").value.trim();
+    var sec = $("nSec").value;
     if (!sec || !S.mood) return JSE.toast("Choose a company and a news severity.", "warn");
-    if (!head) return JSE.toast("Enter the headline.", "warn");
     var name = $("nSec").selectedOptions[0].textContent.split(" · ")[0];
-    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", html: "<p><b>" + esc(name) + "</b></p><p>“" + esc(head) + "”</p><p class=\"small muted\">The price moves immediately by a random amount inside the band (max ±10%). Open orders created at the old price are closed as MARKET PRICE CHANGED.</p>", confirmText: "Publish" }))) return;
-    try { var r = await JSE.api.post("/api/market-news", { security_id: Number(sec), mood: S.mood, headline: head });
+    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", html: "<p><b>" + esc(name) + "</b></p><p class=\"small muted\">The price moves immediately by a random amount inside the band (max ±10%). Open orders created at the old price are closed as MARKET PRICE CHANGED.</p>", confirmText: "Publish" }))) return;
+    try { var r = await JSE.api.post("/api/market-news", { security_id: Number(sec), mood: S.mood });
       JSE.toast(r.symbol + ": " + F.price(r.previous_price) + " → " + F.price(r.new_price) + " (" + F.pct(r.applied_pct) + ")" + (N(r.stale_orders) ? " · " + r.stale_orders + " order(s) now price stale" : ""), N(r.applied_pct) >= 0 ? "good" : "warn", 9000);
-      $("nHead").value = ""; $("nHead").dataset.edited = ""; loadNews(); loadSecs(); poller.now();
+      loadNews(); loadSecs(); poller.now();
     } catch (e) { JSE.toast(e.message, "bad"); }
   });
 
