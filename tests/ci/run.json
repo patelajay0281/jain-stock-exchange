@@ -25,7 +25,7 @@
       "viewers": 800
     }
   ],
-  "note": "Edit this file on the v272 branch to start a staging run. Run 11: health only (event data untouched) \u2014 v3.13.1 data saver deployed.",
+  "note": "Edit this file on the v272 branch to start a staging run. Run 12: health only (event data untouched) \u2014 v3.13.2 Reopen after Finalize.",
   "stress": {
     "orders": 1500,
     "workers": 16
