@@ -13,8 +13,9 @@
   .login p { margin: 6px 0 18px; color: var(--muted); }
   .login .field + .field { margin-top: 12px; }
   .login .logo { display: block; max-width: 260px; margin: 0 auto 18px; opacity: .95; }
-  .roles { margin-top: 16px; font-size: 12px; color: var(--muted); }
-  .login-timing { max-width: 980px; margin: 0 auto 8px; }
+  .login h1 { margin-bottom: 18px; }
+  .event-credit { text-align: center; margin: 4px auto 24px; font-size: 20px; font-weight: 800; letter-spacing: .02em; color: var(--navy); }
+  .event-credit span { font-weight: 600; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -24,17 +25,15 @@
     <form class="card" id="f" novalidate>
       <div class="card-b">
         <h1>Sign in</h1>
-        <p>For participant teams (TEAM-001 … TEAM-100) and event staff: brokers, Exchange, Bank, the institutional desk, faculty and Event Admin.</p>
         <div class="alert bad hidden" id="err" role="alert"></div>
         <div class="alert info hidden" id="info"></div>
-        <div class="field"><label for="u">Username</label><input class="input lg" id="u" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required placeholder="e.g. TEAM-001 or BROKER-01"></div>
+        <div class="field"><label for="u">Username</label><input class="input lg" id="u" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required></div>
         <div class="field"><label for="p">Password</label><input class="input lg" id="p" name="password" type="password" autocomplete="current-password" required></div>
         <div style="margin-top:20px"><button class="btn primary lg block caps" id="go" type="submit">Sign in</button></div>
-        <div class="roles">The Market page is public — no sign-in needed. Participants follow their orders and portfolio after signing in; orders are created by the assigned broker.</div>
       </div>
     </form>
   </div>
-  <div class="login-timing" id="timingBox"></div>
+  <p class="event-credit">Dalal Street 2026 <span>by Finance Interest Group</span></p>
 </main>
 <script src="/assets/config.js?v=316"></script>
 <script src="/assets/jse.js?v=316"></script>
@@ -46,7 +45,6 @@
     if (/^\/[A-Za-z0-9._\-\/?=&%]*$/.test(n) && n.indexOf("//") !== 0 && n.indexOf("/login") !== 0 && JSE.canOpen(n, user.role)) return n;
     return JSE.homeFor(user.role);
   }
-  document.getElementById("timingBox").innerHTML = JSE.cashRuleCard();
   JSE.page({ id: "login", roles: "*" }).then(function (user) {
     if (user) { location.replace(next(user)); return; }
     if (params.get("expired")) { var i = document.getElementById("info"); i.textContent = "Your session ended. Please sign in again."; i.classList.remove("hidden"); }
