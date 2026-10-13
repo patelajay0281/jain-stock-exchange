@@ -8,7 +8,7 @@ import { ApiError, call, ensureMigrated, rawQuery } from "./db";
 import { verifyGithubOidc } from "./oidc";
 import { buildXlsx, readCsv, readXlsx, toCsv, type Sheet } from "./xlsx";
 
-export const VERSION = "3.13.2";
+export const VERSION = "3.14.0";
 const STARTED = Date.now();
 
 // ---------------------------------------------------------------------------
@@ -377,6 +377,21 @@ get("/api/loan", async (ctx) => {
   return respond(ctx, 200, await cached("q:loans", 1500, () => call("jse_loans", actor(ctx), {})));
 });
 post("/api/loan", async (ctx) => { need(ctx, "ADMIN", "BANK"); return mutate(ctx, "jse_loan_action", ctx.body || {}, ["q:", "staff:", "pd:", "cash:", "bd:"]); });
+// v3.14 loan requests: request (broker / bank / admin / participant) → Bank Desk approve = cash released at once
+get("/api/loan-requests", async (ctx) => {
+  need(ctx, "ADMIN", "BANK", "VIEWER", "BROKER", "PIT_MANAGER", "PARTICIPANT");
+  return json(ctx, await call("jse_loan_requests", actor(ctx), {}));
+});
+post("/api/loan-requests", async (ctx) => {
+  const b = ctx.body || {};
+  if (String(b.action || "").toUpperCase() === "REQUEST") {
+    need(ctx, "ADMIN", "BANK", "BROKER", "PIT_MANAGER", "PARTICIPANT");
+    return mutate(ctx, "jse_loan_request", b, ["q:", "bd:"]);
+  }
+  need(ctx, "ADMIN", "BANK");
+  return mutate(ctx, "jse_loan_decide", b, ["q:", "staff:", "pd:", "cash:", "bd:"]);
+});
+post("/api/rename", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_rename_entity", ctx.body || {}, ["q:", "staff:", "inst:", "admin:", "pub:"]); });
 
 // ---- ledgers, audit, commissions ----
 get("/api/cash", async (ctx) => {

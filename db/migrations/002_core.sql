@@ -179,6 +179,28 @@ RETURNS numeric LANGUAGE sql STABLE AS $$
       AND (p_exclude_order IS NULL OR id <> p_exclude_order)), 0)
 $$;
 
+-- Per-company limit (v3.14): money committed to one company (holding at cost + open BUY orders + this order) may not exceed
+-- max_company_pct of the team's capital at cost (cash + cost of all holdings). IPO companies are exempt (allotments are fixed lots).
+CREATE OR REPLACE FUNCTION jse_check_company_limit(p_team integer, p_security integer, p_amount numeric, p_exclude_order bigint)
+RETURNS void LANGUAGE plpgsql STABLE AS $$
+DECLARE v_pct numeric; v_base numeric; v_used numeric; v_limit numeric; v_kind text; v_sym text;
+BEGIN
+  SELECT coalesce(max_company_pct, 0) INTO v_pct FROM event_config WHERE id = 1;
+  SELECT kind, symbol INTO v_kind, v_sym FROM securities WHERE id = p_security;
+  IF v_pct <= 0 OR v_kind = 'IPO' THEN RETURN; END IF;
+  SELECT t.cash + coalesce((SELECT sum(cost_basis) FROM holdings WHERE team_id = p_team), 0) INTO v_base FROM teams t WHERE t.id = p_team;
+  SELECT coalesce((SELECT cost_basis FROM holdings WHERE team_id = p_team AND security_id = p_security), 0)
+       + coalesce((SELECT sum(settlement_amount) FROM orders WHERE team_id = p_team AND security_id = p_security AND account_type = 'TEAM' AND side = 'BUY'
+                     AND status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING') AND (p_exclude_order IS NULL OR id <> p_exclude_order)), 0)
+    INTO v_used;
+  v_limit := round(v_base * v_pct / 100, 2);
+  IF v_used + p_amount > v_limit THEN
+    RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'COMPANY_LIMIT', HINT = '409',
+      MESSAGE = 'Per-company limit: a team may invest at most ' || trim(to_char(v_pct, 'FM990.##')) || '% of its funds (' || jse_inr(v_limit) || ') in ' || v_sym ||
+                '. Already committed ' || jse_inr(v_used) || '; this order needs ' || jse_inr(p_amount) || '. You can still invest ' || jse_inr(greatest(v_limit - v_used, 0)) || '.';
+  END IF;
+END $$;
+
 -- Loan principal the team can still draw (limit applies to the total principal ever drawn).
 CREATE OR REPLACE FUNCTION jse_loan_room(p_team integer) RETURNS numeric LANGUAGE sql STABLE AS $$
   SELECT CASE WHEN c.loans_enabled THEN greatest(0, c.loan_max_principal - coalesce(l.original_principal, 0)) ELSE 0 END
@@ -525,28 +547,27 @@ BEGIN
       ' per order (this order: ' || jse_inr(v_tv) || ').', 400);
   END IF;
 
-  -- risk checks (recorded and shown to the Pit Manager, Exchange and Bank; the Bank enforces them)
+  -- P0 financial safety (v3.14): one team's orders are serialised by locking the team row, so two desks cannot sell the
+  -- same shares or commit the same cash twice. Short selling and buying beyond free cash are refused here (and again at the Bank).
+  PERFORM 1 FROM teams WHERE id = v_team.id FOR UPDATE;
+  IF v_sec.price <> trunc(v_sec.price) THEN
+    PERFORM jse_fail('PRICE_NOT_WHOLE', v_sec.symbol || ' price must be whole rupees. Ask the Event Admin to correct the price.', 409);
+  END IF;
   IF v_side = 'SELL' THEN
     SELECT * INTO v_avail FROM jse_available_qty(v_team.id, v_sec.id, NULL);
     IF v_qty > v_avail.available THEN
-      v_short := true;
-      v_warnings := v_warnings || jsonb_build_object('code', 'SHORT_SELL', 'message',
-        'Short selling is not allowed: ' || v_team.code || ' can sell only ' || greatest(v_avail.available, 0) || ' ' || v_sec.symbol ||
-        ' shares (holding ' || v_avail.holding || ', already in open sell orders ' || v_avail.open_sell || '). The attempt has been recorded; the Bank will reject it unless the holding is sufficient.');
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_NOT_ALLOWED', HINT = '409',
+        MESSAGE = 'Short selling is not allowed. You can sell only the shares available in your portfolio. Please reduce the quantity or check your holdings. (' ||
+                  v_team.code || ' can sell ' || greatest(v_avail.available, 0) || ' ' || v_sec.symbol || ': holding ' || v_avail.holding || ', in open sell orders ' || v_avail.open_sell || ')';
     END IF;
   ELSE
     v_free_cash := jse_available_cash(v_team.id, NULL);
-    v_room := jse_loan_room(v_team.id);
-    IF v_amount > v_free_cash + v_room THEN
-      v_shortfall := true;
-      v_warnings := v_warnings || jsonb_build_object('code', 'CASH_SHORTFALL', 'message',
-        'Cash shortfall: this BUY needs ' || jse_inr(v_amount) || ' but ' || v_team.code || ' has ' || jse_inr(greatest(v_free_cash, 0)) ||
-        ' free cash and ' || jse_inr(v_room) || ' of loan room. The attempt has been recorded; the Bank will reject it unless funds are available.');
-    ELSIF v_amount > v_free_cash THEN
-      v_warnings := v_warnings || jsonb_build_object('code', 'LOAN_NEEDED', 'message',
-        'This BUY needs about ' || jse_inr(round(v_amount - greatest(v_free_cash, 0), 2)) || ' more than the free cash. The Bank will draw that amount as a loan at settlement (' ||
-        jse_rate_text(cfg.loan_interest_rate) || ' interest).');
+    IF v_amount > v_free_cash THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSUFFICIENT_BALANCE', HINT = '409',
+        MESSAGE = 'Insufficient balance! Your available cash is ' || jse_inr(greatest(v_free_cash, 0)) || ', but this order requires ' || jse_inr(v_amount) ||
+                  ', including applicable charges. Please reduce the order quantity or obtain an approved loan before placing this order.';
     END IF;
+    PERFORM jse_check_company_limit(v_team.id, v_sec.id, v_amount, NULL);
   END IF;
 
   v_id := nextval(pg_get_serial_sequence('orders', 'id'));
@@ -870,6 +891,13 @@ BEGIN
 
   IF v_team_buys THEN
     v_req := v_tv + v_brk;
+    IF o.account_type = 'TEAM' THEN
+      BEGIN
+        PERFORM jse_check_company_limit(t.id, s.id, v_req, o.id);
+      EXCEPTION WHEN SQLSTATE 'JSE01' THEN
+        RETURN jse__bank_reject(a, o, 'COMPANY_LIMIT', SQLERRM, '{}'::jsonb);
+      END;
+    END IF;
     IF v_cash < v_req THEN
       -- own money first: only the shortfall is borrowed, automatically, within the loan limit
       v_room := CASE WHEN cfg.loans_enabled THEN greatest(0, cfg.loan_max_principal - ln.original_principal) ELSE 0 END;

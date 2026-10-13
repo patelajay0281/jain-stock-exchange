@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create Order · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=316">
+<link rel="stylesheet" href="/assets/jse.css?v=317">
 <style>
   .ticket .card-b { display: grid; gap: 18px; }
   .done { border: 1px solid var(--green-line); background: var(--green-soft); border-radius: 10px; padding: 12px 14px; }
@@ -65,9 +65,17 @@
       <div id="result" aria-live="polite"></div>
     </div>
   </form>
+
+  <form class="card" id="loanForm" novalidate style="margin-top:14px">
+    <div class="card-h"><h2>Request a bank loan</h2><span class="meta">The Bank Desk approves it; the approved amount is credited at once</span></div>
+    <div class="card-b"><div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div class="field" style="min-width:180px"><label for="loanAmt">Amount (₹, whole rupees)</label><input class="input" id="loanAmt" type="number" min="1000" step="1000" inputmode="numeric"></div>
+      <button class="btn" type="submit" id="loanGo">Send loan request for the selected team</button>
+      <span class="small muted" id="loanMsg"></span></div></div>
+  </form>
 </main>
-<script src="/assets/config.js?v=316"></script>
-<script src="/assets/jse.js?v=316"></script>
+<script src="/assets/config.js?v=317"></script>
+<script src="/assets/jse.js?v=317"></script>
 <script>
 (function () {
   "use strict";
@@ -98,7 +106,7 @@
   function preview() {
     var s = sec(), t = team(), q = N($("qty").value), rate = N(S.desk ? S.desk.rules.brokerage_rate : 0.005), sell = S.side === "SELL";
     $("pvBrkK").textContent = "Brokerage";
-    $("mp").value = s ? N(s.price).toFixed(2) : "—";
+    $("mp").value = s ? F.money(s.price) : "—";
     if (s) $("lotHint").textContent = "Multiples of " + s.lot_size + " shares" + (q && q % s.lot_size === 0 ? " · " + (q / s.lot_size) + " lot(s)" : " · not a whole lot");
     var p = s ? N(s.price) : 0, tv = q > 0 && p > 0 ? q * p : 0, brk = Math.round(tv * rate * 100 + 1e-6) / 100;
     $("pvSh").textContent = q > 0 ? F.num(q) : "0";
@@ -113,15 +121,15 @@
     var out = [], r = S.desk ? S.desk.rules : {};
     if (s && q && q % s.lot_size !== 0) out.push(["bad", s.symbol + " trades in multiples of " + s.lot_size + " shares (50, 100, 150 …)."]);
     if (tv && tv > N(r.max_order_value)) out.push(["bad", "Maximum order value is " + F.money(r.max_order_value) + " per order."]);
-    if (t && s && tv) {
+    S.block = !!(s && q && q % s.lot_size !== 0);
+    if (t && s) {
       var h = (t.holdings || []).filter(function (x) { return x.symbol === s.symbol; })[0];
-      var avail = h ? N(h.available) : 0;
-      if (S.side === "SELL" && q > avail) out.push(["warn", "Short selling is not allowed: " + t.code + " holds " + F.num(avail) + " " + s.symbol + " shares available to sell. The attempt is recorded; only an explicit Exchange approval can pass it and the Bank still checks the holding."]);
-      if (S.side === "BUY") {
-        var need = tv + brk, free = N(t.free_cash), room = N(t.loan_room);
-        if (need > free + room) out.push(["warn", "Insufficient balance: needs " + F.money(need) + "; " + t.code + " has " + F.money(free) + " available cash and " + F.money(room) + " loan capacity. The Bank will reject it."]);
-        else if (need > free) out.push(["info", "Bank loan: about " + F.money(need - free) + " will be drawn automatically at Bank settlement (" + JSE.rate(r.loan_interest_rate) + " interest)."]);
-      }
+      var avail = h ? N(h.available) : 0, free = N(t.free_cash);
+      out.push(["info", t.code + " · available cash " + F.money(free) + " · " + s.symbol + " shares available to sell: " + F.num(avail)]);
+      if (S.side === "SELL" && q > avail) { S.block = true;
+        out.push(["bad", "Short selling is not allowed. You can sell only the shares available in your portfolio. Please reduce the quantity or check your holdings."]); }
+      if (S.side === "BUY" && tv && tv + brk > free) { S.block = true;
+        out.push(["bad", "Insufficient balance! Your available cash is " + F.money(free) + ", but this order requires " + F.money(tv + brk) + ", including applicable charges. Please reduce the order quantity or obtain an approved loan before placing this order."]); }
     }
     $("checks").innerHTML = out.map(function (x) { return '<div class="alert ' + x[0] + '" style="margin-bottom:8px">' + esc(x[1]) + "</div>"; }).join("");
   }
@@ -133,6 +141,7 @@
     if (!$("team").value) return JSE.toast("Select the participant team.", "warn");
     if (!s) return JSE.toast("Select a stock or IPO.", "warn");
     if (q <= 0 || q % s.lot_size !== 0) return JSE.toast(s.symbol + " trades in multiples of " + s.lot_size + " shares.", "warn");
+    if (S.block) { res.innerHTML = '<div class="alert bad"><b>Not submitted.</b> Correct the order first (see the message above).</div>'; return; }
     var body = { team: $("team").value, symbol: s.symbol, side: S.side, quantity: q, expected_price: N(s.price), idempotency_key: S.key };
     S.busy = true; var btn = $("submit"); btn.disabled = true; var label = btn.textContent; btn.innerHTML = '<span class="spinner"></span> Submitting…';
     try {
@@ -177,6 +186,17 @@
   $("sec").addEventListener("change", function () { var s = sec(); if (s) { $("qty").step = s.lot_size; $("qty").min = s.lot_size; } preview(); });
   $("qty").addEventListener("input", preview);
   $("ticket").addEventListener("submit", submit);
+  $("loanForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var team = $("team").value, amt = N($("loanAmt").value);
+    if (!team) return JSE.toast("Select the participant team first.", "warn");
+    if (!(amt > 0) || amt !== Math.floor(amt)) return JSE.toast("Enter the loan amount in whole rupees.", "warn");
+    $("loanGo").disabled = true;
+    try { var r = await JSE.api.post("/api/loan-requests", { action: "REQUEST", team: team, amount: amt });
+      $("loanMsg").textContent = r.message; JSE.toast(r.message, "good"); $("loanAmt").value = ""; }
+    catch (ex) { $("loanMsg").textContent = ex.message; JSE.toast(ex.message, "bad", 8000); }
+    finally { $("loanGo").disabled = false; }
+  });
   $("brokerSel").addEventListener("change", function () { S.broker = $("brokerSel").value; $("team").value = ""; desk.now(); });
 
   JSE.page({ id: "order" }).then(function (user) {

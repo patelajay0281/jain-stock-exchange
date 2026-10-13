@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bank Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=316">
+<link rel="stylesheet" href="/assets/jse.css?v=317">
 <style>
   .lp-grid { display: grid; grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(0, 1fr)); gap: 12px; align-items: end; }
   .lp-act { display: flex; gap: 12px; align-items: end; margin-top: 14px; flex-wrap: wrap; }
@@ -17,7 +17,7 @@
 <body>
 <main id="main" class="wrap wide">
   <section class="band green">
-    <div><h1>CMS BANK LTD</h1><p>Approve or reject exchange-approved transactions based on available participant cash and settlement requirements.</p></div>
+    <div><h1 id="bankName">CMS BANK LTD</h1><p>Approve or reject exchange-approved transactions based on available participant cash and settlement requirements.</p></div>
     <span class="tag">CMS Bank Ltd · Bank control</span>
   </section>
   <div class="kpis k5" id="kpis"></div>
@@ -27,6 +27,16 @@
       <div class="row"><input class="input sm hidden" id="q" type="search" aria-hidden="true"><span class="meta" id="conn">Settlement queue</span></div>
     </div>
     <div class="txn-grid green" id="rows"><div class="empty">Loading…</div></div>
+  </section>
+
+  <section class="card" style="margin-top:18px">
+    <div class="card-h bar green"><h2>Loan requests</h2><span class="meta">Approve = the approved amount is credited to the team at once (never twice)</span></div>
+    <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t"><thead><tr><th>Request</th><th>Team</th><th class="num">Requested</th><th class="num">Cash now</th><th class="num">Loan room</th><th>Status</th><th class="actions">Approve amount</th></tr></thead>
+      <tbody id="lreq"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody></table></div></div>
+    <div class="card-b"><div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div class="field"><label for="lrTeam">New request for team</label><input class="input" id="lrTeam" placeholder="TEAM-001" style="max-width:150px"></div>
+      <div class="field"><label for="lrAmt">Amount (₹)</label><input class="input" id="lrAmt" type="number" min="1000" step="1000" style="max-width:160px"></div>
+      <button class="btn" id="lrGo" type="button">Create request</button></div></div>
   </section>
 
   <section class="card loanpay" style="margin-top:18px">
@@ -61,8 +71,8 @@
       <tbody id="recent"></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=316"></script>
-<script src="/assets/jse.js?v=316"></script>
+<script src="/assets/config.js?v=317"></script>
+<script src="/assets/jse.js?v=317"></script>
 <script>
 (function () {
   "use strict";
@@ -145,7 +155,34 @@
     render();
     $("conn").textContent = "Settlement queue · " + new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase();
   }
-  async function loadLoans() { S.loans = await JSE.api.get("/api/loan"); renderLoans(); }
+  async function loadLoans() { S.loans = await JSE.api.get("/api/loan"); renderLoans(); loadReq(); }
+  async function loadReq() {
+    var d = await JSE.api.get("/api/loan-requests");
+    if (d.bank_name) $("bankName").textContent = d.bank_name;
+    var rows = d.requests || [];
+    $("lreq").innerHTML = rows.length ? rows.map(function (r) {
+      var pend = r.status === "PENDING";
+      return "<tr><td><b>" + esc(r.request_no) + '</b><div class="tiny muted">' + esc(r.requested_by || "") + " · " + F.time(r.requested_at) + "</div></td><td>" + esc(r.team) + '<div class="tiny muted">' + esc(r.team_name || "") + '</div></td><td class="num">' +
+        F.money(r.requested_amount) + '</td><td class="num">' + F.money(r.cash) + '</td><td class="num">' + F.money(r.loan_room) + "</td><td>" +
+        (pend ? '<span class="badge prov">PENDING</span>' : '<span class="badge ' + (r.status === "DISBURSED" ? "ok" : "bad") + '">' + esc(r.status) + "</span>" +
+          (r.approved_amount ? '<div class="tiny muted">' + F.money(r.approved_amount) + " · " + esc(r.decided_by || "") + "</div>" : "")) + '</td><td class="actions">' +
+        (pend && S.canAct ? '<input class="input sm" type="number" step="1000" value="' + N(r.requested_amount) + '" data-amt="' + r.id + '" style="width:120px"> <button class="btn sm approve" data-lr="' + r.id + '" data-a="APPROVE">Approve &amp; release</button> <button class="btn sm reject" data-lr="' + r.id + '" data-a="REJECT">Reject</button>' : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="7" class="empty">No loan requests yet.</td></tr>';
+  }
+  $("lreq").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-lr]"); if (!b) return;
+    var id = Number(b.getAttribute("data-lr")), a = b.getAttribute("data-a"), amtEl = document.querySelector('[data-amt="' + id + '"]');
+    b.disabled = true;
+    try { var r = await JSE.api.post("/api/loan-requests", { action: a, request_id: id, approved_amount: amtEl ? N(amtEl.value) : undefined });
+      JSE.toast(r.message, a === "APPROVE" ? "good" : "warn", 9000); }
+    catch (ex) { JSE.toast(ex.message, "bad", 9000); }
+    finally { b.disabled = false; loadLoans(); }
+  });
+  $("lrGo").addEventListener("click", async function () {
+    try { var r = await JSE.api.post("/api/loan-requests", { action: "REQUEST", team: $("lrTeam").value.trim().toUpperCase(), amount: N($("lrAmt").value) });
+      JSE.toast(r.message, "good"); $("lrAmt").value = ""; loadReq(); }
+    catch (ex) { JSE.toast(ex.message, "bad", 8000); }
+  });
 
   async function act(id, action) {
     if (S.busy[id]) return; S.busy[id] = true;

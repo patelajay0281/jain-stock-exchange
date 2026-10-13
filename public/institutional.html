@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Institutional Investors · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=316">
+<link rel="stylesheet" href="/assets/jse.css?v=317">
 <style>
   .inst-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
   .moods { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
@@ -30,7 +30,7 @@
 <body>
 <main id="main" class="wrap wide">
   <div class="page-head">
-    <div><h1>Institutional Investors</h1>
+    <div><h1>Institutional Investors <span id="instName" class="muted" style="font-weight:600"></span></h1>
       <p id="ruleText">Institutional trading desk with unrestricted cash and holdings — institutional activity is recorded only as transactions. A participant buys from the institution at 2% above the market price and sells to it at 2% below; the trade goes through the normal Exchange → Bank workflow.</p></div>
     <div class="tools"><select class="input sm hidden" id="instSel" aria-label="Institution" style="width:auto"></select>
       <span class="pill not-started" id="mkt"><span class="dot"></span><span id="mktText">Market</span></span></div>
@@ -99,8 +99,8 @@
       <tbody id="orders"><tr><td colspan="10" class="empty">Loading institutional transaction desk…</td></tr></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=316"></script>
-<script src="/assets/jse.js?v=316"></script>
+<script src="/assets/config.js?v=317"></script>
+<script src="/assets/jse.js?v=317"></script>
 <script>
 (function () {
   "use strict";
@@ -185,6 +185,7 @@
 
   async function load() {
     S.data = await JSE.api.get("/api/institutional-portfolio", S.inst ? { institution_id: S.inst } : null);
+    if (S.data.institution && S.data.institution.name) $("instName").textContent = "· " + S.data.institution.name;
     render();
   }
   async function loadNews() {

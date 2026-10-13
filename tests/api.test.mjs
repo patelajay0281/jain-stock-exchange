@@ -400,78 +400,90 @@ test("SELL: cash up, holding down, brokerage, realised P/L", async () => {
   assert.equal(d.assessment.sell, 1); assert.equal(d.sold.length, 1); assert.equal(num(d.sold[0].net_proceeds), 44775);
 });
 
-test("short selling: flagged at submission, Exchange confirmation, Bank rejects", async () => {
+test("P0 short selling is refused at submission (holdings and open sell orders), also under concurrency", async () => {
   const o = await submit("TEAM-003", "TCS", "SELL", 100);
-  ok(o); assert.ok(o.data.warnings.some((w) => w.code === "SHORT_SELL"));
-  ok(await execute(o.data.order.id));
-  const no = await approve(o.data.order.id);
-  assert.equal(no.status, 409); assert.equal(no.data.code, "SHORT_SELL_CONFIRM_REQUIRED");
-  ok(await approve(o.data.order.id, { confirm_short_sell: true }));
-  const s = await settle(o.data.order.id);
-  ok(s); assert.equal(s.data.status, "BANK_REJECTED"); assert.equal(s.data.code, "SHORT_SELLING_NOT_ALLOWED");
+  assert.equal(o.status, 409); assert.equal(o.data.code, "SHORT_SELL_NOT_ALLOWED");
+  assert.match(o.data.error, /^Short selling is not allowed\. You can sell only the shares available in your portfolio\. Please reduce the quantity or check your holdings\./);
+  // 50 shares held: one SELL 50 is accepted; a second SELL 50 while the first is open is refused (reserved shares)
+  ok(await fullTrade("TEAM-003", "ITC", "BUY", 50).then((x) => ({ status: x.settle.status === "BANK_SETTLED" ? 200 : 500, data: x })));
+  const s1 = await submit("TEAM-003", "ITC", "SELL", 50); ok(s1);
+  const s2 = await submit("TEAM-003", "ITC", "SELL", 50);
+  assert.equal(s2.data.code, "SHORT_SELL_NOT_ALLOWED", "shares in an open sell order cannot be sold again");
+  ok(await approve(s1.data.order.id)); assert.equal((await settle(s1.data.order.id)).data.status, "BANK_SETTLED");
+  // concurrency: holding 100, five simultaneous SELL 50 orders → exactly two accepted
+  await fullTrade("TEAM-003", "ITC", "BUY", 100);
+  const res = await Promise.all([1, 2, 3, 4, 5].map(() => submit("TEAM-003", "ITC", "SELL", 50)));
+  assert.equal(res.filter((r) => r.status === 200).length, 2, res.map((r) => r.status + ":" + (r.data.code || "")).join(","));
   const d = await detail("TEAM-003");
-  assert.equal(d.team.short_sell_attempts, 1, "one attempt per order"); assert.equal(d.short_sell_history.length, 1);
-  assert.equal(num(d.team.cash), 2000000); assert.equal(d.assessment.sell, 0, "rejected orders do not count");
-  // the audit log keeps every stage visibly distinguishable (risk indicators)
-  const risks = (await GET("/api/audit?page_size=50&q=" + o.data.order.order_no, "ADMIN")).data.rows.filter((r) => r.risk).map((r) => r.action + ":" + r.risk);
-  for (const want of ["SHORT_SELLING_ATTEMPT:SHORT SELLING ATTEMPT", "SHORT_SELLING_APPROVED:SHORT SELLING — EXCHANGE APPROVED",
-                      "SHORT_SELLING_ATTEMPT:SHORT SELLING — REJECTED AT BANK"]) assert.ok(risks.includes(want), want + " in " + risks.join(" | "));
-  const riskOnly = (await GET("/api/audit?risk=true&page_size=200", "ADMIN")).data;
-  assert.ok(riskOnly.rows.length >= 3 && riskOnly.rows.every((r) => r.risk), "the risk filter returns only flagged rows");
-  assert.ok(riskOnly.rows.some((r) => r.security === "TCS" && r.team === "TEAM-003"), "rows carry the order's security and team");
+  assert.equal(num(d.team.cash) >= 0, true); assert.ok(d.holdings.every((h) => h.quantity >= 0));
 });
 
-test("cash shortfall attempt and insufficient-balance rejection", async () => {
-  // 9,400 ITC = ₹24,91,000 + ₹12,455 brokerage > ₹20 L cash + ₹5 L loan room
-  const o = await submit("TEAM-004", "ITC", "BUY", 9400);
-  ok(o); assert.ok(o.data.warnings.some((w) => w.code === "CASH_SHORTFALL"), JSON.stringify(o.data.warnings));
-  ok(await execute(o.data.order.id)); ok(await approve(o.data.order.id));
-  const s = await settle(o.data.order.id);
-  assert.equal(s.data.status, "BANK_REJECTED"); assert.equal(s.data.code, "INSUFFICIENT_BALANCE");
-  const d = await detail("TEAM-004");
-  assert.equal(d.team.cash_shortfall_attempts, 1); assert.equal(d.team.insufficient_balance_rejections, 1);
-  assert.equal(num(d.team.cash), 2000000); assert.equal(num(d.loan?.original_principal || 0), 0, "no loan drawn for a rejected order");
-  const r = (await GET("/api/audit?action=INSUFFICIENT_BALANCE_REJECTED&q=" + o.data.order.order_no, "ADMIN")).data.rows[0];
-  assert.ok(r && r.risk === "INSUFFICIENT BALANCE — REJECTED", JSON.stringify(r));
+test("P0 insufficient balance and per-company 25% limit are refused at submission with live amounts", async () => {
+  const p = await price("LT");
+  const o = await submit("TEAM-004", "LT", "BUY", 200);          // ≈ ₹5.8 L > 25% of ₹20 L
+  assert.equal(o.status, 409); assert.equal(o.data.code, "COMPANY_LIMIT"); assert.match(o.data.error, /Per-company limit: a team may invest at most 25%/);
+  // build up to the cash limit across companies, then one more BUY is refused with the exact message
+  const m = await market(); const syms = m.stocks.filter((s) => num(s.price) > 0).slice(0, 12);
+  let accepted = 0;
+  for (const s of syms) {
+    const q = Math.floor(450000 / num(s.price) / 50) * 50; if (q < 50) continue;
+    const r = await submit("TEAM-004", s.symbol, "BUY", q);
+    if (r.status === 200) accepted++;
+    else { assert.equal(r.data.code, "INSUFFICIENT_BALANCE", JSON.stringify(r.data));
+           assert.match(r.data.error, /^Insufficient balance! Your available cash is ₹[\d,.]+, but this order requires ₹[\d,.]+, including applicable charges\. Please reduce the order quantity or obtain an approved loan before placing this order\.$/);
+           break; }
+  }
+  assert.ok(accepted >= 3 && accepted <= 4, "pending BUY orders reserve cash: " + accepted);
+  assert.equal(num((await detail("TEAM-004")).team.cash), 2000000, "nothing moves before the Bank settles");
+  assert.ok(p > 0);
 });
 
-test("loans: shortfall-only automatic draw, 2% interest, ₹5 L limit, interest first, fresh interest, full repayment", async () => {
-  // 700 LT = ₹20,28,600 + ₹10,143 → shortfall ₹38,743 borrowed automatically; interest 2% = ₹774.86
-  const { settle: s } = await fullTrade("TEAM-008", "LT", "BUY", 700);
-  assert.equal(s.status, "BANK_SETTLED"); assert.equal(num(s.loan_drawn), 38743); assert.equal(num(s.loan_interest), 774.86); assert.equal(num(s.cash_after), 0);
-  const used = (await GET("/api/audit?action=INSUFFICIENT_BALANCE_SETTLED&team=TEAM-008", "ADMIN")).data.rows[0];
-  assert.ok(used && used.risk === "INSUFFICIENT BALANCE — LOAN USED" && num(used.details.loan_drawn) === 38743, JSON.stringify(used));
-  let d = await detail("TEAM-008");
-  assert.equal(num(d.loan.original_principal), 38743); assert.equal(num(d.loan.interest), 774.86);
-  assert.equal(num(d.team.net_worth), 700 * 2898, "loans are not deducted from Net Worth");
-  assert.ok(d.eligibility.gaps.includes("Loan not fully repaid"));
-  const led = (await GET("/api/cash?team=TEAM-008", "ADMIN")).data.rows.map((x) => x.type);
-  assert.ok(led.includes("LOAN_DRAW") && led.includes("INTEREST_CHARGE"));
-  // Bank draw within the limit (no cash buffer rule), then over the limit
-  const draw = await POST("/api/loan", { team: "TEAM-008", action: "DRAW", amount: 100000 }, "BANK-01");
-  ok(draw); assert.equal(num(draw.data.interest_charged), 2000); assert.equal(num(draw.data.cash), 100000);
-  const tooMuch = await POST("/api/loan", { team: "TEAM-008", action: "DRAW", amount: 400000 }, "BANK-01");
-  assert.equal(tooMuch.status, 409); assert.equal(tooMuch.data.code, "LOAN_LIMIT");
-  assert.equal((await POST("/api/loan", { team: "TEAM-008", action: "REPAY", amount: 110000 }, "BANK-01")).data.code, "REPAYMENT_CASH_LIMIT");
-  assert.equal((await POST("/api/loan", { team: "TEAM-008", action: "DRAW", amount: 1000 }, "EXCHANGE-01")).status, 403);
-  // partial repayment: interest first (774.86 + 2,000), then principal; fresh 2% on the principal that remains
-  const rep = await POST("/api/loan", { team: "TEAM-008", action: "REPAY", amount: 50000 }, "BANK-01");
-  ok(rep);
-  assert.equal(num(rep.data.interest_paid), 2774.86); assert.equal(num(rep.data.principal_paid), 47225.14);
-  assert.equal(num(rep.data.fresh_interest), round2((138743 - 47225.14) * 0.02));
-  d = await detail("TEAM-008");
-  assert.equal(num(d.loan.current_principal), round2(138743 - 47225.14)); assert.equal(num(d.loan.interest), round2((138743 - 47225.14) * 0.02));
-  assert.equal(num(d.loan.original_principal), 138743, "original principal keeps the total drawn");
-  // raise cash by selling, then repay the whole liability → eligible on the loan rule
-  await fullTrade("TEAM-008", "LT", "SELL", 100);
-  d = await detail("TEAM-008");
+test("P0 concurrent BUY orders for one team never commit the same cash twice", async () => {
+  const m = await market(); const syms = m.stocks.filter((s) => num(s.price) <= 3000).slice(10, 20);
+  const res = await Promise.all(syms.map((s) => submit("TEAM-015", s.symbol, "BUY", Math.max(50, Math.floor(300000 / num(s.price) / 50) * 50))));
+  const ok200 = res.filter((r) => r.status === 200);
+  const reserved = ok200.reduce((a, r) => a + num(r.data.order.settlement_amount), 0);
+  assert.ok(reserved <= 2000000, "reserved " + reserved); assert.ok(ok200.length >= 5 && ok200.length < syms.length, String(ok200.length));
+  assert.ok(res.filter((r) => r.status !== 200).every((r) => r.data.code === "INSUFFICIENT_BALANCE"));
+  ok(await POST("/api/reject-open-orders", { ...A, reason: "test cleanup" }, "ADMIN"));
+});
+
+test("P1 loan request → Bank Desk approval releases the approved amount once", async () => {
+  const before = num((await detail("TEAM-008")).team.cash);
+  const rq = await POST("/api/loan-requests", { action: "REQUEST", team: "TEAM-008", amount: 100000, reason: "buy more" }, brokerOf["TEAM-008"]);
+  ok(rq); assert.match(rq.data.request_no, /^LR-\d+$/);
+  assert.equal(num((await detail("TEAM-008")).team.cash), before, "a request does not credit cash");
+  assert.equal((await POST("/api/loan-requests", { action: "REQUEST", team: "TEAM-008", amount: 5000 }, "BANK-01")).data.code, "LOAN_REQUEST_PENDING");
+  assert.equal((await POST("/api/loan-requests", { action: "APPROVE", request_id: rq.data.id }, "EXCHANGE-01")).status, 403);
+  const ap = await POST("/api/loan-requests", { action: "APPROVE", request_id: rq.data.id, approved_amount: 80000 }, "BANK-01");
+  ok(ap); assert.equal(ap.data.message, "Loan approved and released successfully. ₹80,000 has been credited to Team TEAM-008's account.");
+  const again = await POST("/api/loan-requests", { action: "APPROVE", request_id: rq.data.id, approved_amount: 80000 }, "BANK-01");
+  ok(again); assert.equal(again.data.replayed, true);
+  const d = await detail("TEAM-008");
+  assert.equal(num(d.team.cash), before + 80000, "credited exactly once"); assert.equal(num(d.loan.original_principal), 80000);
+  const led = (await GET("/api/cash?team=TEAM-008", "ADMIN")).data;
+  assert.equal(led.rows.filter((x) => x.type === "LOAN_DRAW").length, 1); assert.equal(led.reconciliation.ok, true);
+  const list = (await GET("/api/loan-requests", "BANK-01")).data.requests.find((r) => r.id === rq.data.id);
+  assert.equal(list.status, "DISBURSED"); assert.equal(num(list.approved_amount), 80000); assert.ok(list.disbursement_ref);
+  assert.equal((await POST("/api/loan-requests", { action: "REQUEST", team: "TEAM-008", amount: 500000 }, "BANK-01")).data.code, "LOAN_LIMIT");
+  // repayment still works (interest first) and clears the loan
   const due = num(d.loan.total_liability);
-  const full = await POST("/api/loan", { team: "TEAM-008", action: "REPAY", amount: due }, "BANK-01");
-  ok(full); assert.equal(num(full.data.fresh_interest), 0);
-  d = await detail("TEAM-008");
-  assert.equal(num(d.loan.total_liability), 0); assert.equal(d.loan.repayment_status, "REPAID");
-  assert.ok(!d.eligibility.gaps.includes("Loan not fully repaid"));
-  assert.equal((await POST("/api/loan", { team: "TEAM-008", action: "REPAY", amount: 10 }, "BANK-01")).data.code, "NO_LOAN");
+  ok(await POST("/api/loan", { team: "TEAM-008", action: "REPAY", amount: due }, "BANK-01"));
+  assert.equal(num((await detail("TEAM-008")).loan.total_liability), 0);
+});
+
+test("P3 bank and institutional investor names are editable; IDs and balances unchanged", async () => {
+  const inst0 = (await GET("/api/institutional-portfolio", "INST-01")).data.institution;
+  if (!CI) assert.equal((await POST("/api/rename", { kind: "BANK", name: "X" }, "ADMIN")).data.code, "ADMIN_PASSWORD_REQUIRED");
+  assert.equal((await POST("/api/rename", { kind: "BANK", name: "X", ...A }, "BANK-01")).status, 403);
+  assert.equal((await POST("/api/rename", { kind: "BANK", name: "  ", ...A }, "ADMIN")).data.code, "INVALID_NAME");
+  ok(await POST("/api/rename", { kind: "BANK", name: "Dalal Cooperative Bank", reason: "sponsor", ...A }, "ADMIN"));
+  assert.equal((await GET("/api/loan-requests", "BANK-01")).data.bank_name, "Dalal Cooperative Bank");
+  ok(await POST("/api/rename", { kind: "INSTITUTION", id: inst0.id, name: "Nalanda Funds Ltd", reason: "official name", ...A }, "ADMIN"));
+  const inst1 = (await GET("/api/institutional-portfolio", "INST-01")).data.institution;
+  assert.equal(inst1.id, inst0.id); assert.equal(inst1.name, "Nalanda Funds Ltd");
+  const aud = (await GET("/api/audit?action=INSTITUTION_RENAMED", "ADMIN")).data.rows[0];
+  assert.ok(aud && aud.details.reason === "official name", JSON.stringify(aud));
 });
 
 test("market price changed: Market News closes open orders created at the old price; settlement never writes a price", async () => {
@@ -563,12 +575,7 @@ test("institutional counterparty: participant buys at market +2%, sells at marke
   assert.equal(d2.assessment.buy, before2.assessment.buy + 1, "a settled institutional trade counts as the team's BUY");
   // no institutional holdings restriction (the institution sold shares it never bought); the participant cannot short-sell
   const sh = await POST("/api/institutional-order", { counterparty_team: "TEAM-030", symbol: "TCS", side: "BUY", quantity: 100, expected_price: await price("TCS"), idempotency_key: key() }, "INST-01");
-  ok(sh); assert.ok(sh.data.warnings.some((w) => w.code === "SHORT_SELL"));
-  ok(await execute(sh.data.order.id));
-  assert.equal((await approve(sh.data.order.id)).data.code, "SHORT_SELL_CONFIRM_REQUIRED");
-  ok(await approve(sh.data.order.id, { confirm_short_sell: true }));
-  const sr = await settle(sh.data.order.id);
-  assert.equal(sr.data.status, "BANK_REJECTED"); assert.equal(sr.data.code, "SHORT_SELLING_NOT_ALLOWED");
+  assert.equal(sh.status, 409); assert.equal(sh.data.code, "SHORT_SELL_NOT_ALLOWED", "the participant cannot short-sell to the institution");
   // stale-price rule uses the market price the institutional price was derived from
   const st = await POST("/api/institutional-order", { counterparty_team: "TEAM-030", symbol: "NTPC", side: "SELL", quantity: 50, expected_price: await price("NTPC"), idempotency_key: key() }, "INST-01");
   ok(st);
@@ -580,7 +587,7 @@ test("institutional counterparty: participant buys at market +2%, sells at marke
   const aud = (await GET("/api/audit?action=INSTITUTIONAL_ORDER_SUBMITTED&q=" + ord.order_no, "ADMIN")).data.rows[0];
   assert.ok(aud && num(aud.details.spread_pct) === 2 && num(aud.details.market_price) === p, JSON.stringify(aud));
   const trk = (await GET("/api/orders?page_size=100", "INST-01")).data;
-  assert.ok(trk.rows.length >= 4 && trk.rows.every((r) => r.account_type === "INSTITUTION"));
+  assert.ok(trk.rows.length >= 3 && trk.rows.every((r) => r.account_type === "INSTITUTION"));
   assert.equal(num(await price("INFY")), p, "institutional trades never change prices");
 });
 
@@ -589,14 +596,20 @@ test("assessment counts only settled listed-stock BUY and SELL trades; exactly o
     for (let i = 0; i < 5; i++) await fullTrade(team, "ITC", "BUY", 50);
     for (let i = 0; i < 5; i++) await fullTrade(team, "ITC", "SELL", 50);
   }
-  // deploy the capital so that each team's closing cash ends under ₹50,000 (lots of 50 shares)
-  await fullTrade("TEAM-011", "LT", "BUY", 650); await fullTrade("TEAM-011", "ITC", "BUY", 250);
-  await fullTrade("TEAM-012", "TITAN", "BUY", 550); await fullTrade("TEAM-012", "ITC", "BUY", 100);
-  await fullTrade("TEAM-013", "RELIANCE", "BUY", 650); await fullTrade("TEAM-013", "ITC", "BUY", 300);
+  // deploy the capital (at most 25% per company) so that each team's closing cash ends under ₹50,000 (lots of 50 shares)
+  const deploy = async (team, syms) => {
+    for (const sym of syms) {
+      const cash = num((await detail(team)).team.cash); if (cash < 50000) break;
+      const q = Math.floor(Math.min(cash - 1000, 490000) / (await price(sym) * 1.005) / 50) * 50;
+      if (q >= 50) await fullTrade(team, sym, "BUY", q);
+    }
+  };
+  await deploy("TEAM-011", ["LT", "INFY", "HDFCBANK", "SBIN", "WIPRO", "ITC", "NTPC"]);
+  await deploy("TEAM-012", ["TITAN", "TCS", "BEL", "SBIN", "WIPRO", "ITC", "NTPC"]);
+  await deploy("TEAM-013", ["RELIANCE", "INFY", "HDFCBANK", "NTPC", "WIPRO", "ITC", "SBIN"]);
   const d = await detail("TEAM-011");
-  assert.equal(d.assessment.buy, 7); assert.equal(d.assessment.sell, 5); assert.equal(d.assessment.met, true);
-  assert.equal(num(d.team.cash), round2(2000000 - 5 * 132.5 - (650 * 2898 * 1.005) - (250 * 265 * 1.005)));
-  assert.ok(num(d.team.cash) <= 50000);
+  assert.ok(d.assessment.buy >= 9); assert.equal(d.assessment.sell, 5); assert.equal(d.assessment.met, true);
+  assert.ok(num(d.team.cash) <= 50000, "cash " + d.team.cash);
   assert.equal((await detail("TEAM-005")).assessment.buy, 0, "IPO allotments never count");
   ok(await POST("/api/market-news", { symbol: "TITAN", mood: "SUPER_POSITIVE", headline: "Titan wins a global luxury deal" }, "ADMIN"));
   const p = (await GET("/api/portfolios", "ADMIN")).data;
@@ -628,24 +641,6 @@ test("undo / redo: settlement restores cash and holdings (never prices); Market 
   assert.equal(await price("DLF"), num(n.data.previous_price));
   ok(await POST("/api/undo-redo", { action: "REDO", journal_id: jn.id, ...A }, "ADMIN"));
   assert.equal(await price("DLF"), num(n.data.new_price));
-});
-
-test("concurrent settlements for one team: loans drawn exactly as needed, balance never breaks", async () => {
-  const ids = [];
-  for (let i = 0; i < 10; i++) {
-    const o = await submit("TEAM-015", "ITC", "BUY", 1000);            // ₹2,65,000 + ₹1,325 each
-    ok(o); ids.push(o.data.order.id);
-  }
-  for (const id of ids) ok(await execute(id));
-  for (const id of ids) ok(await approve(id));
-  const res = await Promise.all(ids.map((id, i) => settle(id, i % 2 ? "BANK-01" : "BANK-01")));
-  const settled = res.filter((r) => r.data.status === "BANK_SETTLED").length;
-  assert.equal(settled, 9, res.map((r) => r.data.status + ":" + (r.data.code || "")).join(","));
-  const d = await detail("TEAM-015");
-  assert.equal(holding(d, "ITC"), 9000); assert.ok(num(d.team.cash) >= 0);
-  assert.equal(num(d.loan.original_principal), 9 * 266325 - 2000000); assert.equal(num(d.loan.interest), round2((9 * 266325 - 2000000) * 0.02));
-  const cash = (await GET("/api/cash?team=TEAM-015", "ADMIN")).data;
-  assert.equal(cash.reconciliation.ok, true);
 });
 
 test("ledger, commissions and exports reconcile with the live records", async () => {

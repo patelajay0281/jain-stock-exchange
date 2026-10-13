@@ -78,25 +78,23 @@ BEGIN
       ' per order (this order: ' || jse_inr(v_tv) || ').', 400);
   END IF;
 
-  -- the participant side is checked like any participant trade (the institution itself is unrestricted)
+  -- the participant side is checked like any participant trade (v3.14: refused, not only flagged); team row locked
+  PERFORM 1 FROM teams WHERE id = v_team.id FOR UPDATE;
   IF v_team_side = 'SELL' THEN
     SELECT * INTO v_avail FROM jse_available_qty(v_team.id, v_sec.id, NULL);
     IF v_qty > v_avail.available THEN
-      v_warnings := v_warnings || jsonb_build_object('code', 'SHORT_SELL', 'message',
-        'Short selling is not allowed: ' || v_team.code || ' can sell only ' || greatest(v_avail.available, 0) || ' ' || v_sec.symbol ||
-        ' shares (holding ' || v_avail.holding || '). The Bank will reject it unless the holding is sufficient at settlement.');
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_NOT_ALLOWED', HINT = '409',
+        MESSAGE = 'Short selling is not allowed. You can sell only the shares available in your portfolio. Please reduce the quantity or check your holdings. (' ||
+                  v_team.code || ' can sell ' || greatest(v_avail.available, 0) || ' ' || v_sec.symbol || ')';
     END IF;
   ELSE
     v_free_cash := jse_available_cash(v_team.id, NULL);
-    v_room := jse_loan_room(v_team.id);
-    IF v_amount > v_free_cash + v_room THEN
-      v_warnings := v_warnings || jsonb_build_object('code', 'CASH_SHORTFALL', 'message',
-        'Cash shortfall: ' || v_team.code || ' needs ' || jse_inr(v_amount) || ' but has ' || jse_inr(greatest(v_free_cash, 0)) ||
-        ' free cash and ' || jse_inr(v_room) || ' of loan room. The Bank will reject it unless funds are available.');
-    ELSIF v_amount > v_free_cash THEN
-      v_warnings := v_warnings || jsonb_build_object('code', 'LOAN_NEEDED', 'message',
-        v_team.code || ' needs about ' || jse_inr(round(v_amount - greatest(v_free_cash, 0), 2)) || ' more than its free cash; the Bank will draw that amount as a loan at settlement.');
+    IF v_amount > v_free_cash THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSUFFICIENT_BALANCE', HINT = '409',
+        MESSAGE = 'Insufficient balance! Your available cash is ' || jse_inr(greatest(v_free_cash, 0)) || ', but this order requires ' || jse_inr(v_amount) ||
+                  ', including applicable charges. Please reduce the order quantity or obtain an approved loan before placing this order.';
     END IF;
+    PERFORM jse_check_company_limit(v_team.id, v_sec.id, v_amount, NULL);
   END IF;
 
   v_id := nextval(pg_get_serial_sequence('orders', 'id'));
@@ -370,6 +368,117 @@ BEGIN
     CASE v_action WHEN 'START' THEN 'EVENT_START' WHEN 'PAUSE' THEN 'EVENT_PAUSE' WHEN 'RESUME' THEN 'EVENT_RESUME'
                   WHEN 'CLOSE' THEN 'EVENT_CLOSE' WHEN 'REOPEN' THEN 'EVENT_REOPEN' ELSE 'EVENT_FINALIZE' END)
     || jsonb_build_object('listed', v_listed);
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- v3.14 Loan requests: a team (through its broker), the Bank or the Admin requests a loan; the Bank Desk approves it and the
+-- approved amount is credited at once (one transaction: loan draw + cash + ledger + request status). Approving twice never pays twice.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION jse_loan_request(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE t teams%ROWTYPE; v_amt numeric; v_room numeric; v_status text; v_id bigint; cfg event_config%ROWTYPE;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BANK', 'BROKER', 'PIT_MANAGER', 'PARTICIPANT');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  IF v_status NOT IN ('LIVE', 'SETTLEMENT_ONLY') THEN PERFORM jse_fail('EVENT_NOT_OPEN', 'Loans can be requested only while the market is open.', 409); END IF;
+  IF NOT cfg.loans_enabled THEN PERFORM jse_fail('LOANS_DISABLED', 'Borrowing is not permitted right now.', 409); END IF;
+  IF a->>'role' = 'PARTICIPANT' THEN SELECT * INTO t FROM teams WHERE id = nullif(a->>'team_id', '')::integer;
+  ELSE SELECT * INTO t FROM teams WHERE code = upper(trim(coalesce(p->>'team', ''))); END IF;
+  IF NOT FOUND THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'Select a valid team.', 404); END IF;
+  IF a->>'role' = 'BROKER' AND t.broker_id IS DISTINCT FROM nullif(a->>'broker_id', '')::integer THEN
+    PERFORM jse_fail('NOT_YOUR_TEAM', t.code || ' is assigned to another broker.', 403);
+  END IF;
+  BEGIN v_amt := (p->>'amount')::numeric; EXCEPTION WHEN others THEN PERFORM jse_fail('INVALID_AMOUNT', 'Enter the loan amount in whole rupees.', 400); END;
+  IF v_amt IS NULL OR v_amt <= 0 OR v_amt <> trunc(v_amt) THEN PERFORM jse_fail('INVALID_AMOUNT', 'Enter the loan amount in whole rupees.', 400); END IF;
+  v_room := jse_loan_room(t.id);
+  IF v_amt > v_room THEN PERFORM jse_fail('LOAN_LIMIT', 'Only ' || jse_inr(v_room) || ' of the ' || jse_inr(cfg.loan_max_principal) || ' loan limit is left for ' || t.code || '.', 409); END IF;
+  BEGIN
+    INSERT INTO loan_requests(team_id, requested_amount, reason, requested_by, requested_role)
+    VALUES (t.id, v_amt, left(p->>'reason', 300), jse_actor_name(a), a->>'role') RETURNING id INTO v_id;
+  EXCEPTION WHEN unique_violation THEN
+    PERFORM jse_fail('LOAN_REQUEST_PENDING', t.code || ' already has a loan request waiting at the Bank Desk.', 409);
+  END;
+  UPDATE loan_requests SET request_no = 'LR-' || v_id WHERE id = v_id;
+  PERFORM jse_audit(a, 'LOAN_REQUESTED', 'loan', 'LR-' || v_id, t.id, NULL, NULL, jsonb_build_object('status', 'PENDING', 'requested_amount', v_amt), NULL);
+  RETURN jsonb_build_object('success', true, 'request_no', 'LR-' || v_id, 'id', v_id, 'team', t.code, 'requested_amount', v_amt,
+    'message', 'Loan request LR-' || v_id || ' for ' || jse_inr(v_amt) || ' sent to the Bank Desk.');
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_loan_decide(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE r loan_requests%ROWTYPE; t teams%ROWTYPE; v_action text := upper(coalesce(p->>'action', '')); v_amt numeric; v_draw jsonb; v_ref bigint;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BANK');
+  SELECT * INTO r FROM loan_requests WHERE id = nullif(p->>'request_id', '')::bigint FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('REQUEST_NOT_FOUND', 'Loan request not found.', 404); END IF;
+  SELECT * INTO t FROM teams WHERE id = r.team_id;
+  IF r.status = 'DISBURSED' AND v_action = 'APPROVE' THEN
+    RETURN jsonb_build_object('success', true, 'replayed', true, 'request_no', r.request_no, 'team', t.code, 'approved_amount', r.approved_amount,
+      'message', 'Already released: ' || jse_inr(r.approved_amount) || ' was credited to Team ' || t.code || ' (no second credit).');
+  END IF;
+  IF r.status <> 'PENDING' THEN PERFORM jse_fail('REQUEST_CLOSED', r.request_no || ' is already ' || lower(r.status) || '.', 409); END IF;
+  IF v_action = 'REJECT' THEN
+    UPDATE loan_requests SET status = 'REJECTED', decided_by = jse_actor_name(a), decided_at = now(), decision_note = left(p->>'note', 300) WHERE id = r.id;
+    PERFORM jse_audit(a, 'LOAN_REJECTED', 'loan', r.request_no, t.id, NULL, jsonb_build_object('status', 'PENDING'), jsonb_build_object('status', 'REJECTED'),
+      jsonb_build_object('note', p->>'note'));
+    RETURN jsonb_build_object('success', true, 'request_no', r.request_no, 'team', t.code, 'status', 'REJECTED', 'message', r.request_no || ' rejected.');
+  ELSIF v_action <> 'APPROVE' THEN PERFORM jse_fail('INVALID_ACTION', 'Choose APPROVE or REJECT.', 400);
+  END IF;
+  BEGIN v_amt := coalesce(nullif(p->>'approved_amount', '')::numeric, r.requested_amount);
+  EXCEPTION WHEN others THEN PERFORM jse_fail('INVALID_AMOUNT', 'Enter the approved amount in whole rupees.', 400); END;
+  IF v_amt <= 0 OR v_amt <> trunc(v_amt) OR v_amt > r.requested_amount THEN
+    PERFORM jse_fail('INVALID_AMOUNT', 'The approved amount must be a whole-rupee amount up to the requested ' || jse_inr(r.requested_amount) || '.', 400);
+  END IF;
+  -- release: the existing Bank loan draw (team lock, loan limit, cash, ledger, interest, audit) in this same transaction
+  v_draw := jse_loan_action(a, jsonb_build_object('team', t.code, 'action', 'DRAW', 'amount', v_amt));
+  SELECT max(id) INTO v_ref FROM loan_transactions WHERE team_id = t.id AND kind = 'DRAW';
+  UPDATE loan_requests SET status = 'DISBURSED', approved_amount = v_amt, decided_by = jse_actor_name(a), decided_at = now(),
+         decision_note = left(p->>'note', 300), disbursement_ref = v_ref, cash_after = (v_draw->>'cash')::numeric WHERE id = r.id;
+  PERFORM jse_audit(a, 'LOAN_APPROVED_RELEASED', 'loan', r.request_no, t.id, NULL,
+    jsonb_build_object('status', 'PENDING', 'cash', (v_draw->>'cash')::numeric - v_amt),
+    jsonb_build_object('status', 'DISBURSED', 'cash', (v_draw->>'cash')::numeric),
+    jsonb_build_object('requested_amount', r.requested_amount, 'approved_amount', v_amt, 'disbursement_ref', v_ref));
+  RETURN jsonb_build_object('success', true, 'request_no', r.request_no, 'team', t.code, 'status', 'DISBURSED', 'approved_amount', v_amt,
+    'cash', (v_draw->>'cash')::numeric, 'disbursement_ref', v_ref,
+    'message', 'Loan approved and released successfully. ' || jse_inr(v_amt) || ' has been credited to Team ' || t.code || '''s account.');
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_loan_requests(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql STABLE AS $$
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BANK', 'VIEWER', 'BROKER', 'PIT_MANAGER', 'PARTICIPANT');
+  RETURN jsonb_build_object('success', true, 'bank_name', (SELECT bank_name FROM event_config WHERE id = 1), 'requests', coalesce((
+    SELECT jsonb_agg(jsonb_build_object('id', r.id, 'request_no', r.request_no, 'team', t.code, 'team_name', t.name, 'requested_amount', r.requested_amount,
+      'approved_amount', r.approved_amount, 'status', r.status, 'reason', r.reason, 'requested_by', r.requested_by, 'requested_at', r.requested_at,
+      'decided_by', r.decided_by, 'decided_at', r.decided_at, 'disbursement_ref', r.disbursement_ref, 'cash', t.cash, 'loan_room', jse_loan_room(t.id))
+      ORDER BY (r.status = 'PENDING') DESC, r.id DESC)
+    FROM (SELECT * FROM loan_requests ORDER BY id DESC LIMIT 200) r JOIN teams t ON t.id = r.team_id
+    WHERE (a->>'role' <> 'PARTICIPANT' OR t.id = nullif(a->>'team_id', '')::integer)
+      AND (a->>'role' <> 'BROKER' OR t.broker_id = nullif(a->>'broker_id', '')::integer)), '[]'::jsonb));
+END $$;
+
+-- v3.14 P3: editable bank name and institutional investor name (same records, stable IDs; audited with old/new/reason)
+CREATE OR REPLACE FUNCTION jse_rename_entity(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE v_kind text := upper(coalesce(p->>'kind', '')); v_new text := trim(coalesce(p->>'name', '')); v_old text; v_id integer;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  PERFORM jse_require_admin_password(a, p);
+  IF v_new = '' OR length(v_new) > 80 THEN PERFORM jse_fail('INVALID_NAME', 'Enter a name (1–80 characters).', 400); END IF;
+  IF v_kind = 'BANK' THEN
+    SELECT bank_name INTO v_old FROM event_config WHERE id = 1 FOR UPDATE;
+    UPDATE event_config SET bank_name = v_new WHERE id = 1;
+  ELSIF v_kind = 'INSTITUTION' THEN
+    SELECT id, name INTO v_id, v_old FROM institutions WHERE (nullif(p->>'id', '') IS NULL OR id = (p->>'id')::integer) ORDER BY id LIMIT 1 FOR UPDATE;
+    IF NOT FOUND THEN PERFORM jse_fail('NOT_FOUND', 'Institutional investor not found.', 404); END IF;
+    IF EXISTS (SELECT 1 FROM institutions WHERE lower(name) = lower(v_new) AND id <> v_id) THEN
+      PERFORM jse_fail('DUPLICATE_NAME', 'Another institutional investor already uses that name.', 409);
+    END IF;
+    UPDATE institutions SET name = v_new WHERE id = v_id;
+  ELSE PERFORM jse_fail('INVALID_KIND', 'Choose BANK or INSTITUTION.', 400);
+  END IF;
+  IF v_old IS NOT DISTINCT FROM v_new THEN RETURN jsonb_build_object('success', true, 'unchanged', true, 'name', v_new); END IF;
+  PERFORM jse_audit(a, v_kind || '_RENAMED', lower(v_kind), coalesce(v_id::text, 'bank'), NULL, NULL,
+    jsonb_build_object('name', v_old), jsonb_build_object('name', v_new), jsonb_build_object('reason', left(p->>'reason', 300)));
+  RETURN jsonb_build_object('success', true, 'kind', v_kind, 'old_name', v_old, 'name', v_new,
+    'message', initcap(lower(v_kind)) || ' name changed from "' || v_old || '" to "' || v_new || '".');
 END $$;
 
 -- Rejects every order still waiting at the Pit, Exchange or Bank, and expires open instructions (used at close).

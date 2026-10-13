@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=316">
+<link rel="stylesheet" href="/assets/jse.css?v=317">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -156,6 +156,16 @@
       <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Username</th><th>Role</th><th>Broker</th><th>Last sign-in</th><th>Status</th><th class="actions"></th></tr></thead><tbody id="users"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
     </section>
 
+    <section class="card admin-only">
+      <div class="card-h bar navy"><h2>Bank &amp; Institutional Investor Management</h2><span class="meta">Same accounts, balances and history — only the display name changes</span></div>
+      <div class="card-b"><div class="form-grid">
+        <div class="field"><label for="rnBank">Bank name</label><input class="input" id="rnBank" maxlength="80"></div>
+        <div class="field"><label for="rnInst">Institutional investor name</label><input class="input" id="rnInst" maxlength="80"></div>
+        <div class="field span-2"><label for="rnWhy">Reason for change</label><input class="input" id="rnWhy" maxlength="300"></div>
+      </div>
+      <div class="row" style="margin-top:12px;gap:8px"><button class="btn primary" id="rnSave" type="button">Save changes</button><button class="btn" id="rnCancel" type="button">Cancel</button><span class="small muted" id="rnNow"></span></div></div>
+    </section>
+
     <section class="card">
       <div class="card-h bar navy"><h2>Reports &amp; exports</h2></div>
       <div class="card-b stack">
@@ -168,8 +178,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=316"></script>
-<script src="/assets/jse.js?v=316"></script>
+<script src="/assets/config.js?v=317"></script>
+<script src="/assets/jse.js?v=317"></script>
 <script>
 (function () {
   "use strict";
@@ -375,6 +385,30 @@
     } catch (e) { JSE.toast(e.message, "bad"); }
   });
 
+
+  // ---- Bank & institutional investor names (v3.14) ----
+  var RN = {};
+  async function loadNames() {
+    try { var b = await JSE.api.get("/api/loan-requests"); RN.bank = b.bank_name || ""; } catch (e) {}
+    try { var i = await JSE.api.get("/api/institutional-portfolio"); RN.inst = (i.institution && i.institution.name) || ""; RN.instId = i.institution && i.institution.id; } catch (e) {}
+    if (!$("rnBank")) return;
+    $("rnBank").value = RN.bank || ""; $("rnInst").value = RN.inst || "";
+    $("rnNow").textContent = "Current: " + (RN.bank || "—") + " · " + (RN.inst || "—");
+  }
+  $("rnCancel").onclick = loadNames;
+  $("rnSave").onclick = async function () {
+    var nb = $("rnBank").value.trim(), ni = $("rnInst").value.trim(), why = $("rnWhy").value.trim();
+    if (!nb || !ni) return JSE.toast("Names cannot be blank.", "warn");
+    var todo = []; if (nb !== RN.bank) todo.push({ kind: "BANK", name: nb }); if (ni !== RN.inst) todo.push({ kind: "INSTITUTION", name: ni, id: RN.instId });
+    if (!todo.length) return JSE.toast("Nothing changed.", "warn");
+    for (var k = 0; k < todo.length; k++) {
+      try { var r = await confirmed({ title: "Change " + (todo[k].kind === "BANK" ? "bank" : "institutional investor") + " name", text: "New name: " + todo[k].name, confirmText: "Save" },
+          "/api/rename", Object.assign({ reason: why }, todo[k]));
+        if (r) JSE.toast(r.message, "good"); } catch (ex) { JSE.toast(ex.message, "bad", 8000); }
+    }
+    loadNames();
+  };
+  loadNames();
   // ---- lifecycle wiring ----
   document.querySelectorAll("[data-ev]").forEach(function (b) { b.addEventListener("click", function () { eventAction(b.getAttribute("data-ev")); }); });
   $("undoLast").onclick = function () { undoRedo("UNDO"); };

@@ -226,3 +226,21 @@ ALTER TABLE cash_ledger ADD CONSTRAINT cash_ledger_entry_type_check
 ALTER TABLE securities ADD COLUMN IF NOT EXISTS ipo_shares_offered integer;
 
 INSERT INTO schema_migrations(version) VALUES ('001a_upgrades');
+
+-- v3.14 (P0/P1/P3): per-company limit, editable bank name, loan requests approved and released by the Bank Desk
+ALTER TABLE event_config ADD COLUMN IF NOT EXISTS max_company_pct numeric(5,2) NOT NULL DEFAULT 25 CHECK (max_company_pct >= 0 AND max_company_pct <= 100);
+ALTER TABLE event_config ADD COLUMN IF NOT EXISTS bank_name text NOT NULL DEFAULT 'JSE Bank';
+CREATE TABLE IF NOT EXISTS loan_requests (
+  id               bigserial PRIMARY KEY,
+  request_no       text UNIQUE,
+  team_id          integer NOT NULL REFERENCES teams(id),
+  requested_amount numeric(16,2) NOT NULL CHECK (requested_amount > 0),
+  approved_amount  numeric(16,2) CHECK (approved_amount IS NULL OR approved_amount > 0),
+  status           text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','DISBURSED','REJECTED','CANCELLED')),
+  reason           text,
+  requested_by     text, requested_role text, requested_at timestamptz NOT NULL DEFAULT now(),
+  decided_by       text, decided_at timestamptz, decision_note text,
+  disbursement_ref bigint,               -- loan_transactions.id of the DRAW
+  cash_after       numeric(16,2)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS loan_requests_one_pending ON loan_requests(team_id) WHERE status = 'PENDING';

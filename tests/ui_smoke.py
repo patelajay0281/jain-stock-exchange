@@ -167,7 +167,7 @@ with sync_playwright() as pwr:
     check("settlement preview: total shares, trade value, brokerage, total required",
           page.inner_text("#pvSh") == "100" and "1,445" in page.inner_text("#pvBrk") and "2,90,445" in page.inner_text("#pvAmt"),
           page.inner_text("#pvBrk") + " " + page.inner_text("#pvAmt"))
-    check("price per share is locked to the market price", page.get_attribute("#mp", "readonly") is not None and page.input_value("#mp") == "2890.00")
+    check("price per share is locked to the market price", page.get_attribute("#mp", "readonly") is not None and page.input_value("#mp").replace("\u20b9", "").replace(",", "") == "2890")
     page.screenshot(path=os.path.join(SHOTS, "create-order.png"), full_page=True)
     page.click("#submit"); page.wait_for_function("document.querySelector('#result .done') && document.querySelector('#result').innerText.includes('Reliance')", timeout=10000)
     ord2 = [w for w in page.inner_text("#result").split() if w.startswith("ORD-")][0]
