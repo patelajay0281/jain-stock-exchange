@@ -377,7 +377,7 @@ BEGIN
         AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
         AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000
         AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL)
-      ORDER BY random()
+      ORDER BY gen_random_bytes(16)
     LOOP
       v_position := v_position + 1;
       v_requested := v_requested + x.requested_lots;
