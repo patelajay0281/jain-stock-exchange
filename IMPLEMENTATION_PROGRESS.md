@@ -37,4 +37,4 @@ Tests: `npm test` 44/44, `npm run test:ui` 72/72 (local).
 6. Deploy: staging done when listed below; production switch needs go-ahead.
 
 ## Deployment log
-- (see git log / this section) v3.14.0 staging deploy — fill in after deploy.
+- 13 Oct 2026 22:00 IST: v3.14.0 (commit eb235d7) deployed to staging `jsestage` deployment 13; CI health run 38430902270 → version 3.14.0, db ok; staging DB verified: 010_safety applied, price_tick 1, auto loan off, max_company_pct 25, loan_requests present. Pages auto-deployed from v272.
