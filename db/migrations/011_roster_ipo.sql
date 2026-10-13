@@ -1,0 +1,458 @@
+-- v272 targeted roster and IPO administration additions.
+-- Additive only: preserve existing tables, data, routes and financial history.
+
+CREATE TABLE IF NOT EXISTS ipo_allotment_draws (
+  id                 bigserial PRIMARY KEY,
+  security_id        integer NOT NULL REFERENCES securities(id),
+  status             text NOT NULL DEFAULT 'GENERATED'
+                     CHECK (status IN ('GENERATED','VERIFIED','APPROVED','FINALIZED','CANCELLED')),
+  available_shares   integer NOT NULL CHECK (available_shares >= 0),
+  available_lots     integer NOT NULL CHECK (available_lots >= 0),
+  requested_lots     integer NOT NULL DEFAULT 0 CHECK (requested_lots >= 0),
+  subscription_ratio numeric(14,4),
+  algorithm_version  text NOT NULL DEFAULT 'RANDOM_ROUND_ROBIN_V1',
+  inventory_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
+  generated_by       text,
+  generated_at       timestamptz NOT NULL DEFAULT now(),
+  verified_by        text,
+  verified_at        timestamptz,
+  approved_by        text,
+  approved_at        timestamptz,
+  finalized_by       text,
+  finalized_at       timestamptz,
+  created_at         timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ipo_allotment_draws_security_idx ON ipo_allotment_draws(security_id, id DESC);
+
+CREATE TABLE IF NOT EXISTS ipo_allotment_draw_items (
+  id                 bigserial PRIMARY KEY,
+  draw_id            bigint NOT NULL REFERENCES ipo_allotment_draws(id),
+  application_id     bigint NOT NULL,
+  team_id            integer NOT NULL REFERENCES teams(id),
+  team_code          text NOT NULL,
+  team_name          text NOT NULL,
+  draw_position      integer NOT NULL CHECK (draw_position > 0),
+  requested_lots     integer NOT NULL CHECK (requested_lots > 0),
+  allotted_lots      integer NOT NULL DEFAULT 0 CHECK (allotted_lots >= 0 AND allotted_lots <= requested_lots),
+  lot_size           integer NOT NULL CHECK (lot_size > 0),
+  application_price  numeric(12,2) NOT NULL CHECK (application_price > 0),
+  rounds             integer[] NOT NULL DEFAULT '{}',
+  UNIQUE (draw_id, application_id),
+  UNIQUE (draw_id, draw_position)
+);
+CREATE INDEX IF NOT EXISTS ipo_allotment_draw_items_order_idx ON ipo_allotment_draw_items(draw_id, draw_position);
+
+-- Five-column roster importer. This only updates the canonical broker assignment on existing teams.
+CREATE OR REPLACE FUNCTION jse_import_roster_assignments(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_status text;
+  r jsonb;
+  x jsonb;
+  v_i integer := 0;
+  v_team_no integer;
+  v_broker_no integer;
+  v_team_code text;
+  v_broker_code text;
+  v_broker_name text;
+  t teams%ROWTYPE;
+  b brokers%ROWTYPE;
+  v_plan jsonb := '[]'::jsonb;
+  v_errors jsonb := '[]'::jsonb;
+  v_changed integer := 0;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
+  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR UPDATE;
+  IF v_status <> 'NOT_STARTED' THEN
+    PERFORM jse_fail('EVENT_STARTED', 'Roster broker assignments can be imported only before the event starts.', 409);
+  END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
+    PERFORM jse_fail('NO_ROWS', 'No roster rows were supplied.', 400);
+  END IF;
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i := v_i + 1;
+    BEGIN v_team_no := nullif(trim(r->>'team_number'), '')::integer; EXCEPTION WHEN others THEN v_team_no := NULL; END;
+    BEGIN v_broker_no := nullif(trim(r->>'broker_number'), '')::integer; EXCEPTION WHEN others THEN v_broker_no := NULL; END;
+    v_team_code := upper(trim(coalesce(r->>'team_code', '')));
+    v_broker_code := upper(trim(coalesce(r->>'broker_code', '')));
+    v_broker_name := trim(coalesce(r->>'broker_name', ''));
+    IF v_team_no IS NULL OR v_team_no <= 0 THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Number must be a positive whole number'); CONTINUE;
+    END IF;
+    IF v_broker_no IS NULL OR v_broker_no <= 0 THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number must be a positive whole number'); CONTINUE;
+    END IF;
+    IF v_team_code = '' OR v_broker_code = '' OR v_broker_name = '' THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Code, Broker Code and Broker Name are required'); CONTINUE;
+    END IF;
+    SELECT * INTO t FROM teams WHERE code = v_team_code;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown Team Code ' || v_team_code); CONTINUE;
+    END IF;
+    IF t.seq <> v_team_no THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Number ' || v_team_no || ' does not match ' || v_team_code || ' (registered number ' || t.seq || ')'); CONTINUE;
+    END IF;
+    SELECT * INTO b FROM brokers WHERE code = v_broker_code AND active;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown or inactive Broker Code ' || v_broker_code); CONTINUE;
+    END IF;
+    IF substring(b.code from '([0-9]+)$') IS NULL OR substring(b.code from '([0-9]+)$')::integer <> v_broker_no THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number ' || v_broker_no || ' does not match registered Broker Code ' || b.code); CONTINUE;
+    END IF;
+    IF lower(trim(b.name)) <> lower(v_broker_name) THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Name does not match ' || b.code || ' (registered name: ' || b.name || ')'); CONTINUE;
+    END IF;
+    v_plan := v_plan || jsonb_build_object('team_id', t.id, 'team_number', t.seq, 'team_code', t.code,
+      'broker_id', b.id, 'broker_number', v_broker_no, 'broker_code', b.code, 'broker_name', b.name,
+      'before_broker_id', t.broker_id,
+      'before_broker_code', (SELECT code FROM brokers WHERE id = t.broker_id));
+  END LOOP;
+
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    IF (SELECT count(*) FROM jsonb_array_elements(v_plan) e WHERE e->>'team_code' = x->>'team_code') > 1 THEN
+      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', (x->>'team_code') || ' appears more than once in the file');
+      EXIT;
+    END IF;
+  END LOOP;
+  IF jsonb_array_length(v_errors) > 0 THEN
+    RETURN jsonb_build_object('success', false, 'code', 'ROSTER_ERRORS',
+      'error', 'Nothing was saved. Fix the rows listed and import again.', 'errors', v_errors, 'http', 400);
+  END IF;
+  IF coalesce((p->>'dry_run')::boolean, false) THEN
+    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_plan), 'preview', v_plan);
+  END IF;
+
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    UPDATE teams SET broker_id = (x->>'broker_id')::integer, updated_at = now()
+    WHERE id = (x->>'team_id')::integer AND broker_id IS DISTINCT FROM (x->>'broker_id')::integer;
+    IF FOUND THEN
+      v_changed := v_changed + 1;
+      PERFORM jse_audit(a, 'TEAM_BROKER_ASSIGNMENT_IMPORTED', 'team', x->>'team_code',
+        (x->>'team_id')::integer, NULL,
+        jsonb_build_object('broker_code', x->>'before_broker_code'),
+        jsonb_build_object('broker_code', x->>'broker_code', 'broker_number', x->>'broker_number'),
+        jsonb_build_object('import', true, 'team_number', x->>'team_number'));
+    END IF;
+  END LOOP;
+  PERFORM jse_audit(a, 'ROSTER_ASSIGNMENTS_IMPORTED', 'team', NULL, NULL, NULL, NULL, NULL,
+    jsonb_build_object('rows', jsonb_array_length(v_plan), 'changed', v_changed));
+  RETURN jsonb_build_object('success', true, 'rows', jsonb_array_length(v_plan), 'updated', jsonb_array_length(v_plan), 'changed', v_changed);
+END $$;
+
+-- Company/base-price import. Ticker is the stable key; this deliberately does not change live prices.
+CREATE OR REPLACE FUNCTION jse_import_companies(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  r jsonb;
+  x jsonb;
+  v_i integer := 0;
+  v_ticker text;
+  v_name text;
+  v_price numeric;
+  s securities%ROWTYPE;
+  v_plan jsonb := '[]'::jsonb;
+  v_errors jsonb := '[]'::jsonb;
+  v_changed integer := 0;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
+    PERFORM jse_fail('NO_ROWS', 'No company rows were supplied.', 400);
+  END IF;
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i := v_i + 1;
+    v_ticker := upper(trim(coalesce(r->>'ticker', '')));
+    v_name := trim(coalesce(r->>'name', ''));
+    BEGIN v_price := (r->>'base_price')::numeric; EXCEPTION WHEN others THEN v_price := NULL; END;
+    IF v_ticker = '' OR v_name = '' THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Company Name and Ticker are required'); CONTINUE;
+    END IF;
+    IF v_ticker !~ '^[A-Z0-9][A-Z0-9._-]{0,19}$' THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Ticker must use 1–20 letters, numbers, dots, underscores or hyphens'); CONTINUE;
+    END IF;
+    IF v_price IS NULL OR v_price <= 0 OR v_price <> trunc(v_price) THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Base Price must be a positive whole number'); CONTINUE;
+    END IF;
+    IF length(v_name) > 160 THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Company Name must be 160 characters or fewer'); CONTINUE;
+    END IF;
+    SELECT * INTO s FROM securities WHERE symbol = v_ticker;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Ticker ' || v_ticker || ' does not exist in the current securities list. Add it through the existing company/IPO setup first.'); CONTINUE;
+    END IF;
+    v_plan := v_plan || jsonb_build_object('id', s.id, 'ticker', s.symbol, 'name', v_name, 'base_price', v_price,
+      'before_name', s.name, 'before_base_price', s.base_price, 'kind', s.kind);
+  END LOOP;
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    IF (SELECT count(*) FROM jsonb_array_elements(v_plan) e WHERE e->>'ticker' = x->>'ticker') > 1 THEN
+      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', (x->>'ticker') || ' appears more than once in the file');
+      EXIT;
+    END IF;
+  END LOOP;
+  IF jsonb_array_length(v_errors) > 0 THEN
+    RETURN jsonb_build_object('success', false, 'code', 'COMPANY_IMPORT_ERRORS',
+      'error', 'Nothing was saved. Fix the rows listed and import again.', 'errors', v_errors, 'http', 400);
+  END IF;
+  IF coalesce((p->>'dry_run')::boolean, false) THEN
+    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_plan), 'preview', v_plan);
+  END IF;
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    UPDATE securities SET name = x->>'name', base_price = (x->>'base_price')::numeric, updated_at = now()
+    WHERE id = (x->>'id')::integer
+      AND (name IS DISTINCT FROM x->>'name' OR base_price IS DISTINCT FROM (x->>'base_price')::numeric);
+    IF FOUND THEN
+      v_changed := v_changed + 1;
+      PERFORM jse_audit(a, 'COMPANY_BASE_PRICE_IMPORTED', 'security', x->>'ticker', NULL, NULL,
+        jsonb_build_object('name', x->>'before_name', 'base_price', x->>'before_base_price'),
+        jsonb_build_object('name', x->>'name', 'base_price', x->>'base_price'),
+        jsonb_build_object('kind', x->>'kind', 'live_price_unchanged', true));
+    END IF;
+  END LOOP;
+  PERFORM jse_audit(a, 'COMPANY_BASE_PRICES_IMPORTED', 'security', NULL, NULL, NULL, NULL, NULL,
+    jsonb_build_object('rows', jsonb_array_length(v_plan), 'changed', v_changed, 'live_prices_changed', false));
+  RETURN jsonb_build_object('success', true, 'rows', jsonb_array_length(v_plan), 'updated', jsonb_array_length(v_plan), 'changed', v_changed);
+END $$;
+
+-- Admin-only IPO tool: persistent random draw, verification, approval, idempotent issuance, and issue-size editing.
+CREATE OR REPLACE FUNCTION jse_ipo_admin_tool(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action',''), 'STATE'));
+  v_ipo text := upper(trim(coalesce(p->>'ipo','')));
+  v_status text;
+  v_event_status text;
+  s securities%ROWTYPE;
+  d ipo_allotment_draws%ROWTYPE;
+  ap ipo_applications%ROWTYPE;
+  al ipo_allotments%ROWTYPE;
+  x record;
+  v_issued integer;
+  v_remaining integer;
+  v_available_lots integer;
+  v_requested integer := 0;
+  v_position integer := 0;
+  v_round integer := 1;
+  v_left integer := 0;
+  v_progress boolean;
+  v_count integer := 0;
+  v_total_shares integer := 0;
+  v_total_amount numeric := 0;
+  v_new_size numeric;
+  v_new_shares integer;
+  v_unit text;
+  v_reason text;
+  v_draw_id bigint;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF v_action <> 'STATE' THEN PERFORM jse_require_admin_password(a, p); END IF;
+
+  IF v_action = 'STATE' THEN
+    IF v_ipo <> '' THEN
+      SELECT * INTO s FROM securities WHERE kind = 'IPO' AND active AND (symbol = v_ipo OR ipo_code = v_ipo);
+      IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;
+      SELECT * INTO d FROM ipo_allotment_draws WHERE security_id = s.id ORDER BY id DESC LIMIT 1;
+    END IF;
+    RETURN jsonb_build_object(
+      'success', true,
+      'ipos', coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'symbol', sec.symbol, 'ipo_code', sec.ipo_code, 'name', sec.name, 'price', sec.base_price, 'live_price', sec.price,
+        'lot_size', sec.lot_size, 'offered', sec.ipo_shares_offered,
+        'issued', (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL),
+        'remaining', CASE WHEN sec.ipo_shares_offered IS NULL THEN NULL ELSE sec.ipo_shares_offered -
+          (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL) END,
+        'applications', (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),
+        'applied_lots', (SELECT coalesce(sum(ia.lots),0) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),
+        'stage', jse_ipo_stage(sec.id),
+        'latest_draw_status', (SELECT dd.status FROM ipo_allotment_draws dd WHERE dd.security_id=sec.id ORDER BY dd.id DESC LIMIT 1)
+      ) ORDER BY sec.display_order, sec.id) FROM securities sec WHERE sec.kind='IPO' AND sec.active), '[]'::jsonb),
+      'event_status', (SELECT status FROM event_control WHERE id=1),
+      'ipo', CASE WHEN s.id IS NULL THEN NULL ELSE jsonb_build_object('symbol',s.symbol,'name',s.name,'lot_size',s.lot_size,
+        'offered',s.ipo_shares_offered,'issued',(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL),
+        'remaining',CASE WHEN s.ipo_shares_offered IS NULL THEN NULL ELSE s.ipo_shares_offered-(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL) END) END,
+      'draw', CASE WHEN d.id IS NULL THEN NULL ELSE to_jsonb(d) END,
+      'eligible_count', CASE WHEN s.id IS NULL THEN 0 ELSE (SELECT count(*) FROM ipo_applications ia
+        WHERE ia.security_id=s.id AND ia.status='APPLIED' AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
+          AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000
+          AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL)) END,
+      'rejected_count', CASE WHEN s.id IS NULL THEN 0 ELSE greatest(0,
+        (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=s.id AND ia.status='APPLIED') -
+        (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=s.id AND ia.status='APPLIED' AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
+          AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000
+          AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL))) END,
+      'items', CASE WHEN d.id IS NULL THEN '[]'::jsonb ELSE coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'team',di.team_code,'team_name',di.team_name,'position',di.draw_position,'requested_lots',di.requested_lots,
+        'allotted_lots',di.allotted_lots,'shares',di.allotted_lots*di.lot_size,'rounds',to_jsonb(di.rounds),
+        'price',di.application_price,'amount',di.allotted_lots*di.lot_size*di.application_price)
+        ORDER BY di.draw_position) FROM ipo_allotment_draw_items di WHERE di.draw_id=d.id), '[]'::jsonb) END
+    );
+  END IF;
+
+  SELECT status INTO v_event_status FROM event_control WHERE id=1 FOR UPDATE;
+  IF v_event_status <> 'NOT_STARTED' THEN
+    PERFORM jse_fail('EVENT_STARTED', 'IPO allotment and issue-size changes are allowed only before the event starts.', 409);
+  END IF;
+  SELECT * INTO s FROM securities WHERE kind='IPO' AND active AND (symbol=v_ipo OR ipo_code=v_ipo) FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;
+
+  IF v_action = 'SIZE' THEN
+    BEGIN v_new_size := (p->>'new_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;
+    v_unit := upper(trim(coalesce(p->>'unit','SHARES')));
+    v_reason := trim(coalesce(p->>'reason',''));
+    IF v_new_size IS NULL OR v_new_size <= 0 OR v_new_size <> trunc(v_new_size) THEN
+      PERFORM jse_fail('INVALID_ISSUE_SIZE', 'Issue size must be a positive whole number.', 400);
+    END IF;
+    IF v_unit NOT IN ('SHARES','LOTS') THEN PERFORM jse_fail('INVALID_UNIT', 'Choose Shares or Lots.', 400); END IF;
+    IF v_unit='LOTS' THEN v_new_size := v_new_size * s.lot_size; END IF;
+    IF v_new_size > 2147483647 THEN PERFORM jse_fail('ISSUE_SIZE_TOO_LARGE', 'Issue size exceeds the supported inventory range.', 400); END IF;
+    v_new_shares := v_new_size::integer;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id ORDER BY id DESC LIMIT 1;
+    IF d.id IS NOT NULL AND d.status IN ('GENERATED','VERIFIED','APPROVED') THEN
+      PERFORM jse_fail('DRAW_IN_PROGRESS', 'Issue size cannot change while a draw is generated, verified or approved. Finalize or resolve that draw first.', 409);
+    END IF;
+    IF v_new_shares < v_issued THEN
+      PERFORM jse_fail('BELOW_ISSUED', 'Issue size cannot be lower than already allotted shares (' || v_issued || ').', 409);
+    END IF;
+    IF d.id IS NOT NULL AND d.status='FINALIZED' AND v_new_shares < coalesce(s.ipo_shares_offered,0) THEN
+      PERFORM jse_fail('FINALIZED_ISSUE_SIZE', 'After final issuance, issue size may only be increased; it cannot be reduced.', 409);
+    END IF;
+    PERFORM jse_audit(a, 'IPO_ISSUE_SIZE_CHANGED', 'security', s.symbol, NULL, NULL,
+      jsonb_build_object('offered_shares',s.ipo_shares_offered),
+      jsonb_build_object('offered_shares',v_new_shares,'unit_entered',v_unit,'value_entered',p->>'new_size'),
+      jsonb_build_object('reason',v_reason,'issued_shares',v_issued));
+    UPDATE securities SET ipo_shares_offered=v_new_shares, updated_at=now() WHERE id=s.id;
+    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_size',s.ipo_shares_offered,'new_size',v_new_shares,'issued',v_issued,'remaining',v_new_shares-v_issued);
+  END IF;
+
+  IF v_action = 'DRAW' THEN
+    IF s.ipo_shares_offered IS NULL OR s.ipo_shares_offered <= 0 THEN
+      PERFORM jse_fail('ISSUE_SIZE_REQUIRED', 'Set the IPO issue size before generating allotment.', 409);
+    END IF;
+    IF (jse_ipo_window()->>'phase') IS DISTINCT FROM 'CLOSED' THEN
+      PERFORM jse_fail('APPLICATIONS_NOT_CLOSED', 'Random allotment is available only after the IPO application window closes.', 409);
+    END IF;
+    SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id AND status<>'CANCELLED' ORDER BY id DESC LIMIT 1;
+    IF FOUND THEN
+      RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status',d.status,
+        'message','An existing saved draw was returned. The random order was not regenerated.');
+    END IF;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    v_remaining := s.ipo_shares_offered - v_issued;
+    IF v_remaining < 0 THEN PERFORM jse_fail('INVENTORY_MISMATCH', 'Issued shares exceed the configured IPO issue size.', 409); END IF;
+    v_available_lots := floor(v_remaining::numeric / s.lot_size)::integer;
+    INSERT INTO ipo_allotment_draws(security_id,status,available_shares,available_lots,generated_by,inventory_snapshot)
+    VALUES(s.id,'GENERATED',v_remaining,v_available_lots,jse_actor_name(a),
+      jsonb_build_object('offered_shares',s.ipo_shares_offered,'issued_shares',v_issued,'lot_size',s.lot_size,'base_price',s.base_price))
+    RETURNING id INTO v_draw_id;
+    FOR x IN
+      SELECT ia.id AS application_id, ia.team_id, t.code AS team_code, t.name AS team_name,
+        ia.lots AS requested_lots, ia.price AS application_price, s.lot_size
+      FROM ipo_applications ia JOIN teams t ON t.id=ia.team_id
+      WHERE ia.security_id=s.id AND ia.status='APPLIED'
+        AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
+        AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000
+        AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL)
+      ORDER BY random()
+    LOOP
+      v_position := v_position + 1;
+      v_requested := v_requested + x.requested_lots;
+      INSERT INTO ipo_allotment_draw_items(draw_id,application_id,team_id,team_code,team_name,draw_position,
+        requested_lots,allotted_lots,lot_size,application_price)
+      VALUES(v_draw_id,x.application_id,x.team_id,x.team_code,x.team_name,v_position,x.requested_lots,0,x.lot_size,x.application_price);
+    END LOOP;
+    IF v_position=0 THEN
+      DELETE FROM ipo_allotment_draws WHERE id=v_draw_id;
+      PERFORM jse_fail('NO_ELIGIBLE_APPLICATIONS', 'No eligible, unallotted applications were found for this IPO.', 409);
+    END IF;
+    UPDATE ipo_allotment_draws SET requested_lots=v_requested,
+      subscription_ratio=CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END
+    WHERE id=v_draw_id;
+    v_left := v_available_lots;
+    v_round := 1;
+    WHILE v_left>0 LOOP
+      v_progress := false;
+      FOR x IN SELECT id,requested_lots,allotted_lots FROM ipo_allotment_draw_items
+               WHERE draw_id=v_draw_id AND allotted_lots<requested_lots ORDER BY draw_position LOOP
+        UPDATE ipo_allotment_draw_items SET allotted_lots=allotted_lots+1, rounds=array_append(rounds,v_round)
+        WHERE id=x.id;
+        v_left := v_left-1;
+        v_progress := true;
+        EXIT WHEN v_left<=0;
+      END LOOP;
+      EXIT WHEN NOT v_progress;
+      v_round := v_round+1;
+    END LOOP;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_GENERATED','ipo_allotment_draw',v_draw_id::text,NULL,NULL,NULL,NULL,
+      jsonb_build_object('symbol',s.symbol,'eligible',v_position,'requested_lots',v_requested,'available_lots',v_available_lots,
+        'subscription_ratio',CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END,
+        'algorithm','RANDOM_ROUND_ROBIN_V1'));
+    RETURN jsonb_build_object('success',true,'draw_id',v_draw_id,'status','GENERATED','eligible_count',v_position,
+      'requested_lots',v_requested,'available_lots',v_available_lots,
+      'subscription_ratio',CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END);
+  END IF;
+
+  SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id ORDER BY id DESC LIMIT 1 FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('NO_DRAW', 'Generate the random draw first.', 409); END IF;
+
+  IF v_action = 'VERIFY' THEN
+    IF d.status <> 'GENERATED' THEN
+      IF d.status IN ('VERIFIED','APPROVED','FINALIZED') THEN RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status',d.status); END IF;
+      PERFORM jse_fail('INVALID_DRAW_STATUS','Only a generated draw can be verified.',409);
+    END IF;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    v_remaining := coalesce(s.ipo_shares_offered,0)-v_issued;
+    SELECT coalesce(sum(allotted_lots*lot_size),0)::integer, coalesce(sum(allotted_lots),0)::integer
+      INTO v_total_shares,v_count FROM ipo_allotment_draw_items WHERE draw_id=d.id;
+    IF v_remaining <> d.available_shares THEN PERFORM jse_fail('INVENTORY_CHANGED','IPO inventory changed after the draw. Do not approve this stale draw.',409); END IF;
+    IF v_total_shares > d.available_shares OR EXISTS(SELECT 1 FROM ipo_allotment_draw_items WHERE draw_id=d.id AND (allotted_lots<0 OR allotted_lots>requested_lots)) THEN
+      PERFORM jse_fail('ALLOTMENT_INVALID','The proposed allotment exceeds inventory or a request.',409);
+    END IF;
+    UPDATE ipo_allotment_draws SET status='VERIFIED',verified_by=jse_actor_name(a),verified_at=now() WHERE id=d.id;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_VERIFIED','ipo_allotment_draw',d.id::text,NULL,NULL,
+      jsonb_build_object('status','GENERATED'),jsonb_build_object('status','VERIFIED'),
+      jsonb_build_object('allotted_lots',v_count,'allotted_shares',v_total_shares,'available_shares',d.available_shares));
+    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','VERIFIED','allotted_lots',v_count,'allotted_shares',v_total_shares);
+  ELSIF v_action = 'APPROVE' THEN
+    IF d.status <> 'VERIFIED' THEN PERFORM jse_fail('NOT_VERIFIED','Verify the allotment before approval.',409); END IF;
+    UPDATE ipo_allotment_draws SET status='APPROVED',approved_by=jse_actor_name(a),approved_at=now() WHERE id=d.id;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_APPROVED','ipo_allotment_draw',d.id::text,NULL,NULL,
+      jsonb_build_object('status','VERIFIED'),jsonb_build_object('status','APPROVED'),NULL);
+    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','APPROVED');
+  ELSIF v_action = 'FINALIZE' THEN
+    IF d.status='FINALIZED' THEN RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status','FINALIZED'); END IF;
+    IF d.status <> 'APPROVED' THEN PERFORM jse_fail('NOT_APPROVED','Approve the verified allotment before issuing shares.',409); END IF;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    v_remaining := coalesce(s.ipo_shares_offered,0)-v_issued;
+    SELECT coalesce(sum(allotted_lots*lot_size),0)::integer INTO v_total_shares FROM ipo_allotment_draw_items WHERE draw_id=d.id;
+    IF v_remaining <> d.available_shares OR v_total_shares>v_remaining THEN
+      PERFORM jse_fail('INVENTORY_CHANGED','IPO inventory changed after approval. No shares were issued.',409);
+    END IF;
+    IF EXISTS(SELECT 1 FROM ipo_allotment_draw_items di JOIN ipo_allotments aa ON aa.team_id=di.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL WHERE di.draw_id=d.id AND di.allotted_lots>0) THEN
+      PERFORM jse_fail('DUPLICATE_ALLOTMENT','An applicant already has an allotment for this IPO. No shares were issued.',409);
+    END IF;
+    FOR x IN SELECT di.team_id,di.allotted_lots,di.lot_size,di.application_price,t.cash,t.code
+      FROM ipo_allotment_draw_items di JOIN teams t ON t.id=di.team_id
+      WHERE di.draw_id=d.id AND di.allotted_lots>0 LOOP
+      v_total_amount := v_total_amount + x.allotted_lots*x.lot_size*x.application_price;
+      IF x.cash < x.allotted_lots*x.lot_size*x.application_price THEN
+        PERFORM jse_fail('ALLOTMENT_CASH',x.code || ' does not have enough cash for the proposed allotment. No shares were issued.',409);
+      END IF;
+    END LOOP;
+    FOR x IN SELECT di.* FROM ipo_allotment_draw_items di WHERE di.draw_id=d.id AND di.allotted_lots>0 ORDER BY di.draw_position LOOP
+      INSERT INTO ipo_allotments(team_id,security_id,lots,quantity,price,amount,batch_id,created_by,created_by_name)
+      VALUES(x.team_id,s.id,x.allotted_lots,x.allotted_lots*x.lot_size,x.application_price,
+        x.allotted_lots*x.lot_size*x.application_price,'RANDOM-IPO-'||d.id,nullif(a->>'id','')::integer,jse_actor_name(a))
+      RETURNING * INTO al;
+      PERFORM jse__apply_allotment(a,al);
+      v_count := v_count+1;
+    END LOOP;
+    UPDATE ipo_allotment_draws SET status='FINALIZED',finalized_by=jse_actor_name(a),finalized_at=now() WHERE id=d.id;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_FINALIZED','ipo_allotment_draw',d.id::text,NULL,NULL,
+      jsonb_build_object('status','APPROVED'),jsonb_build_object('status','FINALIZED'),
+      jsonb_build_object('rows_issued',v_count,'shares_issued',v_total_shares,'amount_charged',v_total_amount));
+    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','FINALIZED','rows_issued',v_count,
+      'shares_issued',v_total_shares,'amount_charged',v_total_amount);
+  END IF;
+
+  PERFORM jse_fail('INVALID_ACTION','Use STATE, SIZE, DRAW, VERIFY, APPROVE or FINALIZE.',400);
+END $$;
+
+INSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');
