@@ -448,6 +448,10 @@ post("/api/ipo-allotments", async (ctx) => {
   const b = ctx.body || {};
   return mutate(ctx, b.clear ? "jse_ipo_allot_clear" : "jse_ipo_allot", b);
 });
+post("/api/ipo-admin", async (ctx) => {
+  need(ctx, "ADMIN");
+  return mutate(ctx, "jse_ipo_admin_tool", ctx.body || {}, ["admin:", "staff:", "pub:"]);
+});
 post("/api/teams", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_teams", ctx.body || {}); });
 post("/api/brokers", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_brokers", ctx.body || {}); });
 post("/api/config", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_config", ctx.body || {}); });
@@ -472,6 +476,8 @@ post("/api/users", async (ctx) => {
 // Excel / CSV imports: Teams (Team, Team Name, Section, Broker, Members) · Brokers (Broker Code, Broker Name[, Contact, Desk])
 // · IPO allotments (Team, IPO, Lots, Shares, Amount). The file is parsed here; the engine validates every row atomically.
 const IMPORTS: Record<string, { fn: string; required: string[]; map: Record<string, string> }> = {
+  roster_assignments: { fn: "jse_import_roster_assignments", required: ["team_number", "team_code", "broker_number", "broker_code", "broker_name"], map: { "team number": "team_number", "team no": "team_number", "team code": "team_code", "broker number": "broker_number", "broker no": "broker_number", "broker code": "broker_code", "broker name": "broker_name" } },
+  companies: { fn: "jse_import_companies", required: ["name", "ticker", "base_price"], map: { "company name": "name", name: "name", company: "name", ticker: "ticker", symbol: "ticker", "base price": "base_price", "base_price": "base_price", price: "base_price" } },
   teams: { fn: "jse_update_teams", required: ["team"], map: { team: "team", "team code": "team", "team name": "name", name: "name", section: "section", broker: "broker", "broker code": "broker", members: "members", "participant members": "members" } },
   brokers: { fn: "jse_update_brokers", required: ["broker"], map: { "broker code": "broker", broker: "broker", code: "broker", "broker name": "name", name: "name", contact: "contact", "broker contact": "contact", desk: "desk", "broker desk": "desk" } },
   allotments: { fn: "jse_ipo_allot", required: ["team", "ipo", "lots"], map: { team: "team", "team code": "team", ipo: "ipo", "ipo code": "ipo", symbol: "ipo", lots: "lots", shares: "shares", quantity: "shares", amount: "amount" } },
@@ -480,7 +486,7 @@ post("/api/import", async (ctx) => {
   need(ctx, "ADMIN");
   const b = ctx.body || {};
   const spec = IMPORTS[String(b.kind || "")];
-  if (!spec) throw new ApiError(400, "INVALID_IMPORT", "Choose what to import: teams, brokers or allotments.");
+  if (!spec) throw new ApiError(400, "INVALID_IMPORT", "Choose what to import: roster assignments, companies, teams, brokers or allotments.");
   let rows: string[][];
   try {
     if (typeof b.csv_text === "string") rows = readCsv(b.csv_text);
@@ -503,7 +509,7 @@ post("/api/import", async (ctx) => {
     return o;
   });
   if (!data.length) throw new ApiError(400, "NO_ROWS", "The file has no data rows.");
-  if (data.length > 2000) throw new ApiError(400, "TOO_MANY_ROWS", "At most 2,000 rows per import.");
+  if (data.length > (String(b.kind) === "roster_assignments" ? 10000 : 2000)) throw new ApiError(400, "TOO_MANY_ROWS", String(b.kind) === "roster_assignments" ? "At most 10,000 roster rows per upload; split a larger file into validated batches." : "At most 2,000 rows per import.");
   return mutate(ctx, spec.fn, { rows: data, admin_password: b.admin_password, dry_run: !!b.dry_run, replace: !!b.replace, batch_id: b.filename ? String(b.filename).slice(0, 60) : undefined });
 }, 3_000_000);
 
