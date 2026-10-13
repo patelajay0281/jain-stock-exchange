@@ -852,6 +852,8 @@
     JSE.poll(loadSecs, 30000);
     loadNames().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
+    loadIpoAdmin().catch(function (e) { $("ipoToolResult").textContent = "IPO tools unavailable: " + e.message; });
+    JSE.poll(loadIpoAdmin, 10000, { onError: function (e) { $("ipoToolResult").textContent = "IPO tools reconnecting: " + e.message; } });
     if (location.hash === "#intelligence") setTimeout(function () { $("intelligence").scrollIntoView(); }, 400);
   });
 })();
