@@ -128,7 +128,7 @@
 
     <section class="card">
       <div class="card-h bar"><h2>IPO allotments</h2><span class="meta" id="allotSum"></span></div>
-      <div class="card-b small muted" style="padding-bottom:0">Allocations must be loaded before START · 1 lot = 50 shares · shares = lots × 50 · amount = shares × IPO price. Allotments do not count toward the 5 BUY + 5 SELL assessment.</div>
+      <div class="card-b small muted" style="padding-bottom:0">Allocations must be loaded before START · IPO shares = allotted lots × that IPO’s configured allotment lot size. Normal market orders remain multiples of 50 shares. IPO allotments do not count toward the 5 BUY + 5 SELL assessment.</div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Team</th><th>IPO</th><th class="num">Lots</th><th class="num">Shares</th><th class="num">Amount</th></tr></thead><tbody id="allotTable"></tbody></table></div></div>
       <div class="card-b admin-only"><div class="row"><button class="btn sm" id="allotCsv" type="button">Export allotments</button><button class="btn sm bad" id="allotClear" type="button">Remove all allotments…</button></div></div>
       <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO code</th><th>Name</th><th>Symbol</th><th class="num">Price</th><th>Status</th><th class="num">Remaining</th></tr></thead><tbody id="ipoMaster"></tbody></table></div></div>
@@ -168,16 +168,18 @@
     </section>
 
     <section class="card admin-only" id="ipoIssueSizeBox">
-      <div class="card-h bar green"><h2>IPO Issue Size &amp; Inventory Management</h2><span class="meta">Issue size in shares or configured lots</span></div>
+      <div class="card-h bar green"><h2>IPO Issue Size &amp; Inventory Management</h2><span class="meta">IPO allotment lots are separate from 50-share trading lots</span></div>
       <div class="card-b">
         <div class="form-grid">
           <div class="field"><label for="ipoSizeSelect">Select IPO</label><select class="input" id="ipoSizeSelect"></select></div>
-          <div class="field"><label for="ipoSizeUnit">Enter size in</label><select class="input" id="ipoSizeUnit"><option value="SHARES">Shares</option><option value="LOTS">Lots</option></select></div>
+          <div class="field"><label for="ipoSizeUnit">Enter issue size in</label><select class="input" id="ipoSizeUnit"><option value="SHARES">Shares</option><option value="LOTS">IPO lots</option></select></div>
           <div class="field"><label for="ipoSizeInput">New issue size</label><input class="input" id="ipoSizeInput" type="number" min="1" step="1" placeholder="Whole number"></div>
-          <div class="field"><label for="ipoSizeReason">Reason for change</label><input class="input" id="ipoSizeReason" maxlength="300" placeholder="Required for audit"></div>
+          <div class="field"><label for="ipoLotSizeInput">IPO allotment lot size (shares per lot)</label><input class="input" id="ipoLotSizeInput" type="number" min="1" step="1" placeholder="e.g. 100"></div>
+          <div class="field"><label for="ipoSizeReason">Reason for issue-size change (optional)</label><input class="input" id="ipoSizeReason" maxlength="300" placeholder="Optional audit note"></div>
+          <div class="field"><label for="ipoLotSizeReason">Reason for lot-size change (optional)</label><input class="input" id="ipoLotSizeReason" maxlength="300" placeholder="Optional audit note"></div>
         </div>
         <div id="ipoSizeSummary" class="alert" style="margin-top:10px">Select an IPO to view issue size and inventory.</div>
-        <div class="row admin-only" style="margin-top:10px"><button class="btn sm primary" id="ipoSizeSave" type="button">Preview &amp; Save Issue Size…</button></div>
+        <div class="row admin-only" style="margin-top:10px;gap:8px"><button class="btn sm" id="ipoLotSizeSave" type="button">Save IPO Lot Size…</button><button class="btn sm primary" id="ipoSizeSave" type="button">Preview &amp; Save Issue Size…</button></div>
         <p class="small muted" style="margin-bottom:0">Available inventory = issue size − already allotted shares. Reductions below issued inventory are blocked. An active generated/verified/approved draw locks issue-size changes.</p>
       </div>
     </section>
@@ -656,7 +658,7 @@
       $("ipoToolStatus").textContent = "No IPO"; $("ipoToolSummary").textContent = "No active IPO was returned by the database.";
       $("ipoDrawRows").innerHTML = '<tr><td colspan="7" class="empty">No IPOs available.</td></tr>';
       $("ipoDraw").disabled = $("ipoVerify").disabled = $("ipoApprove").disabled = $("ipoFinalize").disabled = true;
-      $("ipoSizeSummary").textContent = "No IPO available."; return;
+      $("ipoSizeSummary").textContent = "No IPO available."; $("ipoLotSizeSave").disabled = true; $("ipoSizeSave").disabled = true; return;
     }
     var status = draw ? draw.status : "NOT GENERATED";
     $("ipoToolStatus").className = "pill " + (status === "FINALIZED" ? "open" : status === "APPROVED" ? "warn" : status === "VERIFIED" ? "prov" : "closed");
@@ -686,7 +688,7 @@
     $("ipoSizeSummary").className = "alert info";
     $("ipoSizeSummary").innerHTML = "Current issue size: <b>" + (ipo.offered === null || ipo.offered === undefined ? "not configured" : F.num(ipo.offered) + " shares") +
       "</b> · already allotted: <b>" + F.num(ipo.issued) + "</b> · available: <b>" + (ipo.remaining === null || ipo.remaining === undefined ? "not configured" : F.num(ipo.remaining)) +
-      "</b> · configured lot size: <b>" + F.num(ipo.lot_size) + " shares</b>";
+      "</b> · configured IPO allotment lot size: <b>" + F.num(ipo.lot_size) + " shares</b> (regular trading stays at 50-share multiples)";
     var size = ipo.offered === null || ipo.offered === undefined ? "" : $("ipoSizeUnit").value === "LOTS" ? Math.floor(ipo.offered / ipo.lot_size) : ipo.offered;
     var sizeInput = $("ipoSizeInput");
     if (sizeInput.dataset.forIpo !== ipo.symbol || sizeInput.dataset.edited !== "1") {
@@ -695,6 +697,13 @@
       sizeInput.dataset.edited = "";
     }
     $("ipoSizeSave").disabled = !S.admin || !eventNotStarted || (draw && ["GENERATED","VERIFIED","APPROVED"].includes(status));
+    var lotSizeInput = $("ipoLotSizeInput");
+    if (lotSizeInput.dataset.forIpo !== ipo.symbol || lotSizeInput.dataset.edited !== "1") {
+      lotSizeInput.value = ipo.lot_size || "";
+      lotSizeInput.dataset.forIpo = ipo.symbol;
+      lotSizeInput.dataset.edited = "";
+    }
+    $("ipoLotSizeSave").disabled = !S.admin || !["NOT_STARTED","LIVE"].includes(d.event_status) || !!ipo.applications || !!ipo.issued || !!ipo.latest_draw_status;
     $("companyGo").disabled = !S.admin || d.event_status !== "NOT_STARTED";
   }
   async function loadIpoAdmin(preferred) {
@@ -743,11 +752,25 @@
       rows.map(function (x) { return [x.position,x.team,x.team_name,x.requested_lots,x.allotted_lots,x.shares,(x.rounds||[]).join("|"),x.price,x.amount].map(csvCell).join(","); }).join("\\r\\n") + "\\r\\n";
     downloadText("JSE_IPO_Allotment_" + selectedIpo() + ".csv", csv);
   };
+  $("ipoLotSizeSave").onclick = async function () {
+    var symbol = $("ipoSizeSelect").value, lotSize = $("ipoLotSizeInput").value, reason = $("ipoLotSizeReason").value.trim();
+    if (!symbol) return JSE.toast("Select an IPO.", "warn");
+    if (!lotSize || !Number.isInteger(Number(lotSize)) || Number(lotSize) <= 0) return JSE.toast("Enter a positive whole-number IPO allotment lot size.", "warn");
+    try {
+      var r = await confirmed({ title: "Change IPO allotment lot size?", text: "This affects IPO applications and allotments for this IPO only. Regular stock trading remains in multiples of 50 shares. The lot size locks after any application, allotment or draw exists.", confirmText: "Save IPO lot size" },
+        "/api/ipo-admin", { action: "LOT_SIZE", ipo: symbol, lot_size: Number(lotSize), reason: reason });
+      if (!r) return;
+      $("ipoLotSizeReason").value = "";
+      $("ipoLotSizeInput").dataset.edited = "";
+      JSE.toast("IPO allotment lot size saved: " + F.num(r.lot_size) + " shares per lot.", "good", 8000);
+      await loadIpoAdmin(symbol); if (poller) poller.now();
+    } catch (e) { $("ipoSizeSummary").innerHTML = '<div class="alert bad">' + esc(e.message) + "</div>" + errList(e); JSE.toast(e.message, "bad", 9000); }
+  };
+  $("ipoLotSizeInput").addEventListener("input", function () { this.dataset.edited = "1"; });
   $("ipoSizeSave").onclick = async function () {
     var symbol = $("ipoSizeSelect").value, value = $("ipoSizeInput").value, unit = $("ipoSizeUnit").value, reason = $("ipoSizeReason").value.trim();
     if (!symbol) return JSE.toast("Select an IPO.", "warn");
     if (!value || !Number.isInteger(Number(value)) || Number(value) <= 0) return JSE.toast("Enter a positive whole-number issue size.", "warn");
-    if (!reason) return JSE.toast("Enter the reason for the issue-size change.", "warn");
     try {
       var r = await confirmed({ title: "Update IPO issue size?", text: "The configured inventory will change. Already allotted shares and financial history will not be changed.", confirmText: "Save issue size" },
         "/api/ipo-admin", { action: "SIZE", ipo: symbol, new_size: Number(value), unit: unit, reason: reason });
