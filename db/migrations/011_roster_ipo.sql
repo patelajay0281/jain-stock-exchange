@@ -42,6 +42,30 @@ CREATE TABLE IF NOT EXISTS ipo_allotment_draw_items (
 );
 CREATE INDEX IF NOT EXISTS ipo_allotment_draw_items_order_idx ON ipo_allotment_draw_items(draw_id, draw_position);
 
+-- Official Dalal Street broker aliases map the uploaded Broker Number/Code/Name to existing internal desks.
+-- Internal BROKER-XX identifiers remain untouched, so logins and historical records are preserved.
+CREATE TABLE IF NOT EXISTS broker_roster_aliases (
+  broker_number       integer PRIMARY KEY CHECK (broker_number > 0),
+  broker_code         text NOT NULL UNIQUE,
+  broker_name         text NOT NULL,
+  internal_broker_id  integer REFERENCES brokers(id)
+);
+INSERT INTO broker_roster_aliases(broker_number,broker_code,broker_name,internal_broker_id) VALUES
+  (1,'Prajna','M Manoj',(SELECT id FROM brokers WHERE code='BROKER-09')),
+  (2,'Ganita','Harsha G',(SELECT id FROM brokers WHERE code='BROKER-05')),
+  (3,'Amrit','Nehaa',(SELECT id FROM brokers WHERE code='BROKER-04')),
+  (4,'Vikas','Vikash',(SELECT id FROM brokers WHERE code='BROKER-01')),
+  (5,'Yash','Gokul Krishna',(SELECT id FROM brokers WHERE code='BROKER-02')),
+  (6,'Arohan','Aman',(SELECT id FROM brokers WHERE code='BROKER-06')),
+  (7,'Madhava','Mayur G',(SELECT id FROM brokers WHERE code='BROKER-03')),
+  (8,'Vidura','Bhavani Reddy',(SELECT id FROM brokers WHERE code='BROKER-07')),
+  (9,'Kalidasa','Varun SB',(SELECT id FROM brokers WHERE code='BROKER-08')),
+  (10,'Suvarna','Sujatha',(SELECT id FROM brokers WHERE code='BROKER-10'))
+ON CONFLICT (broker_number) DO UPDATE SET
+  broker_code=EXCLUDED.broker_code,
+  broker_name=EXCLUDED.broker_name,
+  internal_broker_id=coalesce(broker_roster_aliases.internal_broker_id,EXCLUDED.internal_broker_id);
+
 -- Five-column roster importer. This only updates the canonical broker assignment on existing teams.
 CREATE OR REPLACE FUNCTION jse_import_roster_assignments(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE
@@ -56,6 +80,7 @@ DECLARE
   v_broker_name text;
   t teams%ROWTYPE;
   b brokers%ROWTYPE;
+  v_alias broker_roster_aliases%ROWTYPE;
   v_plan jsonb := '[]'::jsonb;
   v_errors jsonb := '[]'::jsonb;
   v_changed integer := 0;
@@ -92,20 +117,19 @@ BEGIN
     IF t.seq <> v_team_no THEN
       v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Number ' || v_team_no || ' does not match ' || v_team_code || ' (registered number ' || t.seq || ')'); CONTINUE;
     END IF;
-    SELECT * INTO b FROM brokers WHERE code = v_broker_code AND active;
+    SELECT * INTO v_alias FROM broker_roster_aliases
+    WHERE broker_number=v_broker_no AND upper(broker_code)=v_broker_code AND lower(btrim(broker_name))=lower(btrim(v_broker_name));
     IF NOT FOUND THEN
-      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown or inactive Broker Code ' || v_broker_code); CONTINUE;
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number, Broker Code and Broker Name do not match the official broker roster'); CONTINUE;
     END IF;
-    IF substring(b.code from '([0-9]+)$') IS NULL OR substring(b.code from '([0-9]+)$')::integer <> v_broker_no THEN
-      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number ' || v_broker_no || ' does not match registered Broker Code ' || b.code); CONTINUE;
-    END IF;
-    IF lower(trim(b.name)) <> lower(v_broker_name) THEN
-      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Name does not match ' || b.code || ' (registered name: ' || b.name || ')'); CONTINUE;
+    SELECT * INTO b FROM brokers WHERE id=v_alias.internal_broker_id AND active;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'The official broker ' || v_alias.broker_code || ' has no active internal broker desk mapping'); CONTINUE;
     END IF;
     v_plan := v_plan || jsonb_build_object('team_id', t.id, 'team_number', t.seq, 'team_code', t.code,
-      'broker_id', b.id, 'broker_number', v_broker_no, 'broker_code', b.code, 'broker_name', b.name,
+      'broker_id', b.id, 'broker_number', v_broker_no, 'broker_code', v_alias.broker_code, 'broker_name', v_alias.broker_name,
       'before_broker_id', t.broker_id,
-      'before_broker_code', (SELECT code FROM brokers WHERE id = t.broker_id));
+      'before_broker_code', (SELECT broker_code FROM broker_roster_aliases WHERE internal_broker_id=t.broker_id LIMIT 1));
   END LOOP;
 
   FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
