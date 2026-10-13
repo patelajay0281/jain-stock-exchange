@@ -40,3 +40,34 @@ Account controls (13 Oct, commit a9aae19): Event Admin → Account controls → 
 
 ## Deployment log
 - 13 Oct 2026 22:00 IST: v3.14.0 (commit eb235d7) deployed to staging `jsestage` deployment 13; CI health run 38430902270 → version 3.14.0, db ok; staging DB verified: 010_safety applied, price_tick 1, auto loan off, max_company_pct 25, loan_requests present. Pages auto-deployed from v272.
+
+## Targeted v272 roster and IPO administration update (2026-10-13)
+
+Scope is limited to the existing Admin page's roster importer and IPO administration. Existing teams/brokers/manual allotment import options are retained.
+
+### Files changed
+- `public/admin.html`: added Team/Broker Assignment roster import option and three separate IPO panels (random allotment/issuance, company/base-price import, issue-size/inventory management); added previews, status display, export and admin-confirmed actions.
+- `backend/src/server.ts`: added `POST /api/ipo-admin`; added import definitions for `roster_assignments` and `companies`; raised the roster-only row ceiling to 10,000 with an explicit technical-limit message.
+- `backend/src/db.ts`: registered additive migration `011_roster_ipo` and marked it replayable/idempotent.
+- `backend/dist/app.mjs`: synchronized the runtime bundle with the migration and routes. Syntax checked after patching.
+- `db/migrations/011_roster_ipo.sql` (new): stores persistent random draws/items; maps the uploaded official broker number/code/name to existing internal broker desks without changing internal broker codes; implements validated roster assignment import, company/base-price import, issue-size updates, draw, verify, approve and atomic/idempotent final issuance.
+- `IMPLEMENTATION_PROGRESS.md`: this record.
+
+### Backups
+Exact originals are stored under `backups/v272-2026-10-13-before-roster-ipo/`. See `RESTORE_MANIFEST.md` for paths and original blob SHAs. The new migration had no original file; remove it to revert the code addition, but do not drop database objects after use without reviewing data first.
+
+### Validation completed
+- Inline JavaScript in `public/admin.html` parsed successfully.
+- Updated `backend/dist/app.mjs` parsed successfully after stripping its ESM imports/exports for syntax-only validation.
+- Migration was applied inside a database savepoint on staging `jse_stage`; state returned four IPOs.
+- Roster dry-run passed for `TEAM-001` with official broker assignment `6 / Arohan / Aman`; no data was committed.
+- Company/base-price dry-run passed for existing ticker `VOLTRA`; no data was committed.
+- Full IPO draw/verify/approve/finalize flow was exercised transactionally with four temporary applications and a five-lot inventory: generated a saved 1.2x draw, verified 5 lots/250 shares, approved it, finalized 250 shares, then rolled the entire test back.
+- Issue-size update from 100,000 to 110,000 shares was exercised inside a savepoint and rolled back.
+- Post-test check confirmed staging remained `LIVE`, `VOLTRA` issue size remained 100,000, with zero applied IPO applications and zero active allotments. No persistent financial records were changed by these tests.
+
+### Important live/staging state
+The existing staging database currently reports event status `LIVE`. This was not changed. The random draw and issue-size/company write actions are server-blocked until the event is in the appropriate pre-start/application-closed state; roster assignment import follows the existing team editor's broker-assignment policy. Dry-run previews remain available.
+
+### Deployment
+Source and runtime bundle are committed on branch `v272`. Redeploy only the staging Neon Function `jsestage` using the current `backend/dist/app.mjs` checksum and staging environment (`DB_NAME=jse_stage`, staging OIDC values). Do not deploy the production function `jse` as part of this task.
