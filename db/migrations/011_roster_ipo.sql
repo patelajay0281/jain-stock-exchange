@@ -1,6 +1,8 @@
 -- v272 targeted roster and IPO administration additions.
 -- Additive only: preserve existing tables, data, routes and financial history.
 
+ALTER TABLE securities ADD COLUMN IF NOT EXISTS ipo_lot_size integer NOT NULL DEFAULT 50 CHECK (ipo_lot_size > 0);
+
 CREATE TABLE IF NOT EXISTS ipo_allotment_draws (
   id                 bigserial PRIMARY KEY,
   security_id        integer NOT NULL REFERENCES securities(id),
@@ -281,7 +283,7 @@ BEGIN
       'success', true,
       'ipos', coalesce((SELECT jsonb_agg(jsonb_build_object(
         'symbol', sec.symbol, 'ipo_code', sec.ipo_code, 'name', sec.name, 'price', sec.base_price, 'live_price', sec.price,
-        'lot_size', sec.lot_size, 'offered', sec.ipo_shares_offered,
+        'lot_size', sec.ipo_lot_size, 'offered', sec.ipo_shares_offered,
         'issued', (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL),
         'remaining', CASE WHEN sec.ipo_shares_offered IS NULL THEN NULL ELSE sec.ipo_shares_offered -
           (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL) END,
@@ -291,7 +293,7 @@ BEGIN
         'latest_draw_status', (SELECT dd.status FROM ipo_allotment_draws dd WHERE dd.security_id=sec.id ORDER BY dd.id DESC LIMIT 1)
       ) ORDER BY sec.display_order, sec.id) FROM securities sec WHERE sec.kind='IPO' AND sec.active), '[]'::jsonb),
       'event_status', (SELECT status FROM event_control WHERE id=1),
-      'ipo', CASE WHEN s.id IS NULL THEN NULL ELSE jsonb_build_object('symbol',s.symbol,'name',s.name,'lot_size',s.lot_size,
+      'ipo', CASE WHEN s.id IS NULL THEN NULL ELSE jsonb_build_object('symbol',s.symbol,'name',s.name,'lot_size',s.ipo_lot_size,
         'offered',s.ipo_shares_offered,'issued',(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL),
         'remaining',CASE WHEN s.ipo_shares_offered IS NULL THEN NULL ELSE s.ipo_shares_offered-(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL) END) END,
       'draw', CASE WHEN d.id IS NULL THEN NULL ELSE to_jsonb(d) END,
@@ -313,11 +315,36 @@ BEGIN
   END IF;
 
   SELECT status INTO v_event_status FROM event_control WHERE id=1 FOR UPDATE;
-  IF v_event_status <> 'NOT_STARTED' THEN
+  IF v_event_status <> 'NOT_STARTED' AND v_action <> 'LOT_SIZE' THEN
     PERFORM jse_fail('EVENT_STARTED', 'IPO allotment and issue-size changes are allowed only before the event starts.', 409);
   END IF;
   SELECT * INTO s FROM securities WHERE kind='IPO' AND active AND (symbol=v_ipo OR ipo_code=v_ipo) FOR UPDATE;
   IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;
+
+  IF v_action = 'LOT_SIZE' THEN
+    IF v_event_status NOT IN ('NOT_STARTED','LIVE') THEN
+      PERFORM jse_fail('EVENT_NOT_CONFIGURABLE', 'IPO allotment lot size can only be changed before the event or during LIVE status, before IPO applications/allotments exist.', 409);
+    END IF;
+    IF jse_ipo_stage(s.id) = 'APPLICATION_OPEN' THEN
+      PERFORM jse_fail('IPO_APPLICATIONS_OPEN', 'Close the IPO application window before changing its allotment lot size.', 409);
+    END IF;
+    BEGIN v_new_size := (p->>'lot_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;
+    v_reason := trim(coalesce(p->>'reason',''));
+    IF v_new_size IS NULL OR v_new_size <= 0 OR v_new_size <> trunc(v_new_size) OR v_new_size > 2147483647 THEN
+      PERFORM jse_fail('INVALID_IPO_LOT_SIZE', 'IPO allotment lot size must be a positive whole number of shares.', 400);
+    END IF;
+    IF EXISTS (SELECT 1 FROM ipo_applications WHERE security_id=s.id)
+       OR EXISTS (SELECT 1 FROM ipo_allotments WHERE security_id=s.id)
+       OR EXISTS (SELECT 1 FROM ipo_allotment_draws WHERE security_id=s.id) THEN
+      PERFORM jse_fail('IPO_LOT_SIZE_LOCKED', 'IPO lot size cannot change after applications, allotments or a draw exist for this IPO.', 409);
+    END IF;
+    PERFORM jse_audit(a, 'IPO_LOT_SIZE_CHANGED', 'security', s.symbol, NULL, NULL,
+      jsonb_build_object('ipo_lot_size',s.ipo_lot_size),
+      jsonb_build_object('ipo_lot_size',v_new_size::integer),
+      jsonb_build_object('reason',nullif(v_reason,''),'trading_lot_size_unchanged',true));
+    UPDATE securities SET ipo_lot_size=v_new_size::integer, updated_at=now() WHERE id=s.id;
+    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_lot_size',s.ipo_lot_size,'lot_size',v_new_size::integer);
+  END IF;
 
   IF v_action = 'SIZE' THEN
     BEGIN v_new_size := (p->>'new_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;
@@ -327,7 +354,7 @@ BEGIN
       PERFORM jse_fail('INVALID_ISSUE_SIZE', 'Issue size must be a positive whole number.', 400);
     END IF;
     IF v_unit NOT IN ('SHARES','LOTS') THEN PERFORM jse_fail('INVALID_UNIT', 'Choose Shares or Lots.', 400); END IF;
-    IF v_unit='LOTS' THEN v_new_size := v_new_size * s.lot_size; END IF;
+    IF v_unit='LOTS' THEN v_new_size := v_new_size * s.ipo_lot_size; END IF;
     IF v_new_size > 2147483647 THEN PERFORM jse_fail('ISSUE_SIZE_TOO_LARGE', 'Issue size exceeds the supported inventory range.', 400); END IF;
     v_new_shares := v_new_size::integer;
     SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
@@ -364,14 +391,14 @@ BEGIN
     SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
     v_remaining := s.ipo_shares_offered - v_issued;
     IF v_remaining < 0 THEN PERFORM jse_fail('INVENTORY_MISMATCH', 'Issued shares exceed the configured IPO issue size.', 409); END IF;
-    v_available_lots := floor(v_remaining::numeric / s.lot_size)::integer;
+    v_available_lots := floor(v_remaining::numeric / s.ipo_lot_size)::integer;
     INSERT INTO ipo_allotment_draws(security_id,status,available_shares,available_lots,generated_by,inventory_snapshot)
     VALUES(s.id,'GENERATED',v_remaining,v_available_lots,jse_actor_name(a),
-      jsonb_build_object('offered_shares',s.ipo_shares_offered,'issued_shares',v_issued,'lot_size',s.lot_size,'base_price',s.base_price))
+      jsonb_build_object('offered_shares',s.ipo_shares_offered,'issued_shares',v_issued,'lot_size',s.ipo_lot_size,'base_price',s.base_price))
     RETURNING id INTO v_draw_id;
     FOR x IN
       SELECT ia.id AS application_id, ia.team_id, t.code AS team_code, t.name AS team_name,
-        ia.lots AS requested_lots, ia.price AS application_price, s.lot_size
+        ia.lots AS requested_lots, ia.price AS application_price, s.ipo_lot_size
       FROM ipo_applications ia JOIN teams t ON t.id=ia.team_id
       WHERE ia.security_id=s.id AND ia.status='APPLIED'
         AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
@@ -479,7 +506,169 @@ BEGIN
       'shares_issued',v_total_shares,'amount_charged',v_total_amount);
   END IF;
 
-  PERFORM jse_fail('INVALID_ACTION','Use STATE, SIZE, DRAW, VERIFY, APPROVE or FINALIZE.',400);
+  PERFORM jse_fail('INVALID_ACTION','Use STATE, LOT_SIZE, SIZE, DRAW, VERIFY, APPROVE or FINALIZE.',400);
 END $$;
+
+
+-- IPO application and allotment lots are separate from regular share-trading lots.
+CREATE OR REPLACE FUNCTION jse_ipo_application(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action', ''), 'SET'));
+  v_status text; t teams%ROWTYPE; s securities%ROWTYPE; app ipo_applications%ROWTYPE;
+  v_lots integer; v_amount numeric; v_other numeric; v_n integer;
+BEGIN
+  PERFORM jse_require_role(a, 'PARTICIPANT', 'ADMIN');
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  IF v_action = 'CLEAR' THEN
+    PERFORM jse_require_role(a, 'ADMIN');
+    PERFORM jse_require_admin_password(a, p);
+    IF v_status <> 'NOT_STARTED' THEN PERFORM jse_fail('EVENT_STARTED', 'Applications can be cleared only before the event starts.', 409); END IF;
+    DELETE FROM ipo_applications WHERE coalesce(p->>'ipo', '') = '' OR security_id = (SELECT id FROM securities WHERE kind = 'IPO' AND symbol = upper(trim(p->>'ipo')));
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    PERFORM jse_audit(a, 'IPO_APPLICATIONS_CLEARED', 'ipo_application', coalesce(nullif(p->>'ipo', ''), 'ALL'), NULL, NULL, NULL, NULL, jsonb_build_object('rows', v_n));
+    RETURN jsonb_build_object('success', true, 'cleared', v_n);
+  END IF;
+  SELECT * INTO t FROM teams WHERE id = CASE WHEN a->>'role' = 'PARTICIPANT' THEN nullif(a->>'team_id', '')::integer
+                                             ELSE (SELECT id FROM teams WHERE code = upper(trim(coalesce(p->>'team', '')))) END FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'Team not found.', 404); END IF;
+  SELECT * INTO s FROM securities WHERE kind = 'IPO' AND active AND (symbol = upper(trim(coalesce(p->>'ipo', p->>'symbol', ''))) OR ipo_code = upper(trim(coalesce(p->>'ipo', p->>'symbol', ''))));
+  IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose one of the IPOs.', 404); END IF;
+  IF jse_ipo_stage(s.id) <> 'APPLICATION_OPEN' THEN
+    PERFORM jse_fail('IPO_WINDOW_CLOSED', 'Applications for ' || s.name || ' are not open (stage: ' || replace(jse_ipo_stage(s.id), '_', ' ') || ').', 409);
+  END IF;
+  SELECT * INTO app FROM ipo_applications WHERE team_id = t.id AND security_id = s.id FOR UPDATE;
+  IF v_action = 'WITHDRAW' THEN
+    IF NOT FOUND OR app.status <> 'APPLIED' THEN PERFORM jse_fail('NO_APPLICATION', 'There is no application to withdraw.', 409); END IF;
+    UPDATE ipo_applications SET status = 'WITHDRAWN', updated_at = now(), updated_by_name = jse_actor_name(a) WHERE id = app.id;
+    PERFORM jse_audit(a, 'IPO_APPLICATION_WITHDRAWN', 'ipo_application', s.symbol, t.id, NULL, jsonb_build_object('lots', app.lots), NULL, NULL);
+    RETURN jsonb_build_object('success', true, 'status', 'WITHDRAWN');
+  ELSIF v_action <> 'SET' THEN
+    PERFORM jse_fail('INVALID_ACTION', 'Use SET or WITHDRAW.', 400);
+  END IF;
+  BEGIN v_lots := (p->>'lots')::integer; EXCEPTION WHEN others THEN v_lots := NULL; END;
+  IF v_lots IS NULL OR v_lots <= 0 THEN PERFORM jse_fail('INVALID_LOTS', 'Apply for a whole number of lots (1 lot = ' || s.ipo_lot_size || ' shares).', 400); END IF;
+  v_amount := v_lots * s.ipo_lot_size * s.base_price;
+  SELECT coalesce(sum(amount), 0) INTO v_other FROM ipo_applications WHERE team_id = t.id AND status = 'APPLIED' AND security_id <> s.id;
+  IF v_other + v_amount > t.cash THEN
+    PERFORM jse_fail('APPLICATION_CASH', 'All IPO applications together (' || jse_inr((v_other + v_amount)) || ') cannot exceed the team''s cash (' || jse_inr(t.cash) || ').', 409);
+  END IF;
+  INSERT INTO ipo_applications(team_id, security_id, lots, quantity, price, amount, status, created_by_name, updated_by_name)
+  VALUES (t.id, s.id, v_lots, v_lots * s.ipo_lot_size, s.base_price, v_amount, 'APPLIED', jse_actor_name(a), jse_actor_name(a))
+  ON CONFLICT (team_id, security_id) DO UPDATE SET lots = EXCLUDED.lots, quantity = EXCLUDED.quantity, price = EXCLUDED.price,
+    amount = EXCLUDED.amount, status = 'APPLIED', updated_at = now(), updated_by_name = EXCLUDED.updated_by_name
+  RETURNING * INTO app;
+  PERFORM jse_audit(a, 'IPO_APPLICATION_SUBMITTED', 'ipo_application', s.symbol, t.id, NULL, NULL,
+    jsonb_build_object('lots', v_lots, 'shares', v_lots * s.ipo_lot_size, 'amount', v_amount), jsonb_build_object('issue_price', s.base_price));
+  RETURN jsonb_build_object('success', true, 'status', 'APPLIED', 'application', to_jsonb(app) || jsonb_build_object('symbol', s.symbol));
+END $$;
+
+-- One prospectus record per IPO, managed by the administrator. Content is supplied by the organisers.
+
+CREATE OR REPLACE FUNCTION jse_ipo_allot(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_status text; r jsonb; v_errors jsonb := '[]'::jsonb; v_rows jsonb := '[]'::jsonb;
+  v_team teams%ROWTYPE; v_sec securities%ROWTYPE; v_lots integer; v_shares integer; v_amt numeric; v_i integer := 0;
+  v_replace boolean := coalesce((p->>'replace')::boolean, false);
+  v_batch text := coalesce(nullif(p->>'batch_id', ''), to_char(now(), 'YYYYMMDD-HH24MISS'));
+  v_total numeric := 0; v_count integer := 0; v_applied integer;
+  al ipo_allotments%ROWTYPE; x record;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
+  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR UPDATE;
+  IF v_status <> 'NOT_STARTED' THEN PERFORM jse_fail('EVENT_STARTED', 'IPO allotments can be loaded only before the event starts.', 409); END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN PERFORM jse_fail('NO_ROWS', 'No allotment rows were supplied.', 400); END IF;
+
+  -- validation pass (nothing is written unless every row is valid)
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i := v_i + 1;
+    SELECT * INTO v_team FROM teams WHERE code = upper(trim(coalesce(r->>'team', '')));
+    IF NOT FOUND THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown team ' || coalesce(r->>'team', '(blank)')); CONTINUE; END IF;
+    SELECT * INTO v_sec FROM securities WHERE kind = 'IPO' AND (symbol = upper(trim(coalesce(r->>'ipo', r->>'symbol', ''))) OR ipo_code = upper(trim(coalesce(r->>'ipo', '')))
+                                                               OR upper(name) = upper(trim(coalesce(r->>'ipo', r->>'symbol', ''))));
+    IF NOT FOUND THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown IPO ' || coalesce(r->>'ipo', r->>'symbol', '(blank)')); CONTINUE; END IF;
+    BEGIN v_lots := (r->>'lots')::integer; EXCEPTION WHEN others THEN v_lots := NULL; END;
+    IF v_lots IS NULL OR v_lots < 0 THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Lots must be a whole number'); CONTINUE; END IF;
+    IF v_lots = 0 THEN CONTINUE; END IF;
+    v_shares := v_lots * v_sec.ipo_lot_size; v_amt := v_shares * v_sec.base_price;
+    IF nullif(trim(coalesce(r->>'shares', '')), '') IS NOT NULL AND (r->>'shares')::numeric <> v_shares THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Shares ' || (r->>'shares') || ' \u2260 ' || v_lots || ' lots \xD7 ' || v_sec.ipo_lot_size || ' = ' || v_shares); CONTINUE;
+    END IF;
+    IF nullif(trim(coalesce(r->>'amount', '')), '') IS NOT NULL AND round((r->>'amount')::numeric, 2) <> v_amt THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Amount ' || (r->>'amount') || ' \u2260 ' || v_shares || ' \xD7 ' || jse_inr(v_sec.base_price) || ' = ' || jse_inr(v_amt)); CONTINUE;
+    END IF;
+    -- when the portal application process was used for this IPO, an allotment cannot exceed the team's application
+    IF EXISTS (SELECT 1 FROM ipo_applications ap WHERE ap.security_id = v_sec.id AND ap.status = 'APPLIED') THEN
+      SELECT lots INTO v_applied FROM ipo_applications ap WHERE ap.security_id = v_sec.id AND ap.team_id = v_team.id AND ap.status = 'APPLIED';
+      IF coalesce(v_applied, 0) < v_lots THEN
+        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' applied for ' || coalesce(v_applied, 0) || ' ' || v_sec.symbol || ' lot(s) but the file allots ' || v_lots); CONTINUE;
+      END IF;
+    END IF;
+    IF NOT v_replace AND EXISTS (SELECT 1 FROM ipo_allotments WHERE team_id = v_team.id AND security_id = v_sec.id AND reversed_at IS NULL) THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' already has a ' || v_sec.symbol || ' allotment (tick "replace" to overwrite)'); CONTINUE;
+    END IF;
+    v_rows := v_rows || jsonb_build_object('team_id', v_team.id, 'team', v_team.code, 'security_id', v_sec.id, 'symbol', v_sec.symbol,
+                                           'lots', v_lots, 'quantity', v_shares, 'price', v_sec.base_price, 'amount', v_amt);
+  END LOOP;
+  FOR x IN SELECT e->>'team' AS team, e->>'symbol' AS symbol, count(*) AS n FROM jsonb_array_elements(v_rows) e GROUP BY 1, 2 HAVING count(*) > 1 LOOP
+    v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' / ' || x.symbol || ' appears ' || x.n || ' times in the file');
+  END LOOP;
+  FOR x IN
+    SELECT e->>'team' AS team, (e->>'team_id')::integer AS team_id, sum((e->>'amount')::numeric) AS need
+    FROM jsonb_array_elements(v_rows) e GROUP BY 1, 2
+  LOOP
+    SELECT t2.cash + (CASE WHEN v_replace THEN coalesce((
+             SELECT sum(al2.amount) FROM ipo_allotments al2
+             JOIN jsonb_array_elements(v_rows) e2 ON (e2->>'team_id')::integer = al2.team_id AND (e2->>'security_id')::integer = al2.security_id
+             WHERE al2.team_id = x.team_id AND al2.reversed_at IS NULL), 0) ELSE 0 END)
+    INTO v_total FROM teams t2 WHERE t2.id = x.team_id;
+    IF x.need > v_total THEN
+      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' does not have enough cash for ' || jse_inr(x.need) || ' of allotments (available ' || jse_inr(v_total) || ')');
+    END IF;
+  END LOOP;
+  v_total := 0;
+  IF jsonb_array_length(v_errors) > 0 THEN
+    RETURN jsonb_build_object('success', false, 'code', 'ALLOTMENT_ERRORS', 'error', 'Nothing was loaded. Fix the rows listed and upload again.', 'errors', v_errors, 'http', 400);
+  END IF;
+  IF coalesce((p->>'dry_run')::boolean, false) THEN
+    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_rows),
+      'total_amount', (SELECT coalesce(sum((e->>'amount')::numeric), 0) FROM jsonb_array_elements(v_rows) e), 'preview', v_rows);
+  END IF;
+
+  FOR r IN SELECT value FROM jsonb_array_elements(v_rows) LOOP
+    IF v_replace THEN
+      PERFORM jse__reverse_allotment(a, al2.id) FROM ipo_allotments al2
+      WHERE al2.team_id = (r->>'team_id')::integer AND al2.security_id = (r->>'security_id')::integer AND al2.reversed_at IS NULL;
+    END IF;
+    INSERT INTO ipo_allotments(team_id, security_id, lots, quantity, price, amount, batch_id, created_by, created_by_name)
+    VALUES ((r->>'team_id')::integer, (r->>'security_id')::integer, (r->>'lots')::integer, (r->>'quantity')::integer,
+            (r->>'price')::numeric, (r->>'amount')::numeric, v_batch, nullif(a->>'id', '')::integer, jse_actor_name(a))
+    RETURNING * INTO al;
+    PERFORM jse__apply_allotment(a, al);
+    v_total := v_total + al.amount; v_count := v_count + 1;
+  END LOOP;
+  PERFORM jse_audit(a, 'IPO_ALLOTMENT_LOADED', 'ipo_allotment', v_batch, NULL, NULL, NULL, NULL,
+    jsonb_build_object('rows', v_count, 'total_amount', v_total, 'replace', v_replace));
+  RETURN jsonb_build_object('success', true, 'batch_id', v_batch, 'rows', v_count, 'total_amount', v_total);
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_ipo_page() RETURNS jsonb LANGUAGE sql STABLE AS $$
+  SELECT jsonb_build_object('success', true, 'event_name', cfg.event_name, 'event_start_at', cfg.event_start_at, 'window', jse_ipo_window(),
+    'status', (SELECT status FROM event_control WHERE id = 1),
+    'ipos', coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'symbol', s.symbol, 'ipo_code', s.ipo_code, 'name', s.name, 'sector', s.sector,
+        'issue_price', s.base_price, 'lot_size', s.ipo_lot_size, 'lot_value', s.ipo_lot_size * s.base_price,
+        'stage', jse_ipo_stage(s.id), 'listed', s.listed_at IS NOT NULL, 'listed_at', s.listed_at,
+        'listing_price', CASE WHEN s.listed_at IS NOT NULL THEN s.index_base_price END, 'price', s.price, 'in_index', s.listed_at IS NOT NULL,
+        'prospectus', jsonb_build_object(
+          'company_description', pr.company_description, 'issue_details', pr.issue_details, 'business_overview', pr.business_overview,
+          'financial_information', pr.financial_information, 'risk_factors', pr.risk_factors, 'use_of_proceeds', pr.use_of_proceeds,
+          'promoters_management', pr.promoters_management, 'other_information', pr.other_information,
+          'document_url', pr.document_url, 'document_name', pr.document_name, 'document_size', pr.document_size,
+          'document_uploaded_at', pr.document_uploaded_at, 'has_document', pr.document_data IS NOT NULL, 'updated_at', pr.updated_at)
+      ) ORDER BY s.display_order, s.id)
+      FROM securities s LEFT JOIN ipo_prospectus pr ON pr.security_id = s.id WHERE s.kind = 'IPO' AND s.active), '[]'::jsonb))
+  FROM event_config cfg WHERE cfg.id = 1
+$$;
 
 INSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');
