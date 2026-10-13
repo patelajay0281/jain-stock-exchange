@@ -1,4 +1,3 @@
-<!-- Backup of backend/src/db.ts on branch v272 before roster/IPO changes. Original blob SHA: dc63f70d85d683933dea8b1bae35c016be443e8b -->
 // Database access: one pg pool per process, every API call is a single SQL function call
 // (`SELECT fn($1::jsonb, $2::jsonb)`) so each financial action is exactly one transaction.
 import pg from "pg";
