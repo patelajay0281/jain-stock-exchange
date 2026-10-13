@@ -69,7 +69,6 @@ ON CONFLICT (broker_number) DO UPDATE SET
 -- Five-column roster importer. This only updates the canonical broker assignment on existing teams.
 CREATE OR REPLACE FUNCTION jse_import_roster_assignments(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE
-  v_status text;
   r jsonb;
   x jsonb;
   v_i integer := 0;
@@ -87,13 +86,8 @@ DECLARE
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN');
   IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
-  SELECT status INTO v_status FROM event_control WHERE id = 1;
-  IF v_status <> 'NOT_STARTED' AND NOT coalesce((p->>'dry_run')::boolean, false) THEN
-    PERFORM jse_fail('EVENT_STARTED', 'Roster broker assignments can be changed only before the event starts.', 409);
-  END IF;
-  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN
-    PERFORM 1 FROM event_control WHERE id=1 FOR UPDATE;
-  END IF;
+  -- Follow the existing team editor's policy: broker assignments can be changed without resetting team IDs or names.
+  -- The import changes only teams.broker_id and never touches historical orders or financial records.
   IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
     PERFORM jse_fail('NO_ROWS', 'No roster rows were supplied.', 400);
   END IF;
