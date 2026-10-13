@@ -106,6 +106,7 @@
       <div class="card-b">
         <div class="form-grid">
           <div class="field"><label for="impKind">Import</label><select class="input" id="impKind">
+            <option value="roster_assignments">Team/Broker roster — Team Number, Team Code, Broker Number, Broker Code, Broker Name</option>
             <option value="teams">Teams — Team, Team Name, Section, Broker, Members</option>
             <option value="brokers">Brokers — Broker Code, Broker Name (Contact, Desk)</option>
             <option value="allotments">IPO allotments — Team, IPO, Lots, Shares, Amount</option></select></div>
@@ -115,7 +116,7 @@
           <a class="small" href="#" id="impTemplate">Download the current list as a template</a></div>
         <div class="row admin-only" style="margin-top:10px"><button class="btn sm" id="impCheck" type="button">Validate only</button><button class="btn sm primary" id="impGo" type="button">Validate &amp; import…</button></div>
         <div id="impResult" style="margin-top:10px"></div>
-        <p class="small muted" style="margin:8px 0 0">Every row is validated first; nothing is saved unless the whole file is valid. Team names must come from the IKS pool and cannot change once names are locked. teams.broker_id stays the one broker assignment.</p>
+        <p class="small muted" id="impHelp" style="margin:8px 0 0">Every row is validated first; nothing is saved unless the whole file is valid. Team names must come from the IKS pool and cannot change once names are locked. teams.broker_id stays the one broker assignment.</p>
       </div>
     </section>
 
@@ -131,6 +132,54 @@
       <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Team</th><th>IPO</th><th class="num">Lots</th><th class="num">Shares</th><th class="num">Amount</th></tr></thead><tbody id="allotTable"></tbody></table></div></div>
       <div class="card-b admin-only"><div class="row"><button class="btn sm" id="allotCsv" type="button">Export allotments</button><button class="btn sm bad" id="allotClear" type="button">Remove all allotments…</button></div></div>
       <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO code</th><th>Name</th><th>Symbol</th><th class="num">Price</th><th>Status</th><th class="num">Remaining</th></tr></thead><tbody id="ipoMaster"></tbody></table></div></div>
+    </section>
+
+    <section class="card admin-only" id="ipoRandomBox">
+      <div class="card-h bar navy"><h2>IPO Random Allotment &amp; Share Issuance</h2><span class="meta">Saved random draw · approval required</span></div>
+      <div class="card-b">
+        <div class="form-grid">
+          <div class="field"><label for="ipoToolSelect">Select IPO</label><select class="input" id="ipoToolSelect"></select></div>
+          <div class="field"><label>Workflow status</label><div id="ipoToolStatus" class="pill closed">Loading IPO state…</div></div>
+        </div>
+        <div id="ipoToolSummary" class="alert" style="margin-top:10px">Loading IPO applications and inventory…</div>
+        <div class="row admin-only" style="margin-top:10px;gap:8px">
+          <button class="btn sm" id="ipoDraw" type="button">Generate Random Draw</button>
+          <button class="btn sm" id="ipoVerify" type="button">Verify Allotment</button>
+          <button class="btn sm" id="ipoApprove" type="button">Approve Allotment</button>
+          <button class="btn sm primary" id="ipoFinalize" type="button">Finalize &amp; Issue Shares</button>
+          <button class="btn sm" id="ipoDrawExport" type="button">Export Allotment CSV</button>
+        </div>
+      </div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:360px"><table class="t"><thead><tr><th>Draw order</th><th>Team</th><th class="num">Requested lots</th><th class="num">Allotted lots</th><th class="num">Shares</th><th>Rounds</th><th class="num">Amount</th></tr></thead><tbody id="ipoDrawRows"><tr><td colspan="7" class="empty">Select an IPO.</td></tr></tbody></table></div></div>
+      <div class="card-b"><div id="ipoToolResult" class="small muted">The draw is generated once and remains unchanged after refresh. Zero-allotment applicants remain in the report.</div></div>
+    </section>
+
+    <section class="card admin-only" id="companyBaseImportBox">
+      <div class="card-h bar"><h2>Company &amp; Base Price Import</h2><span class="meta">Excel / CSV · existing tickers</span></div>
+      <div class="card-b">
+        <p class="small muted" style="margin-top:0">Upload exactly these columns: Company Name, Ticker, Base Price. Ticker matches an existing security. This updates the company display name and base price only; live market prices, holdings and transactions are untouched.</p>
+        <div class="row" style="gap:8px;align-items:end">
+          <div class="field" style="flex:1"><label for="companyImportFile">Company file (.xlsx or .csv)</label><input type="file" id="companyImportFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="input"></div>
+          <button class="btn sm" type="button" id="companyTemplate">Download Template</button>
+        </div>
+        <div class="row admin-only" style="margin-top:10px;gap:8px"><button class="btn sm" id="companyCheck" type="button">Validate &amp; Preview</button><button class="btn sm primary" id="companyGo" type="button">Confirm Import…</button></div>
+        <div id="companyImportResult" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <section class="card admin-only" id="ipoIssueSizeBox">
+      <div class="card-h bar green"><h2>IPO Issue Size &amp; Inventory Management</h2><span class="meta">Issue size in shares or configured lots</span></div>
+      <div class="card-b">
+        <div class="form-grid">
+          <div class="field"><label for="ipoSizeSelect">Select IPO</label><select class="input" id="ipoSizeSelect"></select></div>
+          <div class="field"><label for="ipoSizeUnit">Enter size in</label><select class="input" id="ipoSizeUnit"><option value="SHARES">Shares</option><option value="LOTS">Lots</option></select></div>
+          <div class="field"><label for="ipoSizeInput">New issue size</label><input class="input" id="ipoSizeInput" type="number" min="1" step="1" placeholder="Whole number"></div>
+          <div class="field"><label for="ipoSizeReason">Reason for change</label><input class="input" id="ipoSizeReason" class="input" maxlength="300" placeholder="Required for audit"></div>
+        </div>
+        <div id="ipoSizeSummary" class="alert" style="margin-top:10px">Select an IPO to view issue size and inventory.</div>
+        <div class="row admin-only" style="margin-top:10px"><button class="btn sm primary" id="ipoSizeSave" type="button">Preview &amp; Save Issue Size…</button></div>
+        <p class="small muted" style="margin-bottom:0">Available inventory = issue size − already allotted shares. Reductions below issued inventory are blocked. An active generated/verified/approved draw locks issue-size changes.</p>
+      </div>
     </section>
 
     <section class="card">
