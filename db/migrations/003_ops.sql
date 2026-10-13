@@ -1503,7 +1503,7 @@ BEGIN
   PERFORM jse_require_role(a, 'ADMIN');
   IF v_action = 'LIST' THEN
     RETURN jsonb_build_object('success', true, 'users', coalesce((
-      SELECT jsonb_agg(jsonb_build_object('id', u2.id, 'username', u2.username, 'name', u2.display_name, 'role', u2.role,
+      SELECT jsonb_agg(jsonb_build_object('id', u2.id, 'username', u2.username, 'name', u2.display_name, 'email', u2.email, 'role', u2.role,
                                           'team', t.code, 'broker', b.code, 'active', u2.active, 'last_login_at', u2.last_login_at,
                                           'must_change_password', u2.must_change_password) ORDER BY u2.role, u2.username)
       FROM app_users u2 LEFT JOIN teams t ON t.id = u2.team_id LEFT JOIN brokers b ON b.id = u2.broker_id), '[]'::jsonb));
@@ -1528,6 +1528,48 @@ BEGIN
     IF NOT u.active THEN UPDATE sessions SET revoked_at = now() WHERE user_id = u.id AND revoked_at IS NULL; END IF;
     PERFORM jse_audit(a, CASE WHEN u.active THEN 'USER_ENABLED' ELSE 'USER_DISABLED' END, 'user', u.username, u.team_id, NULL, NULL, NULL, NULL);
     RETURN jsonb_build_object('success', true, 'username', u.username, 'active', u.active);
+  ELSIF v_action = 'CREATE_USER' THEN
+    -- v3.14: add an account for any role (extra brokers, desks, faculty, administrators); password shown once
+    DECLARE v_role text := upper(trim(coalesce(p->>'role', ''))); v_user text := upper(trim(coalesce(p->>'username', '')));
+            v_name text := trim(coalesce(p->>'display_name', '')); v_team integer; v_broker integer; v_inst integer;
+    BEGIN
+      IF v_role NOT IN ('ADMIN','EXCHANGE','BANK','BROKER','PIT_MANAGER','INSTITUTIONAL','PARTICIPANT','VIEWER') THEN
+        PERFORM jse_fail('INVALID_ROLE', 'Choose a valid role.', 400); END IF;
+      IF v_user !~ '^[A-Z0-9][A-Z0-9_.-]{2,39}$' THEN
+        PERFORM jse_fail('INVALID_USERNAME', 'Username: 3–40 letters, digits, dot, dash or underscore (e.g. BROKER-11, BANK-05).', 400); END IF;
+      IF EXISTS (SELECT 1 FROM app_users WHERE lower(username) = lower(v_user)) THEN
+        PERFORM jse_fail('USERNAME_TAKEN', v_user || ' already exists.', 409); END IF;
+      IF v_name = '' THEN v_name := v_user; END IF;
+      IF v_role = 'PARTICIPANT' THEN
+        SELECT id INTO v_team FROM teams WHERE code = upper(trim(coalesce(p->>'team', '')));
+        IF v_team IS NULL THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'A participant account needs an existing team code (TEAM-001 …).', 400); END IF;
+      ELSIF v_role = 'BROKER' THEN
+        SELECT id INTO v_broker FROM brokers WHERE code = upper(trim(coalesce(nullif(p->>'broker', ''), v_user)));
+        IF v_broker IS NULL THEN   -- a new broker desk: create the broker record with this code
+          INSERT INTO brokers(code, name) VALUES (upper(trim(coalesce(nullif(p->>'broker', ''), v_user))), v_name) RETURNING id INTO v_broker;
+        END IF;
+      ELSIF v_role = 'INSTITUTIONAL' THEN
+        SELECT id INTO v_inst FROM institutions ORDER BY id LIMIT 1;
+      END IF;
+      v_pw := coalesce(nullif(p->>'password', ''), jse_random_password());
+      IF length(v_pw) < 8 THEN PERFORM jse_fail('WEAK_PASSWORD', 'Use at least 8 characters.', 400); END IF;
+      INSERT INTO app_users(username, display_name, email, role, team_id, broker_id, institution_id, password_hash, must_change_password)
+      VALUES (v_user, v_name, nullif(trim(coalesce(p->>'email', '')), ''), v_role, v_team, v_broker, v_inst, crypt(v_pw, gen_salt('bf', 8)),
+              coalesce((p->>'must_change_password')::boolean, false))
+      RETURNING * INTO u;
+      PERFORM jse_audit(a, 'USER_CREATED', 'user', u.username, u.team_id, NULL, NULL,
+        jsonb_build_object('role', u.role, 'display_name', u.display_name, 'broker', (SELECT code FROM brokers WHERE id = u.broker_id)), NULL);
+      RETURN jsonb_build_object('success', true, 'username', u.username, 'role', u.role, 'password', v_pw,
+        'message', 'Account ' || u.username || ' (' || u.role || ') created.');
+    END;
+  ELSIF v_action = 'UPDATE_USER' THEN
+    SELECT * INTO u FROM app_users WHERE lower(username) = lower(trim(coalesce(p->>'username', ''))) FOR UPDATE;
+    IF NOT FOUND THEN PERFORM jse_fail('USER_NOT_FOUND', 'User not found.', 404); END IF;
+    UPDATE app_users SET display_name = coalesce(nullif(trim(p->>'display_name'), ''), display_name),
+                         email = CASE WHEN p ? 'email' THEN nullif(trim(p->>'email'), '') ELSE email END, updated_at = now() WHERE id = u.id;
+    PERFORM jse_audit(a, 'USER_UPDATED', 'user', u.username, u.team_id, NULL, jsonb_build_object('display_name', u.display_name, 'email', u.email),
+      jsonb_build_object('display_name', coalesce(nullif(trim(p->>'display_name'), ''), u.display_name), 'email', CASE WHEN p ? 'email' THEN nullif(trim(p->>'email'), '') ELSE u.email END), NULL);
+    RETURN jsonb_build_object('success', true, 'username', u.username, 'message', u.username || ' updated.');
   ELSIF v_action = 'RESET_ROLE_PASSWORDS' THEN
     -- issue fresh passwords for every account of one role (returned once, never stored in clear)
     FOR r IN SELECT id, username FROM app_users WHERE role = upper(coalesce(p->>'role', '')) AND id IS DISTINCT FROM nullif(a->>'id', '')::integer

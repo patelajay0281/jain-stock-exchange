@@ -479,11 +479,27 @@ test("P3 bank and institutional investor names are editable; IDs and balances un
   assert.equal((await POST("/api/rename", { kind: "BANK", name: "  ", ...A }, "ADMIN")).data.code, "INVALID_NAME");
   ok(await POST("/api/rename", { kind: "BANK", name: "Dalal Cooperative Bank", reason: "sponsor", ...A }, "ADMIN"));
   assert.equal((await GET("/api/loan-requests", "BANK-01")).data.bank_name, "Dalal Cooperative Bank");
+  ok(await POST("/api/rename", { kind: "INSTITUTION", id: inst0.id, name: "Temp Funds " + Date.now(), reason: "temp", ...A }, "ADMIN"));
   ok(await POST("/api/rename", { kind: "INSTITUTION", id: inst0.id, name: "Nalanda Funds Ltd", reason: "official name", ...A }, "ADMIN"));
   const inst1 = (await GET("/api/institutional-portfolio", "INST-01")).data.institution;
   assert.equal(inst1.id, inst0.id); assert.equal(inst1.name, "Nalanda Funds Ltd");
   const aud = (await GET("/api/audit?action=INSTITUTION_RENAMED", "ADMIN")).data.rows[0];
   assert.ok(aud && aud.details.reason === "official name", JSON.stringify(aud));
+});
+
+test("account controls: add a second broker login and a bank account, edit, sign in, duplicates refused", async () => {
+  const sfx = String(Date.now()).slice(-6), bu = "BRK-" + sfx, ku = "BANK-" + sfx;
+  const b = await POST("/api/users", { action: "CREATE_USER", role: "BROKER", username: bu.toLowerCase(), display_name: "Desk 1 relief", broker: "BROKER-01", password: "relief-pass-01", ...A }, "ADMIN");
+  ok(b); assert.equal(b.data.username, bu);
+  assert.equal((await POST("/api/users", { action: "CREATE_USER", role: "BROKER", username: bu, broker: "BROKER-01", ...A }, "ADMIN")).data.code, "USERNAME_TAKEN");
+  assert.equal((await POST("/api/users", { action: "CREATE_USER", role: "BANK", username: ku, ...A }, "BANK-01")).status, 403);
+  const k = await POST("/api/users", { action: "CREATE_USER", role: "BANK", username: ku, ...A }, "ADMIN"); ok(k); assert.ok(k.data.password.length >= 8);
+  assert.equal((await POST("/api/users", { action: "CREATE_USER", role: "PARTICIPANT", username: "TEAM-X" + sfx, team: "TEAM-999", ...A }, "ADMIN")).data.code, "TEAM_NOT_FOUND");
+  ok(await POST("/api/users", { action: "UPDATE_USER", username: ku, display_name: "Bank Desk 5", email: "bank5@example.com", ...A }, "ADMIN"));
+  const list = (await GET("/api/users", "ADMIN")).data.users;
+  assert.ok(list.some((u) => u.username === ku && u.name === "Bank Desk 5" && u.email === "bank5@example.com"));
+  const li = await POST("/api/login", { username: bu, password: "relief-pass-01" });
+  ok(li); assert.equal(li.data.user.role, "BROKER"); assert.equal(li.data.user.broker, "BROKER-01");
 });
 
 test("market price changed: Market News closes open orders created at the old price; settlement never writes a price", async () => {

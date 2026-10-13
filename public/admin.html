@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=317">
+<link rel="stylesheet" href="/assets/jse.css?v=318">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -152,6 +152,18 @@
           <button class="btn sm" id="issueBtn" type="button">Issue new passwords for this role…</button>
         </div>
         <p class="small muted">New passwords are shown once and downloaded as a CSV. Old sessions for those accounts are signed out.</p>
+        <div class="label" style="margin:14px 0 6px">Add an account</div>
+        <div class="form-grid">
+          <div class="field"><label for="nuRole">Role</label><select class="input" id="nuRole"><option value="BROKER">Broker</option><option value="PIT_MANAGER">Pit Manager</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
+            <option value="INSTITUTIONAL">Institutional desk</option><option value="VIEWER">Faculty viewer</option><option value="PARTICIPANT">Participant team</option><option value="ADMIN">Administrator</option></select></div>
+          <div class="field"><label for="nuUser">Username</label><input class="input" id="nuUser" maxlength="40" placeholder="e.g. BROKER-11, BANK-05"></div>
+          <div class="field"><label for="nuName">Display name</label><input class="input" id="nuName" maxlength="80"></div>
+          <div class="field"><label for="nuEmail">Email (optional)</label><input class="input" id="nuEmail" type="email" maxlength="120"></div>
+          <div class="field"><label for="nuLink">Broker code / Team code</label><input class="input" id="nuLink" maxlength="40" placeholder="Broker: its code (new code = new broker) · Participant: TEAM-001"></div>
+          <div class="field"><label for="nuPw">Password (blank = random)</label><input class="input" id="nuPw" type="text" maxlength="80" autocomplete="off"></div>
+        </div>
+        <div class="row" style="margin-top:10px;gap:10px"><label class="small"><input type="checkbox" id="nuMust"> Ask to change password at first sign-in</label>
+          <button class="btn primary sm" id="nuGo" type="button">Add account…</button></div>
       </div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Username</th><th>Role</th><th>Broker</th><th>Last sign-in</th><th>Status</th><th class="actions"></th></tr></thead><tbody id="users"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
     </section>
@@ -178,8 +190,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=317"></script>
-<script src="/assets/jse.js?v=317"></script>
+<script src="/assets/config.js?v=318"></script>
+<script src="/assets/jse.js?v=318"></script>
 <script>
 (function () {
   "use strict";
@@ -334,8 +346,8 @@
     $("userSum").textContent = Object.keys(counts).map(function (k) { return (JSE.ROLE_LABEL[k] || k) + " " + counts[k]; }).join(" · ");
     var staff = u.users.filter(function (x) { return x.role !== "PARTICIPANT"; });
     $("users").innerHTML = staff.map(function (x) {
-      return '<tr><td class="nowrap"><b>' + esc(x.username) + "</b></td><td>" + esc(JSE.ROLE_LABEL[x.role] || x.role) + "</td><td>" + esc(x.broker || "") + '</td><td class="nowrap">' + (x.last_login_at ? F.datetime(x.last_login_at) : '<span class="muted">never</span>') + "</td><td>" +
-        (x.active ? '<span class="badge ok">Active</span>' : '<span class="badge no">Disabled</span>') + '</td><td class="actions"><button class="btn sm" data-pw="' + esc(x.username) + '">New password</button> <button class="btn sm" data-act="' + esc(x.username) + '" data-on="' + (x.active ? "0" : "1") + '">' + (x.active ? "Disable" : "Enable") + "</button></td></tr>";
+      return '<tr><td class="nowrap"><b>' + esc(x.username) + '</b><div class="tiny muted">' + esc(x.name || "") + (x.email ? " · " + esc(x.email) : "") + "</div></td><td>" + esc(JSE.ROLE_LABEL[x.role] || x.role) + "</td><td>" + esc(x.broker || "") + '</td><td class="nowrap">' + (x.last_login_at ? F.datetime(x.last_login_at) : '<span class="muted">never</span>') + "</td><td>" +
+        (x.active ? '<span class="badge ok">Active</span>' : '<span class="badge no">Disabled</span>') + '</td><td class="actions"><button class="btn sm" data-edit="' + esc(x.username) + '">Edit</button> <button class="btn sm" data-pw="' + esc(x.username) + '">New password</button> <button class="btn sm" data-act="' + esc(x.username) + '" data-on="' + (x.active ? "0" : "1") + '">' + (x.active ? "Disable" : "Enable") + "</button></td></tr>";
     }).join("") + '<tr><td colspan="6" class="small muted">The 100 participant team accounts (TEAM-001 … TEAM-100) are managed with “Issue new passwords” above.</td></tr>';
   }
 
@@ -409,6 +421,30 @@
     loadNames();
   };
   loadNames();
+
+  // ---- add / edit accounts (v3.14) ----
+  $("nuGo").onclick = async function () {
+    var role = $("nuRole").value, link = $("nuLink").value.trim().toUpperCase();
+    var body = { action: "CREATE_USER", role: role, username: $("nuUser").value.trim().toUpperCase(), display_name: $("nuName").value.trim(), email: $("nuEmail").value.trim(),
+                 password: $("nuPw").value, must_change_password: $("nuMust").checked };
+    if (role === "BROKER") body.broker = link || body.username; if (role === "PARTICIPANT") body.team = link;
+    if (!body.username) return JSE.toast("Enter a username.", "warn");
+    try {
+      var r = await confirmed({ title: "Add account " + body.username, text: (JSE.ROLE_LABEL[role] || role) + (link ? " · " + link : ""), confirmText: "Add account" }, "/api/users", body);
+      if (!r) return;
+      await JSE.dialog({ title: "Account created", html: "<p><b>" + esc(r.username) + "</b> (" + esc(r.role) + ")</p><p>Password: <code>" + esc(r.password) + "</code></p><p class=\"small muted\">Shown once — note it down now.</p>", confirmText: "Done" });
+      ["nuUser", "nuName", "nuEmail", "nuLink", "nuPw"].forEach(function (id) { $(id).value = ""; });
+      loadUsers();
+    } catch (ex) { JSE.toast(ex.message, "bad", 8000); }
+  };
+  $("users").addEventListener("click", async function (e) {
+    var un = e.target.getAttribute && e.target.getAttribute("data-edit"); if (!un) return;
+    var x = (S.users || []).filter(function (y) { return y.username === un; })[0] || {};
+    var name = prompt("Display name for " + un, x.name || ""); if (name === null) return;
+    var email = prompt("Email for " + un + " (blank = none)", x.email || ""); if (email === null) return;
+    try { var r = await confirmed({ title: "Update " + un, text: name + (email ? " · " + email : ""), confirmText: "Save" }, "/api/users", { action: "UPDATE_USER", username: un, display_name: name, email: email });
+      if (r) { JSE.toast(r.message, "good"); loadUsers(); } } catch (ex) { JSE.toast(ex.message, "bad", 8000); }
+  });
   // ---- lifecycle wiring ----
   document.querySelectorAll("[data-ev]").forEach(function (b) { b.addEventListener("click", function () { eventAction(b.getAttribute("data-ev")); }); });
   $("undoLast").onclick = function () { undoRedo("UNDO"); };
