@@ -1,4 +1,3 @@
-<!-- Backup of backend/src/server.ts on branch v272 before roster/IPO changes. Original blob SHA: 8509f07e67a7745e04215e8461644680347b7125 -->
 // JAIN STOCK EXCHANGE (JSE) v311 — API server (Neon Functions / Node.js 24).
 // Default export is a fetch handler: { fetch(request): Promise<Response> }.
 // Every financial rule lives in the database (db/migrations); this layer authenticates, routes, caches reads,
