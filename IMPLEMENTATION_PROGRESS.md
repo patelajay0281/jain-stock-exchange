@@ -25,6 +25,8 @@ P1 — loans: `loan_requests` table (001a), `jse_loan_request / jse_loan_decide 
 P3 (part) — `jse_rename_entity` + POST `/api/rename` (admin password): bank name (`event_config.bank_name`, shown on Bank page) and institutional investor name (same institutions row). Audited with old/new/reason. Admin card "Bank & Institutional Investor Management".
 Tests: `npm test` 44/44, `npm run test:ui` 72/72 (local).
 
+Account controls (13 Oct, commit a9aae19): Event Admin → Account controls → "Add an account" (any role; a new broker code creates a new broker desk; participant needs an existing TEAM code; password shown once) and Edit (name / email). API actions CREATE_USER / UPDATE_USER in jse_admin_users. Tests 45/45 + 72/72. Staging deployment 14.
+
 ## Pending (in priority order)
 1. P4 IPO round 1 (TIME-CRITICAL: applications 13 Oct 1:15 PM → 14 Oct 1:15 PM, allotment 14 Oct 7 PM):
    applications table (team, ipo, lots 0–10, ₹15,000 per lot, ≤ ₹1.5 L per IPO, ≤ ₹6 L total, one per team, immutable),
