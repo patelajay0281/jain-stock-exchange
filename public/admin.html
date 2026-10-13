@@ -174,7 +174,7 @@
           <div class="field"><label for="ipoSizeSelect">Select IPO</label><select class="input" id="ipoSizeSelect"></select></div>
           <div class="field"><label for="ipoSizeUnit">Enter size in</label><select class="input" id="ipoSizeUnit"><option value="SHARES">Shares</option><option value="LOTS">Lots</option></select></div>
           <div class="field"><label for="ipoSizeInput">New issue size</label><input class="input" id="ipoSizeInput" type="number" min="1" step="1" placeholder="Whole number"></div>
-          <div class="field"><label for="ipoSizeReason">Reason for change</label><input class="input" id="ipoSizeReason" class="input" maxlength="300" placeholder="Required for audit"></div>
+          <div class="field"><label for="ipoSizeReason">Reason for change</label><input class="input" id="ipoSizeReason" maxlength="300" placeholder="Required for audit"></div>
         </div>
         <div id="ipoSizeSummary" class="alert" style="margin-top:10px">Select an IPO to view issue size and inventory.</div>
         <div class="row admin-only" style="margin-top:10px"><button class="btn sm primary" id="ipoSizeSave" type="button">Preview &amp; Save Issue Size…</button></div>
@@ -688,7 +688,12 @@
       "</b> · already allotted: <b>" + F.num(ipo.issued) + "</b> · available: <b>" + (ipo.remaining === null || ipo.remaining === undefined ? "not configured" : F.num(ipo.remaining)) +
       "</b> · configured lot size: <b>" + F.num(ipo.lot_size) + " shares</b>";
     var size = ipo.offered === null || ipo.offered === undefined ? "" : $("ipoSizeUnit").value === "LOTS" ? Math.floor(ipo.offered / ipo.lot_size) : ipo.offered;
-    $("ipoSizeInput").value = size;
+    var sizeInput = $("ipoSizeInput");
+    if (sizeInput.dataset.forIpo !== ipo.symbol || sizeInput.dataset.edited !== "1") {
+      sizeInput.value = size;
+      sizeInput.dataset.forIpo = ipo.symbol;
+      sizeInput.dataset.edited = "";
+    }
     $("ipoSizeSave").disabled = !S.admin || !eventNotStarted || (draw && ["GENERATED","VERIFIED","APPROVED"].includes(status));
   }
   async function loadIpoAdmin(preferred) {
@@ -719,7 +724,14 @@
   }
   $("ipoToolSelect").onchange = function () { loadIpoAdmin($("ipoToolSelect").value).catch(function (e) { JSE.toast(e.message, "bad"); }); };
   $("ipoSizeSelect").onchange = function () { loadIpoAdmin($("ipoSizeSelect").value).catch(function (e) { JSE.toast(e.message, "bad"); }); };
-  $("ipoSizeUnit").onchange = function () { if (S.ipoAdmin) renderIpoAdmin(S.ipoAdmin); };
+  $("ipoSizeInput").addEventListener("input", function () { this.dataset.edited = "1"; });
+  $("ipoSizeUnit").onchange = function () {
+    var input = $("ipoSizeInput"), ipo = S.ipoAdmin && (S.ipoAdmin.ipos || []).filter(function (x) { return x.symbol === $("ipoSizeSelect").value; })[0];
+    if (input.dataset.edited === "1" && ipo && Number.isInteger(Number(input.value)) && Number(input.value) > 0) {
+      input.value = this.value === "LOTS" ? Math.floor(Number(input.value) / ipo.lot_size) : Number(input.value) * ipo.lot_size;
+      input.dataset.edited = "1";
+    } else if (S.ipoAdmin) renderIpoAdmin(S.ipoAdmin);
+  };
   $("ipoDraw").onclick = function () { doIpoAction("DRAW"); };
   $("ipoVerify").onclick = function () { doIpoAction("VERIFY"); };
   $("ipoApprove").onclick = function () { doIpoAction("APPROVE"); };
@@ -739,7 +751,7 @@
       var r = await confirmed({ title: "Update IPO issue size?", text: "The configured inventory will change. Already allotted shares and financial history will not be changed.", confirmText: "Save issue size" },
         "/api/ipo-admin", { action: "SIZE", ipo: symbol, new_size: Number(value), unit: unit, reason: reason });
       if (!r) return;
-      $("ipoSizeReason").value = "";
+      $("ipoSizeReason").value = ""; $("ipoSizeInput").dataset.edited = "";
       JSE.toast("Issue size saved: " + F.num(r.new_size) + " shares; " + F.num(r.remaining) + " remaining.", "good", 8000);
       await loadIpoAdmin(symbol); if (poller) poller.now();
     } catch (e) { $("ipoSizeSummary").innerHTML = '<div class="alert bad">' + esc(e.message) + "</div>" + errList(e); JSE.toast(e.message, "bad", 9000); }
