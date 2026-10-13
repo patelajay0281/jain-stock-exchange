@@ -157,7 +157,7 @@
     <section class="card admin-only" id="companyBaseImportBox">
       <div class="card-h bar"><h2>Company &amp; Base Price Import</h2><span class="meta">Excel / CSV · existing tickers</span></div>
       <div class="card-b">
-        <p class="small muted" style="margin-top:0">Upload exactly these columns: Company Name, Ticker, Base Price. Ticker matches an existing security. This updates the company display name and base price only; live market prices, holdings and transactions are untouched.</p>
+        <p class="small muted" style="margin-top:0">Upload exactly these columns: Company Name, Ticker, Base Price. Ticker matches an existing security. This updates the company display name and base price only; live market prices, holdings and transactions are untouched. Saving is allowed only before the event starts; validation previews remain available at any time.</p>
         <div class="row" style="gap:8px;align-items:end">
           <div class="field" style="flex:1"><label for="companyImportFile">Company file (.xlsx or .csv)</label><input type="file" id="companyImportFile" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="input"></div>
           <button class="btn sm" type="button" id="companyTemplate">Download Template</button>
@@ -695,6 +695,7 @@
       sizeInput.dataset.edited = "";
     }
     $("ipoSizeSave").disabled = !S.admin || !eventNotStarted || (draw && ["GENERATED","VERIFIED","APPROVED"].includes(status));
+    $("companyGo").disabled = !S.admin || d.event_status !== "NOT_STARTED";
   }
   async function loadIpoAdmin(preferred) {
     if (!S.admin) return;
