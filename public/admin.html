@@ -245,7 +245,7 @@
 (function () {
   "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
-  var S = { st: null, admin: false, mood: null, users: null, market: null, names: null };
+  var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null };
   var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
     ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
   var SHEETS = [["winner", "Winner & Runner-Up"], ["assessment", "Assessment & Eligibility"], ["networth", "Net Worth & P/L"], ["teams", "Team Details (import template)"], ["participants", "Participant Details"],
@@ -579,8 +579,37 @@
 
   // ---- roster import ----
   function fileB64(file) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(",")[1] || ""); }; r.onerror = function () { rej(new Error("The file could not be read.")); }; r.readAsDataURL(file); }); }
-  $("impKind").onchange = function () { $("impReplaceWrap").classList.toggle("hidden", $("impKind").value !== "allotments"); };
-  $("impTemplate").onclick = function (e) { e.preventDefault(); var k = { teams: "teams", brokers: "broker_roster", allotments: "ipo_allotments" }[$("impKind").value]; JSE.download("/api/export?sheet=" + k, "JSE_" + k + ".csv").catch(function (x) { JSE.toast(x.message, "bad"); }); };
+  function downloadText(name, text, type) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: type || "text/csv;charset=utf-8" }));
+    a.download = name; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function csvCell(v) {
+    var s = v === null || v === undefined ? "" : String(v);
+    if (/^[=+\-@]/.test(s)) s = "'" + s;
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  $("impKind").onchange = function () {
+    var kind = $("impKind").value;
+    $("impReplaceWrap").classList.toggle("hidden", kind !== "allotments");
+    $("impHelp").textContent = kind === "roster_assignments"
+      ? "Required columns: Team Number, Team Code, Broker Number, Broker Code, Broker Name. This updates only existing teams' broker assignments; every identifier is checked against the registered roster."
+      : kind === "teams"
+        ? "Every row is validated before saving. Team names must come from the IKS pool and cannot change once names are locked. Existing team codes remain stable."
+        : kind === "brokers"
+          ? "Broker Code must already exist. The import updates broker display details without changing broker identity."
+          : "Every row is validated first; nothing is saved unless the whole file is valid.";
+  };
+  $("impTemplate").onclick = function (e) {
+    e.preventDefault();
+    var kind = $("impKind").value;
+    if (kind === "roster_assignments") {
+      downloadText("JSE_Roster_Assignments_Template.csv", "\uFEFFTeam Number,Team Code,Broker Number,Broker Code,Broker Name\r\n");
+      return;
+    }
+    var k = { teams: "teams", brokers: "broker_roster", allotments: "ipo_allotments" }[kind];
+    JSE.download("/api/export?sheet=" + k, "JSE_" + k + ".csv").catch(function (x) { JSE.toast(x.message, "bad"); });
+  };
   async function runImport(dry) {
     var f = $("impFile").files[0]; if (!f) return JSE.toast("Choose an .xlsx or .csv file first.", "warn");
     var body = { kind: $("impKind").value, filename: f.name, data_base64: await fileB64(f), dry_run: dry, replace: $("impReplace").checked };
@@ -589,12 +618,155 @@
       var r = dry ? await JSE.api.post("/api/import", body) : await confirmed({ title: "Import " + f.name + "?", text: "Every row is validated first; nothing is saved unless the whole file is valid.", confirmText: "Import" }, "/api/import", body);
       if (!r) { $("impResult").innerHTML = ""; return; }
       $("impResult").innerHTML = '<div class="alert good">' + (r.dry_run ? "Valid: " + r.rows + " row(s) ready to import" + (r.total_amount !== undefined ? " · " + F.money(r.total_amount) : "") + "." :
-        "Imported " + (r.updated !== undefined ? r.updated + " row(s), " + r.changed + " changed" : r.rows + " allotment row(s) · " + F.money(r.total_amount)) + ".") + "</div>";
+        "Imported " + (r.updated !== undefined ? r.updated + " row(s), " + r.changed + " changed" : r.rows + " allotment row(s) · " + F.money(r.total_amount)) + ".") + "</div>" + importPreviewHtml(r.preview, $("impKind").value);
       if (!dry) { poller.now(); loadNames(); }
     } catch (e) { $("impResult").innerHTML = '<div class="alert bad"><b>' + esc(e.message) + "</b>" + errList(e) + "</div>"; }
   }
   $("impCheck").onclick = function () { runImport(true); };
   $("impGo").onclick = function () { runImport(false); };
+
+  function importPreviewHtml(rows, kind) {
+    if (!Array.isArray(rows) || !rows.length) return "";
+    var cols = kind === "roster_assignments"
+      ? [["team_number","Team Number"],["team_code","Team Code"],["broker_number","Broker Number"],["broker_code","Broker Code"],["broker_name","Broker Name"],["before_broker_code","Current Broker"]]
+      : kind === "companies"
+        ? [["ticker","Ticker"],["name","Company Name"],["base_price","Base Price"],["before_base_price","Current Base Price"]]
+        : [["team","Team"],["ipo","IPO"],["lots","Lots"],["quantity","Shares"],["amount","Amount"]];
+    return '<div class="table-wrap" style="margin-top:8px;max-height:220px"><table class="t"><thead><tr>' +
+      cols.map(function (x) { return "<th>" + x[1] + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      rows.slice(0, 30).map(function (r) { return "<tr>" + cols.map(function (x) { return "<td>" + esc(r[x[0]] === undefined ? "" : r[x[0]]) + "</td>"; }).join("") + "</tr>"; }).join("") +
+      "</tbody></table></div>" + (rows.length > 30 ? '<p class="small muted">Showing first 30 of ' + rows.length + " rows.</p>" : "");
+  }
+
+  // ---- IPO tools (separate from the existing manual allotment import) ----
+  function selectedIpo() { return $("ipoToolSelect").value || $("ipoSizeSelect").value || ""; }
+  function setIpoOptions(ipos, selected) {
+    var options = ipos.map(function (x) { return '<option value="' + esc(x.symbol) + '">' + esc(x.symbol) + " — " + esc(x.name) + "</option>"; }).join("");
+    ["ipoToolSelect","ipoSizeSelect"].forEach(function (id) {
+      var el = $(id), old = selected || el.value;
+      el.innerHTML = options || '<option value="">No active IPOs found</option>';
+      if (old && ipos.some(function (x) { return x.symbol === old; })) el.value = old;
+      else if (ipos.length) el.value = ipos[0].symbol;
+    });
+  }
+  function renderIpoAdmin(d) {
+    var ipos = d.ipos || [], selected = $("ipoToolSelect").value, ipo = (ipos.filter(function (x) { return x.symbol === selected; })[0]) || d.ipo;
+    var draw = d.draw, items = d.items || [];
+    if (!ipo) {
+      $("ipoToolStatus").textContent = "No IPO"; $("ipoToolSummary").textContent = "No active IPO was returned by the database.";
+      $("ipoDrawRows").innerHTML = '<tr><td colspan="7" class="empty">No IPOs available.</td></tr>';
+      $("ipoDraw").disabled = $("ipoVerify").disabled = $("ipoApprove").disabled = $("ipoFinalize").disabled = true;
+      $("ipoSizeSummary").textContent = "No IPO available."; return;
+    }
+    var status = draw ? draw.status : "NOT GENERATED";
+    $("ipoToolStatus").className = "pill " + (status === "FINALIZED" ? "open" : status === "APPROVED" ? "warn" : status === "VERIFIED" ? "prov" : "closed");
+    $("ipoToolStatus").textContent = status;
+    var remaining = ipo.remaining === null || ipo.remaining === undefined ? "Issue size not set" : F.num(ipo.remaining) + " shares remaining";
+    $("ipoToolSummary").className = "alert " + (ipo.remaining === null || ipo.remaining === undefined ? "bad" : "info");
+    $("ipoToolSummary").innerHTML = "<b>" + esc(ipo.name) + " (" + esc(ipo.symbol) + ")</b> · issue size " +
+      (ipo.offered === null || ipo.offered === undefined ? "not configured" : F.num(ipo.offered) + " shares") +
+      " · issued " + F.num(ipo.issued) + " · " + remaining +
+      " · eligible applications " + F.num(d.eligible_count) + " · ineligible/excluded " + F.num(d.rejected_count) +
+      (draw ? " · requested " + F.num(draw.requested_lots) + " lots · capacity " + F.num(draw.available_lots) +
+        " lots · subscription " + (draw.subscription_ratio === null ? "inventory unavailable" : Number(draw.subscription_ratio).toFixed(2) + "×") : "");
+    $("ipoDrawRows").innerHTML = items.length ? items.map(function (x) {
+      return "<tr><td>" + F.num(x.position) + "</td><td><b>" + esc(x.team) + '</b><span class="sub">' + esc(x.team_name || "") + "</span></td><td class=\"num\">" +
+        F.num(x.requested_lots) + "</td><td class=\"num\"><b>" + F.num(x.allotted_lots) + "</b></td><td class=\"num\">" +
+        F.num(x.shares) + "</td><td>" + esc((x.rounds || []).join(", ") || "—") + '</td><td class="num">' + F.money(x.amount) + "</td></tr>";
+    }).join("") : '<tr><td colspan="7" class="empty">' + (draw ? "No draw items were saved." : "Generate a draw after the application window closes.") + "</td></tr>";
+    var eventNotStarted = d.event_status === "NOT_STARTED";
+    $("ipoDraw").disabled = !S.admin || !eventNotStarted || !!draw || !ipo.offered;
+    $("ipoVerify").disabled = !S.admin || !draw || status !== "GENERATED" || !eventNotStarted;
+    $("ipoApprove").disabled = !S.admin || !draw || status !== "VERIFIED" || !eventNotStarted;
+    $("ipoFinalize").disabled = !S.admin || !draw || status !== "APPROVED" || !eventNotStarted;
+    $("ipoDrawExport").disabled = !items.length;
+    $("ipoToolResult").textContent = draw ? "Draw #" + draw.id + " · algorithm " + (draw.algorithm_version || "RANDOM_ROUND_ROBIN_V1") +
+      " · generated " + F.datetime(draw.generated_at) + (draw.finalized_at ? " · issued " + F.datetime(draw.finalized_at) : "") :
+      "No saved draw. The server will persist the randomized order; refreshing this page will not rerun it.";
+    $("ipoSizeSummary").className = "alert info";
+    $("ipoSizeSummary").innerHTML = "Current issue size: <b>" + (ipo.offered === null || ipo.offered === undefined ? "not configured" : F.num(ipo.offered) + " shares") +
+      "</b> · already allotted: <b>" + F.num(ipo.issued) + "</b> · available: <b>" + (ipo.remaining === null || ipo.remaining === undefined ? "not configured" : F.num(ipo.remaining)) +
+      "</b> · configured lot size: <b>" + F.num(ipo.lot_size) + " shares</b>";
+    var size = ipo.offered === null || ipo.offered === undefined ? "" : $("ipoSizeUnit").value === "LOTS" ? Math.floor(ipo.offered / ipo.lot_size) : ipo.offered;
+    $("ipoSizeInput").value = size;
+    $("ipoSizeSave").disabled = !S.admin || !eventNotStarted || (draw && ["GENERATED","VERIFIED","APPROVED"].includes(status));
+  }
+  async function loadIpoAdmin(preferred) {
+    if (!S.admin) return;
+    var selected = preferred || $("ipoToolSelect").value || $("ipoSizeSelect").value || "";
+    var d = await JSE.api.post("/api/ipo-admin", { action: "STATE", ipo: selected });
+    setIpoOptions(d.ipos || [], selected);
+    var chosen = $("ipoToolSelect").value || $("ipoSizeSelect").value || "";
+    if (chosen && chosen !== selected) d = await JSE.api.post("/api/ipo-admin", { action: "STATE", ipo: chosen });
+    S.ipoAdmin = d;
+    renderIpoAdmin(d);
+  }
+  async function doIpoAction(action) {
+    var symbol = selectedIpo();
+    if (!symbol) return JSE.toast("Select an IPO first.", "warn");
+    var prompts = {
+      DRAW: { title: "Generate random IPO allotment?", text: "This creates and saves a server-generated random order. Round-by-round allocation will follow the saved order. Refreshing the page will not regenerate it.", confirmText: "Generate draw" },
+      VERIFY: { title: "Verify IPO allotment?", text: "The server will recheck inventory, requested lots and allotted lots before approval.", confirmText: "Verify" },
+      APPROVE: { title: "Approve IPO allotment?", text: "Approval does not issue shares. Finalization is a separate step.", confirmText: "Approve" },
+      FINALIZE: { title: "Finalize and issue IPO shares?", text: "This will charge the allotted amount and add shares to participant portfolios exactly once. Verify the preview before continuing.", confirmText: "Finalize & issue", danger: true }
+    };
+    try {
+      var r = await confirmed(prompts[action], "/api/ipo-admin", { action: action, ipo: symbol });
+      if (!r) return;
+      JSE.toast((r.replay ? "Existing saved draw: " : "IPO action completed: ") + (r.status || action), "good", 7000);
+      await loadIpoAdmin(symbol); if (poller) poller.now(); loadNames();
+    } catch (e) { $("ipoToolResult").innerHTML = '<span class="bad">' + esc(e.message) + "</span>" + errList(e); JSE.toast(e.message, "bad", 9000); }
+  }
+  $("ipoToolSelect").onchange = function () { loadIpoAdmin($("ipoToolSelect").value).catch(function (e) { JSE.toast(e.message, "bad"); }); };
+  $("ipoSizeSelect").onchange = function () { loadIpoAdmin($("ipoSizeSelect").value).catch(function (e) { JSE.toast(e.message, "bad"); }); };
+  $("ipoSizeUnit").onchange = function () { if (S.ipoAdmin) renderIpoAdmin(S.ipoAdmin); };
+  $("ipoDraw").onclick = function () { doIpoAction("DRAW"); };
+  $("ipoVerify").onclick = function () { doIpoAction("VERIFY"); };
+  $("ipoApprove").onclick = function () { doIpoAction("APPROVE"); };
+  $("ipoFinalize").onclick = function () { doIpoAction("FINALIZE"); };
+  $("ipoDrawExport").onclick = function () {
+    var d = S.ipoAdmin || {}, rows = d.items || [];
+    var csv = "\\uFEFFDraw Order,Team Code,Team Name,Requested Lots,Allotted Lots,Shares,Rounds,Application Price,Amount\\r\\n" +
+      rows.map(function (x) { return [x.position,x.team,x.team_name,x.requested_lots,x.allotted_lots,x.shares,(x.rounds||[]).join("|"),x.price,x.amount].map(csvCell).join(","); }).join("\\r\\n") + "\\r\\n";
+    downloadText("JSE_IPO_Allotment_" + selectedIpo() + ".csv", csv);
+  };
+  $("ipoSizeSave").onclick = async function () {
+    var symbol = $("ipoSizeSelect").value, value = $("ipoSizeInput").value, unit = $("ipoSizeUnit").value, reason = $("ipoSizeReason").value.trim();
+    if (!symbol) return JSE.toast("Select an IPO.", "warn");
+    if (!value || !Number.isInteger(Number(value)) || Number(value) <= 0) return JSE.toast("Enter a positive whole-number issue size.", "warn");
+    if (!reason) return JSE.toast("Enter the reason for the issue-size change.", "warn");
+    try {
+      var r = await confirmed({ title: "Update IPO issue size?", text: "The configured inventory will change. Already allotted shares and financial history will not be changed.", confirmText: "Save issue size" },
+        "/api/ipo-admin", { action: "SIZE", ipo: symbol, new_size: Number(value), unit: unit, reason: reason });
+      if (!r) return;
+      $("ipoSizeReason").value = "";
+      JSE.toast("Issue size saved: " + F.num(r.new_size) + " shares; " + F.num(r.remaining) + " remaining.", "good", 8000);
+      await loadIpoAdmin(symbol); if (poller) poller.now();
+    } catch (e) { $("ipoSizeSummary").innerHTML = '<div class="alert bad">' + esc(e.message) + "</div>" + errList(e); JSE.toast(e.message, "bad", 9000); }
+  };
+
+  // ---- Company/base-price import ----
+  function companyPreviewHtml(rows) {
+    if (!Array.isArray(rows) || !rows.length) return "";
+    return '<div class="table-wrap" style="margin-top:8px;max-height:220px"><table class="t"><thead><tr><th>Ticker</th><th>Company Name</th><th>Current Base</th><th>Proposed Base</th></tr></thead><tbody>' +
+      rows.slice(0,30).map(function (x) { return "<tr><td><b>" + esc(x.ticker) + "</b></td><td>" + esc(x.name) + "</td><td class=\"num\">" + F.money(x.before_base_price) + "</td><td class=\"num\">" + F.money(x.base_price) + "</td></tr>"; }).join("") +
+      "</tbody></table></div>" + (rows.length > 30 ? '<p class="small muted">Showing first 30 of ' + rows.length + " rows.</p>" : "");
+  }
+  $("companyTemplate").onclick = function () { downloadText("JSE_Company_Base_Price_Template.csv", "\\uFEFFCompany Name,Ticker,Base Price\\r\\n"); };
+  async function runCompanyImport(dry) {
+    var file = $("companyImportFile").files[0];
+    if (!file) return JSE.toast("Choose a company .xlsx or .csv file first.", "warn");
+    var body = { kind: "companies", filename: file.name, data_base64: await fileB64(file), dry_run: dry };
+    $("companyImportResult").innerHTML = '<span class="spinner"></span> ' + (dry ? "Validating…" : "Importing…");
+    try {
+      var r = dry ? await JSE.api.post("/api/import", body) : await confirmed({ title: "Import company names and base prices?", text: "The file is validated atomically. Existing live prices, holdings, trades and cash balances are not changed.", confirmText: "Import" }, "/api/import", body);
+      if (!r) { $("companyImportResult").innerHTML = ""; return; }
+      $("companyImportResult").innerHTML = '<div class="alert good">' + (r.dry_run ? "Valid: " + r.rows + " company row(s) ready to import." : "Imported " + r.rows + " row(s); " + (r.changed || 0) + " changed. Live prices were not changed.") + "</div>" + companyPreviewHtml(r.preview);
+      if (!dry) { $("companyImportFile").value = ""; if (poller) poller.now(); loadSecs(); loadIpoAdmin().catch(function () {}); }
+    } catch (e) { $("companyImportResult").innerHTML = '<div class="alert bad"><b>' + esc(e.message) + "</b>" + errList(e) + "</div>"; }
+  }
+  $("companyCheck").onclick = function () { runCompanyImport(true); };
+  $("companyGo").onclick = function () { runCompanyImport(false); };
 
   // ---- exports ----
   var dl = function (sheet) { JSE.download("/api/export?sheet=" + sheet, "JSE_" + sheet + ".csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
