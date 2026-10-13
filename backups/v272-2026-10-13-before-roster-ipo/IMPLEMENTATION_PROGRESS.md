@@ -1,4 +1,3 @@
-<!-- Backup of IMPLEMENTATION_PROGRESS.md on branch v272 before roster/IPO changes. Original blob SHA: 41e16978a26288979e0706c69741b5036495a829 -->
 # IMPLEMENTATION_PROGRESS — JAIN STOCK EXCHANGE (v3.14 master brief, 13 Oct 2026)
 
 Objective: implement the "COMPLETE MASTER EXECUTION PROMPT" (P0–P7) on the existing app without rebuilding or resetting data.
