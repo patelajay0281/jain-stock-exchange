@@ -87,9 +87,12 @@ DECLARE
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN');
   IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
-  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR UPDATE;
-  IF v_status <> 'NOT_STARTED' THEN
-    PERFORM jse_fail('EVENT_STARTED', 'Roster broker assignments can be imported only before the event starts.', 409);
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  IF v_status <> 'NOT_STARTED' AND NOT coalesce((p->>'dry_run')::boolean, false) THEN
+    PERFORM jse_fail('EVENT_STARTED', 'Roster broker assignments can be changed only before the event starts.', 409);
+  END IF;
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN
+    PERFORM 1 FROM event_control WHERE id=1 FOR UPDATE;
   END IF;
   IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
     PERFORM jse_fail('NO_ROWS', 'No roster rows were supplied.', 400);
@@ -169,6 +172,7 @@ DECLARE
   r jsonb;
   x jsonb;
   v_i integer := 0;
+  v_status text;
   v_ticker text;
   v_name text;
   v_price numeric;
@@ -179,6 +183,11 @@ DECLARE
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN');
   IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
+  SELECT status INTO v_status FROM event_control WHERE id=1;
+  IF v_status <> 'NOT_STARTED' AND NOT coalesce((p->>'dry_run')::boolean, false) THEN
+    PERFORM jse_fail('EVENT_STARTED', 'Company/base-price imports can be saved only before the event starts.', 409);
+  END IF;
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM 1 FROM event_control WHERE id=1 FOR UPDATE; END IF;
   IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
     PERFORM jse_fail('NO_ROWS', 'No company rows were supplied.', 400);
   END IF;
