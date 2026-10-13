@@ -1,0 +1,57 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-13T16:38:13.028Z",
+  "run_id": "38432064581",
+  "commit": "d2a540844372747831146dc4a495c62c839f2b17",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+    "suites": [
+      "health"
+    ],
+    "probes": [
+      {
+        "rps": 200,
+        "seconds": 15,
+        "viewers": 300,
+        "pause_s": 5
+      },
+      {
+        "rps": 850,
+        "seconds": 60,
+        "viewers": 600,
+        "pause_s": 10
+      },
+      {
+        "rps": 1200,
+        "seconds": 30,
+        "viewers": 800
+      }
+    ],
+    "note": "Edit this file on the v272 branch to start a staging run. Run 15: health only (event data untouched) — account controls.",
+    "stress": {
+      "orders": 1500,
+      "workers": 16
+    }
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "3.14.0",
+        "db": "ok",
+        "db_ms": 3,
+        "uptime_s": 0,
+        "node": "v24.16.0",
+        "time": "2026-10-13T16:38:15.145Z"
+      },
+      "ms": 3122,
+      "event_csv_route": 401
+    }
+  },
+  "finished_at": "2026-10-13T16:38:16.150Z"
+}
