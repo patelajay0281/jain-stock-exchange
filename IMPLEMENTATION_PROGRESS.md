@@ -71,3 +71,10 @@ The existing staging database currently reports event status `LIVE`. This was no
 
 ### Deployment
 Source and runtime bundle are committed on branch `v272`. Redeploy only the staging Neon Function `jsestage` using the current `backend/dist/app.mjs` checksum and staging environment (`DB_NAME=jse_stage`, staging OIDC values). Do not deploy the production function `jse` as part of this task.
+
+### Deployment verification update
+- Cloudflare Pages preview deployment for commit `da77ec797167fada9838f642e3783be78b976b78` completed successfully; the `v272.jse-live.pages.dev` alias now contains all three new IPO panels and the five-column roster import option.
+- Neon staging function `jsestage` deployed as deployment ID `15` using the versioned runtime bundle and `DB_NAME=jse_stage`. Production function `jse` was not changed.
+- Staging API health returned `success=true`, `db=ok`, version `3.14.0`.
+- The migration is now applied to `jse_stage`; the three new tables/alias mapping and migration record were verified. Read-only live dry-runs succeeded for roster assignment and company/base-price import.
+- The actual staging event status remains `LIVE`; this was deliberately not reset. IPO draw and issue-size/company write actions remain safely blocked by server-side pre-start/window guards until the existing event state is appropriate. Roster assignment import is available and changes only `teams.broker_id`.
