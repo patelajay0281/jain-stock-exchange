@@ -113,4 +113,96 @@ BEGIN
 END $function$
 
 
+CREATE OR REPLACE FUNCTION public.jse_broker_desk(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE b brokers%ROWTYPE; cfg event_config%ROWTYPE;
+  -- the Pit Manager records trades for every team; administrators can open the all-teams desk with broker=ALL
+  v_all boolean := a->>'role' = 'PIT_MANAGER' OR (a->>'role' IN ('ADMIN', 'VIEWER') AND upper(coalesce(p->>'broker', '')) = 'ALL');
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER', 'VIEWER');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  IF a->>'role' = 'BROKER' THEN
+    SELECT * INTO b FROM brokers WHERE id = nullif(a->>'broker_id', '')::integer;
+  ELSE
+    SELECT * INTO b FROM brokers WHERE code = CASE WHEN v_all THEN (SELECT min(code) FROM brokers) ELSE upper(trim(coalesce(nullif(p->>'broker', ''), (SELECT min(code) FROM brokers)))) END;
+  END IF;
+  IF NOT FOUND THEN PERFORM jse_fail('BROKER_NOT_FOUND', 'Broker not found.', 404); END IF;
+  RETURN jsonb_build_object('success', true,
+    'broker', CASE WHEN v_all THEN jsonb_build_object('code', 'ALL', 'name', 'All teams') ELSE jsonb_build_object('code', b.code, 'name', b.name, 'contact', b.contact, 'desk', b.desk) END, 'all_teams', v_all,
+    'brokers', CASE WHEN a->>'role' = 'BROKER' THEN NULL ELSE (SELECT jsonb_agg(jsonb_build_object('code', br.code, 'name', br.name, 'broker_number', coalesce(ra.broker_number,br.id), 'roster_code', coalesce(ra.broker_code,br.code), 'roster_name', coalesce(ra.broker_name,br.name)) ORDER BY coalesce(ra.broker_number,br.id)) FROM brokers br LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=br.id) END,
+    'rules', jsonb_build_object('brokerage_rate', cfg.brokerage_rate, 'max_order_value', cfg.max_order_value, 'min_order_value', cfg.min_order_value,
+      'stock_lot_size', cfg.stock_lot_size, 'loan_max_principal', cfg.loan_max_principal, 'loan_interest_rate', cfg.loan_interest_rate,
+      'min_buy_trades', cfg.min_buy_trades, 'min_sell_trades', cfg.min_sell_trades),
+    'teams', coalesce((SELECT jsonb_agg(jsonb_build_object('code', tm.code, 'seq', right(tm.code,3)::integer, 'name', CASE WHEN sa.account_code='BIG-BULL' THEN sa.display_name ELSE tm.name END, 'special_account', sa.account_code, 'cash_limit', sa.cash_limit, 'broker_number', coalesce(ra.broker_number, tm.broker_id), 'broker_code', coalesce(ra.broker_code, (SELECT code FROM brokers WHERE id=tm.broker_id)), 'broker_name', coalesce(ra.broker_name, (SELECT name FROM brokers WHERE id=tm.broker_id)), 'section', tm.section, 'members', tm.members,
+        'cash', tm.cash, 'free_cash', jse_available_cash(tm.team_id, NULL), 'loan_room', jse_loan_room(tm.team_id),
+        'holdings_value', tm.holdings_value, 'net_worth', tm.net_worth, 'settled_buys', tm.settled_buys, 'settled_sells', tm.settled_sells,
+        'assessment_met', tm.assessment_met, 'loan_liability', tm.loan_liability, 'eligibility_status', tm.eligibility_status,
+        'holdings', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'quantity', h.quantity,
+              'available', (SELECT available FROM jse_available_qty(tm.team_id, s.id, NULL)), 'avg_price', round(h.trade_cost / nullif(h.quantity, 0), 2),
+              'price', s.price, 'value', h.quantity * s.price, 'tradable', s.kind = 'EQUITY' OR s.listed_at IS NOT NULL) ORDER BY h.quantity * s.price DESC)
+            FROM holdings h JOIN securities s ON s.id = h.security_id WHERE h.team_id = tm.team_id AND h.quantity > 0), '[]'::jsonb),
+        'open_orders', (SELECT count(*) FROM orders o WHERE o.team_id = tm.team_id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')))
+        ORDER BY tm.seq)
+      FROM jse_team_metrics tm LEFT JOIN jse_special_accounts sa ON sa.team_id=tm.team_id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=tm.broker_id WHERE (v_all OR tm.broker_id = b.id) AND tm.active), '[]'::jsonb),
+    'instructions', coalesce((SELECT jsonb_agg(jsonb_build_object('id', i.id, 'instruction_no', i.instruction_no, 'team', t.code, 'team_name', t.name,
+        'symbol', s.symbol, 'security', s.name, 'side', i.side, 'quantity', i.quantity, 'note', i.note, 'price_seen', i.price_seen, 'market_price', s.price,
+        'status', i.status, 'created_at', i.created_at, 'handled_at', i.handled_at, 'handled_by', i.handled_by_name, 'decline_reason', i.decline_reason,
+        'order_no', o.order_no, 'order_status', o.status) ORDER BY (i.status = 'OPEN') DESC, i.id DESC)
+      FROM (SELECT * FROM instructions WHERE broker_id = b.id AND (status = 'OPEN' OR created_at > now() - interval '12 hours') ORDER BY id DESC LIMIT 80) i
+      JOIN teams t ON t.id = i.team_id JOIN securities s ON s.id = i.security_id LEFT JOIN orders o ON o.id = i.order_id), '[]'::jsonb),
+    'orders', coalesce((SELECT jsonb_agg(jse_order_json(x.id) ORDER BY x.id DESC) FROM (
+        SELECT o.id FROM orders o WHERE (v_all OR o.broker_id = b.id) ORDER BY o.id DESC LIMIT 60) x), '[]'::jsonb),
+    'counts', (SELECT jsonb_build_object(
+        'teams', (SELECT count(*) FROM teams WHERE broker_id = b.id AND active),
+        'open_instructions', (SELECT count(*) FROM instructions WHERE broker_id = b.id AND status = 'OPEN'),
+        'pit_pending', count(*) FILTER (WHERE status = 'PIT_PENDING'),
+        'awaiting_exchange', count(*) FILTER (WHERE status = 'EXCHANGE_PENDING'),
+        'awaiting_bank', count(*) FILTER (WHERE status IN ('EXCHANGE_APPROVED', 'BANK_PENDING')),
+        'settled', count(*) FILTER (WHERE status = 'BANK_SETTLED'),
+        'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED'))) FROM orders WHERE broker_id = b.id));
+END $function$
+
+
+CREATE OR REPLACE FUNCTION public.jse_institutional(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE i institutions%ROWTYPE; cfg event_config%ROWTYPE;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL', 'VIEWER');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT * INTO i FROM institutions WHERE id = coalesce(CASE WHEN a->>'role' <> 'INSTITUTIONAL' THEN nullif(p->>'institution_id', '')::integer END,
+                                                        nullif(a->>'institution_id', '')::integer, (SELECT min(id) FROM institutions));
+  IF NOT FOUND THEN PERFORM jse_fail('INSTITUTION_NOT_FOUND', 'Institutional account not found.', 404); END IF;
+  -- a transaction desk: ticket inputs, the current market with institutional prices, and the transaction history.
+  -- Institutions are counterparties only — no cash or holdings restriction and no participant-style portfolio.
+  RETURN jsonb_build_object('success', true,
+    'rules', jsonb_build_object('spread_pct', jse_inst_spread_pct(), 'brokerage_rate', cfg.brokerage_rate, 'stock_lot_size', cfg.stock_lot_size,
+       'min_order_value', cfg.min_order_value, 'max_order_value', cfg.max_order_value,
+       'text', 'When a participant cannot find a counterparty, the institution trades with it: the participant BUYS from the institution at ' ||
+               to_char(jse_inst_spread_pct(), 'FM990.##') || '% ABOVE the prevailing market price and SELLS to it at ' || to_char(jse_inst_spread_pct(), 'FM990.##') ||
+               '% BELOW. The participant pays the normal brokerage (' || jse_rate_text(cfg.brokerage_rate) || '), earned by its broker. The trade goes through the Pit Manager, Exchange and Bank like any order.'),
+    'institutions', (SELECT jsonb_agg(jsonb_build_object('id', x.id, 'code', x.code, 'name', x.name) ORDER BY x.id) FROM institutions x),
+    'institution', jsonb_build_object('id', i.id, 'code', i.code, 'name', i.name),
+    -- counterparty choices: participant team code, name and broker only (no team cash or holdings)
+    'teams', coalesce((SELECT jsonb_agg(jsonb_build_object('code', t.code, 'seq', t.seq, 'name', CASE WHEN sa.account_code='BIG-BULL' THEN sa.display_name ELSE t.name END, 'special_account', sa.account_code, 'broker', coalesce(ra.broker_code,b.code), 'broker_number', coalesce(ra.broker_number,b.id), 'broker_name', coalesce(ra.broker_name,b.name)) ORDER BY t.seq) FROM teams t LEFT JOIN brokers b ON b.id = t.broker_id LEFT JOIN jse_special_accounts sa ON sa.team_id=t.id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=t.broker_id WHERE t.active), '[]'::jsonb),
+    'market', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'name', s.name, 'type', CASE WHEN s.kind = 'IPO' THEN 'IPO' ELSE 'EQUITY' END,
+        'price', s.price, 'change_pct', round(jse_pct(s.price, s.previous_price), 2), 'lot_size', s.lot_size,
+        'participant_buy_price', jse_inst_price(s.price, 'SELL'), 'participant_sell_price', jse_inst_price(s.price, 'BUY'),
+        'last_price_change_at', s.last_price_change_at) ORDER BY s.last_price_change_at DESC NULLS LAST, s.display_order, s.id)
+      FROM securities s WHERE s.active AND (s.kind = 'EQUITY' OR s.listed_at IS NOT NULL)), '[]'::jsonb),
+    'orders', coalesce((SELECT jsonb_agg(jse_order_json(o.id) ORDER BY o.id DESC) FROM (SELECT id FROM orders WHERE institution_id = i.id ORDER BY id DESC LIMIT 80) o), '[]'::jsonb),
+    'stats', (SELECT jsonb_build_object('transactions', count(*), 'settled', count(*) FILTER (WHERE status = 'BANK_SETTLED'),
+       'pending', count(*) FILTER (WHERE status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')),
+       'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED','EXCHANGE_REJECTED','BANK_REJECTED')),
+       'participants_bought_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'SELL'), 0),
+       'participants_sold_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'BUY'), 0),
+       'brokerage', coalesce(sum(brokerage) FILTER (WHERE status = 'BANK_SETTLED'), 0)) FROM orders WHERE institution_id = i.id));
+END $function$
+
+
 INSERT INTO schema_migrations(version) VALUES ('012_big_bull_special_account');
