@@ -247,7 +247,7 @@
       <div class="card-h bar navy"><h2>Account controls</h2><span class="meta" id="userSum"></span></div>
       <div class="card-b admin-only">
         <div class="row">
-          <select class="input" id="roleSel" style="max-width:240px"><option value="BROKER">Brokers (BROKER-01…10)</option><option value="PIT_MANAGER">Pit Managers (PIT-01…10)</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
+          <select class="input" id="roleSel" style="max-width:240px"><option value="BROKER">Brokers (BROKER-01…11)</option><option value="PIT_MANAGER">Pit Managers (PIT-01…10)</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
             <option value="INSTITUTIONAL">Institutional desk</option><option value="VIEWER">Faculty viewers</option><option value="PARTICIPANT">Participant teams (100)</option><option value="ADMIN">Administrators</option></select>
           <button class="btn sm" id="issueBtn" type="button">Issue new passwords for this role…</button>
         </div>
@@ -259,7 +259,7 @@
           <div class="field"><label for="nuUser">Username</label><input class="input" id="nuUser" maxlength="40" placeholder="e.g. BROKER-11, BANK-05"></div>
           <div class="field"><label for="nuName">Display name</label><input class="input" id="nuName" maxlength="80"></div>
           <div class="field"><label for="nuEmail">Email (optional)</label><input class="input" id="nuEmail" type="email" maxlength="120"></div>
-          <div class="field"><label for="nuLink">Broker code / Team code</label><input class="input" id="nuLink" maxlength="40" placeholder="Broker: its code (new code = new broker) · Participant: TEAM-001"></div>
+          <div class="field"><label for="nuLink">Broker code / Team code</label><input class="input" id="nuLink" maxlength="40" placeholder="Broker: BROKER-01…11 · Participant: TEAM-001"></div>
           <div class="field"><label for="nuPw">Password (blank = random)</label><input class="input" id="nuPw" type="text" maxlength="80" autocomplete="off"></div>
         </div>
         <div class="row" style="margin-top:10px;gap:10px"><label class="small"><input type="checkbox" id="nuMust"> Ask to change password at first sign-in</label>
