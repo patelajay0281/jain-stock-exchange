@@ -90,8 +90,10 @@
 
   function fillTeams() {
     var el = $("team"), v = el.value;
-    el.innerHTML = '<option value="">Select team…</option>' + S.desk.teams.map(function (t) {
-      return '<option value="' + esc(t.code) + '">' + esc(t.code) + (t.name ? " · " + esc(t.name) : "") + "</option>";
+    el.innerHTML = '<option value="">Select participant…</option>' + S.desk.teams.map(function (t) {
+      var number = Number(t.seq || String(t.code || "").slice(-3));
+      var label = number + "-" + (t.name || t.code || "") + "-" + (t.broker_number || "") + "-" + (t.broker_name || "");
+      return '<option value="' + esc(t.code) + '">' + esc(label) + "</option>";
     }).join("");
     if (v) el.value = v;
   }
