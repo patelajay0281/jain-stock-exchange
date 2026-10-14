@@ -100,7 +100,9 @@
       var brokerCode = String(t.broker_code || "").toUpperCase();
       var brokerName = String(t.broker_name || "").toUpperCase();
       var rosterLabel = number + "-" + String(t.code || "").toUpperCase() + "-" + brokerCode + "-" + brokerName;
-      var label = (t.special_account === "BIG-BULL" || t.code === "TEAM-001") ? "BIG BULL · " + rosterLabel : rosterLabel;
+      var label = t.special_account === "BIG-BULL"
+        ? number + "-BIG BULL-" + brokerName
+        : rosterLabel;
       return '<option value="' + esc(t.code) + '">' + esc(label) + "</option>";
     }).join("");
     if (v) el.value = v;
