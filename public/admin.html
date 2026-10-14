@@ -92,30 +92,7 @@
       <div class="card-b flush"><div class="table-wrap" style="max-height:380px"><table class="t"><thead><tr><th>Time</th><th>Action</th><th>By</th><th>State</th><th class="actions"></th></tr></thead><tbody id="journal"></tbody></table></div></div>
     </section>
 
-    <section class="card admin-only" id="bigBullBox">
-      <div class="card-h bar navy"><h2>BIG BULL · Special Participant</h2><span class="meta">Team 1 · separately managed</span></div>
-      <div class="card-b">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
-          <div class="box"><div class="small muted">Participant</div><div style="font-weight:850;font-size:18px">1-BIG BULL</div><div class="small muted" id="bbBroker">Broker 11 · SIDDHARTH</div></div>
-          <div class="box"><div class="small muted">Current cash balance</div><div style="font-weight:850;font-size:22px" id="bbBalance">Loading…</div><div class="small muted">Existing financial history preserved</div></div>
-          <div class="box"><div class="small muted">Cash limit</div><div style="font-weight:850;font-size:22px" id="bbLimit">₹1,00,00,000</div><div class="small muted">₹1 crore</div></div>
-          <div class="box"><div class="small muted">Account status</div><div style="font-weight:850;font-size:18px" id="bbStatus">Loading…</div></div>
-        </div>
-        <div class="form-grid" style="margin-top:14px">
-          <div class="field"><label for="bbAmount">Cash adjustment (₹)</label><input class="input" id="bbAmount" type="number" step="0.01" placeholder="Positive to add, negative to deduct"></div>
-          <div class="field"><label for="bbNote">Reason (required for audit)</label><input class="input" id="bbNote" maxlength="300" placeholder="Reason for this balance change"></div>
-        </div>
-        <div class="row" style="margin-top:10px;gap:10px;align-items:center">
-          <button class="btn primary" id="bbAdjust" type="button">Adjust BIG BULL Balance</button>
-          <label class="check"><input type="checkbox" id="bbActive"> Account active</label>
-          <button class="btn" id="bbSaveActive" type="button">Save Account Status</button>
-          <button class="btn" id="bbRefresh" type="button">Refresh</button>
-        </div>
-        <div id="bbResult" class="small muted" style="margin-top:8px" aria-live="polite">Cash changes are recorded in the cash ledger and audit log.</div>
-      </div>
-    </section>
-
-    <section class="card">
+        <section class="card">
       <div class="card-h bar green"><h2>Teams</h2><span class="meta" id="tnSum"></span></div>
       <div class="card-b">
         <p class="small muted" style="margin-top:0">Every team gets a unique name from the curated Indian Knowledge System pool. The assignment is random but reproducible (same seed + same pool → same names) and is locked automatically when the event starts.</p>
@@ -467,16 +444,6 @@
         (r.leaderboard || []).map(function (t) { return "<li><span>#" + t.rank + " <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span> " + JSE.badge.award(t.award) + '</span><span>' + F.short(t.net_worth) + ' <span class="tiny muted">B' + t.buys + " S" + t.sells + (t.eligible ? " ✓" : "") + "</span></span></li>"; }).join("") + "</ul></div>" +
       '<div class="box wide2"><h4>Alerts</h4>' + (r.alerts.length ? '<ul class="alerts">' + r.alerts.map(function (a) { return '<li><span class="badge ' + (a.level === "bad" ? "no" : a.level === "warn" ? "warn" : "prov") + '">' + esc(a.level) + "</span> " + esc(a.text) + "</li>"; }).join("") + "</ul>" : '<div class="small muted">No alerts.</div>') + "</div>";
     $("miMeta").textContent = "Live · " + F.time(new Date()) + " IST · same data as portfolios and order tracking";
-  }
-
-  async function loadBigBull() {
-    var r = await JSE.api.post("/api/big-bull", { action: "STATE" });
-    $("bbBalance").textContent = F.money(r.cash);
-    $("bbLimit").textContent = F.money(r.cash_limit || 100000000);
-    $("bbBroker").textContent = "Broker " + r.broker_number + " · " + r.broker_name + " (" + r.broker_code + ")";
-    $("bbStatus").textContent = r.active ? "ACTIVE" : "DISABLED";
-    $("bbActive").checked = !!r.active;
-    $("bbResult").textContent = "Team " + r.team_number + " · " + r.team_code + " · changes are recorded in the cash ledger and audit log.";
   }
 
   async function load() {
@@ -920,32 +887,6 @@
   $("companyCheck").onclick = function () { runCompanyImport(true); };
   $("companyGo").onclick = function () { runCompanyImport(false); };
 
-  $("bbRefresh").onclick = function () { loadBigBull().catch(function (e) { $("bbResult").textContent = e.message; }); };
-  $("bbAdjust").onclick = async function () {
-    var amount = $("bbAmount").value, note = $("bbNote").value.trim();
-    if (amount === "" || Number(amount) === 0) return JSE.toast("Enter a non-zero cash adjustment.", "warn");
-    if (!note) return JSE.toast("Enter a reason for the cash adjustment.", "warn");
-    try {
-      var r = await confirmed({ title: "Adjust BIG BULL cash?", text: "The adjustment will change Team 1 cash and create a cash-ledger and audit-log entry. Amount: " + F.money(amount), confirmText: "Apply adjustment" },
-        "/api/big-bull", { action: "ADJUST_CASH", amount: Number(amount), note: note });
-      if (!r) return;
-      $("bbAmount").value = ""; $("bbNote").value = "";
-      $("bbResult").textContent = "Balance updated and recorded in the audit log.";
-      await loadBigBull(); if (poller) poller.now();
-      JSE.toast("BIG BULL balance updated.", "good");
-    } catch (e) { $("bbResult").textContent = e.message; JSE.toast(e.message, "bad", 9000); }
-  };
-  $("bbSaveActive").onclick = async function () {
-    var active = $("bbActive").checked;
-    try {
-      var r = await confirmed({ title: (active ? "Enable" : "Disable") + " BIG BULL?", text: active ? "Team 1 and its participant login will be enabled." : "Team 1 and its participant login will be disabled.", confirmText: active ? "Enable account" : "Disable account", danger: !active },
-        "/api/big-bull", { action: "SET_ACTIVE", active: active });
-      if (!r) return;
-      await loadBigBull(); if (poller) poller.now();
-      JSE.toast("BIG BULL account status saved.", "good");
-    } catch (e) { JSE.toast(e.message, "bad", 9000); }
-  };
-
   // ---- exports ----
   var dl = function (sheet) { JSE.download("/api/export?sheet=" + sheet, "JSE_" + sheet + ".csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
   $("rosterCsv").onclick = function () { dl("broker_roster"); };
@@ -1031,8 +972,6 @@
     loadNames().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadBigBull().catch(function (e) { $("bbSummary").className = "alert bad"; $("bbSummary").textContent = "BIG BULL account could not load: " + e.message; });
     loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
-    loadBigBull().catch(function (e) { $("bbResult").textContent = "BIG BULL controls unavailable: " + e.message; });
-    JSE.poll(loadBigBull, 10000, { onError: function (e) { $("bbResult").textContent = "BIG BULL reconnecting: " + e.message; } });
     loadIpoAdmin().catch(function (e) { $("ipoToolResult").textContent = "IPO tools unavailable: " + e.message; });
     JSE.poll(loadIpoAdmin, 10000, { onError: function (e) { $("ipoToolResult").textContent = "IPO tools reconnecting: " + e.message; } });
     if (location.hash === "#intelligence") setTimeout(function () { $("intelligence").scrollIntoView(); }, 400);
