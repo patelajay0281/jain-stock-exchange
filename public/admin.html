@@ -101,6 +101,18 @@
       <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Team</th><th>Team name</th><th>Section · members</th><th>Broker</th><th class="actions"></th></tr></thead><tbody id="tnRows"></tbody></table></div></div>
     </section>
 
+    <section class="card" id="nameClashBox">
+      <div class="card-h bar navy"><h2>Broker ↔ Team Name Clash Check</h2><span class="meta" id="clashSummary">Checking roster names…</span></div>
+      <div class="card-b">
+        <p class="small muted" style="margin-top:0">Compares saved team display names with broker display names. Matching ignores capitalization, repeated spaces and punctuation. This is a read-only check; it does not change team names, broker names or assignments.</p>
+        <div id="clashOverview" class="alert info">Loading team and broker names…</div>
+        <div class="table-wrap" style="max-height:320px;margin-top:10px">
+          <table class="t"><thead><tr><th>Team code</th><th>Team name</th><th>Broker code</th><th>Broker name</th><th>Clash type</th></tr></thead><tbody id="clashRows"><tr><td colspan="5" class="empty">Loading roster names…</td></tr></tbody></table>
+        </div>
+        <div id="clashDuplicateSummary" class="small muted" style="margin-top:10px"></div>
+      </div>
+    </section>
+
     <section class="card admin-only" id="bigBullBox" style="border:2px solid #c8a65d">
       <div class="card-h bar navy"><h2>BIG BULL · Special Participant Account</h2><span class="tag">Cash limit ₹1,00,00,000</span></div>
       <div class="card-b">
@@ -404,6 +416,7 @@
     $("brSum").textContent = (d.brokers || []).length + " brokers";
     $("brRows").innerHTML = (d.brokers || []).map(function (b) { return "<tr><td><b>" + esc(b.code) + "</b></td><td>" + esc(b.name) + "</td><td>" + esc(b.desk || "—") + "</td><td>" + esc(b.contact || "—") + '</td><td class="num">' + b.teams + '</td><td class="actions">' +
       (S.admin ? '<button class="btn xs" type="button" data-broker="' + esc(b.code) + '">Edit</button>' : "") + "</td></tr>"; }).join("");
+    renderNameClashes();
     if (!$("cfg").children.length) renderConfig(d.config_full || {});
   }
 
@@ -452,11 +465,63 @@
     render();
     $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
+  function clashKey(value) {
+    return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function renderNameClashes() {
+    var teams = S.names && Array.isArray(S.names.teams) ? S.names.teams : null;
+    var brokers = S.st && Array.isArray(S.st.brokers) ? S.st.brokers : null;
+    if (!teams || !brokers) {
+      $("clashSummary").textContent = "Waiting for rosters…";
+      $("clashOverview").className = "alert info";
+      $("clashOverview").textContent = "Loading team and broker names…";
+      $("clashRows").innerHTML = '<tr><td colspan="5" class="empty">Loading roster names…</td></tr>';
+      $("clashDuplicateSummary").textContent = "";
+      return;
+    }
+    var matches = [];
+    teams.forEach(function (t) {
+      var tk = clashKey(t.name);
+      if (!tk) return;
+      brokers.forEach(function (b) {
+        if (tk === clashKey(b.name)) matches.push({ team: t.team, teamName: t.name, broker: b.code, brokerName: b.name });
+      });
+    });
+    $("clashSummary").textContent = matches.length + " exact clash" + (matches.length === 1 ? "" : "es") +
+      " · " + teams.length + " teams · " + brokers.length + " brokers";
+    $("clashOverview").className = "alert " + (matches.length ? "bad" : "good");
+    $("clashOverview").textContent = matches.length
+      ? matches.length + " team/broker name clash" + (matches.length === 1 ? "" : "es") + " found. Review the pairs below; nothing has been changed."
+      : "No exact team-name / broker-name clashes found. Names are compared case-insensitively and punctuation-insensitively.";
+    $("clashRows").innerHTML = matches.length ? matches.map(function (x) {
+      return '<tr><td><b>' + esc(x.team) + '</b></td><td>' + esc(x.teamName) + '</td><td><b>' + esc(x.broker) +
+        '</b></td><td>' + esc(x.brokerName) + '</td><td><span class="badge no">Same normalized name</span></td></tr>';
+    }).join("") : '<tr><td colspan="5" class="empty">No cross-roster name clashes.</td></tr>';
+    function duplicateGroups(rows, nameProp, codeProp) {
+      var groups = Object.create(null);
+      rows.forEach(function (x) {
+        var k = clashKey(x[nameProp]);
+        if (!k) return;
+        if (!groups[k]) groups[k] = { name: x[nameProp], codes: [] };
+        groups[k].codes.push(x[codeProp]);
+      });
+      return Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) { return g.codes.length > 1; });
+    }
+    var duplicateTeams = duplicateGroups(teams, "name", "team");
+    var duplicateBrokers = duplicateGroups(brokers, "name", "code");
+    var notes = [];
+    if (duplicateTeams.length) notes.push("Duplicate team names: " + duplicateTeams.map(function (g) { return g.name + " (" + g.codes.join(", ") + ")"; }).join("; "));
+    if (duplicateBrokers.length) notes.push("Duplicate broker names: " + duplicateBrokers.map(function (g) { return g.name + " (" + g.codes.join(", ") + ")"; }).join("; "));
+    $("clashDuplicateSummary").textContent = notes.length ? notes.join(" · ") : "No duplicate team names or duplicate broker names within their own lists.";
+  }
+
   async function loadNames() {
     S.names = await JSE.api.get("/api/team-names");
     $("tnRows").innerHTML = S.names.teams.map(function (t) { return '<tr><td class="nowrap"><b>' + esc(t.team) + "</b></td><td><b>" + esc(t.name) + '</b><span class="sub">' + esc(t.meaning || "") + '</span></td><td class="small">' + esc(t.section || "—") +
       '<span class="sub">' + esc(t.members || "Members not entered") + '</span></td><td class="nowrap">' + esc(t.broker || "—") + '<span class="sub">' + esc(t.broker_name || "") + '</span></td><td class="actions">' +
       (S.admin ? '<button class="btn xs" type="button" data-team="' + esc(t.team) + '">Edit</button>' : "") + "</td></tr>"; }).join("");
+    renderNameClashes();
   }
   async function loadNews() {
     var n = await JSE.api.get("/api/market-news", { limit: 15 });
