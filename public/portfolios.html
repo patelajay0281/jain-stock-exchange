@@ -19,6 +19,7 @@
   @media (max-width: 1280px) { .minis.ten { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 640px) { .minis.ten { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .mini .v.up { color: var(--green); } .mini .v.down { color: var(--red); }
+  .ipo-preview { white-space: normal; line-height: 1.35; max-width: 500px; margin-top: 3px; color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -110,9 +111,13 @@
       kpi("Closing cash met", F.num(st.cash_rule_met) + " / " + F.num(st.teams), "base cash ≤ " + F.money(d.cash_rule_limit));
     var list = rows(), ranked = S.sort !== "team" && S.sort !== "eligible";
     $("rows").innerHTML = list.length ? list.map(function (t, i) {
+      var ipoRows = (t.ipo_allotments || []).filter(function (x) { return N(x.quantity) > 0; });
+      var ipoSummary = ipoRows.length ? '<span class="sub ipo-preview">IPO allotment: ' + ipoRows.map(function (x) { return esc(x.symbol) + " " + F.num(x.quantity) + " @ " + F.price(x.price); }).join(" · ") + "</span>" : '<span class="sub ipo-preview">No IPO allotment</span>';
+      var brokerCode = t.roster_broker_code || t.broker || "—";
+      var brokerName = t.roster_broker_name || t.broker_name || "";
       return '<tr class="pick' + (t.award ? " winner" : "") + (S.team === t.code ? " sel" : "") + '" data-team="' + esc(t.code) + '" tabindex="0">' +
         '<td class="num"><b>' + (ranked ? i + 1 : t.rank) + "</b>" + (ranked && S.sort !== "net_worth" ? '<span class="sub">NW #' + t.rank + "</span>" : "") + "</td>" +
-        "<td><b>" + esc(t.name) + '</b><span class="sub">' + esc(t.code) + (t.section ? " · " + esc(t.section) : "") + "</span></td><td>" + esc(t.broker || "—") + '<span class="sub">' + esc(t.broker_name || "") + "</span></td>" +
+        "<td><b>" + esc(t.name) + '</b><span class="sub">' + esc(t.code) + (t.section ? " · " + esc(t.section) : "") + "</span>" + ipoSummary + "</td><td>" + esc(brokerCode) + '<span class="sub">' + esc(brokerName) + "</span></td>" +
         '<td class="num">' + F.money(t.cash) + '</td><td class="num">' + F.money(t.holdings_value) + '</td><td class="num ' + F.dir(t.realized_pnl) + '">' + F.signedMoney(t.realized_pnl) +
         '</td><td class="num ' + F.dir(t.unrealized_pnl) + '">' + F.signedMoney(t.unrealized_pnl) + '</td><td class="num"><b>' + F.money(t.net_worth) + '</b><span class="sub ' + F.dir(t.pnl) + '">' + F.pct(t.return_pct) + "</span></td>" +
         "<td>" + JSE.badge.progress(t.settled_buys, t.min_buy_trades, "BUY") + " " + JSE.badge.progress(t.settled_sells, t.min_sell_trades, "SELL") + "</td>" +
@@ -133,14 +138,14 @@
 
   function renderDetail() {
     var d = S.detail, box = $("detail"); if (!d) { box.classList.add("hidden"); return; }
-    var t = d.team, l = d.loan || {}, c = d.capital || {}, id = d.identity, b = d.broker, a = d.assessment, el = d.eligibility, participant = S.user && S.user.role === "PARTICIPANT";
+    var t = d.team, l = d.loan || {}, c = d.capital || {}, id = d.identity, b = d.broker, a = d.assessment, el = d.eligibility, participant = S.user && S.user.role === "PARTICIPANT";\n    var rosterTeam = S.data && S.data.teams ? S.data.teams.filter(function (x) { return x.code === id.code; })[0] : null;\n    var brokerDisplayName = rosterTeam && rosterTeam.roster_broker_name || (b && b.name) || "Not assigned yet";\n    var brokerDisplayCode = rosterTeam && rosterTeam.roster_broker_code || (b && b.code) || "";
     var loanStatus = !l.original_principal ? "AVAILABLE" : l.repaid ? "REPAID" : "OUTSTANDING";
     box.classList.remove("hidden");
     box.innerHTML =
       '<div class="idcard"><div><div class="eyebrow">' + (participant ? "Your team" : "Team") + '</div><div class="big">' + esc(id.name) + '</div><div class="code">' + esc(id.code) + (id.section ? " · Section " + esc(id.section) : "") + "</div>" +
         (id.name_meaning ? '<div class="meaning">' + esc(id.name_meaning) + (id.name_category ? " · " + esc(id.name_category) : "") + "</div>" : "") +
         '<div class="small" style="margin-top:6px">' + (id.members ? esc(id.members) : '<span class="muted">Members not entered yet</span>') + "</div></div>" +
-      '<div><div class="eyebrow">Assigned broker</div><div class="big">' + esc(b ? b.name : "Not assigned yet") + '</div><div class="code">' + esc(b ? b.code : "") + "</div>" +
+      '<div><div class="eyebrow">Assigned broker</div><div class="big">' + esc(brokerDisplayName) + '</div><div class="code">' + esc(brokerDisplayCode) + "</div>" +
         (b && (b.desk || b.contact) ? '<div class="small" style="margin-top:6px">' + esc([b.desk ? "Desk " + b.desk : "", b.contact].filter(Boolean).join(" · ")) + "</div>" : "") +
         '<div class="small muted" style="margin-top:8px">' + (participant ? "Your broker creates every order for your team; follow them in Order Tracking." : "") +
         (S.user && S.user.role !== "PARTICIPANT" ? ' <button class="btn sm" type="button" id="closeDetail">Close</button>' : "") + "</div></div></div>" +
