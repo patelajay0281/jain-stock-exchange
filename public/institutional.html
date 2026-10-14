@@ -31,7 +31,7 @@
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1>Institutional Investors <span id="instName" class="muted" style="font-weight:600"></span></h1>
-      <p id="ruleText">Institutional trading desk with unrestricted cash and holdings — institutional activity is recorded only as transactions. A participant buys from the institution at 2% above the market price and sells to it at 2% below; the trade goes through the normal Exchange → Bank workflow.</p></div>
+      <p id="ruleText">Institutional trading desk with unrestricted cash and holdings. Institutional transactions use the prevailing market price and follow the normal Exchange → Bank workflow.</p></div>
     <div class="tools"><select class="input sm hidden" id="instSel" aria-label="Institution" style="width:auto"></select>
       <span class="pill not-started" id="mkt"><span class="dot"></span><span id="mktText">Market</span></span></div>
   </div>
@@ -68,7 +68,7 @@
           <div class="field"><label for="sec">Security</label><select class="input" id="sec"></select></div>
           <div class="field"><label for="qty">Quantity (shares)</label><input class="input" id="qty" type="number" min="50" step="50" value="50" inputmode="numeric" placeholder="Select quantity"><span class="hint" id="lotHint">Multiples of 50 shares.</span></div>
           <div class="field span-2"><label for="instPriceIn">Order price per share</label><input class="input locked" id="instPriceIn" readonly tabindex="-1" value="—">
-            <span class="hint">Market <span id="mktPrice">—</span> <span id="instNote">± 2%</span> — set by the institutional counterparty rule</span></div>
+            <span class="hint">Market price <span id="mktPrice">—</span> · institutional trades execute at the prevailing market price</span></div>
         </div>
         <div class="sidebtns" role="group" aria-label="Transaction side">
           <button type="button" class="buy" data-side="BUY" aria-pressed="true">BUY · Institution Buys</button>
@@ -109,7 +109,7 @@
   var MOODS = [["VERY_SEVERE", "VERY SEVERE", "−10 to −7.5%", "neg"], ["SEVERE", "SEVERE", "−7.49 to −5%", "neg"], ["NEGATIVE", "NEGATIVE", "−4.99 to −1%", "neg"],
     ["NORMAL", "NORMAL", "−0.99% to +0.99%", ""], ["POSITIVE", "POSITIVE", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "VERY POSITIVE", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "SUPER POSITIVE", "+7.5 to +10%", "pos"]];
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
-  function rules() { return (S.data && S.data.rules) || { spread_pct: 2, brokerage_rate: 0.005, max_order_value: 2500000, min_order_value: 0 }; }
+  function rules() { return (S.data && S.data.rules) || { spread_pct: 0, brokerage_rate: 0.005, max_order_value: 2500000, min_order_value: 0 }; }
   function list() { var k = $("asset").value; return S.data ? S.data.market.filter(function (s) { return k === "IPO" ? s.type === "IPO" : s.type !== "IPO"; }) : []; }
   function sec() { var sym = $("sec").value; return S.data ? S.data.market.filter(function (s) { return s.symbol === sym; })[0] : null; }
   // S.side is the INSTITUTION's side: BUY = the institution buys from the participant (participant sells at market − 2%)
@@ -118,12 +118,12 @@
   function preview() {
     var s = sec(), q = N($("qty").value), r = rules(), teamBuys = S.side === "SELL";
     $("pvBrkK").textContent = "Brokerage · " + JSE.rate(r.brokerage_rate);
-    $("sideNote").textContent = teamBuys ? "SELL: the institution sells to the selected participant team at market + " + N(r.spread_pct) + "%; the participant pays trade value + brokerage."
-                                         : "BUY: the institution buys from the selected participant team at market − " + N(r.spread_pct) + "%; the counterparty must meet its settlement obligations (it can sell only shares it holds).";
+    $("sideNote").textContent = teamBuys ? "SELL: the institution sells to the selected participant team at the prevailing market price; brokerage applies as configured."
+                                         : "BUY: the institution buys from the selected participant team at the prevailing market price; the counterparty must meet its settlement obligations.";
     if (!s) { $("mktPrice").textContent = "—"; $("instPriceIn").value = "—"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; return; }
     var ip = instPrice(s);
     $("mktPrice").textContent = F.price(s.price);
-    $("instNote").textContent = (teamBuys ? "+ " : "− ") + N(r.spread_pct) + "%";
+    $("instNote").textContent = "market price";
     $("instPriceIn").value = N(ip).toFixed(2);
     $("lotHint").textContent = "Multiples of " + s.lot_size + " shares.";
     $("qty").step = s.lot_size; $("qty").min = s.lot_size;
