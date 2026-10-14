@@ -14,7 +14,6 @@
   body.market-page .hd-in { padding: 10px 16px 0; max-width: none; }
   body.market-page .nav { padding-left: 16px; padding-right: 16px; max-width: none; }
   body.market-page .wrap { padding-left: 16px; padding-right: 16px; max-width: none; }
-  .ver-pill { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); background: #fff; border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px; white-space: nowrap; }
   .cmsbar { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px;
     box-shadow: 0 4px 18px rgba(16, 24, 40, .06); min-height: 84px; margin-top: 14px; }
   .cmsbar::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px; border-radius: 0 4px 4px 0; background: var(--blue); }
@@ -84,7 +83,6 @@
   var grid = document.getElementById("grid");
   document.body.classList.add("market-page");
   document.getElementById("disc").textContent = JSE.DISCLAIMER;
-  var ver = "v" + ((window.JSE_CONFIG && JSE_CONFIG.version) || "").split(".").slice(0, 2).join(".");
   function rupees(v) { return "₹" + nf0.format(Math.round(N(v))); }
   function pctTxt(p) { var n = N(p); return (n > 0 ? "▲ " : n < 0 ? "▼ " : "") + Math.abs(n).toFixed(2) + "%"; }
   function dir(p) { var n = N(p); return n > 0 ? "up" : n < 0 ? "down" : "flat"; }
@@ -164,8 +162,6 @@
   }
 
   JSE.page({ id: "market", statusFromPage: true }).then(function () {
-    var right = document.querySelector(".hd-right");
-    if (right) right.insertAdjacentHTML("afterbegin", '<span class="ver-pill">JSE System • Version ' + esc(ver) + "</span>");
     installMarketDropdown();
     poller = JSE.poll(load, REFRESH_MS, { onError: onError });
   });
