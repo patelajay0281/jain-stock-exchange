@@ -51,16 +51,18 @@
       : '<div class="alert bad"><b>Mismatch:</b> commission total ' + F.money(rc.commission_total, { dp: 2 }) + " vs settled brokerage " + F.money(rc.settled_brokerage_total, { dp: 2 }) + ". Contact the administrator.</div>";
     var brokers = d.brokers || [], top = brokers[0], max = Math.max(1, brokers.reduce(function (m, b) { return Math.max(m, N(b.brokerage_earned)); }, 0));
     var ins = d.institutional || { orders: 0, brokerage: 0 };
+    var selectedBroker = brokers.filter(function (b) { return b.broker === S.broker; })[0];
+    var brokerTitle = selectedBroker ? (selectedBroker.display_code || selectedBroker.broker) : S.broker;
     if (own) {
       var me = brokers[0] || {};
       $("kpis").innerHTML = kpi("Your rank", me.rank ? "#" + me.rank : "—", "among all brokers") + kpi("Assigned teams", F.num(me.teams || 0), "") +
         kpi("Settled trades", F.num(d.totals.orders), (me.buy_orders || 0) + " buy · " + (me.sell_orders || 0) + " sell") + kpi("Institutional brokerage", F.money(ins.brokerage, { dp: 2 }), F.num(ins.orders) + " institutional trade(s)") +
         kpi("Commission earned", F.money(d.totals.brokerage, { dp: 2 }), "at " + rateTxt, "good");
     } else {
-      $("kpis").innerHTML = kpi("Settled transactions", F.num(d.totals.orders), S.broker ? "broker " + esc(S.broker) : brokers.length + " brokers") +
+      $("kpis").innerHTML = kpi("Settled transactions", F.num(d.totals.orders), S.broker ? "broker " + esc(brokerTitle) : brokers.length + " brokers") +
         kpi("Trade value", F.money(d.totals.trade_value), "settled") + kpi("Commission", F.money(d.totals.brokerage, { dp: 2 }), "at " + rateTxt, "good") +
         kpi("Institutional brokerage", F.money(ins.brokerage, { dp: 2 }), F.num(ins.orders) + " institutional counterparty trade(s)") +
-        kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.broker) : "—", top && N(top.brokerage_earned) ? F.money(top.brokerage_earned, { dp: 2 }) : "no commission yet");
+        kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.display_code || top.broker) : "—", top && N(top.brokerage_earned) ? F.money(top.brokerage_earned, { dp: 2 }) : "no commission yet");
     }
     $("rank").innerHTML = brokers.length ? brokers.map(function (b) {
       return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(b.display_code || b.broker) + "</b>" + (b.name && b.name !== (b.display_code || b.broker) ? '<span class="sub">' + esc(b.name) + "</span>" : "") + '</td><td class="num">' + b.teams +
@@ -69,7 +71,7 @@
         '</b></td><td><div class="meter"><i style="width:' + (N(b.brokerage_earned) / max * 100).toFixed(1) + '%"></i></div></td><td class="num">' + b.pending_orders + "</td></tr>";
     }).join("") : '<tr><td colspan="10" class="empty">No brokers.</td></tr>';
     if (!own && !S.brokersLoaded && brokers.length) {
-      var list = brokers.slice().sort(function (a, b) { return a.broker < b.broker ? -1 : 1; });
+      var list = brokers.slice().sort(function (a, b) { return N(a.broker_number) - N(b.broker_number) || ((a.display_code || a.broker) < (b.display_code || b.broker) ? -1 : 1); });
       $("fBroker").innerHTML = '<option value="">All brokers</option>' + list.map(function (b) { return '<option value="' + esc(b.broker) + '">' + esc((b.display_code || b.broker) + (b.name && b.name !== (b.display_code || b.broker) ? " · " + b.name : "")) + "</option>"; }).join("");
       $("fBroker").value = S.broker; S.brokersLoaded = true;
     }
