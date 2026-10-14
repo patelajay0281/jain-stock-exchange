@@ -104,7 +104,7 @@
     <section class="card admin-only" id="bigBullBox" style="border:2px solid #c8a65d">
       <div class="card-h bar navy"><h2>BIG BULL · Special Participant Account</h2><span class="tag">Cash limit ₹1,00,00,000</span></div>
       <div class="card-b">
-        <p class="small muted" style="margin-top:0">Priority participant mapped to TEAM-001. Account changes require the Event Admin password and are written to the audit log. The ₹1 crore cash ceiling is enforced by the database.</p>
+        <p class="small muted" style="margin-top:0">Priority participant is Team 1. Account changes require the Event Admin password and are written to the audit log. The ₹1 crore cash ceiling is enforced by the database.</p>
         <div id="bbSummary" class="alert info">Loading BIG BULL account…</div>
         <div class="form-grid" style="margin-top:12px">
           <div class="field"><label for="bbDisplayName">Account display name</label><input class="input" id="bbDisplayName" maxlength="120" value="BIG BULL"></div>
@@ -224,8 +224,8 @@
       <div class="card-h bar navy"><h2>Account controls</h2><span class="meta" id="userSum"></span></div>
       <div class="card-b admin-only">
         <div class="row">
-          <select class="input" id="roleSel" style="max-width:240px"><option value="BROKER">Brokers (BROKER-01…11)</option><option value="PIT_MANAGER">Pit Managers (PIT-01…10)</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
-            <option value="INSTITUTIONAL">Institutional desk</option><option value="VIEWER">Faculty viewers</option><option value="PARTICIPANT">Participant teams (100)</option><option value="ADMIN">Administrators</option></select>
+          <select class="input" id="roleSel" style="max-width:240px"><option value="BROKER">Brokers (11 active)</option><option value="PIT_MANAGER">Pit Managers (PIT-01…10)</option><option value="EXCHANGE">Exchange desk</option><option value="BANK">Bank desk</option>
+            <option value="INSTITUTIONAL">Institutional desk</option><option value="VIEWER">Faculty viewers</option><option value="PARTICIPANT">Participant teams (74 active)</option><option value="ADMIN">Administrators</option></select>
           <button class="btn sm" id="issueBtn" type="button">Issue new passwords for this role…</button>
         </div>
         <p class="small muted">New passwords are shown once and downloaded as a CSV. Old sessions for those accounts are signed out.</p>
@@ -483,7 +483,7 @@
     $("users").innerHTML = staff.map(function (x) {
       return '<tr><td class="nowrap"><b>' + esc(x.username) + '</b><div class="tiny muted">' + esc(x.name || "") + (x.email ? " · " + esc(x.email) : "") + "</div></td><td>" + esc(JSE.ROLE_LABEL[x.role] || x.role) + "</td><td>" + esc(x.broker || "") + '</td><td class="nowrap">' + (x.last_login_at ? F.datetime(x.last_login_at) : '<span class="muted">never</span>') + "</td><td>" +
         (x.active ? '<span class="badge ok">Active</span>' : '<span class="badge no">Disabled</span>') + '</td><td class="actions"><button class="btn sm" data-edit="' + esc(x.username) + '">Edit</button> <button class="btn sm" data-pw="' + esc(x.username) + '">New password</button> <button class="btn sm" data-act="' + esc(x.username) + '" data-on="' + (x.active ? "0" : "1") + '">' + (x.active ? "Disable" : "Enable") + "</button></td></tr>";
-    }).join("") + '<tr><td colspan="6" class="small muted">The 100 participant team accounts (TEAM-001 … TEAM-100) are managed with “Issue new passwords” above.</td></tr>';
+    }).join("") + '<tr><td colspan="6" class="small muted">The 74 active participant accounts are managed with “Issue new passwords” above.</td></tr>';
   }
 
   async function eventAction(action) {
