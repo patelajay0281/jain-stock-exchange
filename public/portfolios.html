@@ -73,7 +73,7 @@
     var minB = c.min_buy_trades || 5, minS = c.min_sell_trades || 5;
     $("rules").innerHTML =
       '<div class="rule key wide"><b>Official winner criterion</b>Net Worth = Liquid Cash + (Shares Held × Closing Price). Assessment: minimum ' + minB + " settled BUY and " + minS + " settled SELL trades per participant. " +
-        "Closing cash limit: at market closing a team can hold at most " + F.money(c.cash_rule_limit || 50000) + " (5% of " + F.money(c.initial_capital || 2000000) + ") as cash. Cash generated from trading profits is exempt, provided the initial capital has been fully invested. " +
+        "Closing cash limit: at market closing a team can hold at most " + F.money(c.cash_rule_limit || 100000) + " (5% of " + F.money(c.initial_capital || 2000000) + ") as cash. Cash generated from trading profits is exempt, provided the initial capital has been fully invested. " +
         "Exactly one Winner and one Runner-Up among eligible teams.</div>";
   }
 
@@ -164,7 +164,7 @@
           "<dt>Loan obligations</dt><dd>" + (l.repaid !== false ? '<span class="badge ok">' + (l.original_principal ? "Repaid" : "No loan") + "</span>" : '<span class="badge warn">' + F.money(l.total_liability) + " due</span>") + "</dd>" +
           "<dt>Closing cash criterion</dt><dd>" + JSE.badge.rule(t.cash_rule_met, t.cash_rule_status) + "</dd><dt>Evaluation</dt><dd>" + (el.final ? "Final" : "Provisional until the close") + "</dd></dl>" +
           '<p class="small muted" style="margin:10px 0 0">A team with a high Net Worth that fails any mandatory condition is not an eligible Winner or Runner-Up.</p></div></div>' +
-        '<div class="card"><div class="card-h bar red"><h3>₹50,000 closing cash criterion</h3></div><div class="card-b"><dl class="dl">' +
+        '<div class="card"><div class="card-h bar red"><h3>₹1,00,000 closing cash criterion</h3></div><div class="card-b"><dl class="dl">' +
           "<dt>Base cash counted</dt><dd>" + F.money(t.base_cash_counted) + "</dd><dt>Profit-generated cash (exempt)</dt><dd>" + F.money(t.profit_cash_exempt) + "</dd><dt>Maximum at the close</dt><dd>" + F.money(d.rules.cash_limit) + "</dd>" +
           "<dt>Status</dt><dd>" + JSE.badge.rule(t.cash_rule_met, t.cash_rule_status) + "</dd></dl>" +
           '<p class="small muted" style="margin:10px 0 0">' + esc(JSE.cashRuleText(d.rules.cash_limit)) + "</p></div></div>" +
