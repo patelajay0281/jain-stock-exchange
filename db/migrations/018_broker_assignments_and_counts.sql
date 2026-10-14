@@ -1,5 +1,8 @@
 -- 018: Apply the official broker-to-team roster, show official broker labels,
 -- and count active assigned teams (never inactive placeholders) in commission summaries.
+-- Broker 6's official roster contact name is Aman (not the old placeholder label).
+UPDATE public.broker_roster_aliases SET broker_name = 'Aman' WHERE broker_number = 6 AND lower(broker_code) = 'arohan';
+
 WITH roster(team_name, broker_code) AS (VALUES
 ('Viveka','Prajna'),('Jya','Prajna'),('Ghosha','Prajna'),('Shree','Prajna'),('Jaya','Prajna'),('Utsaha','Prajna'),('Abhyasa','Prajna'),
 ('Panini','Ganita'),('Yukti','Ganita'),('Virahanka','Ganita'),('Sutra','Ganita'),('Koshya','Ganita'),('Madhava','Ganita'),('Sangita','Ganita'),
