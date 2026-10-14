@@ -452,6 +452,10 @@ post("/api/ipo-admin", async (ctx) => {
   need(ctx, "ADMIN");
   return mutate(ctx, "jse_ipo_admin_tool", ctx.body || {}, ["admin:", "staff:", "pub:"]);
 });
+post("/api/big-bull", async (ctx) => {
+  need(ctx, "ADMIN");
+  return mutate(ctx, "jse_big_bull_admin", ctx.body || {}, ["admin:", "staff:", "pub:"]);
+});
 post("/api/teams", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_teams", ctx.body || {}); });
 post("/api/brokers", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_brokers", ctx.body || {}); });
 post("/api/config", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_update_config", ctx.body || {}); });
@@ -477,6 +481,7 @@ post("/api/users", async (ctx) => {
 // · IPO allotments (Team, IPO, Lots, Shares, Amount). The file is parsed here; the engine validates every row atomically.
 const IMPORTS: Record<string, { fn: string; required: string[]; map: Record<string, string> }> = {
   roster_assignments: { fn: "jse_import_roster_assignments", required: ["team_number", "team_code", "broker_number", "broker_code", "broker_name"], map: { "team number": "team_number", "team no": "team_number", "team code": "team_code", "broker number": "broker_number", "broker no": "broker_number", "broker code": "broker_code", "broker name": "broker_name" } },
+  dalal_roster: { fn: "jse_import_dalal_roster", required: ["team", "broker_code"], map: { "team name": "team", "team code": "team", "broker code": "broker_code", "section combination": "section_combination", "section 1": "section1", "section 2": "section2", "participant 1": "participant1", "contact number 1": "phone1", "usn 1": "usn1", "email 1": "email1", "participant 2": "participant2", "contact number 2": "phone2", "usn 2": "usn2", "email 2": "email2" } },
   companies: { fn: "jse_import_companies", required: ["name", "ticker", "base_price"], map: { "company name": "name", name: "name", company: "name", ticker: "ticker", symbol: "ticker", "base price": "base_price", "base_price": "base_price", price: "base_price" } },
   teams: { fn: "jse_update_teams", required: ["team"], map: { team: "team", "team code": "team", "team name": "name", name: "name", section: "section", broker: "broker", "broker code": "broker", members: "members", "participant members": "members" } },
   brokers: { fn: "jse_update_brokers", required: ["broker"], map: { "broker code": "broker", broker: "broker", code: "broker", "broker name": "name", name: "name", contact: "contact", "broker contact": "contact", desk: "desk", "broker desk": "desk" } },
@@ -503,12 +508,26 @@ post("/api/import", async (ctx) => {
   const header = rows[headerRow].map((c) => spec.map[c.trim().toLowerCase()] || "");
   const missing = spec.required.filter((k) => !header.includes(k));
   if (missing.length) throw new ApiError(400, "MISSING_HEADERS", "Missing column(s): " + missing.join(", ") + ".");
-  const data = rows.slice(headerRow + 1).filter((r) => r.some((c) => c !== "")).map((r) => {
+  let data = rows.slice(headerRow + 1).filter((r) => r.some((c) => c !== "")).map((r) => {
     const o: Record<string, string> = {};
     header.forEach((k, i) => { if (k && r[i] !== undefined && r[i] !== "") o[k] = r[i]; });
     return o;
   });
   if (!data.length) throw new ApiError(400, "NO_ROWS", "The file has no data rows.");
+  if (String(b.kind) === "dalal_roster") {
+    const clean = (v: unknown) => String(v ?? "").trim();
+    data = data.map((r) => {
+      const section = clean(r.section_combination) || [clean(r.section1), clean(r.section2)].filter(Boolean).join(" + ");
+      const participant = (n: "1" | "2") => [
+        clean(r["participant" + n]),
+        clean(r["usn" + n]) ? "USN: " + clean(r["usn" + n]) : "",
+        clean(r["phone" + n]) ? "Mobile: " + clean(r["phone" + n]) : "",
+        clean(r["email" + n]) ? "Email: " + clean(r["email" + n]) : "",
+      ].filter(Boolean).join(" | ");
+      return { team: clean(r.team), broker_code: clean(r.broker_code), section,
+        members: [participant("1"), participant("2")].filter(Boolean).join(" ; ") };
+    });
+  }
   if (data.length > (String(b.kind) === "roster_assignments" ? 10000 : 2000)) throw new ApiError(400, "TOO_MANY_ROWS", String(b.kind) === "roster_assignments" ? "At most 10,000 roster rows per upload; split a larger file into validated batches." : "At most 2,000 rows per import.");
   return mutate(ctx, spec.fn, { rows: data, admin_password: b.admin_password, dry_run: !!b.dry_run, replace: !!b.replace, batch_id: b.filename ? String(b.filename).slice(0, 60) : undefined });
 }, 3_000_000);
