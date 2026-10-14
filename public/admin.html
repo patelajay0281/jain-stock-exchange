@@ -360,6 +360,7 @@
 
   function render() {
     var d = S.st; if (!d) return;
+    if (S.bigBull) renderBigBull();
     var c = d.counts, st = d.stats, m = d.market || {}, ix = m.index || {};
     var pend = N(c.pit_pending) + N(c.exchange_pending) + N(c.bank_pending);
     $("kpis").innerHTML = kpi("Pending orders", F.num(pend), "Exchange " + F.num(N(c.exchange_pending) + N(c.pit_pending)) + " · Bank " + F.num(c.bank_pending), "warn") +
