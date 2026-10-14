@@ -177,16 +177,16 @@
   };
   // the closing cash rule card (login page)
   function cashRuleCard(limit) {
-    var l = fmt.money(limit === undefined ? 50000 : limit);
+    var l = fmt.money(limit === undefined ? 100000 : limit);
     return '<section class="cash-rule-card" aria-label="Closing cash rule"><div class="h"><b>Closing cash rule</b><span>5% of initial capital</span></div><div class="b">' +
       "<p>At market closing, each team can hold a maximum of 5% of the initial virtual capital (" + esc(l) + " out of ₹20 lakh) as cash in their portfolio. " +
       "Cash generated from profits earned during trading is exempt from this limit.</p>" +
       "<p><b><i>Example:</i></b> If a team earns a profit of ₹5 lakh and holds ₹4 lakh in cash from the profits earned, this amount will not be counted under the 5% cash limit, " +
       "provided the initial virtual capital has been fully invested.</p></div></section>";
   }
-  // the ₹50,000 closing cash criterion — one wording everywhere
+  // the ₹1,00,000 closing cash criterion — one wording everywhere
   function cashRuleText(limit) {
-    var l = fmt.money(limit === undefined ? 50000 : limit);
+    var l = fmt.money(limit === undefined ? 100000 : limit);
     return "At market closing, each team can hold a maximum of 5% of the initial virtual capital (" + l + " out of ₹20 lakh) as cash in their portfolio. " +
       "Cash generated from profits earned during trading is exempt from this limit. " +
       "Example: if a team earns a profit of ₹5 lakh and holds ₹4 lakh in cash from the profits earned, this amount will not be counted under the 5% cash limit, " +
