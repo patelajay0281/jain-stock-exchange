@@ -68,7 +68,7 @@
           <div class="field"><label for="sec">Security</label><select class="input" id="sec"></select></div>
           <div class="field"><label for="qty">Quantity (shares)</label><input class="input" id="qty" type="number" min="50" step="50" value="50" inputmode="numeric" placeholder="Select quantity"><span class="hint" id="lotHint">Multiples of 50 shares.</span></div>
           <div class="field span-2"><label for="instPriceIn">Order price per share</label><input class="input locked" id="instPriceIn" readonly tabindex="-1" value="—">
-            <span class="hint">Market price <span id="mktPrice">—</span> · institutional trades execute at the prevailing market price</span></div>
+            <span class="hint">Market price <span id="mktPrice">—</span> · <span id="instNote">market price</span></span></div>
         </div>
         <div class="sidebtns" role="group" aria-label="Transaction side">
           <button type="button" class="buy" data-side="BUY" aria-pressed="true">BUY · Institution Buys</button>
@@ -112,7 +112,7 @@
   function rules() { return (S.data && S.data.rules) || { spread_pct: 0, brokerage_rate: 0.005, max_order_value: 2500000, min_order_value: 0 }; }
   function list() { var k = $("asset").value; return S.data ? S.data.market.filter(function (s) { return k === "IPO" ? s.type === "IPO" : s.type !== "IPO"; }) : []; }
   function sec() { var sym = $("sec").value; return S.data ? S.data.market.filter(function (s) { return s.symbol === sym; })[0] : null; }
-  // S.side is the INSTITUTION's side: BUY = the institution buys from the participant (participant sells at market − 2%)
+  // Institutional trades execute at the prevailing market price.
   function instPrice(s) { return S.side === "SELL" ? N(s.participant_buy_price) : N(s.participant_sell_price); }
 
   function preview() {
