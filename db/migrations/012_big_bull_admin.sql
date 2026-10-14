@@ -38,8 +38,14 @@ DECLARE
   t teams%ROWTYPE;
   b brokers%ROWTYPE;
   v_amount numeric(16,2);
+  v_delta numeric(16,2);
   v_after numeric(16,2);
-  v_note text;
+  v_reason text;
+  v_name text;
+  v_broker_code text;
+  v_broker_id integer;
+  v_section text;
+  v_members text;
   v_active boolean;
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN');
@@ -48,43 +54,65 @@ BEGIN
   SELECT * INTO b FROM brokers WHERE id=t.broker_id;
 
   IF v_action = 'STATE' THEN
-    RETURN jsonb_build_object('success',true,'team_number',t.seq,'team_code',t.code,'team_name',t.name,
-      'broker_number',b.id,'broker_code',b.code,'broker_name',b.name,'cash',t.cash,
-      'cash_limit',100000000,'active',t.active);
+    RETURN jsonb_build_object('success',true,'account',jsonb_build_object(
+      'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,
+      'broker_name',b.name,'cash',t.cash,'cash_limit',100000000,'active',t.active,'section',t.section,'members',t.members));
   END IF;
 
   PERFORM jse_require_admin_password(a,p);
-  IF v_action = 'ADJUST_CASH' THEN
-    BEGIN v_amount := nullif(trim(p->>'amount'),'')::numeric; EXCEPTION WHEN others THEN v_amount := NULL; END;
-    v_note := left(trim(coalesce(p->>'note','')),300);
-    IF v_amount IS NULL OR v_amount=0 THEN PERFORM jse_fail('INVALID_AMOUNT','Enter a non-zero cash adjustment amount.',400); END IF;
-    IF v_note='' THEN PERFORM jse_fail('NOTE_REQUIRED','Enter a reason for the cash adjustment.',400); END IF;
-    v_after := t.cash + v_amount;
-    IF v_after < 0 THEN PERFORM jse_fail('INSUFFICIENT_CASH','The adjustment would make the cash balance negative.',400); END IF;
-    UPDATE teams SET cash=v_after, updated_at=now() WHERE id=t.id;
-    INSERT INTO cash_ledger(team_id,entry_type,debit,credit,balance_after,note,actor_id,actor_name)
-    VALUES(t.id,'ADJUSTMENT',greatest(-v_amount,0),greatest(v_amount,0),v_after,'BIG BULL admin adjustment: '||v_note,
-      nullif(a->>'id','')::integer,jse_actor_name(a));
-    PERFORM jse_audit(a,'BIG_BULL_CASH_ADJUSTED','team',t.code,t.id,NULL,
-      jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),
-      jsonb_build_object('amount',v_amount,'note',v_note,'broker_code',b.code));
-  ELSIF v_action = 'SET_ACTIVE' THEN
+  v_reason := left(trim(coalesce(p->>'reason','')),300);
+  IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for the BIG BULL change.',400); END IF;
+
+  IF v_action = 'UPDATE_ACCOUNT' THEN
+    v_name := left(trim(coalesce(p->>'display_name','')),120);
+    v_broker_code := upper(trim(coalesce(p->>'broker_code','')));
+    v_section := left(trim(coalesce(p->>'section','')),120);
+    v_members := left(trim(coalesce(p->>'members','')),1000);
     BEGIN v_active := (p->>'active')::boolean; EXCEPTION WHEN others THEN v_active := NULL; END;
-    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose whether BIG BULL should be active.',400); END IF;
-    UPDATE teams SET active=v_active, updated_at=now() WHERE id=t.id;
-    UPDATE app_users SET active=v_active, updated_at=now() WHERE role='PARTICIPANT' AND team_id=t.id;
-    PERFORM jse_audit(a,'BIG_BULL_ACTIVE_CHANGED','team',t.code,t.id,NULL,
-      jsonb_build_object('active',t.active),jsonb_build_object('active',v_active),
-      jsonb_build_object('broker_code',b.code));
+    IF v_name='' THEN PERFORM jse_fail('NAME_REQUIRED','Enter the BIG BULL display name.',400); END IF;
+    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose an account status.',400); END IF;
+    SELECT id INTO v_broker_id FROM brokers WHERE code=v_broker_code AND active;
+    IF v_broker_id IS NULL THEN PERFORM jse_fail('BROKER_NOT_FOUND','Choose an existing active broker.',400); END IF;
+    IF EXISTS (SELECT 1 FROM teams WHERE id<>t.id AND lower(name)=lower(v_name)) THEN
+      PERFORM jse_fail('DUPLICATE_TEAM_NAME','That display name is already used by another team.',409);
+    END IF;
+    UPDATE teams SET name=v_name, broker_id=v_broker_id, section=nullif(v_section,''), members=nullif(v_members,''),
+      active=v_active, updated_at=now() WHERE id=t.id;
+    UPDATE app_users SET display_name=v_name, active=v_active, updated_at=now()
+      WHERE role='PARTICIPANT' AND team_id=t.id;
+    PERFORM jse_audit(a,'BIG_BULL_ACCOUNT_UPDATED','team',t.code,t.id,NULL,
+      jsonb_build_object('name',t.name,'broker_code',b.code,'section',t.section,'members',t.members,'active',t.active),
+      jsonb_build_object('name',v_name,'broker_code',v_broker_code,'section',nullif(v_section,''),'members',nullif(v_members,''),'active',v_active),
+      jsonb_build_object('reason',v_reason));
+  ELSIF v_action IN ('SET_BALANCE','ADJUST_CASH') THEN
+    BEGIN v_amount := nullif(trim(p->>'amount'),'')::numeric; EXCEPTION WHEN others THEN v_amount := NULL; END;
+    IF v_amount IS NULL OR (v_amount<0 AND v_action='SET_BALANCE') THEN
+      PERFORM jse_fail('INVALID_AMOUNT','Enter a balance from ₹0 to ₹1 crore.',400);
+    END IF;
+    IF v_action='ADJUST_CASH' AND v_amount=0 THEN PERFORM jse_fail('INVALID_AMOUNT','Enter a non-zero cash adjustment.',400); END IF;
+    v_after := CASE WHEN v_action='SET_BALANCE' THEN v_amount ELSE t.cash+v_amount END;
+    IF v_after<0 OR v_after>100000000 THEN
+      PERFORM jse_fail('CASH_LIMIT','BIG BULL cash must stay between ₹0 and ₹1 crore.',400);
+    END IF;
+    v_delta := v_after-t.cash;
+    IF v_delta<>0 THEN
+      UPDATE teams SET cash=v_after, updated_at=now() WHERE id=t.id;
+      INSERT INTO cash_ledger(team_id,entry_type,debit,credit,balance_after,note,actor_id,actor_name)
+      VALUES(t.id,'ADJUSTMENT',greatest(-v_delta,0),greatest(v_delta,0),v_after,
+        'BIG BULL admin '||lower(v_action)||': '||v_reason,nullif(a->>'id','')::integer,jse_actor_name(a));
+      PERFORM jse_audit(a,CASE WHEN v_action='SET_BALANCE' THEN 'BIG_BULL_BALANCE_SET' ELSE 'BIG_BULL_CASH_ADJUSTED' END,
+        'team',t.code,t.id,NULL,jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),
+        jsonb_build_object('reason',v_reason,'amount',v_amount,'action',v_action));
+    END IF;
   ELSE
-    PERFORM jse_fail('INVALID_ACTION','Use STATE, ADJUST_CASH or SET_ACTIVE.',400);
+    PERFORM jse_fail('INVALID_ACTION','Use STATE, UPDATE_ACCOUNT, SET_BALANCE or ADJUST_CASH.',400);
   END IF;
 
   SELECT * INTO t FROM teams WHERE id=t.id;
   SELECT * INTO b FROM brokers WHERE id=t.broker_id;
-  RETURN jsonb_build_object('success',true,'team_number',t.seq,'team_code',t.code,'team_name',t.name,
-    'broker_number',b.id,'broker_code',b.code,'broker_name',b.name,'cash',t.cash,
-    'cash_limit',100000000,'active',t.active);
+  RETURN jsonb_build_object('success',true,'cash',t.cash,'account',jsonb_build_object(
+    'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,
+    'broker_name',b.name,'cash',t.cash,'cash_limit',100000000,'active',t.active,'section',t.section,'members',t.members));
 END $$;
 
 INSERT INTO schema_migrations(version) VALUES ('012_big_bull_admin');
