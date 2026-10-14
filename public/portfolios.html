@@ -138,7 +138,10 @@
 
   function renderDetail() {
     var d = S.detail, box = $("detail"); if (!d) { box.classList.add("hidden"); return; }
-    var t = d.team, l = d.loan || {}, c = d.capital || {}, id = d.identity, b = d.broker, a = d.assessment, el = d.eligibility, participant = S.user && S.user.role === "PARTICIPANT";\n    var rosterTeam = S.data && S.data.teams ? S.data.teams.filter(function (x) { return x.code === id.code; })[0] : null;\n    var brokerDisplayName = rosterTeam && rosterTeam.roster_broker_name || (b && b.name) || "Not assigned yet";\n    var brokerDisplayCode = rosterTeam && rosterTeam.roster_broker_code || (b && b.code) || "";
+    var t = d.team, l = d.loan || {}, c = d.capital || {}, id = d.identity, b = d.broker, a = d.assessment, el = d.eligibility, participant = S.user && S.user.role === "PARTICIPANT";
+    var rosterTeam = S.data && S.data.teams ? S.data.teams.filter(function (x) { return x.code === id.code; })[0] : null;
+    var brokerDisplayName = rosterTeam && rosterTeam.roster_broker_name || (b && b.name) || "Not assigned yet";
+    var brokerDisplayCode = rosterTeam && rosterTeam.roster_broker_code || (b && b.code) || "";
     var loanStatus = !l.original_principal ? "AVAILABLE" : l.repaid ? "REPAID" : "OUTSTANDING";
     box.classList.remove("hidden");
     box.innerHTML =
