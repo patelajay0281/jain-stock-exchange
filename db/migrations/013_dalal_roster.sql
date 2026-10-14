@@ -89,6 +89,8 @@ INSERT INTO team_name_pool(name,category,meaning,active)
 SELECT r.name,'ROSTER','Official Dalal Street 2026 participant team',true
 FROM roster r WHERE NOT EXISTS (SELECT 1 FROM team_name_pool p WHERE lower(p.name)=lower(r.name));
 
+UPDATE teams SET name='__DALAL_ROSTER_TMP__' || seq, updated_at=now() WHERE seq BETWEEN 2 AND 100;
+
 WITH raw AS (
  SELECT line, ord FROM unnest(string_to_array($roster$Apala|Vidura|K + K|Krishnangshu Sarkar / Gourav V Rao
 Dignaga|Vidura|D + A|Karanam Seebivamsikrishna / Shreya C
@@ -174,7 +176,7 @@ UPDATE teams t SET name=r.name, section=r.section, members=r.members,
 FROM roster r JOIN broker_roster_aliases a ON lower(a.broker_code)=lower(r.broker_code)
 WHERE t.seq=r.team_no AND t.seq BETWEEN 2 AND 74;
 
-UPDATE teams SET active=false, updated_at=now() WHERE seq BETWEEN 75 AND 100;
+UPDATE teams SET name='INACTIVE-PLACEHOLDER-' || seq, active=false, updated_at=now() WHERE seq BETWEEN 75 AND 100;
 UPDATE teams SET name='BIG BULL', active=true, broker_id=(SELECT id FROM brokers WHERE code='BROKER-11'), updated_at=now()
 WHERE seq=1 AND code='TEAM-001';
 UPDATE app_users u SET display_name=t.name, active=t.active, updated_at=now()
