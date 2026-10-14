@@ -55,6 +55,45 @@
     .tile { padding: 11px 12px 10px; } .tile-name { font-size: 15px; } .tile-price { font-size: 20px; }
     .cmsbar .id h1 { font-size: 19px; } .cmsbar .ix .val { font-size: 30px; } .cmsbar .ix .lbl { font-size: 15px; }
   }
+
+  /* Market page only: plain broadcast-friendly layout and one dropdown for navigation. */
+  body.market-page { background:#fff; color:#111827; }
+  body.market-page .hd { background:#fff; }
+  body.market-page .hd-in { padding:10px 20px 0; }
+  body.market-page .nav { padding:8px 20px 10px; border-bottom:1px solid #d9dee5; }
+  body.market-page .nav-in { display:block; }
+  body.market-page .market-nav-wrap { display:flex; align-items:center; gap:10px; }
+  body.market-page .market-nav-label { color:#344054; font-size:12px; font-weight:700; }
+  body.market-page .market-nav-select { width:min(320px, 100%); min-height:36px; padding:7px 34px 7px 10px; border:1px solid #cbd2da; border-radius:4px; background:#fff; color:#111827; box-shadow:none; }
+  body.market-page .wrap { padding:14px 20px 28px; }
+  body.market-page .cmsbar { min-height:68px; margin-top:0; border:1px solid #cbd2da; border-radius:0; box-shadow:none; }
+  body.market-page .cmsbar::before { display:none; }
+  body.market-page .cmsbar .id { padding:14px 18px; }
+  body.market-page .cmsbar .id h1 { font-size:18px; font-weight:800; letter-spacing:0; }
+  body.market-page .cmsbar .ix { padding:12px 18px; }
+  body.market-page .cmsbar .ix .lbl { font-size:13px; letter-spacing:.02em; }
+  body.market-page .cmsbar .ix .val { font-size:30px; }
+  body.market-page .cmsbar .live { top:-10px; right:12px; border-radius:3px; box-shadow:none; }
+  body.market-page .mgrid { gap:0; margin-top:0; border-top:1px solid #d9dee5; border-left:1px solid #d9dee5; }
+  body.market-page .tile { padding:11px 12px; border:0; border-right:1px solid #d9dee5; border-bottom:1px solid #d9dee5; border-radius:0; background:#fff !important; box-shadow:none; }
+  body.market-page .tile.up::after, body.market-page .tile.down::after { display:none; }
+  body.market-page .tile-name { font-size:14px; font-weight:650; color:#111827; }
+  body.market-page .tile-kind { font-size:9px; color:#667085; }
+  body.market-page .tile-price { margin-top:7px; font-size:21px; font-weight:750; color:#111827; }
+  body.market-page .tile-foot { margin-top:8px; font-size:12px; font-weight:700; color:#667085; }
+  body.market-page .tile.up .tile-foot { color:#16803c; }
+  body.market-page .tile.down .tile-foot { color:#c62828; }
+  body.market-page .tile.flat .tile-foot { color:#667085; }
+  body.market-page .tile.flash-up, body.market-page .tile.flash-down { animation:none; }
+  @media (max-width:1000px) {
+    body.market-page .cmsbar { grid-template-columns:minmax(0,1fr); }
+    body.market-page .cmsbar .id { border-bottom:1px solid #d9dee5; }
+  }
+  @media (max-width:640px) {
+    body.market-page .hd-in, body.market-page .nav, body.market-page .wrap { padding-left:12px; padding-right:12px; }
+    body.market-page .cmsbar .ix { padding-left:14px; }
+    body.market-page .cmsbar .ix .val { font-size:26px; }
+  }
 </style>
 </head>
 <body>
@@ -130,9 +169,42 @@
   }
   if (/[?&]tv=1/.test(location.search)) document.body.classList.add("tv");
   var poller;
+  function installMarketDropdown() {
+    var nav = document.querySelector(".nav");
+    var navIn = nav && nav.querySelector(".nav-in");
+    if (!navIn || document.getElementById("marketNavSelect")) return;
+    var links = Array.prototype.slice.call(navIn.querySelectorAll("a"));
+    if (!links.length) return;
+    var wrap = document.createElement("div");
+    wrap.className = "market-nav-wrap";
+    var label = document.createElement("label");
+    label.className = "market-nav-label";
+    label.htmlFor = "marketNavSelect";
+    label.textContent = "Go to";
+    var select = document.createElement("select");
+    select.id = "marketNavSelect";
+    select.className = "market-nav-select";
+    select.setAttribute("aria-label", "Navigate to page");
+    links.forEach(function (link) {
+      var option = document.createElement("option");
+      option.value = link.getAttribute("href");
+      option.textContent = link.textContent.trim();
+      option.selected = link.getAttribute("aria-current") === "page";
+      select.appendChild(option);
+    });
+    select.addEventListener("change", function () {
+      if (select.value) window.location.href = select.value;
+    });
+    wrap.appendChild(label);
+    wrap.appendChild(select);
+    navIn.innerHTML = "";
+    navIn.appendChild(wrap);
+  }
+
   JSE.page({ id: "market", statusFromPage: true }).then(function () {
     var right = document.querySelector(".hd-right");
     if (right) right.insertAdjacentHTML("afterbegin", '<span class="ver-pill">JSE System • Version ' + esc(ver) + "</span>");
+    installMarketDropdown();
     poller = JSE.poll(load, REFRESH_MS, { onError: onError });
   });
 })();
