@@ -24,7 +24,7 @@
   <div class="alert warn hidden" id="closedNote" style="margin-bottom:16px"></div>
   <section class="card">
     <div class="card-h bar green"><h2>Pending bank transactions <span class="muted" id="pendCount" style="font-weight:600;letter-spacing:0"></span></h2>
-      <div class="row"><input class="input sm hidden" id="q" type="search" aria-hidden="true"><span class="meta" id="conn">Settlement queue</span></div>
+      <div class="row"><input class="input sm hidden" id="q" type="search" aria-hidden="true"><span class="meta" id="conn">Settlement queue</span><button class="btn sm" id="refreshBank" type="button">Refresh now</button></div>
     </div>
     <div class="txn-grid green" id="rows"><div class="empty">Loading…</div></div>
   </section>
@@ -235,6 +235,13 @@
   });
 
   var poller, loanPoll;
+  var manualRefresh = document.getElementById("refreshBank");
+  if (manualRefresh) manualRefresh.addEventListener("click", async function () {
+    manualRefresh.disabled = true; manualRefresh.textContent = "Refreshing…";
+    try { await Promise.all([load(), loadLoans()]); JSE.toast("Bank queue, balances and loan requests refreshed.", "good", 2500); }
+    catch (e) { JSE.toast(e.message || "Refresh failed. Try again.", "bad", 5000); }
+    finally { manualRefresh.disabled = false; manualRefresh.textContent = "Refresh now"; }
+  });
   JSE.page({ id: "bank" }).then(function (user) {
     if (!user) return;
     S.canAct = user.role === "ADMIN" || user.role === "BANK";
