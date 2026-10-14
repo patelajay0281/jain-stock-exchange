@@ -74,7 +74,7 @@
         </div>
         <div class="label" style="margin:12px 0 6px">Selected mood</div>
         <div class="moods" id="moods"></div>
-        <div class="row between" style="margin-top:12px"><span class="small muted">News moves remain random within the selected severity band. Total news-driven movement is capped at ±15% per company per day; the automated price changer is unchanged.</span>
+        <div class="row between" style="margin-top:12px"><span class="small muted">Each news event moves a share by no more than 10%. Total news-driven movement is capped at ±15% from that day’s baseline per company; the automated price changer is unchanged.</span>
           <button class="btn primary caps admin-only" id="nGo" type="button">Publish news + move price</button></div>
       </div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:240px"><table class="t"><thead><tr><th>Time</th><th>Company</th><th>Mood</th><th class="num">Move</th><th class="num">New price</th></tr></thead><tbody id="news"></tbody></table></div></div>
@@ -274,8 +274,8 @@
   "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
   var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null, bigBull: null };
-  var MOODS = [["VERY_SEVERE", "Very severe", "−15 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
-    ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +15%", "pos"]];
+  var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
+    ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
   var SHEETS = [["winner", "Winner & Runner-Up"], ["assessment", "Assessment & Eligibility"], ["networth", "Net Worth & P/L"], ["teams", "Team Details (import template)"], ["participants", "Participant Details"],
     ["broker_roster", "Broker Roster (import template)"], ["brokers", "Broker Performance"], ["cash", "Cash"], ["holdings", "Holdings"], ["sold_stocks", "Sold Stocks"], ["sold_ipos", "Sold IPOs"],
     ["loans", "Loans & Interest"], ["cash_rule", "Cash Rule"], ["short_sell", "Short Selling Attempts"], ["cash_shortfall", "Cash Shortfall Attempts"], ["insufficient_balance", "Insufficient Balance Rejections"],
