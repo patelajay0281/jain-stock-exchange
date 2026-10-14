@@ -62,19 +62,19 @@
           <button class="btn ev-reset" id="resetBtn" type="button">Reset event + base prices</button>
         </div>
         <label class="check admin-only" style="margin-top:10px"><input type="checkbox" id="keepAllot" checked> Keep loaded IPO allotments when resetting</label>
-        <div class="small muted" style="margin-top:12px">Actions are validated against the current event state. Winner rule: highest Net Worth at close — Net Worth = liquid cash + (shares × closing price). The ₹50,000 closing cash criterion is an audit condition at the close, not a lock on cash.</div>
+        <div class="small muted" style="margin-top:12px">Actions are validated against the current event state. Winner rule: highest Net Worth at close — Net Worth = liquid cash + (shares × closing price). The final assessment requires closing cash of no more than ₹1,00,000, excluding cash from realized profits. This is checked at close, not locked during trading.</div>
       </div>
     </section>
 
     <section class="card">
-      <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · choose company + mood · max ±10%</span></div>
+      <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · choose company + mood · daily news cap ±15%</span></div>
       <div class="card-b">
         <div class="form-grid">
           <div class="field span-2"><label for="nSec">Company</label><select class="input" id="nSec"></select></div>
         </div>
         <div class="label" style="margin:12px 0 6px">Selected mood</div>
         <div class="moods" id="moods"></div>
-        <div class="row between" style="margin-top:12px"><span class="small muted">The engine picks a random move inside the severity band (cap ±10%). No manual price input exists.</span>
+        <div class="row between" style="margin-top:12px"><span class="small muted">News moves remain random within the selected severity band. Total news-driven movement is capped at ±15% per company per day; the automated price changer is unchanged.</span>
           <button class="btn primary caps admin-only" id="nGo" type="button">Publish news + move price</button></div>
       </div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:240px"><table class="t"><thead><tr><th>Time</th><th>Company</th><th>Mood</th><th class="num">Move</th><th class="num">New price</th></tr></thead><tbody id="news"></tbody></table></div></div>
@@ -118,7 +118,7 @@
         <div class="divider" style="margin:16px 0"></div>
         <h3 style="margin:0 0 8px">Balance controls</h3>
         <div class="form-grid">
-          <div class="field"><label for="bbSetBalance">Set exact cash balance (₹)</label><input class="input" id="bbSetBalance" type="number" min="0" max="100000000" step="0.01" placeholder="0.00"></div>
+          <div class="field"><label for="bbSetBalance">Set exact cash balance (₹)</label><input class="input" id="bbSetBalance" type="number" min="0" max="10000000" step="0.01" placeholder="0.00"></div>
           <div class="field"><label for="bbAdjustAmount">Cash adjustment (₹; negative to deduct)</label><input class="input" id="bbAdjustAmount" type="number" step="0.01" placeholder="e.g. 500000 or -250000"></div>
           <div class="field span-2"><label for="bbCashReason">Reason for balance change</label><input class="input" id="bbCashReason" maxlength="300" placeholder="Required for audit trail"></div>
         </div>
@@ -274,15 +274,15 @@
   "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
   var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null, bigBull: null };
-  var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
-    ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
+  var MOODS = [["VERY_SEVERE", "Very severe", "−15 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
+    ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +15%", "pos"]];
   var SHEETS = [["winner", "Winner & Runner-Up"], ["assessment", "Assessment & Eligibility"], ["networth", "Net Worth & P/L"], ["teams", "Team Details (import template)"], ["participants", "Participant Details"],
     ["broker_roster", "Broker Roster (import template)"], ["brokers", "Broker Performance"], ["cash", "Cash"], ["holdings", "Holdings"], ["sold_stocks", "Sold Stocks"], ["sold_ipos", "Sold IPOs"],
     ["loans", "Loans & Interest"], ["cash_rule", "Cash Rule"], ["short_sell", "Short Selling Attempts"], ["cash_shortfall", "Cash Shortfall Attempts"], ["insufficient_balance", "Insufficient Balance Rejections"],
     ["orders", "Order Tracking"], ["rejected", "Rejected Orders"], ["trades", "Trade History"], ["ledger", "Cash Ledger"],
     ["commission", "Broker Commission"], ["institutional", "Institutional Investors"], ["ipo_allotments", "IPO Allotments (import template)"],
     ["news", "Market News"], ["prices", "Price History"], ["journal", "Action Journal"], ["audit", "Audit Logs"]];
-  var CFG = [["max_price_move_pct", "Maximum price move % (cap ±10%)", "number"], ["brokerage_rate", "Brokerage %", "pct"], ["max_order_value", "Maximum order value (₹)", "number"],
+  var CFG = [["max_price_move_pct", "Automated price changer cap % (unchanged by news)", "number"], ["brokerage_rate", "Brokerage %", "pct"], ["max_order_value", "Maximum order value (₹)", "number"],
     ["cash_rule_limit", "Closing cash limit (₹) — closing criterion", "number"], ["initial_capital", "Starting capital per team (₹)", "number"], ["loan_max_principal", "Maximum loan principal (₹)", "number"],
     ["loan_interest_rate", "Loan interest %", "pct"], ["min_buy_trades", "Minimum settled BUY trades", "int"], ["min_sell_trades", "Minimum settled SELL trades", "int"],
     ["min_order_value", "Minimum order value (₹) — no minimum", "number"], ["event_name", "Event name", "text"],
@@ -417,7 +417,7 @@
       return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + k + '" type="' + (f[2] === "text" ? "text" : "number") + '" step="' + (f[2] === "int" ? "1" : "any") + '" value="' + esc(shown) + '"></div>';
     }).join("");
     $("cfgUpd").textContent = cfg.updated_by ? "last changed by " + cfg.updated_by + " " + F.datetime(cfg.updated_at) : "";
-    $("cfgCashRule").innerHTML = "<b>₹50,000 closing cash criterion</b>" + esc(JSE.cashRuleText(cfg.cash_rule_limit));
+    $("cfgCashRule").innerHTML = "<b>₹1,00,000 maximum closing cash criterion</b>" + esc(JSE.cashRuleText(cfg.cash_rule_limit));
     if (!S.admin) $("cfg").querySelectorAll("input").forEach(function (i) { i.disabled = true; });
   }
 
@@ -525,7 +525,7 @@
     var sec = $("nSec").value;
     if (!sec || !S.mood) return JSE.toast("Choose a company and a news severity.", "warn");
     var name = $("nSec").selectedOptions[0].textContent.split(" · ")[0];
-    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", html: "<p><b>" + esc(name) + "</b></p><p class=\"small muted\">The price moves immediately by a random amount inside the band (max ±10%). Open orders created at the old price are closed as MARKET PRICE CHANGED.</p>", confirmText: "Publish" }))) return;
+    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", html: "<p><b>" + esc(name) + "</b></p><p class=\"small muted\">The price moves immediately by a random amount inside the band (daily news cap ±15%). The automated price changer is unchanged. Open orders created at the old price are closed as MARKET PRICE CHANGED.</p>", confirmText: "Publish" }))) return;
     try { var r = await JSE.api.post("/api/market-news", { security_id: Number(sec), mood: S.mood });
       JSE.toast(r.symbol + ": " + F.price(r.previous_price) + " → " + F.price(r.new_price) + " (" + F.pct(r.applied_pct) + ")" + (N(r.stale_orders) ? " · " + r.stale_orders + " order(s) now price stale" : ""), N(r.applied_pct) >= 0 ? "good" : "warn", 9000);
       loadNews(); loadSecs(); poller.now();
