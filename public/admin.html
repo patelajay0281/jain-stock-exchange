@@ -657,7 +657,7 @@
         if (!row.name) return JSE.toast("Enter the broker name.", "warn");
         try {
           var r = await confirmed({ title: "Save " + code + "?", text: "The broker's details are updated everywhere and recorded in the audit log.", confirmText: "Save" }, "/api/brokers", { rows: [row] });
-          if (r) { JSE.toast(code + " updated.", "good"); back.remove(); poller.now(); loadNames(); }
+          if (r) { JSE.toast(code + " updated.", "good"); back.remove(); poller.now(); loadTeamNames(); }
         } catch (ex) { JSE.toast(ex.message + ((ex.data && ex.data.errors) ? " " + ex.data.errors.map(function (x) { return x.error; }).join("; ") : ""), "bad", 9000); }
       });
   });
