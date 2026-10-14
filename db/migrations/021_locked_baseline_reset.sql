@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS public.jse_locked_baseline (
   snapshot jsonb NOT NULL,
   locked_at timestamptz NOT NULL DEFAULT now(),
   locked_by text NOT NULL DEFAULT 'STAGING BASELINE'
-);
+);;
+
+DROP TRIGGER IF EXISTS jse_locked_baseline_no_mutation ON public.jse_locked_baseline;
 
 INSERT INTO public.jse_locked_baseline(id,version,snapshot,locked_by)
 VALUES (
@@ -58,6 +60,24 @@ VALUES (
   'LOCKED OFFICIAL ROSTER + INITIAL PRICES + IPO ALLOTMENTS'
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- Save pre-allotment cash for every team, preserving BIG BULL's current ₹1 crore starting balance.
+UPDATE public.jse_locked_baseline b
+SET snapshot = b.snapshot || jsonb_build_object(
+  'team_starting_cash',
+  (SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'team_id', t.id,
+      'cash', t.cash + coalesce(al.total_amount, 0)
+    ) ORDER BY t.seq), '[]'::jsonb)
+   FROM public.teams t
+   LEFT JOIN (
+     SELECT team_id, sum(amount) total_amount
+     FROM public.ipo_allotments
+     WHERE reversed_at IS NULL AND quantity > 0
+     GROUP BY team_id
+   ) al ON al.team_id = t.id)
+)
+WHERE b.id = 1 AND NOT (b.snapshot ? 'team_starting_cash');
 
 CREATE OR REPLACE FUNCTION public.jse_locked_baseline_immutable()
 RETURNS trigger LANGUAGE plpgsql AS $function$
@@ -126,8 +146,13 @@ BEGIN
   )
   WHERE s.id = x.id;
 
-  UPDATE teams SET cash = cfg.initial_capital, realized_pnl = 0, brokerage_paid = 0, short_sell_attempts = 0,
-                   cash_shortfall_attempts = 0, insufficient_balance_rejections = 0, updated_at = now();
+  UPDATE teams t SET cash = coalesce(
+      (SELECT (x.value->>'cash')::numeric
+       FROM jsonb_array_elements(v_base->'team_starting_cash') AS x(value)
+       WHERE (x.value->>'team_id')::integer = t.id),
+      cfg.initial_capital
+    ), realized_pnl = 0, brokerage_paid = 0, short_sell_attempts = 0,
+    cash_shortfall_attempts = 0, insufficient_balance_rejections = 0, updated_at = now();
   UPDATE loans SET original_principal = 0, principal_outstanding = 0, interest_outstanding = 0, interest_charged = 0,
                    interest_paid = 0, principal_repaid = 0, draws = 0, status = 'NONE', updated_at = now();
   INSERT INTO loans(team_id) SELECT id FROM teams ON CONFLICT (team_id) DO NOTHING;
@@ -158,8 +183,8 @@ BEGIN
     jsonb_build_object('reset_no', ev.reset_count + 1, 'archived_audit_rows', v_archived, 'kept_ipo_allotments', v_n, 'baseline_restored', true,
                        'team_names_locked', cfg.team_names_locked_at IS NOT NULL));
   RETURN jsonb_build_object('success', true, 'status', 'NOT_STARTED', 'reset_no', ev.reset_count + 1, 'kept_ipo_allotments', v_n, 'archived_audit_rows', v_archived);
-END $function$;
-
+END $function$
+;
 
 CREATE OR REPLACE FUNCTION public.jse_admin_state(a jsonb, p jsonb)
  RETURNS jsonb
@@ -232,8 +257,8 @@ BEGIN
       FROM brokers b LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id),
     'unassigned_teams', (SELECT count(*) FROM teams WHERE broker_id IS NULL),
     'users', (SELECT jsonb_object_agg(role, n) FROM (SELECT role, count(*) n FROM app_users WHERE active GROUP BY role) u));
-END $function$;
-
+END $function$
+;
 
 INSERT INTO public.schema_migrations(version) VALUES ('021_locked_baseline_reset')
 ON CONFLICT (version) DO NOTHING;
