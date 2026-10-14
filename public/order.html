@@ -90,9 +90,17 @@
 
   function fillTeams() {
     var el = $("team"), v = el.value;
-    el.innerHTML = '<option value="">Select participant…</option>' + S.desk.teams.map(function (t) {
+    var teams = (S.desk.teams || []).slice().sort(function (a, b) {
+      var as = a.special_account === "BIG-BULL" || a.code === "TEAM-074";
+      var bs = b.special_account === "BIG-BULL" || b.code === "TEAM-074";
+      return as === bs ? Number(a.seq || 9999) - Number(b.seq || 9999) : (as ? -1 : 1);
+    });
+    el.innerHTML = '<option value="">Select participant…</option>' + teams.map(function (t) {
       var number = Number(t.seq || String(t.code || "").slice(-3));
-      var label = number + "-" + (t.name || t.code || "") + "-" + (t.broker_number || "") + "-" + (t.broker_name || "");
+      var brokerCode = String(t.broker_code || "").toUpperCase();
+      var brokerName = String(t.broker_name || "").toUpperCase();
+      var rosterLabel = number + "-" + String(t.code || "").toUpperCase() + "-" + brokerCode + "-" + brokerName;
+      var label = (t.special_account === "BIG-BULL" || t.code === "TEAM-074") ? "BIG BULL · " + rosterLabel : rosterLabel;
       return '<option value="' + esc(t.code) + '">' + esc(label) + "</option>";
     }).join("");
     if (v) el.value = v;
