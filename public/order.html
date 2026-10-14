@@ -175,7 +175,7 @@
   async function loadDesk() {
     S.desk = await JSE.api.get("/api/broker-desk", S.broker ? { broker: S.broker } : null);
     if (S.desk.brokers && !$("brokerSel").options.length && S.user.role !== "PIT_MANAGER") {
-      $("brokerSel").innerHTML = '<option value="ALL">All teams</option>' + S.desk.brokers.map(function (b) { return '<option value="' + esc(b.code) + '">' + esc(b.code) + " · " + esc(b.name) + "</option>"; }).join("");
+      $("brokerSel").innerHTML = '<option value="ALL">All teams</option>' + S.desk.brokers.map(function (b) { var label = Number(b.broker_number || 0) + "-" + String(b.roster_code || b.code).toUpperCase() + "-" + String(b.roster_name || b.name).toUpperCase(); return '<option value="' + esc(b.code) + '">' + esc(label) + "</option>"; }).join("");
       $("brokerSel").value = S.desk.broker.code; $("brokerSel").classList.remove("hidden");
     }
     $("deskMeta").textContent = "Participant trading" + (S.desk.broker.code !== "ALL" ? " · " + S.desk.broker.code : "");
