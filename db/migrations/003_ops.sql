@@ -58,8 +58,8 @@ BEGIN
     v_qty := (p->>'quantity')::integer; v_expected := nullif(p->>'expected_price', '')::numeric;
   EXCEPTION WHEN others THEN PERFORM jse_fail('INVALID_NUMBER', 'Quantity must be a whole number of shares.', 400);
   END;
-  IF v_qty IS NULL OR v_qty <= 0 OR v_qty % v_sec.lot_size <> 0 THEN
-    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' trades in multiples of ' || v_sec.lot_size || ' shares.', 400);
+  IF v_qty IS NULL OR v_qty <= 0 OR v_qty % 50 <> 0 THEN
+    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' normal market trading uses multiples of 50 shares.', 400);
   END IF;
   -- expected_price = the prevailing MARKET price the desk saw (the institutional price is derived from it)
   IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
@@ -542,8 +542,8 @@ BEGIN
     IF s.kind = 'IPO' AND s.listed_at IS NULL THEN PERFORM jse_fail('IPO_NOT_LISTED', s.symbol || ' has not listed yet.', 409); END IF;
     IF v_side NOT IN ('BUY', 'SELL') THEN PERFORM jse_fail('INVALID_SIDE', 'Choose BUY or SELL.', 400); END IF;
     BEGIN v_qty := (p->>'quantity')::integer; EXCEPTION WHEN others THEN v_qty := NULL; END;
-    IF v_qty IS NULL OR v_qty <= 0 OR v_qty % s.lot_size <> 0 THEN
-      PERFORM jse_fail('INVALID_LOT', 'Quantity must be a multiple of ' || s.lot_size || ' shares.', 400);
+    IF v_qty IS NULL OR v_qty <= 0 OR v_qty % 50 <> 0 THEN
+      PERFORM jse_fail('INVALID_LOT', 'Normal market instructions must be a multiple of 50 shares.', 400);
     END IF;
     SELECT count(*) INTO v_open FROM instructions WHERE team_id = t.id AND status = 'OPEN';
     IF v_open >= 10 THEN PERFORM jse_fail('TOO_MANY_OPEN', 'You already have 10 open instructions. Wait for your broker or cancel one.', 409); END IF;
