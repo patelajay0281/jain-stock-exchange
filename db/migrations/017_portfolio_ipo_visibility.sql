@@ -2,7 +2,7 @@
 -- Does not change Team-page/account-page UI or the existing portfolio-detail/account functions.
 
 UPDATE public.broker_roster_aliases
-SET broker_name = 'Aman'
+SET broker_name = 'SUGADEV'
 WHERE broker_number = 6
   AND lower(broker_code) = 'arohan';
 
