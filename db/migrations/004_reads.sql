@@ -51,7 +51,7 @@ WITH cfg AS (SELECT * FROM event_config WHERE id = 1),
               coalesce(l.interest_paid, 0) AS loan_interest_paid, coalesce(l.principal_repaid, 0) AS loan_principal_repaid,
               coalesce(l.status, 'NONE') AS loan_status, cfg.loan_repayment_required,
               greatest(0, least(t.cash, t.realized_pnl)) AS profit_cash_exempt,
-              cfg.initial_capital, cfg.cash_rule_limit, ev.status AS event_status
+              coalesce(t.initial_capital, cfg.initial_capital) AS initial_capital, cfg.cash_rule_limit, ev.status AS event_status
        FROM teams t CROSS JOIN cfg CROSS JOIN ev
        LEFT JOIN brokers b ON b.id = t.broker_id
        LEFT JOIN hv ON hv.team_id = t.id
