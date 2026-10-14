@@ -56,6 +56,7 @@ BEGIN
         SELECT jsonb_build_object(
           'rank', row_number() OVER (ORDER BY coalesce(c.amount, 0) DESC, coalesce(ba.broker_number, 999), b.code),
           'broker', b.code,
+          'broker_number', coalesce(ba.broker_number, 999),
           'display_code', coalesce(ba.broker_code, b.code),
           'name', coalesce(ba.broker_name, b.name),
           'teams', (SELECT count(*) FROM teams t WHERE t.broker_id = b.id AND t.active),
