@@ -124,6 +124,32 @@
       <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Team</th><th>Team name</th><th>Section · members</th><th>Broker</th><th class="actions"></th></tr></thead><tbody id="tnRows"></tbody></table></div></div>
     </section>
 
+    <section class="card admin-only" id="bigBullBox" style="border:2px solid #c8a65d">
+      <div class="card-h bar navy"><h2>BIG BULL · Special Participant Account</h2><span class="tag">Cash limit ₹1,00,00,000</span></div>
+      <div class="card-b">
+        <p class="small muted" style="margin-top:0">Priority participant mapped to TEAM-074. Account changes require the Event Admin password and are written to the audit log. The ₹1 crore cash ceiling is enforced by the database.</p>
+        <div id="bbSummary" class="alert info">Loading BIG BULL account…</div>
+        <div class="form-grid" style="margin-top:12px">
+          <div class="field"><label for="bbDisplayName">Account display name</label><input class="input" id="bbDisplayName" maxlength="120" value="BIG BULL"></div>
+          <div class="field"><label for="bbBroker">Broker assignment</label><select class="input" id="bbBroker"></select></div>
+          <div class="field"><label for="bbSection">Section</label><input class="input" id="bbSection" maxlength="120"></div>
+          <div class="field"><label for="bbActive">Account status</label><select class="input" id="bbActive"><option value="true">Active</option><option value="false">Inactive</option></select></div>
+          <div class="field span-2"><label for="bbMembers">Participant details / members</label><textarea class="input" id="bbMembers" maxlength="1000" rows="2"></textarea></div>
+          <div class="field span-2"><label for="bbDetailsReason">Reason for account changes</label><input class="input" id="bbDetailsReason" maxlength="300" placeholder="Required for audit trail"></div>
+        </div>
+        <div class="row" style="margin-top:10px"><button class="btn primary" type="button" id="bbSaveDetails">Save account details…</button></div>
+        <div class="divider" style="margin:16px 0"></div>
+        <h3 style="margin:0 0 8px">Balance controls</h3>
+        <div class="form-grid">
+          <div class="field"><label for="bbSetBalance">Set exact cash balance (₹)</label><input class="input" id="bbSetBalance" type="number" min="0" max="100000000" step="0.01" placeholder="0.00"></div>
+          <div class="field"><label for="bbAdjustAmount">Cash adjustment (₹; negative to deduct)</label><input class="input" id="bbAdjustAmount" type="number" step="0.01" placeholder="e.g. 500000 or -250000"></div>
+          <div class="field span-2"><label for="bbCashReason">Reason for balance change</label><input class="input" id="bbCashReason" maxlength="300" placeholder="Required for audit trail"></div>
+        </div>
+        <div class="row" style="margin-top:10px;gap:8px"><button class="btn" type="button" id="bbSetCash">Set balance…</button><button class="btn" type="button" id="bbAdjustCash">Apply adjustment…</button><button class="btn" type="button" id="bbRefresh">Refresh account</button></div>
+        <p class="small muted" style="margin-bottom:0">Cash cannot be negative or exceed ₹1 crore. The current live balance is not reset by opening this panel.</p>
+      </div>
+    </section>
+
     <section class="card">
       <div class="card-h bar"><h2>Roster import (Excel / CSV)</h2></div>
       <div class="card-b">
@@ -270,7 +296,7 @@
 (function () {
   "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
-  var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null };
+  var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null, bigBull: null };
   var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
     ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
   var SHEETS = [["winner", "Winner & Runner-Up"], ["assessment", "Assessment & Eligibility"], ["networth", "Net Worth & P/L"], ["teams", "Team Details (import template)"], ["participants", "Participant Details"],
@@ -297,6 +323,63 @@
     body = Object.assign({}, body || {}, { admin_password: pw });
     return JSE.api.post(path, body);
   }
+
+  async function loadBigBull() {
+    if (!S.admin) return;
+    var r = await JSE.api.post("/api/big-bull", { action: "STATE" });
+    S.bigBull = r.account;
+    renderBigBull();
+  }
+  function renderBigBull() {
+    var a = S.bigBull; if (!a) return;
+    $("bbSummary").className = "alert " + (a.active ? "good" : "warn");
+    $("bbSummary").innerHTML = "<b>" + esc(a.display_name || "BIG BULL") + "</b> · " + esc(a.team_code) +
+      " · Cash <b>" + F.money(a.cash) + "</b> / " + F.money(a.cash_limit) +
+      " · " + (a.active ? "Active" : "Inactive") + " · Broker " + esc(a.broker_code || "—") +
+      (a.broker_name ? " (" + esc(a.broker_name) + ")" : "");
+    if (document.activeElement !== $("bbDisplayName")) $("bbDisplayName").value = a.display_name || "BIG BULL";
+    if (document.activeElement !== $("bbSection")) $("bbSection").value = a.section || "";
+    if (document.activeElement !== $("bbMembers")) $("bbMembers").value = a.members || "";
+    if (document.activeElement !== $("bbActive")) $("bbActive").value = String(!!a.active);
+    var brokers = (S.st && S.st.brokers) || [];
+    var current = $("bbBroker").value || a.broker_code || "";
+    $("bbBroker").innerHTML = brokers.map(function (b) {
+      return '<option value="' + esc(b.code) + '">' + esc(b.code + " · " + b.name) + "</option>";
+    }).join("");
+    if (current && brokers.some(function (b) { return b.code === current; })) $("bbBroker").value = current;
+  }
+  async function saveBigBullDetails() {
+    var body = { action: "UPDATE_ACCOUNT", display_name: $("bbDisplayName").value.trim(),
+      broker_code: $("bbBroker").value, section: $("bbSection").value.trim(), members: $("bbMembers").value.trim(),
+      active: $("bbActive").value === "true", reason: $("bbDetailsReason").value.trim() };
+    if (!body.display_name || !body.reason) return JSE.toast("Enter the display name and reason.", "warn");
+    try {
+      var r = await confirmed({ title: "Update BIG BULL account?", text: "This updates the special account details and is recorded in the audit log.", confirmText: "Save account" }, "/api/big-bull", body);
+      if (r) { $("bbDetailsReason").value = ""; JSE.toast("BIG BULL account details saved.", "good"); await loadBigBull(); if (poller) poller.now(); }
+    } catch (e) { JSE.toast(e.message, "bad", 9000); }
+  }
+  async function setBigBullBalance() {
+    var amount = $("bbSetBalance").value, reason = $("bbCashReason").value.trim();
+    if (amount === "" || !reason) return JSE.toast("Enter the exact balance and reason.", "warn");
+    try {
+      var r = await confirmed({ title: "Set BIG BULL cash balance?", text: "The balance must be between ₹0 and ₹1,00,00,000. This change is ledgered and audited.", confirmText: "Set balance" },
+        "/api/big-bull", { action: "SET_BALANCE", amount: amount, reason: reason });
+      if (r) { $("bbSetBalance").value = ""; $("bbCashReason").value = ""; JSE.toast("BIG BULL cash balance updated to " + F.money(r.cash) + ".", "good"); await loadBigBull(); if (poller) poller.now(); }
+    } catch (e) { JSE.toast(e.message, "bad", 9000); }
+  }
+  async function adjustBigBullCash() {
+    var amount = $("bbAdjustAmount").value, reason = $("bbCashReason").value.trim();
+    if (amount === "" || Number(amount) === 0 || !reason) return JSE.toast("Enter a non-zero adjustment and reason.", "warn");
+    try {
+      var r = await confirmed({ title: "Adjust BIG BULL cash?", text: "This adds or deducts the entered amount, subject to the ₹1 crore ceiling. The change is ledgered and audited.", confirmText: "Apply adjustment" },
+        "/api/big-bull", { action: "ADJUST_CASH", amount: amount, reason: reason });
+      if (r) { $("bbAdjustAmount").value = ""; $("bbCashReason").value = ""; JSE.toast("BIG BULL cash balance updated to " + F.money(r.cash) + ".", "good"); await loadBigBull(); if (poller) poller.now(); }
+    } catch (e) { JSE.toast(e.message, "bad", 9000); }
+  }
+  $("bbSaveDetails").addEventListener("click", saveBigBullDetails);
+  $("bbSetCash").addEventListener("click", setBigBullBalance);
+  $("bbAdjustCash").addEventListener("click", adjustBigBullCash);
+  $("bbRefresh").addEventListener("click", function () { loadBigBull().catch(function (e) { JSE.toast(e.message, "bad"); }); });
 
   function render() {
     var d = S.st; if (!d) return;
@@ -946,6 +1029,7 @@
     JSE.poll(loadNews, 20000);
     JSE.poll(loadSecs, 30000);
     loadNames().catch(function (e) { JSE.toast(e.message, "bad"); });
+    loadBigBull().catch(function (e) { $("bbSummary").className = "alert bad"; $("bbSummary").textContent = "BIG BULL account could not load: " + e.message; });
     loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadBigBull().catch(function (e) { $("bbResult").textContent = "BIG BULL controls unavailable: " + e.message; });
     JSE.poll(loadBigBull, 10000, { onError: function (e) { $("bbResult").textContent = "BIG BULL reconnecting: " + e.message; } });
