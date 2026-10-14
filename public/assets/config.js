@@ -11,11 +11,12 @@
     pick = sessionStorage.getItem("jse_api");
   } catch (e) {}
   var api;
-  if (pick === "stage") api = STAGE;
+  // Preview deployments are isolated to staging even if this browser previously selected production.
+  if (host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host)) api = STAGE;
+  else if (pick === "stage") api = STAGE;
   else if (pick === "prod") api = PROD;
   else if (pick === "local") api = "";
   else if (host === "localhost" || host === "127.0.0.1") api = "";
-  else if (host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host)) api = STAGE;
   else api = PROD;
   window.JSE_CONFIG = { api: api, env: api === STAGE ? "staging" : api === PROD ? "production" : "local", version: "3.14.0" };
 })();
