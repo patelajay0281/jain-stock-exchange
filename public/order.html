@@ -99,7 +99,7 @@
       var number = Number(t.seq || String(t.code || "").slice(-3));
       var brokerCode = String(t.broker_code || "").toUpperCase();
       var brokerName = String(t.broker_name || "").toUpperCase();
-      var rosterLabel = number + "-" + String(t.code || "").toUpperCase() + "-" + brokerCode + "-" + brokerName;
+      var rosterLabel = number + "-" + String(t.name || t.code || "").toUpperCase() + "-" + brokerCode + "-" + brokerName;
       var label = t.special_account === "BIG-BULL"
         ? number + "-BIG BULL-" + brokerName
         : rosterLabel;
