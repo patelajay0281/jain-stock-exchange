@@ -12,6 +12,12 @@
 -- ---------------------------------------------------------------------------
 -- Helpers
 -- ---------------------------------------------------------------------------
+-- Per-team initial capital, so BIG BULL can start at ₹1 crore without changing normal teams.
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS initial_capital numeric(16,2);
+UPDATE teams SET initial_capital=(SELECT initial_capital FROM event_config WHERE id=1) WHERE initial_capital IS NULL;
+ALTER TABLE teams ALTER COLUMN initial_capital SET DEFAULT 2000000;
+ALTER TABLE teams ALTER COLUMN initial_capital SET NOT NULL;
+
 CREATE OR REPLACE FUNCTION jse_fail(p_code text, p_msg text, p_http integer DEFAULT 400)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
@@ -524,8 +530,8 @@ BEGIN
     PERFORM jse_fail('INVALID_NUMBER', 'Quantity must be a whole number of shares.', 400);
   END;
   IF v_qty IS NULL OR v_qty <= 0 THEN PERFORM jse_fail('INVALID_QUANTITY', 'Quantity must be a positive number of shares.', 400); END IF;
-  IF v_qty % v_sec.lot_size <> 0 THEN
-    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' trades in multiples of ' || v_sec.lot_size || ' shares (e.g. ' || v_sec.lot_size || ', ' || (2 * v_sec.lot_size) || ', ' || (3 * v_sec.lot_size) || ').', 400);
+  IF v_qty % 50 <> 0 THEN
+    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' normal market trading uses multiples of 50 shares (50, 100, 150 …).', 400);
   END IF;
   IF v_ins.id IS NOT NULL AND (v_ins.team_id <> v_team.id OR v_ins.security_id <> v_sec.id OR v_ins.side <> v_side OR v_ins.quantity <> v_qty) THEN
     PERFORM jse_fail('INSTRUCTION_MISMATCH', 'The order must match ' || v_ins.instruction_no || ' (' || v_ins.side || ' ' || v_ins.quantity ||
@@ -871,8 +877,8 @@ BEGIN
   END IF;
   IF NOT t.active THEN RETURN jse__bank_reject(a, o, 'TEAM_INACTIVE', 'Team ' || t.code || ' is not active.', '{}'::jsonb); END IF;
   IF NOT s.active THEN RETURN jse__bank_reject(a, o, 'SECURITY_INACTIVE', s.symbol || ' is not tradable.', '{}'::jsonb); END IF;
-  IF o.quantity <= 0 OR o.quantity % s.lot_size <> 0 THEN
-    RETURN jse__bank_reject(a, o, 'INVALID_LOT', 'Quantity must be a multiple of ' || s.lot_size || '.', '{}'::jsonb);
+  IF o.quantity <= 0 OR o.quantity % 50 <> 0 THEN
+    RETURN jse__bank_reject(a, o, 'INVALID_LOT', 'Normal market trading requires a multiple of 50 shares.', '{}'::jsonb);
   END IF;
   IF o.price <= 0 THEN
     RETURN jse__bank_reject(a, o, 'INVALID_PRICE', 'Invalid order price.', '{}'::jsonb);
