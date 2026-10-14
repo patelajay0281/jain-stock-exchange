@@ -452,7 +452,7 @@
     render();
     $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
-  async function loadNames() {
+  async function loadTeamNames() {
     S.names = await JSE.api.get("/api/team-names");
     $("tnRows").innerHTML = S.names.teams.map(function (t) { return '<tr><td class="nowrap"><b>' + esc(t.team) + "</b></td><td><b>" + esc(t.name) + '</b><span class="sub">' + esc(t.meaning || "") + '</span></td><td class="small">' + esc(t.section || "—") +
       '<span class="sub">' + esc(t.members || "Members not entered") + '</span></td><td class="nowrap">' + esc(t.broker || "—") + '<span class="sub">' + esc(t.broker_name || "") + '</span></td><td class="actions">' +
@@ -504,7 +504,7 @@
       var lst = (r.listed || []).map(function (x) { return x.symbol + " " + F.price(x.listing_price); }).join(" · ");
       JSE.toast("Event status: " + F.statusText(r.status) + (lst ? " · listed " + lst : ""), "good", lst ? 9000 : 5000);
     } catch (e) { JSE.toast(e.message, "bad", 9000); }
-    poller.now(); loadSecs(); loadNames();
+    poller.now(); loadSecs(); loadTeamNames();
   }
   async function undoRedo(action, id) {
     var j = id ? (S.st.journal || []).filter(function (x) { return x.id === id; })[0] : null;
@@ -605,7 +605,7 @@
   async function names(action, title, text) {
     try {
       var r = await confirmed({ title: title, text: text, confirmText: title.split(" ")[0] }, "/api/team-names", { action: action });
-      if (r) { JSE.toast("Team names: " + (r.locked ? "locked" : "unlocked") + " · seed " + r.seed, "good"); loadNames(); }
+      if (r) { JSE.toast("Team names: " + (r.locked ? "locked" : "unlocked") + " · seed " + r.seed, "good"); loadTeamNames(); }
     } catch (e) { JSE.toast(e.message, "bad"); }
     poller.now();
   }
@@ -640,7 +640,7 @@
         if (!locked) row.name = back.querySelector("#etName").value.trim();
         try {
           var r = await confirmed({ title: "Save " + code + "?", text: "Team details are updated and recorded in the audit log.", confirmText: "Save" }, "/api/teams", { rows: [row] });
-          if (r) { JSE.toast(code + " updated.", "good"); back.remove(); loadNames(); poller.now(); }
+          if (r) { JSE.toast(code + " updated.", "good"); back.remove(); loadTeamNames(); poller.now(); }
         } catch (ex) { JSE.toast(ex.message + ((ex.data && ex.data.errors) ? " " + ex.data.errors.map(function (x) { return x.error; }).join("; ") : ""), "bad", 9000); }
       });
   });
@@ -704,7 +704,7 @@
       if (!r) { $("impResult").innerHTML = ""; return; }
       $("impResult").innerHTML = '<div class="alert good">' + (r.dry_run ? "Valid: " + r.rows + " row(s) ready to import" + (r.total_amount !== undefined ? " · " + F.money(r.total_amount) : "") + "." :
         "Imported " + (r.updated !== undefined ? r.updated + " row(s), " + r.changed + " changed" : r.rows + " allotment row(s) · " + F.money(r.total_amount)) + ".") + "</div>" + importPreviewHtml(r.preview, $("impKind").value);
-      if (!dry) { poller.now(); loadNames(); }
+      if (!dry) { poller.now(); loadTeamNames(); }
     } catch (e) { $("impResult").innerHTML = '<div class="alert bad"><b>' + esc(e.message) + "</b>" + errList(e) + "</div>"; }
   }
   $("impCheck").onclick = function () { runImport(true); };
@@ -812,7 +812,7 @@
       var r = await confirmed(prompts[action], "/api/ipo-admin", { action: action, ipo: symbol });
       if (!r) return;
       JSE.toast((r.replay ? "Existing saved draw: " : "IPO action completed: ") + (r.status || action), "good", 7000);
-      await loadIpoAdmin(symbol); if (poller) poller.now(); loadNames();
+      await loadIpoAdmin(symbol); if (poller) poller.now(); loadTeamNames();
     } catch (e) { $("ipoToolResult").innerHTML = '<span class="bad">' + esc(e.message) + "</span>" + errList(e); JSE.toast(e.message, "bad", 9000); }
   }
   $("ipoToolSelect").onchange = function () { loadIpoAdmin($("ipoToolSelect").value).catch(function (e) { JSE.toast(e.message, "bad"); }); };
@@ -969,7 +969,7 @@
     JSE.poll(loadIntel, 10000, { onError: function () {} });
     JSE.poll(loadNews, 20000);
     JSE.poll(loadSecs, 30000);
-    loadNames().catch(function (e) { JSE.toast(e.message, "bad"); });
+    loadTeamNames().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadBigBull().catch(function (e) { $("bbSummary").className = "alert bad"; $("bbSummary").textContent = "BIG BULL account could not load: " + e.message; });
     loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadIpoAdmin().catch(function (e) { $("ipoToolResult").textContent = "IPO tools unavailable: " + e.message; });
