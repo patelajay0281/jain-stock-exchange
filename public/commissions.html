@@ -63,19 +63,19 @@
         kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.broker) : "—", top && N(top.brokerage_earned) ? F.money(top.brokerage_earned, { dp: 2 }) : "no commission yet");
     }
     $("rank").innerHTML = brokers.length ? brokers.map(function (b) {
-      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(b.broker) + "</b>" + (b.name && b.name !== b.broker ? '<span class="sub">' + esc(b.name) + "</span>" : "") + '</td><td class="num">' + b.teams +
+      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(b.display_code || b.broker) + "</b>" + (b.name && b.name !== (b.display_code || b.broker) ? '<span class="sub">' + esc(b.name) + "</span>" : "") + '</td><td class="num">' + b.teams +
         '</td><td class="num">' + F.num(b.orders) + '<span class="sub">' + b.buy_orders + " buy · " + b.sell_orders + ' sell</span></td><td class="num">' + F.money(b.buy_volume) + '<span class="sub">' + F.num(b.buy_quantity) + ' shares</span></td>' +
         '<td class="num">' + F.money(b.sell_volume) + '<span class="sub">' + F.num(b.sell_quantity) + ' shares</span></td><td class="num">' + F.money(b.total_trade_value) + '</td><td class="num"><b>' + F.money(b.brokerage_earned, { dp: 2 }) +
         '</b></td><td><div class="meter"><i style="width:' + (N(b.brokerage_earned) / max * 100).toFixed(1) + '%"></i></div></td><td class="num">' + b.pending_orders + "</td></tr>";
     }).join("") : '<tr><td colspan="10" class="empty">No brokers.</td></tr>';
     if (!own && !S.brokersLoaded && brokers.length) {
       var list = brokers.slice().sort(function (a, b) { return a.broker < b.broker ? -1 : 1; });
-      $("fBroker").innerHTML = '<option value="">All brokers</option>' + list.map(function (b) { return '<option value="' + esc(b.broker) + '">' + esc(b.broker + (b.name && b.name !== b.broker ? " · " + b.name : "")) + "</option>"; }).join("");
+      $("fBroker").innerHTML = '<option value="">All brokers</option>' + list.map(function (b) { return '<option value="' + esc(b.broker) + '">' + esc((b.display_code || b.broker) + (b.name && b.name !== (b.display_code || b.broker) ? " · " + b.name : "")) + "</option>"; }).join("");
       $("fBroker").value = S.broker; S.brokersLoaded = true;
     }
     var tx = d.transactions || [];
     $("rows").innerHTML = tx.length ? tx.map(function (t) {
-      return '<tr><td class="nowrap">' + F.datetime(t.created_at) + "</td><td><b>" + esc(t.broker) + "</b>" + (t.broker_name && t.broker_name !== t.broker ? '<span class="sub">' + esc(t.broker_name) + "</span>" : "") +
+      return '<tr><td class="nowrap">' + F.datetime(t.created_at) + "</td><td><b>" + esc(t.broker_display_code || t.broker) + "</b>" + (t.broker_name && t.broker_name !== (t.broker_display_code || t.broker) ? '<span class="sub">' + esc(t.broker_name) + "</span>" : "") +
         "</td><td><b>" + esc(t.team) + '</b><span class="sub">' + esc(t.team_name || "") + "</span></td>" +
         '<td><a class="mono" href="/orders.html?order=' + encodeURIComponent(t.order_no) + '">' + esc(t.order_no) + "</a>" + (t.account_type === "INSTITUTION" ? ' <span class="tag navy">Institutional</span>' : "") + "</td>" +
         "<td><b>" + esc(t.security || t.symbol) + '</b><span class="sub">' + esc(t.symbol) + "</span></td><td>" + JSE.badge.side(t.side) + '</td><td class="num">' + F.num(t.quantity) + " @ " + F.price(t.price) +
