@@ -183,8 +183,7 @@ BEGIN
     jsonb_build_object('reset_no', ev.reset_count + 1, 'archived_audit_rows', v_archived, 'kept_ipo_allotments', v_n, 'baseline_restored', true,
                        'team_names_locked', cfg.team_names_locked_at IS NOT NULL));
   RETURN jsonb_build_object('success', true, 'status', 'NOT_STARTED', 'reset_no', ev.reset_count + 1, 'kept_ipo_allotments', v_n, 'archived_audit_rows', v_archived);
-END $function$
-;
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.jse_admin_state(a jsonb, p jsonb)
  RETURNS jsonb
@@ -257,8 +256,7 @@ BEGIN
       FROM brokers b LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id),
     'unassigned_teams', (SELECT count(*) FROM teams WHERE broker_id IS NULL),
     'users', (SELECT jsonb_object_agg(role, n) FROM (SELECT role, count(*) n FROM app_users WHERE active GROUP BY role) u));
-END $function$
-;
+END $function$;
 
 INSERT INTO public.schema_migrations(version) VALUES ('021_locked_baseline_reset')
 ON CONFLICT (version) DO NOTHING;
