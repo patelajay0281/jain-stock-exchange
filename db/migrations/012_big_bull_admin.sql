@@ -1,5 +1,36 @@
 -- BIG BULL special participant controls: Team 1 / Broker 11.
 -- Additive and replayable. Existing balances and trade history are retained.
+INSERT INTO brokers (code,name,active) VALUES ('BROKER-11','SIDDHARTH',true)
+ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, active=true;
+
+INSERT INTO team_name_pool (name,category,meaning,active)
+SELECT 'BIG BULL','SPECIAL','Special participant; managed separately by the administrator',true
+WHERE NOT EXISTS (SELECT 1 FROM team_name_pool WHERE lower(name)='big bull');
+
+UPDATE teams
+SET name='BIG BULL', broker_id=(SELECT id FROM brokers WHERE code='BROKER-11'), updated_at=now()
+WHERE seq=1 AND code='TEAM-001'
+  AND (name IS DISTINCT FROM 'BIG BULL' OR broker_id IS DISTINCT FROM (SELECT id FROM brokers WHERE code='BROKER-11'));
+
+UPDATE app_users SET display_name='BIG BULL', updated_at=now()
+WHERE role='PARTICIPANT' AND team_id=(SELECT id FROM teams WHERE seq=1 AND code='TEAM-001')
+  AND display_name IS DISTINCT FROM 'BIG BULL';
+
+-- Add sequence and broker identity to the order-desk team payload so dropdowns can show
+-- 1-BIG BULL-11-SIDDHARTH without relying on hard-coded browser values.
+DO $do$
+DECLARE v_def text;
+  v_old text := '''code'', tm.code, ''name'', tm.name, ''section'', tm.section, ''members'', tm.members';
+  v_new text := '''code'', tm.code, ''seq'', tm.seq, ''name'', tm.name, ''broker_number'', tm.broker_id, ''broker_code'', (SELECT code FROM brokers WHERE id=tm.broker_id), ''broker_name'', (SELECT name FROM brokers WHERE id=tm.broker_id), ''section'', tm.section, ''members'', tm.members';
+BEGIN
+  SELECT pg_get_functiondef('jse_broker_desk(jsonb,jsonb)'::regprocedure) INTO v_def;
+  IF position(v_old IN v_def) > 0 THEN
+    EXECUTE replace(v_def, v_old, v_new);
+  ELSIF position('broker_name' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'Could not patch broker-desk team payload';
+  END IF;
+END $do$;
+
 CREATE OR REPLACE FUNCTION public.jse_big_bull_admin(a jsonb, p jsonb)
 RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE
@@ -56,4 +87,4 @@ BEGIN
     'cash_limit',100000000,'active',t.active);
 END $$;
 
-INSERT INTO schema_migrations(version) VALUES ('012_big_bull_admin') ON CONFLICT (version) DO NOTHING;
+INSERT INTO schema_migrations(version) VALUES ('012_big_bull_admin');
