@@ -452,6 +452,7 @@
     render();
     $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
+  async function loadNames() {
     S.names = await JSE.api.get("/api/team-names");
     $("tnRows").innerHTML = S.names.teams.map(function (t) { return '<tr><td class="nowrap"><b>' + esc(t.team) + "</b></td><td><b>" + esc(t.name) + '</b><span class="sub">' + esc(t.meaning || "") + '</span></td><td class="small">' + esc(t.section || "—") +
       '<span class="sub">' + esc(t.members || "Members not entered") + '</span></td><td class="nowrap">' + esc(t.broker || "—") + '<span class="sub">' + esc(t.broker_name || "") + '</span></td><td class="actions">' +
