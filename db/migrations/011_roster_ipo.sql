@@ -288,6 +288,7 @@ BEGIN
         'remaining', CASE WHEN sec.ipo_shares_offered IS NULL THEN NULL ELSE sec.ipo_shares_offered -
           (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL) END,
         'applications', (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),
+        'application_rows', (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=sec.id),
         'applied_lots', (SELECT coalesce(sum(ia.lots),0) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),
         'stage', jse_ipo_stage(sec.id),
         'latest_draw_status', (SELECT dd.status FROM ipo_allotment_draws dd WHERE dd.security_id=sec.id ORDER BY dd.id DESC LIMIT 1)
@@ -315,23 +316,14 @@ BEGIN
   END IF;
 
   SELECT status INTO v_event_status FROM event_control WHERE id=1 FOR UPDATE;
-  IF v_event_status <> 'NOT_STARTED' AND v_action <> 'LOT_SIZE' THEN
-    PERFORM jse_fail('EVENT_STARTED', 'IPO allotment and issue-size changes are allowed only before the event starts.', 409);
-  END IF;
   SELECT * INTO s FROM securities WHERE kind='IPO' AND active AND (symbol=v_ipo OR ipo_code=v_ipo) FOR UPDATE;
   IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;
 
   IF v_action = 'LOT_SIZE' THEN
-    IF v_event_status NOT IN ('NOT_STARTED','LIVE') THEN
-      PERFORM jse_fail('EVENT_NOT_CONFIGURABLE', 'IPO allotment lot size can only be changed before the event or during LIVE status, before IPO applications/allotments exist.', 409);
-    END IF;
-    IF jse_ipo_stage(s.id) = 'APPLICATION_OPEN' THEN
-      PERFORM jse_fail('IPO_APPLICATIONS_OPEN', 'Close the IPO application window before changing its allotment lot size.', 409);
-    END IF;
     BEGIN v_new_size := (p->>'lot_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;
-    v_reason := trim(coalesce(p->>'reason',''));
+    v_reason := nullif(trim(coalesce(p->>'reason','')), '');
     IF v_new_size IS NULL OR v_new_size <= 0 OR v_new_size <> trunc(v_new_size) OR v_new_size > 2147483647 THEN
-      PERFORM jse_fail('INVALID_IPO_LOT_SIZE', 'IPO allotment lot size must be a positive whole number of shares.', 400);
+      PERFORM jse_fail('INVALID_IPO_LOT_SIZE', 'IPO lot size must be a positive whole number of shares.', 400);
     END IF;
     IF EXISTS (SELECT 1 FROM ipo_applications WHERE security_id=s.id)
        OR EXISTS (SELECT 1 FROM ipo_allotments WHERE security_id=s.id)
@@ -339,11 +331,16 @@ BEGIN
       PERFORM jse_fail('IPO_LOT_SIZE_LOCKED', 'IPO lot size cannot change after applications, allotments or a draw exist for this IPO.', 409);
     END IF;
     PERFORM jse_audit(a, 'IPO_LOT_SIZE_CHANGED', 'security', s.symbol, NULL, NULL,
-      jsonb_build_object('ipo_lot_size',s.ipo_lot_size),
-      jsonb_build_object('ipo_lot_size',v_new_size::integer),
-      jsonb_build_object('reason',nullif(v_reason,''),'trading_lot_size_unchanged',true));
-    UPDATE securities SET ipo_lot_size=v_new_size::integer, updated_at=now() WHERE id=s.id;
-    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_lot_size',s.ipo_lot_size,'lot_size',v_new_size::integer);
+      jsonb_build_object('lot_size',s.lot_size),
+      jsonb_build_object('lot_size',v_new_size::integer),
+      jsonb_build_object('reason',v_reason,'trading_lot_size_unchanged',true));
+    UPDATE securities SET lot_size=v_new_size::integer, updated_at=now() WHERE id=s.id;
+    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_lot_size',s.lot_size,'lot_size',v_new_size::integer,
+      'trading_lot_size',50);
+  END IF;
+
+  IF v_event_status <> 'NOT_STARTED' THEN
+    PERFORM jse_fail('EVENT_STARTED', 'IPO issue-size and allotment-draw changes are allowed only before the event starts.', 409);
   END IF;
 
   IF v_action = 'SIZE' THEN
@@ -671,4 +668,104 @@ CREATE OR REPLACE FUNCTION jse_ipo_page() RETURNS jsonb LANGUAGE sql STABLE AS $
   FROM event_config cfg WHERE cfg.id = 1
 $$;
 
-INSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');
+-- Admin-only special controls for BIG BULL, a dedicated participant with its own capital baseline.
+CREATE OR REPLACE FUNCTION jse_big_bull_admin(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action',''), 'STATE'));
+  t teams%ROWTYPE; u app_users%ROWTYPE; b brokers%ROWTYPE;
+  v_delta numeric; v_after numeric; v_capital numeric; v_reason text; v_active boolean;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF v_action <> 'STATE' THEN PERFORM jse_require_admin_password(a, p); END IF;
+  SELECT * INTO t FROM teams WHERE code='TEAM-101' AND lower(name)='big bull' FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_NOT_FOUND', 'BIG BULL special participant team has not been provisioned.', 404); END IF;
+  SELECT * INTO u FROM app_users WHERE lower(username)='bigbull' AND team_id=t.id;
+  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_USER_NOT_FOUND', 'BIGBULL participant login has not been provisioned.', 404); END IF;
+  IF v_action = 'STATE' THEN
+    RETURN jsonb_build_object('success',true,'team_code',t.code,'name',t.name,'cash',t.cash,'active',t.active AND u.active,
+      'team_active',t.active,'user_active',u.active,'username',u.username,'display_name',u.display_name,
+      'starting_capital',t.initial_capital,'broker',(SELECT code FROM brokers WHERE id=t.broker_id),
+      'broker_name',(SELECT name FROM brokers WHERE id=t.broker_id),
+      'brokers',coalesce((SELECT jsonb_agg(jsonb_build_object('code',code,'name',name) ORDER BY code) FROM brokers WHERE active),'[]'::jsonb),
+      'holdings',coalesce((SELECT jsonb_agg(jsonb_build_object('symbol',s.symbol,'name',s.name,'quantity',h.quantity,'price',s.price,'market_value',h.quantity*s.price,'cost_basis',h.cost_basis,'trade_cost',h.trade_cost) ORDER BY s.symbol)
+        FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),'[]'::jsonb),
+      'holdings_value',coalesce((SELECT sum(h.quantity*s.price) FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),0),
+      'net_worth',t.cash+coalesce((SELECT sum(h.quantity*s.price) FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),0),
+      'pnl',t.cash+coalesce((SELECT sum(h.quantity*s.price) FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),0)-t.initial_capital,
+      'orders_pending',(SELECT count(*) FROM orders o WHERE o.team_id=t.id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')),
+      'settled_trades',(SELECT count(*) FROM settlements st JOIN orders o ON o.id=st.order_id WHERE o.team_id=t.id AND st.reversed_at IS NULL));
+  ELSIF v_action = 'CASH_ADJUST' THEN
+    BEGIN v_delta := (p->>'delta')::numeric; EXCEPTION WHEN others THEN v_delta := NULL; END;
+    v_reason := trim(coalesce(p->>'reason',''));
+    IF v_delta IS NULL OR v_delta=0 THEN PERFORM jse_fail('INVALID_CASH_ADJUSTMENT','Enter a non-zero cash adjustment amount.',400); END IF;
+    IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for this financial adjustment.',400); END IF;
+    v_after := t.cash+v_delta;
+    IF v_after<0 THEN PERFORM jse_fail('NEGATIVE_CASH','BIG BULL cash cannot be negative.',409); END IF;
+    IF v_delta<0 AND EXISTS(SELECT 1 FROM orders o WHERE o.team_id=t.id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')) THEN
+      PERFORM jse_fail('BIG_BULL_PENDING_ORDERS','Resolve BIG BULL pending orders before reducing its available cash.',409);
+    END IF;
+    UPDATE teams SET cash=v_after,updated_at=now() WHERE id=t.id;
+    PERFORM jse_ledger(t.id,NULL,NULL,'ADJUSTMENT',greatest(-v_delta,0),greatest(v_delta,0),v_after,'BIG BULL cash adjustment: '||v_reason,a);
+    PERFORM jse_audit(a,'BIG_BULL_CASH_ADJUSTED','team',t.code,t.id,NULL,jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),jsonb_build_object('delta',v_delta,'reason',v_reason));
+    RETURN jsonb_build_object('success',true,'old_cash',t.cash,'new_cash',v_after,'delta',v_delta);
+  ELSIF v_action = 'CAPITAL_SET' THEN
+    BEGIN v_capital := (p->>'capital')::numeric; EXCEPTION WHEN others THEN v_capital := NULL; END;
+    v_reason := trim(coalesce(p->>'reason',''));
+    IF v_capital IS NULL OR v_capital<=0 OR v_capital>1000000000 THEN PERFORM jse_fail('INVALID_CAPITAL','Enter capital between ₹1 and ₹1,000,000,000.',400); END IF;
+    IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for the capital-baseline change.',400); END IF;
+    PERFORM jse_audit(a,'BIG_BULL_CAPITAL_CHANGED','team',t.code,t.id,NULL,jsonb_build_object('initial_capital',t.initial_capital),jsonb_build_object('initial_capital',v_capital),jsonb_build_object('reason',v_reason));
+    UPDATE teams SET initial_capital=v_capital,updated_at=now() WHERE id=t.id;
+    RETURN jsonb_build_object('success',true,'old_capital',t.initial_capital,'capital',v_capital);
+  ELSIF v_action = 'SET_BROKER' THEN
+    SELECT * INTO b FROM brokers WHERE code=upper(trim(coalesce(p->>'broker',''))) AND active;
+    IF NOT FOUND THEN PERFORM jse_fail('BROKER_NOT_FOUND','Choose an active broker.',404); END IF;
+    PERFORM jse_audit(a,'BIG_BULL_BROKER_CHANGED','team',t.code,t.id,NULL,jsonb_build_object('broker',(SELECT code FROM brokers WHERE id=t.broker_id)),jsonb_build_object('broker',b.code),NULL);
+    UPDATE teams SET broker_id=b.id,updated_at=now() WHERE id=t.id;
+    RETURN jsonb_build_object('success',true,'broker',b.code,'broker_name',b.name);
+  ELSIF v_action = 'SET_ACTIVE' THEN
+    BEGIN v_active := (p->>'active')::boolean; EXCEPTION WHEN others THEN v_active := NULL; END;
+    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose whether BIG BULL should be enabled.',400); END IF;
+    UPDATE teams SET active=v_active,updated_at=now() WHERE id=t.id;
+    UPDATE app_users SET active=v_active,updated_at=now() WHERE id=u.id;
+    IF NOT v_active THEN UPDATE sessions SET revoked_at=now() WHERE user_id=u.id AND revoked_at IS NULL; END IF;
+    PERFORM jse_audit(a,CASE WHEN v_active THEN 'BIG_BULL_ENABLED' ELSE 'BIG_BULL_DISABLED' END,'team',t.code,t.id,NULL,jsonb_build_object('team_active',t.active,'user_active',u.active),jsonb_build_object('team_active',v_active,'user_active',v_active),NULL);
+    RETURN jsonb_build_object('success',true,'active',v_active);
+  END IF;
+  PERFORM jse_fail('INVALID_ACTION','Use STATE, CASH_ADJUST, CAPITAL_SET, SET_BROKER or SET_ACTIVE.',400);
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_import_dalal_roster(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE r jsonb; x jsonb; t teams%ROWTYPE; v_alias broker_roster_aliases%ROWTYPE;
+  v_i integer:=0; v_input text; v_broker_code text; v_section text; v_members text;
+  v_plan jsonb:='[]'::jsonb; v_errors jsonb:='[]'::jsonb; v_skipped jsonb:='[]'::jsonb; v_changed integer:=0;
+BEGIN
+  PERFORM jse_require_role(a,'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean,false) THEN PERFORM jse_require_admin_password(a,p); END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows')=0 THEN PERFORM jse_fail('NO_ROWS','No roster rows were supplied.',400); END IF;
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i:=v_i+1; v_input:=trim(coalesce(r->>'team','')); v_broker_code:=trim(coalesce(r->>'broker_code',''));
+    v_section:=trim(coalesce(r->>'section','')); v_members:=trim(coalesce(r->>'members',''));
+    SELECT * INTO t FROM teams WHERE code=upper(v_input);
+    IF NOT FOUND THEN SELECT * INTO t FROM teams WHERE lower(name)=lower(v_input); END IF;
+    IF NOT FOUND THEN v_skipped:=v_skipped||jsonb_build_object('row',v_i,'team',v_input,'reason','No exact existing team name/code; code was not guessed.'); CONTINUE; END IF;
+    IF EXISTS(SELECT 1 FROM jsonb_array_elements(v_plan) q WHERE q->>'code'=t.code) THEN v_errors:=v_errors||jsonb_build_object('row',v_i,'team',v_input,'error','Duplicate existing team row.'); CONTINUE; END IF;
+    SELECT * INTO v_alias FROM broker_roster_aliases WHERE lower(broker_code)=lower(v_broker_code);
+    IF NOT FOUND THEN v_errors:=v_errors||jsonb_build_object('row',v_i,'team',v_input,'error','Unknown official broker code: '||v_broker_code); CONTINUE; END IF;
+    IF length(v_section)>120 OR length(v_members)>1000 THEN v_errors:=v_errors||jsonb_build_object('row',v_i,'team',v_input,'error','Section or participant text too long.'); CONTINUE; END IF;
+    v_plan:=v_plan||jsonb_build_object('id',t.id,'code',t.code,'team_name',t.name,'section',nullif(v_section,''),'members',nullif(v_members,''),'broker_id',v_alias.internal_broker_id,
+      'before',jsonb_build_object('section',t.section,'members',t.members,'broker_id',t.broker_id,'broker',(SELECT code FROM brokers WHERE id=t.broker_id)));
+  END LOOP;
+  IF jsonb_array_length(v_errors)>0 THEN RETURN jsonb_build_object('success',false,'code','ROSTER_ERRORS','error','Nothing saved; correct invalid rows first.','errors',v_errors,'http',400); END IF;
+  IF jsonb_array_length(v_plan)=0 THEN PERFORM jse_fail('NO_MATCHING_TEAMS','No rows matched existing team names or codes.',400); END IF;
+  IF coalesce((p->>'dry_run')::boolean,false) THEN RETURN jsonb_build_object('success',true,'dry_run',true,'matched',jsonb_array_length(v_plan),'skipped_count',jsonb_array_length(v_skipped),'skipped',v_skipped); END IF;
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    UPDATE teams SET section=x->>'section',members=x->>'members',broker_id=(x->>'broker_id')::integer,updated_at=now() WHERE id=(x->>'id')::integer;
+    IF (x->'before') IS DISTINCT FROM jsonb_build_object('section',x->>'section','members',x->>'members','broker_id',(x->>'broker_id')::integer,'broker',(SELECT code FROM brokers WHERE id=(x->>'broker_id')::integer)) THEN
+      PERFORM jse_audit(a,'DALAL_ROSTER_IMPORTED','team',x->>'code',(x->>'id')::integer,NULL,x->'before',jsonb_build_object('team_name',x->>'team_name','section',x->>'section','members',x->>'members','broker',(SELECT code FROM brokers WHERE id=(x->>'broker_id')::integer)),jsonb_build_object('source','Dalal Street Teams spreadsheet'));
+      v_changed:=v_changed+1;
+    END IF;
+  END LOOP;
+  PERFORM jse_audit(a,'DALAL_ROSTER_UPLOAD','team',NULL,NULL,NULL,NULL,NULL,jsonb_build_object('matched',jsonb_array_length(v_plan),'changed',v_changed,'skipped',jsonb_array_length(v_skipped),'cash_or_history_changed',false));
+  RETURN jsonb_build_object('success',true,'matched',jsonb_array_length(v_plan),'updated',v_changed,'skipped_count',jsonb_array_length(v_skipped),'skipped',v_skipped,'cash_or_history_changed',false);
+END $$;
+\nINSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');
