@@ -11,11 +11,12 @@
 <style>
   /* Market wall — as on the live Hatchable application */
   body.market-page .hd .wordmark { display: none; }
-  body.market-page .hd-in { padding: 4px 16px 0; max-width: none; }
-  body.market-page .nav { padding: 4px 16px 0; max-width: none; }
-  body.market-page .wrap { padding: 8px 16px 40px; max-width: none; }
+  body.market-page .hd-in { padding: 2px 16px 0; max-width: none; }
+  body.market-page .nav { padding: 2px 16px 0; max-width: none; }
+  body.market-page .wrap { padding: 4px 16px 40px; max-width: none; }
+  body.market-page .hd-right .ver-pill { display: none !important; }
   .cmsbar { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px;
-    box-shadow: 0 4px 18px rgba(16, 24, 40, .06); min-height: 84px; margin-top: 14px; }
+    box-shadow: 0 4px 18px rgba(16, 24, 40, .06); min-height: 84px; margin-top: 6px; }
   .cmsbar::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px; border-radius: 0 4px 4px 0; background: var(--blue); }
   .cmsbar .id { padding: 18px 24px; border-right: 1px solid var(--line-3); }
   .cmsbar .id h1 { margin: 0; font-size: 23px; font-weight: 900; letter-spacing: .06em; color: #0b1220; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -95,7 +96,15 @@
     return (b.listed_market || []).concat(b.ipo_market || []).map(function (sym) { return m[sym]; }).filter(Boolean);
   }
   function tileHtml(s, flash) {
-    var pre = s.type === "IPO" && !s.listed, pct = pre ? 0 : s.day_change_pct, dd = pre ? "flat" : dir(pct);
+    var pre = s.type === "IPO" && !s.listed;
+    // IPO price-change colour is measured against the participants' allotment/issue price.
+    // A saved listing price is applied by Start Event; after that this reflects the change from
+    // the allotment baseline, not the new index base set at listing.
+    var ipoBase = N(s.base_price);
+    var pct = pre ? 0 : (s.type === "IPO" && ipoBase > 0
+      ? ((N(s.price) - ipoBase) / ipoBase) * 100
+      : s.day_change_pct);
+    var dd = pre ? "flat" : dir(pct);
     return '<li class="tile ' + dd + (flash ? " flash-" + flash : "") + '" data-sym="' + esc(s.symbol) + '" title="' + esc(s.name + " · " + s.symbol) + '">' +
       '<div class="tile-top"><div class="tile-name">' + esc(s.name) + '</div><span class="tile-kind">' + (s.type === "IPO" ? "IPO" : "EQUITY") + "</span></div>" +
       '<div class="tile-price">' + rupees(pre ? s.base_price : s.price) + "</div>" +
