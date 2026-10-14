@@ -22,10 +22,11 @@ import m016 from "../../db/migrations/016_news_single_move_cap.sql";
 import m017 from "../../db/migrations/017_portfolio_ipo_visibility.sql";
 import m018 from "../../db/migrations/018_broker_assignments_and_counts.sql";
 import m019 from "../../db/migrations/019_ipo_start_market_order.sql";
+import m020 from "../../db/migrations/020_broker_sugadev_name.sql";
 
 export const MIGRATIONS: Array<[string, string]> = [
   ["001_schema", m001], ["001a_upgrades", m001a], ["002_core", m002], ["003_ops", m003], ["004_reads", m004],
-  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013], ["014_big_bull_news_assessment", m014], ["015_broker_sugadev", m015], ["016_news_single_move_cap", m016], ["017_portfolio_ipo_visibility", m017], ["018_broker_assignments_and_counts", m018], ["019_ipo_start_market_order", m019],
+  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013], ["014_big_bull_news_assessment", m014], ["015_broker_sugadev", m015], ["016_news_single_move_cap", m016], ["017_portfolio_ipo_visibility", m017], ["018_broker_assignments_and_counts", m018], ["019_ipo_start_market_order", m019], ["020_broker_sugadev_name", m020],
 ];
 // Files whose content may be re-applied safely (idempotent / CREATE OR REPLACE only) when their text changes.
 const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning", "008_v311", "011_roster_ipo", "012_big_bull_admin"]);
