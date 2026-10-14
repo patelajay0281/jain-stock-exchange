@@ -16,10 +16,11 @@ import m011 from "../../db/migrations/011_roster_ipo.sql";
 import m012special from "../../db/migrations/012_big_bull_special_account.sql";
 import m012admin from "../../db/migrations/012_big_bull_admin.sql";
 import m013 from "../../db/migrations/013_dalal_roster.sql";
+import m014 from "../../db/migrations/014_big_bull_news_assessment.sql";
 
 export const MIGRATIONS: Array<[string, string]> = [
   ["001_schema", m001], ["001a_upgrades", m001a], ["002_core", m002], ["003_ops", m003], ["004_reads", m004],
-  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013],
+  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013], ["014_big_bull_news_assessment", m014],
 ];
 // Files whose content may be re-applied safely (idempotent / CREATE OR REPLACE only) when their text changes.
 const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning", "008_v311", "011_roster_ipo", "012_big_bull_admin"]);
