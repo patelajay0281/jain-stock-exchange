@@ -32,7 +32,7 @@
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.5 var(--font); font-feature-settings: "cv11", "ss01"; font-variant-numeric: tabular-nums;
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); font-feature-settings: "cv11", "ss01"; font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
