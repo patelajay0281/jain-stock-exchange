@@ -162,7 +162,7 @@ BEGIN
                         last_trade_at = NULL, listed_at = NULL, last_price_change_at = NULL,
                         index_base_price = CASE WHEN kind = 'EQUITY' THEN base_price END, updated_at = now();
   INSERT INTO cash_ledger(team_id, entry_type, credit, balance_after, note, actor_id, actor_name)
-  SELECT id, 'INITIAL_CAPITAL', cfg.initial_capital, cfg.initial_capital, 'Initial event capital', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM teams;
+  SELECT id, 'INITIAL_CAPITAL', cash, cash, 'Initial event capital', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM teams;
   INSERT INTO institution_ledger(institution_id, entry_type, credit, balance_after, note, actor_id, actor_name)
   SELECT id, 'INITIAL_CAPITAL', initial_cash, initial_cash, 'Initial institutional cash', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM institutions;
 
