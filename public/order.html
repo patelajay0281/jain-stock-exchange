@@ -206,7 +206,7 @@
   $("mp").addEventListener("wheel", function (e) { e.preventDefault(); }, { passive: false });
   $("mp").addEventListener("keydown", function (e) { if (e.key === "ArrowUp" || e.key === "ArrowDown") e.preventDefault(); if (!/^[0-9]$/.test(e.key) && !["Backspace","Delete","Tab","Enter","Escape","ArrowLeft","ArrowRight","Home","End"].includes(e.key) && !(e.ctrlKey || e.metaKey)) e.preventDefault(); });
   $("mp").addEventListener("paste", function (e) { var text = (e.clipboardData || window.clipboardData).getData("text"); if (!/^[0-9]+$/.test(text.trim())) e.preventDefault(); });
-  $("mp").addEventListener("input", function () { if (!S.user || S.user.role !== "PIT_MANAGER") return; $("mp").dataset.edited = "1"; if ($("mp").value !== "" && $("mp").value.includes(".")) $("mp").value = String(Math.trunc(N($("mp").value))); preview(); });
+  $("mp").addEventListener("input", function () { if (!S.user || !(S.user.role === "BROKER" || S.user.role === "ADMIN" || S.user.role === "PIT_MANAGER")) return; $("mp").dataset.edited = "1"; if ($("mp").value !== "" && $("mp").value.includes(".")) $("mp").value = String(Math.trunc(N($("mp").value))); preview(); });
   $("mp").addEventListener("change", function () { if ($("mp").value !== "") $("mp").value = String(Math.round(N($("mp").value))); preview(); });
   $("sec").addEventListener("change", function () { $("mp").dataset.edited = ""; });
   $("ticket").addEventListener("submit", submit);
@@ -226,8 +226,8 @@
   JSE.page({ id: "order" }).then(function (user) {
     if (!user) return;
     S.user = user; canAct = user.role === "BROKER" || user.role === "ADMIN" || user.role === "PIT_MANAGER";
-    // Only Pit Managers may manually enter a price; no mouse-wheel/spinner price changes.
-    $("mp").readOnly = user.role !== "PIT_MANAGER";
+    // Any authorized order-entry role can type a whole-number price; no mouse-wheel/spinner changes.
+    $("mp").readOnly = !canAct;
     $("mp").setAttribute("inputmode", "numeric");
     if (user.role === "ADMIN" || user.role === "VIEWER") S.broker = "ALL";
     if (!canAct) { ["team", "sec", "qty", "submit", "side", "asset", "txType"].forEach(function (id) { $(id).disabled = true; }); }
