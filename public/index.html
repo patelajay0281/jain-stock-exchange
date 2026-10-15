@@ -95,17 +95,13 @@
   function pctTxt(p) { var n = N(p); return (n > 0 ? "▲ " : n < 0 ? "▼ " : "") + Math.abs(n).toFixed(2) + "%"; }
   function dir(p) { var n = N(p); return n > 0 ? "up" : n < 0 ? "down" : "flat"; }
 
-  // Pin the four IPOs in the first four positions in their configured order,
-  // before all equities, whether each IPO is pre-listing or already listed.
+  // Preserve live board order: Start Event stamps all four IPOs as the latest price
+  // changes, so they appear first; subsequent stock updates naturally move ahead of them.
   function wall() {
     var d = state.data, m = {};
-    (d.ipos || []).concat(d.stocks || []).forEach(function (s) { m[s.symbol] = s; });
+    d.ipos.concat(d.stocks).forEach(function (s) { m[s.symbol] = s; });
     var b = d.board || {};
-    var ipoSymbols = (d.ipos || []).map(function (s) { return s.symbol; });
-    var equitySymbols = (b.listed_market || []).filter(function (sym) {
-      return m[sym] && m[sym].type !== "IPO";
-    });
-    return ipoSymbols.concat(equitySymbols).map(function (sym) { return m[sym]; }).filter(Boolean);
+    return (b.listed_market || []).concat(b.ipo_market || []).map(function (sym) { return m[sym]; }).filter(Boolean);
   }
   function tileHtml(s, flash) {
     var pre = s.type === "IPO" && !s.listed;
