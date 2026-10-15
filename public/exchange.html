@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Exchange Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=318">
+<link rel="stylesheet" href="/assets/jse.css?v=324">
 </head>
 <body>
 <main id="main" class="wrap wide">
@@ -32,8 +32,8 @@
       <tbody id="recent"></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=319"></script>
-<script src="/assets/jse.js?v=318"></script>
+<script src="/assets/config.js?v=324"></script>
+<script src="/assets/jse.js?v=324"></script>
 <script>
 (function () {
   "use strict";
@@ -64,8 +64,10 @@
       '<div class="txn-trio"><div><div class="k">Side</div><div class="v side-txt ' + side.toLowerCase() + '">' + esc(side) + '</div></div><div><div class="k">Quantity</div><div class="v">' + F.num(o.quantity) +
       '</div></div><div><div class="k">Price</div><div class="v">' + F.price(o.price) + "</div></div></div>" +
       (notes.length ? '<div class="txn-notes">' + notes.join("") + "</div>" : "") +
-      (S.canAct ? '<div class="txn-a"><button class="btn approve" data-a="APPROVE">✓ Approve</button><button class="btn reject" data-a="REJECT">✕ Reject</button></div>'
-                : '<div class="txn-a one"><span class="muted small center">View only</span></div>') + "</article>";
+      (S.canAct ? (o.short_sell_risk
+        ? '<div class="txn-a"><span class="muted small">Short sales cannot be approved.</span><button class="btn reject" data-a="REJECT">✕ Reject</button></div>'
+        : '<div class="txn-a"><button class="btn approve" data-a="APPROVE">✓ Approve</button><button class="btn reject" data-a="REJECT">✕ Reject</button></div>')
+        : '<div class="txn-a one"><span class="muted small center">View only</span></div>') + "</article>";
   }
 
   function render() {
@@ -107,21 +109,10 @@
         body.reason = reason === true ? "" : reason;
       }
       if (action === "APPROVE" && o && o.short_sell_risk) {
-        var ok = await JSE.dialog({ eyebrow: "Exchange review required", title: "Short Selling Warning", danger: true, cancelText: "Cancel", confirmText: "Approve anyway",
-          html: "<p>This SELL order exceeds the participant holdings.</p><p class=\"small muted\">" + esc(o.team) + " holds " + F.num(Math.max(0, o.available_qty)) + " " + esc(o.symbol) + " available; this order sells " + F.num(o.quantity) +
-                ". Approving records SHORT SELLING — EXCHANGE APPROVED; the Bank still checks the holding at settlement.</p>" });
-        if (!ok) return;
-        body.confirm_short_sell = true;
+        JSE.toast("Short selling is prohibited. Reject the order or reduce the quantity to the shares available.", "bad");
+        return;
       }
-      var r;
-      try { r = await JSE.api.post("/api/exchange", body); }
-      catch (e) {
-        if (e.code !== "SHORT_SELL_CONFIRM_REQUIRED") throw e;
-        var ok2 = await JSE.dialog({ eyebrow: "Exchange review required", title: "Short Selling Warning", text: "This SELL order exceeds the participant holdings.", danger: true, cancelText: "Cancel", confirmText: "Approve anyway" });
-        if (!ok2) return;
-        body.confirm_short_sell = true;
-        r = await JSE.api.post("/api/exchange", body);
-      }
+      var r = await JSE.api.post("/api/exchange", body);
       JSE.toast((o ? o.order_no : "Order") + " → " + JSE.STATUS_TEXT[r.status], r.status === "EXCHANGE_APPROVED" ? "good" : "warn");
       S.data.pending = S.data.pending.filter(function (x) { return x.id !== id; }); render();
     } catch (e) {
