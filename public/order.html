@@ -123,12 +123,12 @@
     $("pvBrkK").textContent = "Brokerage";
     if (!s) $("mp").value = "";
     else if ($("mp").dataset.edited !== "1") $("mp").value = String(Math.round(N(s.price)));
-    var flexibleIpoSell = !!(s && $("asset").value === "IPO" && sell);
+    var flexibleIpo = !!(s && $("asset").value === "IPO");
     var lotSize = Number(s && s.lot_size) || 50;
-    $("qty").min = flexibleIpoSell ? "1" : String(lotSize);
-    $("qty").step = flexibleIpoSell ? "1" : String(lotSize);
-    if (s) $("lotHint").textContent = flexibleIpoSell
-      ? "IPO SELL orders allow any whole-share quantity."
+    $("qty").min = flexibleIpo ? "1" : String(lotSize);
+    $("qty").step = flexibleIpo ? "1" : String(lotSize);
+    if (s) $("lotHint").textContent = flexibleIpo
+      ? "IPO orders allow any whole-share quantity."
       : "Multiples of " + s.lot_size + " shares" + (q && q % s.lot_size === 0 ? " · " + (q / s.lot_size) + " lot(s)" : " · not a whole lot");
     var p = s ? N($("mp").value) : 0, tv = q > 0 && p > 0 ? q * p : 0, brk = Math.round(tv * rate * 100 + 1e-6) / 100;
     $("pvSh").textContent = q > 0 ? F.num(q) : "0";
@@ -141,10 +141,10 @@
 
   function checks(s, t, q, tv, brk) {
     var out = [], r = S.desk ? S.desk.rules : {};
-    var flexibleIpoSell = !!(s && $("asset").value === "IPO" && S.side === "SELL");
-    if (s && q && q % s.lot_size !== 0 && !flexibleIpoSell) out.push(["bad", s.symbol + " trades in multiples of " + s.lot_size + " shares (50, 100, 150 …)."]);
+    var flexibleIpo = !!(s && $("asset").value === "IPO");
+    if (s && q && q % s.lot_size !== 0 && !flexibleIpo) out.push(["bad", s.symbol + " trades in multiples of " + s.lot_size + " shares (50, 100, 150 …)."]);
     if (tv && tv > N(r.max_order_value)) out.push(["bad", "Maximum order value is " + F.money(r.max_order_value) + " per order."]);
-    S.block = !!(s && q && q % s.lot_size !== 0 && !flexibleIpoSell);
+    S.block = !!(s && q && q % s.lot_size !== 0 && !flexibleIpo);
     if (t && s) {
       var h = (t.holdings || []).filter(function (x) { return x.symbol === s.symbol; })[0];
       var avail = h ? N(h.available) : 0, free = N(t.free_cash);
@@ -163,7 +163,7 @@
     var s = sec(), q = N($("qty").value), res = $("result"); res.innerHTML = "";
     if (!$("team").value) return JSE.toast("Select the participant team.", "warn");
     if (!s) return JSE.toast("Select a stock or IPO.", "warn");
-    if (q <= 0 || (q % s.lot_size !== 0 && !($("asset").value === "IPO" && S.side === "SELL"))) return JSE.toast(s.symbol + " trades in multiples of " + s.lot_size + " shares, except IPO sells which allow any whole-share quantity.", "warn");
+    if (q <= 0 || (q % s.lot_size !== 0 && $("asset").value !== "IPO")) return JSE.toast(s.symbol + " trades in multiples of " + s.lot_size + " shares, except IPO orders which allow any whole-share quantity.", "warn");
     if (S.block) { res.innerHTML = '<div class="alert bad"><b>Not submitted.</b> Correct the order first (see the message above).</div>'; return; }
     var enteredPrice = N($("mp").value);
     if (!Number.isInteger(enteredPrice) || enteredPrice <= 0) return JSE.toast("Enter a valid whole-number price per share.", "warn");
@@ -208,7 +208,7 @@
   $("side").addEventListener("change", function () { S.side = $("side").value; preview(); });
   $("asset").addEventListener("change", function () { $("sec").value = ""; fillSecs(); preview(); });
   $("team").addEventListener("change", preview);
-  $("sec").addEventListener("change", function () { var s = sec(); if (s) { $("qty").step = s.lot_size; $("qty").min = s.lot_size; } preview(); });
+  $("sec").addEventListener("change", function () { var s = sec(); if (s) { var flexibleIpo = $("asset").value === "IPO"; $("qty").step = flexibleIpo ? "1" : s.lot_size; $("qty").min = flexibleIpo ? "1" : s.lot_size; } preview(); });
   $("qty").addEventListener("input", preview);
   $("mp").addEventListener("wheel", function (e) { e.preventDefault(); }, { passive: false });
   $("mp").addEventListener("keydown", function (e) { if (e.key === "ArrowUp" || e.key === "ArrowDown") e.preventDefault(); if (!/^[0-9]$/.test(e.key) && !["Backspace","Delete","Tab","Enter","Escape","ArrowLeft","ArrowRight","Home","End"].includes(e.key) && !(e.ctrlKey || e.metaKey)) e.preventDefault(); });
