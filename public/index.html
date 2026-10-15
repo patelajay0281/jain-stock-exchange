@@ -57,11 +57,12 @@
   }
 
 
-  /* Market-only compact header spacing; the original market tile design stays unchanged. */
-  body.market-page .hd-in { padding-top: 8px; }
-  body.market-page .nav { padding-top: 4px; padding-bottom: 0; }
-  body.market-page .wrap { padding-top: 8px; }
-  body.market-page .cmsbar { margin-top: 4px; }
+  /* Market-only compact header: preserve the original tile design and leave every other page unchanged. */
+  body.market-page .hd-in { padding-top: 4px; padding-bottom: 0; }
+  body.market-page .hd-right > span { display: none !important; }
+  body.market-page .nav { padding-top: 0; padding-bottom: 0; }
+  body.market-page .wrap { padding-top: 0; }
+  body.market-page .cmsbar { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -78,8 +79,8 @@
   <ul class="mgrid" id="grid" aria-live="off" aria-label="Market wall"></ul>
   <p class="sr-only" id="disc"></p>
 </main>
-<script src="/assets/config.js?v=320"></script>
-<script src="/assets/jse.js?v=320"></script>
+<script src="/assets/config.js?v=321"></script>
+<script src="/assets/jse.js?v=321"></script>
 <script>
 (function () {
   "use strict";
@@ -94,12 +95,17 @@
   function pctTxt(p) { var n = N(p); return (n > 0 ? "▲ " : n < 0 ? "▼ " : "") + Math.abs(n).toFixed(2) + "%"; }
   function dir(p) { var n = N(p); return n > 0 ? "up" : n < 0 ? "down" : "flat"; }
 
-  // board order: the security whose price changed last comes first; IPOs not yet listed follow the listed market
+  // Pin the four IPOs in the first four positions in their configured order,
+  // before all equities, whether each IPO is pre-listing or already listed.
   function wall() {
     var d = state.data, m = {};
-    d.ipos.concat(d.stocks).forEach(function (s) { m[s.symbol] = s; });
+    (d.ipos || []).concat(d.stocks || []).forEach(function (s) { m[s.symbol] = s; });
     var b = d.board || {};
-    return (b.listed_market || []).concat(b.ipo_market || []).map(function (sym) { return m[sym]; }).filter(Boolean);
+    var ipoSymbols = (d.ipos || []).map(function (s) { return s.symbol; });
+    var equitySymbols = (b.listed_market || []).filter(function (sym) {
+      return m[sym] && m[sym].type !== "IPO";
+    });
+    return ipoSymbols.concat(equitySymbols).map(function (sym) { return m[sym]; }).filter(Boolean);
   }
   function tileHtml(s, flash) {
     var pre = s.type === "IPO" && !s.listed;
