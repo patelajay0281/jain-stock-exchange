@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Institutional Investors · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=322">
+<link rel="stylesheet" href="/assets/jse.css?v=323">
 <style>
   .inst-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
   .moods { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
@@ -99,8 +99,8 @@
       <tbody id="orders"><tr><td colspan="10" class="empty">Loading institutional transaction desk…</td></tr></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=322"></script>
-<script src="/assets/jse.js?v=322"></script>
+<script src="/assets/config.js?v=323"></script>
+<script src="/assets/jse.js?v=323"></script>
 <script>
 (function () {
   "use strict";
@@ -125,14 +125,18 @@
     $("mktPrice").textContent = F.price(s.price);
     $("instNote").textContent = "market price";
     $("instPriceIn").value = N(ip).toFixed(2);
-    $("lotHint").textContent = "Multiples of " + s.lot_size + " shares.";
-    $("qty").step = s.lot_size; $("qty").min = s.lot_size;
+    var flexibleIpoSell = $("asset").value === "IPO" && S.side === "BUY";
+    $("lotHint").textContent = flexibleIpoSell
+      ? "The participant sells IPO shares in any whole-share quantity."
+      : "Multiples of " + s.lot_size + " shares.";
+    $("qty").step = flexibleIpoSell ? 1 : s.lot_size;
+    $("qty").min = flexibleIpoSell ? 1 : s.lot_size;
     var tv = q > 0 ? Math.round(q * ip * 100) / 100 : 0, brk = Math.round(tv * N(r.brokerage_rate) * 100 + 1e-6) / 100;
     $("pvTv").textContent = F.money(tv);
     $("pvBrk").textContent = F.money(brk);
     $("pvAmt").textContent = F.money(teamBuys ? tv + brk : tv - brk);
     var checks = [];
-    if (q && q % s.lot_size) checks.push(["bad", "Quantity must be a multiple of " + s.lot_size + " shares."]);
+    if (q && q % s.lot_size && !flexibleIpoSell) checks.push(["bad", "Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant."]);
     // Institutional orders have no maximum order-value cap. Counterparty settlement rules are enforced by the server.
     $("checks").innerHTML = checks.map(function (c) { return '<div class="alert ' + c[0] + '" style="margin-bottom:8px">' + esc(c[1]) + "</div>"; }).join("");
   }
@@ -242,7 +246,7 @@
   $("ticket").addEventListener("submit", async function (e) {
     e.preventDefault();
     var s = sec(); if (!s || !$("cp").value) return JSE.toast("Select the participant counterparty and the security.", "warn");
-    var q = N($("qty").value); if (!q || q % s.lot_size) return JSE.toast("Quantity must be a multiple of " + s.lot_size + " shares.", "warn");
+    var q = N($("qty").value); if (!q || (q % s.lot_size && !($("asset").value === "IPO" && S.side === "BUY"))) return JSE.toast("Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant.", "warn");
     var b = $("go"); b.disabled = true;
     try {
       var body = { side: S.side, symbol: s.symbol, quantity: q, expected_price: s.price, counterparty_team: $("cp").value, idempotency_key: S.key };
