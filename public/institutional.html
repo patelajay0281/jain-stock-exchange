@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Institutional Investors · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=323">
+<link rel="stylesheet" href="/assets/jse.css?v=324">
 <style>
   .inst-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
   .moods { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
@@ -42,7 +42,7 @@
   <section class="card" id="newsCard">
     <div class="card-h bar"><h2>Market News → Automatic Price Impact</h2><span class="tag">Max move ±10%</span></div>
     <div class="card-b">
-      <p class="small muted" style="margin:0 0 12px">Shared JSE market control — no cash or holding restriction. Choose the company and the market mood; the engine applies a random move inside the mood band.</p>
+      <p class="small muted" style="margin:0 0 12px">Shared JSE market control — no cash or holding restriction. Each news event moves at most 10%; total movement stays within ±15% of the company’s locked base price. Reaching the band does not lock the stock for BUY/SELL trading; opposite-direction news can move it back inside.</p>
       <div class="form-grid">
         <div class="field"><label for="nSec">Company</label><select class="input" id="nSec"><option value="">Loading companies…</option></select></div>
         <div class="field"><label>Market mood</label><div class="small muted" id="nMoodTxt">NORMAL · −0.99% to +0.99%</div></div>
@@ -53,7 +53,7 @@
     <div class="card-b flush"><div class="table-wrap" style="max-height:320px"><table class="t">
       <thead><tr><th>Time</th><th>Company</th><th>Mood</th><th class="num">Move</th><th class="num">New price</th></tr></thead>
       <tbody id="news"><tr><td colspan="5" class="empty">No market news applied yet.</td></tr></tbody></table></div></div>
-    <div class="card-b small muted" style="padding-top:10px">Prices are controlled through Market News only.</div>
+    <div class="card-b small muted" style="padding-top:10px">The ±15% band limits price movement, not trading access. A stock at its upper or lower band can still be traded; only news in the same direction is capped at the boundary.</div>
   </section>
 
   <div class="inst-grid">
@@ -99,8 +99,8 @@
       <tbody id="orders"><tr><td colspan="10" class="empty">Loading institutional transaction desk…</td></tr></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=323"></script>
-<script src="/assets/jse.js?v=323"></script>
+<script src="/assets/config.js?v=324"></script>
+<script src="/assets/jse.js?v=324"></script>
 <script>
 (function () {
   "use strict";
