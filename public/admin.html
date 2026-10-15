@@ -925,10 +925,6 @@
 
   $("allotClear").onclick = function () {
     JSE.toast("Uploaded IPO allotments are locked in the reset baseline. Reset restores them; request an explicit baseline update to change them.", "warn", 8000);
-    return;
-    try { var r = await confirmed({ title: "Remove all IPO allotments?", text: "Cash is returned and the allotted shares are removed for every team.", danger: true, confirmText: "Remove all", typeWord: "REMOVE" }, "/api/ipo-allotments", { clear: true });
-      if (r) JSE.toast(r.removed + " allotment rows removed.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
-    poller.now();
   };
   // ---- configuration ----
   $("cfgSave").onclick = async function () {
