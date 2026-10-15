@@ -33,5 +33,5 @@ BEGIN
 END
 $jse_migration$;
 
-INSERT INTO schema_migrations(version) VALUES ('028_ipo_company_price_band')
+INSERT INTO schema_migrations(version) VALUES ('028_company_base_price_band')
 ON CONFLICT (version) DO NOTHING;
