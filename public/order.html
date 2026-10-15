@@ -7,8 +7,8 @@
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/jse.css?v=318">
 <style>
-  #mp::-webkit-inner-spin-button, #mp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  #mp { -moz-appearance: textfield; }
+  #mp::-webkit-inner-spin-button, #mp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; display: none; }
+  #mp { -moz-appearance: textfield; appearance: textfield; }
   #mp[readonly] { background: #f3f6fa; cursor: not-allowed; }
   .ticket .card-b { display: grid; gap: 18px; }
   .done { border: 1px solid var(--green-line); background: var(--green-soft); border-radius: 10px; padding: 12px 14px; }
@@ -51,7 +51,7 @@
         <div class="field"><label for="side">Transaction side</label><select class="input" id="side"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
         <div class="field"><label for="qty">Quantity</label><input class="input" id="qty" type="number" inputmode="numeric" min="50" step="50" value="50" required>
           <span class="hint" id="lotHint">Multiples of 50 shares</span></div>
-        <div class="field"><label for="mp">Price per share (₹)</label><input class="input" id="mp" type="number" min="1" step="1" inputmode="numeric" value="" aria-describedby="mpNote" required readonly>
+        <div class="field"><label for="mp">Price per share (₹)</label><input class="input" id="mp" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="" aria-describedby="mpNote" required readonly>
           <span class="hint" id="mpNote">Shows the live Market Page price. Only Pit Managers can type a replacement price using the keyboard.</span></div>
         <div class="form-sec">Settlement preview</div>
         <div class="span-2"><div class="minis pv4">
@@ -204,7 +204,8 @@
   $("sec").addEventListener("change", function () { var s = sec(); if (s) { $("qty").step = s.lot_size; $("qty").min = s.lot_size; } preview(); });
   $("qty").addEventListener("input", preview);
   $("mp").addEventListener("wheel", function (e) { e.preventDefault(); }, { passive: false });
-  $("mp").addEventListener("keydown", function (e) { if (e.key === "ArrowUp" || e.key === "ArrowDown") e.preventDefault(); });
+  $("mp").addEventListener("keydown", function (e) { if (e.key === "ArrowUp" || e.key === "ArrowDown") e.preventDefault(); if (!/^[0-9]$/.test(e.key) && !["Backspace","Delete","Tab","Enter","Escape","ArrowLeft","ArrowRight","Home","End"].includes(e.key) && !(e.ctrlKey || e.metaKey)) e.preventDefault(); });
+  $("mp").addEventListener("paste", function (e) { var text = (e.clipboardData || window.clipboardData).getData("text"); if (!/^[0-9]+$/.test(text.trim())) e.preventDefault(); });
   $("mp").addEventListener("input", function () { if (!S.user || S.user.role !== "PIT_MANAGER") return; $("mp").dataset.edited = "1"; if ($("mp").value !== "" && $("mp").value.includes(".")) $("mp").value = String(Math.trunc(N($("mp").value))); preview(); });
   $("mp").addEventListener("change", function () { if ($("mp").value !== "") $("mp").value = String(Math.round(N($("mp").value))); preview(); });
   $("sec").addEventListener("change", function () { $("mp").dataset.edited = ""; });
