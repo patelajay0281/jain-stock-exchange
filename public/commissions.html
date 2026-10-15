@@ -17,7 +17,8 @@
     <div><h1 id="h1">Broker Commission</h1>
       <p id="lead">Monitor broker earnings generated from settled market transactions.</p></div>
     <div class="tools"><span class="pill blue" id="rateTag">Commission rate —</span><span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
-      <button class="btn primary caps" type="button" id="csvTop">↓ Download commission CSV</button></div>
+      <button class="btn primary caps" type="button" id="csvTop">↓ Download commission CSV</button>
+      <button class="btn caps" type="button" id="importSnapshotBtn">Import commission snapshot</button><input id="importSnapshotFile" type="file" accept=".csv,text/csv" hidden></div>
   </div>
   <div id="recon" style="margin-bottom:16px"></div>
   <div class="kpis k5" id="kpis"></div>
@@ -94,10 +95,53 @@
     $("conn").className = "conn"; $("connText").textContent = "Live · " + F.time(new Date()) + " IST";
   }
 
+
+  // Historical CSV import is deliberately kept separate from live API totals.
+  function parseCSV(text) {
+    var rows=[], row=[], cell="", quoted=false;
+    for (var i=0;i<text.length;i++) {
+      var ch=text[i];
+      if (quoted) { if (ch === '"' && text[i+1] === '"') { cell+='"'; i++; } else if (ch === '"') quoted=false; else cell+=ch; }
+      else if (ch === '"' && cell === "") quoted=true;
+      else if (ch === ",") { row.push(cell); cell=""; }
+      else if (ch === "\n") { row.push(cell.replace(/\r$/, "")); if (row.some(function(v){return v!=="";})) rows.push(row); row=[]; cell=""; }
+      else cell+=ch;
+    }
+    if (cell!=="" || row.length) { row.push(cell.replace(/\r$/, "")); if (row.some(function(v){return v!=="";})) rows.push(row); }
+    if (!rows.length) return [];
+    var headers=rows.shift();
+    return rows.map(function(r){var o={}; headers.forEach(function(h,i){o[h.trim()]=(r[i]||"").trim();}); return o;});
+  }
+  function snapshotCell(v) { return esc(v == null ? "" : String(v)); }
+  function showSnapshot(file) {
+    var reader=new FileReader();
+    reader.onload=function(){
+      var rows=parseCSV(String(reader.result||""));
+      if (!rows.length) { JSE.toast("The selected CSV has no transaction rows.","bad"); return; }
+      var get=function(r,k){return r[k]||"";};
+      var total=rows.reduce(function(a,r){return a+(Number(get(r,"Commission"))||0);},0);
+      var trade=rows.reduce(function(a,r){return a+(Number(get(r,"Trade value"))||0);},0);
+      $("conn").className="conn"; $("connText").textContent="Imported snapshot · "+rows.length+" records";
+      $("rateTag").textContent="CSV snapshot · historical";
+      $("recon").innerHTML='<div class="alert good"><b>Historical CSV snapshot.</b> '+rows.length+' rows loaded from '+snapshotCell(file.name)+'. These figures are separate from live API totals.</div>';
+      $("kpis").innerHTML=kpi("Imported transactions",F.num(rows.length),"CSV snapshot")+kpi("Trade value",F.money(trade,{dp:2}),"CSV snapshot")+kpi("Brokerage total",F.money(total,{dp:2}),"CSV snapshot","good")+kpi("Broker count",F.num(new Set(rows.map(function(r){return get(r,"Broker");})).size),"CSV snapshot")+kpi("Data source","CSV","Not live");
+      $("rank").innerHTML='<tr><td colspan="10" class="empty">Historical snapshot loaded below. Live broker ranking is unchanged.</td></tr>';
+      $("rows").innerHTML=rows.slice().reverse().map(function(r){
+        return '<tr><td class="nowrap">'+snapshotCell(get(r,"Date/time"))+'</td><td><b>'+snapshotCell(get(r,"Broker"))+'</b><span class="sub">'+snapshotCell(get(r,"Broker name"))+'</span></td><td><b>'+snapshotCell(get(r,"Team"))+'</b><span class="sub">'+snapshotCell(get(r,"Team name"))+'</span></td><td><span class="mono">'+snapshotCell(get(r,"Order"))+'</span><span class="sub">'+snapshotCell(get(r,"Counterparty"))+'</span></td><td><b>'+snapshotCell(get(r,"Security"))+'</b></td><td>'+snapshotCell(get(r,"Side"))+'</td><td class="num">'+snapshotCell(get(r,"Quantity"))+' @ '+snapshotCell(get(r,"Price"))+'</td><td class="num">'+F.money(get(r,"Trade value"),{dp:2})+'</td><td class="num">'+snapshotCell(get(r,"Brokerage rate"))+'</td><td class="num"><b>'+F.money(get(r,"Commission"),{dp:2})+'</b></td><td>'+snapshotCell(get(r,"Status"))+'</td></tr>';
+      }).join("");
+      $("info").textContent="Showing "+rows.length+" imported historical records. Live totals are not modified.";
+      $("prev").disabled=true; $("next").disabled=true;
+    };
+    reader.onerror=function(){JSE.toast("Could not read the selected CSV.","bad");};
+    reader.readAsText(file);
+  }
+
   var poller;
   JSE.page({ id: "commissions" }).then(function (u) {
     if (!u) return;
     S.user = u;
+    $("importSnapshotBtn").addEventListener("click", function(){ $("importSnapshotFile").click(); });
+    $("importSnapshotFile").addEventListener("change", function(e){ if(e.target.files && e.target.files[0]) showSnapshot(e.target.files[0]); });
     if (u.role === "BROKER") {
       $("rankH").textContent = "Broker commission summary · " + (u.broker || "your desk"); $("csvTop").classList.add("hidden");
     } else {
