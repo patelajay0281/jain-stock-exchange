@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=322">
+<link rel="stylesheet" href="/assets/jse.css?v=324">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -66,14 +66,14 @@
     </section>
 
     <section class="card">
-      <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · choose company + mood · daily news cap ±15%</span></div>
+      <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · company news price band ±15% of base price</span></div>
       <div class="card-b">
         <div class="form-grid">
           <div class="field span-2"><label for="nSec">Company</label><select class="input" id="nSec"></select></div>
         </div>
         <div class="label" style="margin:12px 0 6px">Selected mood</div>
         <div class="moods" id="moods"></div>
-        <div class="row between" style="margin-top:12px"><span class="small muted">Each news event moves a share by no more than 10%. Total news-driven movement is capped at ±15% from that day’s baseline per company; the automated price changer is unchanged.</span>
+        <div class="row between" style="margin-top:12px"><span class="small muted">Each news event moves a share by no more than 10%. A company stays within ±15% of its locked starting/base price (not a daily reset). Reaching the band does not disable trading; opposite-direction news can move the price back inside it.</span>
           <button class="btn primary caps admin-only" id="nGo" type="button">Publish news + move price</button></div>
       </div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:240px"><table class="t"><thead><tr><th>Time</th><th>Company</th><th>Mood</th><th class="num">Move</th><th class="num">New price</th></tr></thead><tbody id="news"></tbody></table></div></div>
@@ -271,8 +271,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=322"></script>
-<script src="/assets/jse.js?v=322"></script>
+<script src="/assets/config.js?v=324"></script>
+<script src="/assets/jse.js?v=324"></script>
 <script>
 (function () {
   "use strict";
@@ -580,7 +580,7 @@
     var sec = $("nSec").value;
     if (!sec || !S.mood) return JSE.toast("Choose a company and a news severity.", "warn");
     var name = $("nSec").selectedOptions[0].textContent.split(" · ")[0];
-    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", html: "<p><b>" + esc(name) + "</b></p><p class=\"small muted\">The price moves immediately by a random amount inside the band (daily news cap ±15%). The automated price changer is unchanged. Open orders created at the old price are closed as MARKET PRICE CHANGED.</p>", confirmText: "Publish" }))) return;
+    if (!(await JSE.dialog({ title: "Publish " + S.mood.replace(/_/g, " ") + " news?", html: "<p><b>" + esc(name) + "</b></p><p class=\"small muted\">The price moves by a random amount, but the company remains within ±15% of its locked base price. Reaching the band does not lock BUY/SELL trading; opposite-direction news can move the price back inside it. Open orders created at the old price are closed as MARKET PRICE CHANGED.</p>", confirmText: "Publish" }))) return;
     try { var r = await JSE.api.post("/api/market-news", { security_id: Number(sec), mood: S.mood });
       JSE.toast(r.symbol + ": " + F.price(r.previous_price) + " → " + F.price(r.new_price) + " (" + F.pct(r.applied_pct) + ")" + (N(r.stale_orders) ? " · " + r.stale_orders + " order(s) now price stale" : ""), N(r.applied_pct) >= 0 ? "good" : "warn", 9000);
       loadNews(); loadSecs(); poller.now();
