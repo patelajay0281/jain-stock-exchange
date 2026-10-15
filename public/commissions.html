@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Broker Commission · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=318">
+<link rel="stylesheet" href="/assets/jse.css?v=322">
 <style>
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .toolbar .input { width: 240px; }
@@ -24,7 +24,7 @@
   <div class="kpis k5" id="kpis"></div>
   <section class="card" style="margin-bottom:18px"><div class="card-h bar"><h2 id="rankH">Broker commission summary</h2><span class="meta">Settled transactions only</span></div>
     <div class="card-b flush"><div class="table-wrap"><table class="t">
-    <thead><tr><th class="num">Rank</th><th>Broker</th><th class="num">Teams</th><th class="num">Settled trades</th><th class="num">Buy value</th><th class="num">Sell value</th><th class="num">Total trade value</th><th class="num">Commission earned</th><th style="width:16%">Share</th><th class="num">In workflow</th></tr></thead>
+    <thead><tr><th class="num">Rank</th><th>Broker</th><th class="num">Assigned Teams</th><th class="num">Settled trades</th><th class="num">Buy value</th><th class="num">Sell value</th><th class="num">Total trade value</th><th class="num">Commission earned</th><th style="width:16%">Share</th><th class="num">In workflow</th></tr></thead>
     <tbody id="rank"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div></section>
   <section class="card"><div class="card-h bar navy"><h2>Commission transaction ledger</h2>
       <div class="toolbar"><label class="sr-only" for="fBroker">Broker</label><select class="input sm hidden" id="fBroker"></select>
@@ -67,7 +67,7 @@
     }
     $("rank").innerHTML = brokers.length ? brokers.map(function (b) {
       var officialBroker = b.display_code || b.broker || "";
-      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(officialBroker) + '</b><span class="sub">' + esc(b.name || "") + "</span></td><td class="num">' + b.teams +
+      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(officialBroker) + '</b><span class="sub">' + esc(b.name || "") + "</span></td><td class="num">' + F.num(N(b.teams)) +
         '</td><td class="num">' + F.num(b.orders) + '<span class="sub">' + b.buy_orders + " buy · " + b.sell_orders + ' sell</span></td><td class="num">' + F.money(b.buy_volume) + '<span class="sub">' + F.num(b.buy_quantity) + ' shares</span></td>' +
         '<td class="num">' + F.money(b.sell_volume) + '<span class="sub">' + F.num(b.sell_quantity) + ' shares</span></td><td class="num">' + F.money(b.total_trade_value) + '</td><td class="num"><b>' + F.money(b.brokerage_earned, { dp: 2 }) +
         '</b></td><td><div class="meter"><i style="width:' + (N(b.brokerage_earned) / max * 100).toFixed(1) + '%"></i></div></td><td class="num">' + b.pending_orders + "</td></tr>";
