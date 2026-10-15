@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=318">
+<link rel="stylesheet" href="/assets/jse.css?v=322">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -149,7 +149,11 @@
     <section class="card">
       <div class="card-h bar green"><h2>Brokers</h2><span class="meta" id="brSum"></span></div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:320px"><table class="t"><thead><tr><th>Broker</th><th>Name</th><th>Desk</th><th>Contact</th><th class="num">Teams</th><th class="actions"></th></tr></thead><tbody id="brRows"></tbody></table></div></div>
-      <div class="card-b"><div class="row"><button class="btn sm" type="button" id="rosterCsv">Export broker roster (CSV)</button><button class="btn sm" type="button" id="teamsCsv">Export team roster (CSV)</button></div></div>
+      <div class="card-b"><div class="row">
+        <button class="btn sm" type="button" id="brokerRefresh" title="Refresh the official roster and reset this page view only; financial records are unchanged">Reset &amp; refresh broker page</button>
+        <button class="btn sm" type="button" id="rosterCsv">Export broker roster (CSV)</button>
+        <button class="btn sm" type="button" id="teamsCsv">Export team roster (CSV)</button>
+      </div><div class="small muted" style="margin-top:8px">Official broker number, broker code and broker name are linked to the existing internal desk. Editing a broker never changes team assignments.</div></div>
     </section>
 
     <section class="card">
@@ -267,8 +271,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=321"></script>
-<script src="/assets/jse.js?v=321"></script>
+<script src="/assets/config.js?v=322"></script>
+<script src="/assets/jse.js?v=322"></script>
 <script>
 (function () {
   "use strict";
@@ -288,7 +292,7 @@
   var legacyPanelObserver = new MutationObserver(removeLegacyClashPanel);
   legacyPanelObserver.observe(document.body, { childList: true, subtree: true });
 
-  var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null, bigBull: null };
+  var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null, bigBull: null, brokerRoster: [], brokerRosterError: "", brokerRosterLoaded: false };
   var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
     ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
   var SHEETS = [["winner", "Winner & Runner-Up"], ["assessment", "Assessment & Eligibility"], ["networth", "Net Worth & P/L"], ["teams", "Team Details (import template)"], ["participants", "Participant Details"],
@@ -416,9 +420,31 @@
     var tn = d.team_names || {};
     $("tnSum").textContent = "Pool " + tn.pool_size + " names · seed " + (tn.seed || "—") + " · " + (tn.locked ? "locked by " + (tn.locked_by || "administrator") : "not locked");
     $("tnRandom").disabled = !S.admin || tn.locked || d.status !== "NOT_STARTED"; $("tnLock").disabled = !S.admin || tn.locked; $("tnUnlock").disabled = !S.admin || !tn.locked || d.status !== "NOT_STARTED";
-    $("brSum").textContent = (d.brokers || []).length + " brokers";
-    $("brRows").innerHTML = (d.brokers || []).map(function (b, i) { var officialBroker = "BROKER-" + String(i + 1).padStart(2, "0"); return "<tr><td><b>" + esc(officialBroker) + "</b></td><td>" + esc(b.name) + "</td><td>" + esc(b.desk || "—") + "</td><td>" + esc(b.contact || "—") + '</td><td class="num">' + b.teams + '</td><td class="actions">' +
-      (S.admin ? '<button class="btn xs" type="button" data-broker="' + esc(b.code) + '">Edit</button>' : "") + "</td></tr>"; }).join("");
+    var internalBrokers = d.brokers || [];
+    var officialRoster = S.brokerRoster || [];
+    var brokerRows = officialRoster.length ? officialRoster.map(function (meta, i) {
+      var b = internalBrokers.filter(function (x) { return x.code === meta.broker; })[0] || {};
+      return {
+        internalCode: meta.broker || b.code || "",
+        officialCode: meta.display_code || meta.broker || b.code || "",
+        number: N(meta.broker_number) || i + 1,
+        name: meta.name || b.name || meta.display_code || meta.broker || "—",
+        desk: b.desk || "",
+        contact: b.contact || "",
+        teams: meta.teams !== undefined && meta.teams !== null ? meta.teams : (b.teams || 0)
+      };
+    }) : internalBrokers.map(function (b, i) {
+      return { internalCode: b.code || "", officialCode: b.code || "—", number: i + 1, name: b.name || "—", desk: b.desk || "", contact: b.contact || "", teams: b.teams || 0 };
+    });
+    $("brSum").textContent = brokerRows.length + " brokers" +
+      (S.brokerRosterError ? " · official roster unavailable; using internal fallback" : " · official roster linked");
+    $("brRows").innerHTML = brokerRows.map(function (b) {
+      return '<tr><td><b>#' + esc(b.number) + " · " + esc(b.officialCode) + '</b></td><td>' + esc(b.name) +
+        '</td><td>' + esc(b.desk || "—") + '</td><td>' + esc(b.contact || "—") +
+        '</td><td class="num">' + esc(b.teams) + '</td><td class="actions">' +
+        (S.admin ? '<button class="btn xs" type="button" data-broker="' + esc(b.internalCode) + '" data-official-code="' + esc(b.officialCode) + '">Edit</button>' : "") +
+        "</td></tr>";
+    }).join("") || '<tr><td colspan="6" class="empty">No broker records returned.</td></tr>';
     if (!$("cfg").children.length) renderConfig(d.config_full || {});
   }
 
@@ -462,8 +488,22 @@
     $("miMeta").textContent = "Live · " + F.time(new Date()) + " IST · same data as portfolios and order tracking";
   }
 
+  async function loadBrokerRoster() {
+    try {
+      var report = await JSE.api.get("/api/commissions", { page: 1, page_size: 1 });
+      S.brokerRoster = (report.brokers || []).slice().sort(function (a, b) {
+        return N(a.broker_number) - N(b.broker_number);
+      });
+      S.brokerRosterError = S.brokerRoster.length ? "" : "Official broker roster was empty.";
+    } catch (ex) {
+      S.brokerRoster = [];
+      S.brokerRosterError = ex && ex.message ? ex.message : "Official broker roster could not be loaded.";
+    }
+    S.brokerRosterLoaded = true;
+  }
   async function load() {
     S.st = await JSE.api.get("/api/admin-state");
+    if (!S.brokerRosterLoaded) await loadBrokerRoster();
     render();
     $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
@@ -659,20 +699,47 @@
         } catch (ex) { JSE.toast(ex.message + ((ex.data && ex.data.errors) ? " " + ex.data.errors.map(function (x) { return x.error; }).join("; ") : ""), "bad", 9000); }
       });
   });
+  $("brokerRefresh").addEventListener("click", async function () {
+    var btn = $("brokerRefresh");
+    btn.disabled = true; btn.textContent = "Refreshing broker roster…";
+    S.brokerRosterLoaded = false;
+    try {
+      await load();
+      await loadTeamNames();
+      if (S.brokerRosterError) JSE.toast("Broker page refreshed using the internal fallback. " + S.brokerRosterError, "warn", 7000);
+      else JSE.toast("Official broker roster refreshed. Trading and cash records were not changed.", "good", 3000);
+    } catch (ex) {
+      JSE.toast("Broker page refresh failed: " + (ex.message || "Try again."), "bad", 7000);
+    } finally {
+      btn.disabled = false; btn.textContent = "Reset & refresh broker page";
+    }
+  });
   $("brRows").addEventListener("click", function (e) {
-    var code = e.target.getAttribute && e.target.getAttribute("data-broker"); if (!code || !S.st) return;
-    var b = (S.st.brokers || []).filter(function (x) { return x.code === code; })[0]; if (!b) return;
-    editDialog("Edit " + code,
-      '<div class="field"><label for="ebName">Broker display name</label><input class="input" id="ebName" maxlength="120" value="' + esc(b.name) + '"></div>' +
-      '<div class="field" style="margin-top:10px"><label for="ebDesk">Desk</label><input class="input" id="ebDesk" maxlength="60" value="' + esc(b.desk || "") + '"></div>' +
-      '<div class="field" style="margin-top:10px"><label for="ebContact">Contact</label><input class="input" id="ebContact" maxlength="120" value="' + esc(b.contact || "") + '"></div>' +
-      '<p class="small muted" style="margin:10px 0 0">The broker code ' + esc(code) + " and its team assignments do not change.</p>",
+    var btn = e.target.closest ? e.target.closest("button[data-broker]") : null;
+    if (!btn || !S.admin || !S.st) return;
+    var code = btn.getAttribute("data-broker") || "";
+    var officialCode = btn.getAttribute("data-official-code") || code;
+    var b = (S.st.brokers || []).filter(function (x) { return x.code === code; })[0];
+    var meta = (S.brokerRoster || []).filter(function (x) { return x.broker === code; })[0];
+    if (!b) return;
+    var shownName = (meta && meta.name) || b.name || "";
+    editDialog("Edit " + officialCode,
+      '<div class="field"><label for="ebName">Official broker name</label><input class="input" id="ebName" maxlength="120" value="' + esc(shownName) + '"></div>' +
+      '<div class="field" style="margin-top:10px"><label for="ebDesk">Desk</label><input class="input" id="ebDesk" maxlength="120" value="' + esc(b.desk || "") + '"></div>' +
+      '<div class="field" style="margin-top:10px"><label for="ebContact">Contact</label><input class="input" id="ebContact" maxlength="200" value="' + esc(b.contact || "") + '"></div>' +
+      '<p class="small muted" style="margin:10px 0 0">Official broker code: <b>' + esc(officialCode) + '</b>. Existing teams, broker numbering and trade history stay unchanged.</p>',
       async function (back) {
-        var row = { broker: code, name: back.querySelector("#ebName").value.trim(), desk: back.querySelector("#ebDesk").value.trim(), contact: back.querySelector("#ebContact").value.trim() };
+        var row = { broker: officialCode, name: back.querySelector("#ebName").value.trim(), desk: back.querySelector("#ebDesk").value.trim(), contact: back.querySelector("#ebContact").value.trim() };
         if (!row.name) return JSE.toast("Enter the broker name.", "warn");
         try {
-          var r = await confirmed({ title: "Save " + code + "?", text: "The broker's details are updated everywhere and recorded in the audit log.", confirmText: "Save" }, "/api/brokers", { rows: [row] });
-          if (r) { JSE.toast(code + " updated.", "good"); back.remove(); poller.now(); loadTeamNames(); }
+          var r = await confirmed({ title: "Save " + officialCode + "?", text: "Save the official broker name and contact details without changing its team assignments. The edit is recorded in the audit log.", confirmText: "Save" }, "/api/brokers", { rows: [row] });
+          if (r) {
+            back.remove();
+            S.brokerRosterLoaded = false;
+            await load();
+            await loadTeamNames();
+            JSE.toast(officialCode + " updated.", "good", 4000);
+          }
         } catch (ex) { JSE.toast(ex.message + ((ex.data && ex.data.errors) ? " " + ex.data.errors.map(function (x) { return x.error; }).join("; ") : ""), "bad", 9000); }
       });
   });
