@@ -108,7 +108,7 @@
     }
     $("prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
     $("next").onclick = function () { S.page++; poller.now(); };
-    poller = JSE.poll(load, 15000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
+    poller = JSE.poll(load, 15000, { onError: function (e) { var msg = (e && e.message) ? e.message : "Unknown API error"; $("conn").className = "conn down"; $("connText").textContent = "Load failed"; $("rateTag").textContent = "Commission rate unavailable"; $("rank").innerHTML = '<tr><td colspan="10" class="empty"><b>Could not load commission data.</b><br>' + esc(msg) + '<br><button class="btn sm" type="button" id="retryCommission">Retry</button></td></tr>'; $("rows").innerHTML = '<tr><td colspan="11" class="empty"><b>Could not load transaction ledger.</b><br>' + esc(msg) + '</td></tr>'; var retry = $("retryCommission"); if (retry) retry.onclick = function () { poller.now(); }; } });
   });
 })();
 </script>
