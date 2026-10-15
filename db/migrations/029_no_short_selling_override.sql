@@ -19,7 +19,7 @@ BEGIN
       END IF;$old$;
   v_new := $new$      IF o.quantity > greatest(v_avail.available, 0) THEN
         RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELLING_NOT_ALLOWED', HINT = '409',
-          MESSAGE = 'SHORT SELLING PROHIBITED: ' || o.team_code || ' cannot sell more shares than it owns. Available to sell: ' ||
+          MESSAGE = 'SHORT SELLING PROHIBITED: ' || coalesce((SELECT code FROM teams WHERE id = o.team_id), 'team') || ' cannot sell more shares than it owns. Available to sell: ' ||
                     greatest(v_avail.available, 0) || ' (holding ' || v_avail.holding || ', other open sell orders ' || v_avail.open_sell || '). Reject this order or reduce its quantity.';
       END IF;$new$;
   IF position(v_old IN v_fn) = 0 THEN
