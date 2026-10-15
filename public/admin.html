@@ -417,7 +417,7 @@
     $("tnSum").textContent = "Pool " + tn.pool_size + " names · seed " + (tn.seed || "—") + " · " + (tn.locked ? "locked by " + (tn.locked_by || "administrator") : "not locked");
     $("tnRandom").disabled = !S.admin || tn.locked || d.status !== "NOT_STARTED"; $("tnLock").disabled = !S.admin || tn.locked; $("tnUnlock").disabled = !S.admin || !tn.locked || d.status !== "NOT_STARTED";
     $("brSum").textContent = (d.brokers || []).length + " brokers";
-    $("brRows").innerHTML = (d.brokers || []).map(function (b) { return "<tr><td><b>" + esc(b.display_code || b.code) + "</b></td><td>" + esc(b.name) + "</td><td>" + esc(b.desk || "—") + "</td><td>" + esc(b.contact || "—") + '</td><td class="num">' + b.teams + '</td><td class="actions">' +
+    $("brRows").innerHTML = (d.brokers || []).map(function (b, i) { var officialBroker = "BROKER-" + String(i + 1).padStart(2, "0"); return "<tr><td><b>" + esc(officialBroker) + "</b></td><td>" + esc(b.name) + "</td><td>" + esc(b.desk || "—") + "</td><td>" + esc(b.contact || "—") + '</td><td class="num">' + b.teams + '</td><td class="actions">' +
       (S.admin ? '<button class="btn xs" type="button" data-broker="' + esc(b.code) + '">Edit</button>' : "") + "</td></tr>"; }).join("");
     if (!$("cfg").children.length) renderConfig(d.config_full || {});
   }
