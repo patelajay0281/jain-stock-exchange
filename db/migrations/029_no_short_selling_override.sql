@@ -26,7 +26,10 @@ BEGIN
     RAISE EXCEPTION '029: expected Exchange short-selling override block not found';
   END IF;
   v_fn := replace(v_fn, v_old, v_new);
-  v_fn := replace(v_fn, '  v_confirm boolean := coalesce((p->>''confirm_short_sell'')::boolean, false);' || chr(10), '');
+  v_fn := regexp_replace(v_fn, '  v_confirm boolean := [^;]*;' || chr(10), '');
+  v_fn := replace(v_fn, '    -- The Exchange may explicitly approve it (recorded as SHORT SELLING — EXCHANGE APPROVED); the Bank still' || chr(10) ||
+                  '    -- checks the holding at settlement. Institutions have no cash or holdings restriction.' || chr(10),
+                  '    -- Short selling is prohibited at every stage; institutional accounts have no independent holdings.' || chr(10));
   IF position('SHORT SELLING — EXCHANGE APPROVED' IN v_fn) > 0 OR position('confirm_short_sell' IN v_fn) > 0 THEN
     RAISE EXCEPTION '029: Exchange override still present after replacement';
   END IF;
