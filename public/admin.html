@@ -281,7 +281,7 @@
       if (title.indexOf("BROKER TEAM NAME CLASH CHECK") >= 0) card.remove();
     });
     document.querySelectorAll(".ver-pill").forEach(function (pill) {
-      if (/JSE\\s*SYSTEM.*VERSION/i.test(pill.textContent || "")) pill.remove();
+      if (/JSE\s*SYSTEM.*VERSION/i.test(pill.textContent || "")) pill.remove();
     });
   }
   removeLegacyClashPanel();
