@@ -28,13 +28,14 @@ import m022 from "../../db/migrations/022_locked_baseline_refresh.sql";
 import m023 from "../../db/migrations/023_lock_baseline_ipo_allotments.sql";
 import m024 from "../../db/migrations/024_broker_admin_page_repair.sql";
 import m025 from "../../db/migrations/025_institutional_unlimited_order_value.sql";
+import m026 from "../../db/migrations/026_loan_cash_in_base_money.sql";
 
 export const MIGRATIONS: Array<[string, string]> = [
   ["001_schema", m001], ["001a_upgrades", m001a], ["002_core", m002], ["003_ops", m003], ["004_reads", m004],
-  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013], ["014_big_bull_news_assessment", m014], ["015_broker_sugadev", m015], ["016_news_single_move_cap", m016], ["017_portfolio_ipo_visibility", m017], ["018_broker_assignments_and_counts", m018], ["019_ipo_start_market_order", m019], ["020_broker_sugadev_name", m020], ["021_locked_baseline_reset", m021], ["022_locked_baseline_refresh", m022], ["023_lock_baseline_ipo_allotments", m023], ["024_broker_admin_page_repair", m024], ["025_institutional_unlimited_order_value", m025],
+  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013], ["014_big_bull_news_assessment", m014], ["015_broker_sugadev", m015], ["016_news_single_move_cap", m016], ["017_portfolio_ipo_visibility", m017], ["018_broker_assignments_and_counts", m018], ["019_ipo_start_market_order", m019], ["020_broker_sugadev_name", m020], ["021_locked_baseline_reset", m021], ["022_locked_baseline_refresh", m022], ["023_lock_baseline_ipo_allotments", m023], ["024_broker_admin_page_repair", m024], ["025_institutional_unlimited_order_value", m025], ["026_loan_cash_in_base_money", m026],
 ];
 // Files whose content may be re-applied safely (idempotent / CREATE OR REPLACE only) when their text changes.
-const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning", "008_v311", "011_roster_ipo", "012_big_bull_admin", "021_locked_baseline_reset", "024_broker_admin_page_repair", "025_institutional_unlimited_order_value"]);
+const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning", "008_v311", "011_roster_ipo", "012_big_bull_admin", "021_locked_baseline_reset", "024_broker_admin_page_repair", "025_institutional_unlimited_order_value", "026_loan_cash_in_base_money"]);
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string, public extra?: Record<string, unknown>) {
