@@ -65,7 +65,7 @@
         kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.display_code || top.broker) : "—", top && N(top.brokerage_earned) ? F.money(top.brokerage_earned, { dp: 2 }) : "no commission yet");
     }
     $("rank").innerHTML = brokers.length ? brokers.map(function (b) {
-      var officialBroker = "BROKER-" + String(b.broker_number || "").padStart(2, "0");
+      var officialBroker = b.display_code || b.broker || "";
       return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(officialBroker) + '</b><span class="sub">' + esc(b.name || "") + "</span></td><td class="num">' + b.teams +
         '</td><td class="num">' + F.num(b.orders) + '<span class="sub">' + b.buy_orders + " buy · " + b.sell_orders + ' sell</span></td><td class="num">' + F.money(b.buy_volume) + '<span class="sub">' + F.num(b.buy_quantity) + ' shares</span></td>' +
         '<td class="num">' + F.money(b.sell_volume) + '<span class="sub">' + F.num(b.sell_quantity) + ' shares</span></td><td class="num">' + F.money(b.total_trade_value) + '</td><td class="num"><b>' + F.money(b.brokerage_earned, { dp: 2 }) +
@@ -73,13 +73,13 @@
     }).join("") : '<tr><td colspan="10" class="empty">No brokers.</td></tr>';
     if (!own && !S.brokersLoaded && brokers.length) {
       var list = brokers.slice().sort(function (a, b) { return N(a.broker_number) - N(b.broker_number) || ((a.display_code || a.broker) < (b.display_code || b.broker) ? -1 : 1); });
-      $("fBroker").innerHTML = '<option value="">All brokers</option>' + list.map(function (b) { return '<option value="' + esc(b.broker) + '">' + esc("BROKER-" + String(b.broker_number || "").padStart(2, "0") + " · " + (b.name || "")) + "</option>"; }).join("");
+      $("fBroker").innerHTML = '<option value="">All brokers</option>' + list.map(function (b) { return '<option value="' + esc(b.broker) + '">' + esc((b.display_code || b.broker || "") + " · " + (b.name || "")) + "</option>"; }).join("");
       $("fBroker").value = S.broker; S.brokersLoaded = true;
     }
     var tx = d.transactions || [];
     $("rows").innerHTML = tx.length ? tx.map(function (t) {
       var brokerMeta = brokers.filter(function (b) { return b.broker === t.broker; })[0];
-      var brokerLabel = brokerMeta ? "BROKER-" + String(brokerMeta.broker_number || "").padStart(2, "0") : (t.broker_display_code || t.broker);
+      var brokerLabel = brokerMeta ? (brokerMeta.display_code || brokerMeta.broker) : (t.broker_display_code || t.broker);
       var brokerSub = brokerMeta ? brokerMeta.name : (t.broker_name || "");
       return '<tr><td class="nowrap">' + F.datetime(t.created_at) + "</td><td><b>" + esc(brokerLabel) + "</b>" + (brokerSub ? '<span class="sub">' + esc(brokerSub) + "</span>" : "") +
         "</td><td><b>" + esc(t.team) + '</b><span class="sub">' + esc(t.team_name || "") + "</span></td>" +
