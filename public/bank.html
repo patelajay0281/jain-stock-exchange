@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bank Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=318">
+<link rel="stylesheet" href="/assets/jse.css?v=322">
 <style>
   .lp-grid { display: grid; grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(0, 1fr)); gap: 12px; align-items: end; }
   .lp-act { display: flex; gap: 12px; align-items: end; margin-top: 14px; flex-wrap: wrap; }
@@ -24,7 +24,7 @@
   <div class="alert warn hidden" id="closedNote" style="margin-bottom:16px"></div>
   <section class="card">
     <div class="card-h bar green"><h2>Pending bank transactions <span class="muted" id="pendCount" style="font-weight:600;letter-spacing:0"></span></h2>
-      <div class="row"><input class="input sm hidden" id="q" type="search" aria-hidden="true"><span class="meta" id="conn">Settlement queue</span><button class="btn sm" id="refreshBank" type="button">Refresh now</button></div>
+      <div class="row"><input class="input sm hidden" id="q" type="search" aria-hidden="true"><span class="meta" id="conn" title="A reset refreshes this page view only; financial records remain unchanged">Settlement queue</span><button class="btn sm" id="refreshBank" type="button" title="Reset page filters and unsent form inputs, then refresh live bank data. No financial records are deleted.">Reset &amp; refresh Bank page</button></div>
     </div>
     <div class="txn-grid green" id="rows"><div class="empty">Loading…</div></div>
   </section>
@@ -71,8 +71,8 @@
       <tbody id="recent"></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=319"></script>
-<script src="/assets/jse.js?v=318"></script>
+<script src="/assets/config.js?v=322"></script>
+<script src="/assets/jse.js?v=322"></script>
 <script>
 (function () {
   "use strict";
@@ -151,11 +151,21 @@
   }
 
   async function load() {
-    S.data = await JSE.api.get("/api/bank");
+    var data = await JSE.api.get("/api/bank");
+    S.data = Object.assign({ pending: [], recent: [], stats: {} }, data || {});
+    S.data.pending = Array.isArray(S.data.pending) ? S.data.pending : [];
+    S.data.recent = Array.isArray(S.data.recent) ? S.data.recent : [];
+    S.data.stats = S.data.stats || {};
     render();
     $("conn").textContent = "Settlement queue · " + new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase();
   }
-  async function loadLoans() { S.loans = await JSE.api.get("/api/loan"); renderLoans(); loadReq(); }
+  async function loadLoans() {
+    S.loans = await JSE.api.get("/api/loan");
+    S.loans = Object.assign({ loans: [], loan_rate: 0.02 }, S.loans || {});
+    S.loans.loans = Array.isArray(S.loans.loans) ? S.loans.loans : [];
+    renderLoans();
+    await loadReq();
+  }
   async function loadReq() {
     var d = await JSE.api.get("/api/loan-requests");
     if (d.bank_name) $("bankName").textContent = d.bank_name;
@@ -237,10 +247,21 @@
   var poller, loanPoll;
   var manualRefresh = document.getElementById("refreshBank");
   if (manualRefresh) manualRefresh.addEventListener("click", async function () {
-    manualRefresh.disabled = true; manualRefresh.textContent = "Refreshing…";
-    try { await Promise.all([load(), loadLoans()]); JSE.toast("Bank queue, balances and loan requests refreshed.", "good", 2500); }
-    catch (e) { JSE.toast(e.message || "Refresh failed. Try again.", "bad", 5000); }
-    finally { manualRefresh.disabled = false; manualRefresh.textContent = "Refresh now"; }
+    manualRefresh.disabled = true; manualRefresh.textContent = "Resetting page…";
+    try {
+      // Reset only client-side filters and unsent form inputs; never modify settled trades, cash, loans or ledger rows.
+      S.q = "";
+      $("q").value = "";
+      $("lrTeam").value = "";
+      $("lrAmt").value = "";
+      $("lTeam").value = "";
+      $("lAmt").value = "";
+      $("lAction").value = "REPAY";
+      showLoan();
+      await Promise.all([load(), loadLoans()]);
+      JSE.toast("Bank page reset and refreshed. Financial records were not changed.", "good", 3500);
+    } catch (e) { JSE.toast((e.message || "Refresh failed. Try again.") + " Bank records were not reset.", "bad", 7000); }
+    finally { manualRefresh.disabled = false; manualRefresh.textContent = "Reset & refresh Bank page"; }
   });
   JSE.page({ id: "bank" }).then(function (user) {
     if (!user) return;
