@@ -157,7 +157,7 @@
     { id: "commissions", href: "/commissions.html", label: "Broker Commission", roles: ["ADMIN", "BROKER", "VIEWER"] },
     { id: "portfolios", href: "/portfolios.html", label: "Participant Portfolios", roles: ["ADMIN", "VIEWER", "PARTICIPANT"] },
     { id: "admin", href: "/admin.html", label: "Event Admin", roles: ["ADMIN", "VIEWER"] },
-    { id: "audit", href: "/audit.html", label: "Audit Log", roles: ["ADMIN", "VIEWER"] },
+    { id: "audit", href: "/audit.html", label: "Audit Log", roles: ALL },
     { id: "cash", href: "/cash.html", label: "Cash Ledger", roles: ["ADMIN", "BANK", "VIEWER", "PARTICIPANT"] },
   ];
   // the page each role lands on after signing in
