@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Participant Portfolios · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=318">
+<link rel="stylesheet" href="/assets/jse.css?v=322">
 <style>
   .controls { display: grid; grid-template-columns: 260px minmax(0, 1fr) 260px auto; gap: 12px; align-items: end; }
   @media (max-width: 1000px) { .controls { grid-template-columns: 1fr 1fr; } }
@@ -59,8 +59,8 @@
 
   <section id="detail" class="hidden" style="margin-top:18px" aria-live="polite"></section>
 </main>
-<script src="/assets/config.js?v=319"></script>
-<script src="/assets/jse.js?v=318"></script>
+<script src="/assets/config.js?v=322"></script>
+<script src="/assets/jse.js?v=322"></script>
 <script>
 (function () {
   "use strict";
@@ -153,10 +153,11 @@
         '<div class="small muted" style="margin-top:8px">' + (participant ? "Your broker creates every order for your team; follow them in Order Tracking." : "") +
         (S.user && S.user.role !== "PARTICIPANT" ? ' <button class="btn sm" type="button" id="closeDetail">Close</button>' : "") + "</div></div></div>" +
       '<div class="minis ten" style="margin-top:16px">' +
-        mini("Base capital", F.money(c.base_capital)) + mini("Loan sanctioned", F.money(c.loan_sanctioned)) + mini("Base money left", F.money(c.base_money_left)) +
+        mini("Base capital", F.money(c.base_capital)) + mini("Loan sanctioned", F.money(c.loan_sanctioned)) + mini("Base cash left", F.money(c.base_money_left)) +
         mini("Loan available", F.money(c.loan_available)) + mini("Liquid cash", F.money(c.liquid_cash)) + mini("Holdings market value", F.money(c.holdings_value)) +
         mini("Net worth", F.money(c.net_worth)) + mini("Portfolio P/L", F.signedMoney(c.portfolio_pnl), F.dir(c.portfolio_pnl)) + mini("Realized P/L", F.signedMoney(c.realized_pnl), F.dir(c.realized_pnl)) +
         mini("Unrealized P/L", F.signedMoney(c.unrealized_pnl), F.dir(c.unrealized_pnl)) + mini("Brokerage paid", F.money(c.brokerage_paid)) + mini("Rank (net worth)", "#" + t.rank + (t.rank_eligible ? " · #" + t.rank_eligible + " eligible" : "")) + "</div>" +
+      '<p class="small muted" style="margin-top:8px">Base cash left includes loan proceeds still held as cash. Profit-generated cash is excluded from this figure; loan liability and repayment remain shown separately.</p>' +
       '<div class="sec-title">Participant loan</div>' +
       '<div class="minis" style="grid-template-columns:repeat(6,minmax(0,1fr))">' +
         mini("Loan remaining", F.money(l.current_principal || 0)) + mini("Principal repaid", F.money(l.principal_repaid || 0)) + mini("Interest rate", JSE.rate(d.rules.loan_rate)) +
