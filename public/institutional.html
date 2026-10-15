@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Institutional Investors · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=318">
+<link rel="stylesheet" href="/assets/jse.css?v=322">
 <style>
   .inst-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
   .moods { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
@@ -60,7 +60,7 @@
     <form class="card" id="ticket" autocomplete="off" novalidate>
       <div class="card-h bar navy"><h2>Institutional Transaction Ticket</h2><span class="tag">No institution cash / holding limit</span></div>
       <div class="card-b stack">
-        <p class="small muted" style="margin:0">Submit through the normal Exchange → Bank workflow.</p>
+        <p class="small muted" style="margin:0">Institutional orders have no maximum order-value cap and no institutional cash or holdings cap. Quantity must use the listed security's valid lot size. The selected participant counterparty remains subject to that team's settlement rules.</p>
         <div class="alert warn hidden" id="notLive"></div>
         <div class="form-grid">
           <div class="field"><label for="cp">Participant counterparty</label><select class="input" id="cp"></select></div>
@@ -99,8 +99,8 @@
       <tbody id="orders"><tr><td colspan="10" class="empty">Loading institutional transaction desk…</td></tr></tbody></table></div></div>
   </section>
 </main>
-<script src="/assets/config.js?v=319"></script>
-<script src="/assets/jse.js?v=318"></script>
+<script src="/assets/config.js?v=322"></script>
+<script src="/assets/jse.js?v=322"></script>
 <script>
 (function () {
   "use strict";
@@ -133,7 +133,7 @@
     $("pvAmt").textContent = F.money(teamBuys ? tv + brk : tv - brk);
     var checks = [];
     if (q && q % s.lot_size) checks.push(["bad", "Quantity must be a multiple of " + s.lot_size + " shares."]);
-    if (tv && tv > N(r.max_order_value)) checks.push(["bad", "Above the maximum order value of " + F.money(r.max_order_value) + "."]);
+    // Institutional orders have no maximum order-value cap. Counterparty settlement rules are enforced by the server.
     $("checks").innerHTML = checks.map(function (c) { return '<div class="alert ' + c[0] + '" style="margin-bottom:8px">' + esc(c[1]) + "</div>"; }).join("");
   }
 
