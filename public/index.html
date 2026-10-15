@@ -56,6 +56,12 @@
     .cmsbar .id h1 { font-size: 19px; } .cmsbar .ix .val { font-size: 30px; } .cmsbar .ix .lbl { font-size: 15px; }
   }
 
+
+  /* Market-only compact header spacing; the original market tile design stays unchanged. */
+  body.market-page .hd-in { padding-top: 8px; }
+  body.market-page .nav { padding-top: 4px; padding-bottom: 0; }
+  body.market-page .wrap { padding-top: 8px; }
+  body.market-page .cmsbar { margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -72,8 +78,8 @@
   <ul class="mgrid" id="grid" aria-live="off" aria-label="Market wall"></ul>
   <p class="sr-only" id="disc"></p>
 </main>
-<script src="/assets/config.js?v=319"></script>
-<script src="/assets/jse.js?v=318"></script>
+<script src="/assets/config.js?v=320"></script>
+<script src="/assets/jse.js?v=320"></script>
 <script>
 (function () {
   "use strict";
