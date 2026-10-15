@@ -48,8 +48,8 @@
         <div class="field"><label for="side">Transaction side</label><select class="input" id="side"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
         <div class="field"><label for="qty">Quantity</label><input class="input" id="qty" type="number" inputmode="numeric" min="50" step="50" value="50" required>
           <span class="hint" id="lotHint">Multiples of 50 shares</span></div>
-        <div class="field"><label for="mp">Price per share</label><input class="input locked" id="mp" type="text" readonly tabindex="-1" value="—" aria-describedby="mpNote">
-          <span class="hint" id="mpNote">Exact market price — changes only through Market News</span></div>
+        <div class="field"><label for="mp">Price per share (₹)</label><input class="input" id="mp" type="number" min="1" step="1" inputmode="numeric" value="" aria-describedby="mpNote" required>
+          <span class="hint" id="mpNote">Defaults to market price. You can edit it using whole rupees only.</span></div>
         <div class="form-sec">Settlement preview</div>
         <div class="span-2"><div class="minis pv4">
           <div class="mini"><div class="k">Total shares</div><div class="v" id="pvSh">—</div></div>
@@ -118,9 +118,10 @@
   function preview() {
     var s = sec(), t = team(), q = N($("qty").value), rate = N(S.desk ? S.desk.rules.brokerage_rate : 0.005), sell = S.side === "SELL";
     $("pvBrkK").textContent = "Brokerage";
-    $("mp").value = s ? F.money(s.price) : "—";
+    if (!s) $("mp").value = "";
+    else if ($("mp").dataset.edited !== "1") $("mp").value = String(Math.round(N(s.price)));
     if (s) $("lotHint").textContent = "Multiples of " + s.lot_size + " shares" + (q && q % s.lot_size === 0 ? " · " + (q / s.lot_size) + " lot(s)" : " · not a whole lot");
-    var p = s ? N(s.price) : 0, tv = q > 0 && p > 0 ? q * p : 0, brk = Math.round(tv * rate * 100 + 1e-6) / 100;
+    var p = s ? N($("mp").value) : 0, tv = q > 0 && p > 0 ? q * p : 0, brk = Math.round(tv * rate * 100 + 1e-6) / 100;
     $("pvSh").textContent = q > 0 ? F.num(q) : "0";
     $("pvTv").textContent = F.money(tv);
     $("pvBrk").textContent = F.money(brk);
@@ -154,7 +155,9 @@
     if (!s) return JSE.toast("Select a stock or IPO.", "warn");
     if (q <= 0 || q % s.lot_size !== 0) return JSE.toast(s.symbol + " trades in multiples of " + s.lot_size + " shares.", "warn");
     if (S.block) { res.innerHTML = '<div class="alert bad"><b>Not submitted.</b> Correct the order first (see the message above).</div>'; return; }
-    var body = { team: $("team").value, symbol: s.symbol, side: S.side, quantity: q, expected_price: N(s.price), idempotency_key: S.key };
+    var enteredPrice = N($("mp").value);
+    if (!Number.isInteger(enteredPrice) || enteredPrice <= 0) return JSE.toast("Enter a valid whole-number price per share.", "warn");
+    var body = { team: $("team").value, symbol: s.symbol, side: S.side, quantity: q, expected_price: enteredPrice, price: enteredPrice, idempotency_key: S.key };
     S.busy = true; var btn = $("submit"); btn.disabled = true; var label = btn.textContent; btn.innerHTML = '<span class="spinner"></span> Submitting…';
     try {
       var r = await JSE.api.post("/api/orders", body), o = r.order;
@@ -197,6 +200,9 @@
   $("team").addEventListener("change", preview);
   $("sec").addEventListener("change", function () { var s = sec(); if (s) { $("qty").step = s.lot_size; $("qty").min = s.lot_size; } preview(); });
   $("qty").addEventListener("input", preview);
+  $("mp").addEventListener("input", function () { $("mp").dataset.edited = "1"; if ($("mp").value !== "" && $("mp").value.includes(".")) $("mp").value = String(Math.trunc(N($("mp").value))); preview(); });
+  $("mp").addEventListener("change", function () { if ($("mp").value !== "") $("mp").value = String(Math.round(N($("mp").value))); preview(); });
+  $("sec").addEventListener("change", function () { $("mp").dataset.edited = ""; });
   $("ticket").addEventListener("submit", submit);
   $("loanForm").addEventListener("submit", async function (e) {
     e.preventDefault();
