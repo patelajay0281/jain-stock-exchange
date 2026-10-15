@@ -154,9 +154,9 @@
 
     <section class="card">
       <div class="card-h bar"><h2>IPO allotments</h2><span class="meta" id="allotSum"></span></div>
-      <div class="card-b small muted" style="padding-bottom:0">Allocations must be loaded before START · IPO shares = allotted lots × that IPO’s configured allotment lot size. Normal market orders remain multiples of 50 shares. IPO allotments do not count toward the 5 BUY + 5 SELL assessment.</div>
+      <div class="card-b small muted" style="padding-bottom:0">Locked baseline allocations restore on every Reset. IPO shares = allotted lots × configured allotment lot size. Normal market orders remain multiples of 50 shares; IPO allotments do not count toward the 5 BUY + 5 SELL assessment.</div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Team</th><th>IPO</th><th class="num">Lots</th><th class="num">Shares</th><th class="num">Amount</th></tr></thead><tbody id="allotTable"></tbody></table></div></div>
-      <div class="card-b admin-only"><div class="row"><button class="btn sm" id="allotCsv" type="button">Export allotments</button><button class="btn sm bad" id="allotClear" type="button">Remove all allotments…</button></div></div>
+      <div class="card-b admin-only"><div class="row"><button class="btn sm" id="allotCsv" type="button">Export allotments</button><button class="btn sm" id="allotClear" type="button" disabled>Baseline allotments locked</button></div></div>
       <div class="card-b flush"><div class="table-wrap"><table class="t"><thead><tr><th>IPO code</th><th>Name</th><th>Symbol</th><th class="num">Price</th><th>Status</th><th class="num">Remaining</th></tr></thead><tbody id="ipoMaster"></tbody></table></div></div>
     </section>
 
@@ -267,8 +267,8 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=320"></script>
-<script src="/assets/jse.js?v=320"></script>
+<script src="/assets/config.js?v=321"></script>
+<script src="/assets/jse.js?v=321"></script>
 <script>
 (function () {
   "use strict";
@@ -399,7 +399,7 @@
     $("pauseBtn").textContent = d.status === "SETTLEMENT_ONLY" ? "Resume trading" : "Pause / Resume";
     document.querySelectorAll("[data-ev]").forEach(function (b) { b.disabled = !allowed[b.getAttribute("data-ev")] || !S.admin; });
     $("resetBtn").disabled = d.status === "LIVE" || d.status === "SETTLEMENT_ONLY" || !S.admin;
-    $("allotClear").disabled = d.status !== "NOT_STARTED" || !S.admin;
+    $("allotClear").disabled = true;
     $("journal").innerHTML = d.journal.length ? d.journal.map(function (j) {
       var btn = !S.admin ? "" : j.state === "ACTIVE" ? '<button class="btn sm" data-undo="' + j.id + '">Undo</button>' : j.state === "UNDONE" ? '<button class="btn sm" data-redo="' + j.id + '">Redo</button>' : "";
       return '<tr class="' + (j.state === "UNDONE" ? "j-undone" : "") + '"><td>' + F.time(j.at) + "</td><td>" + esc(j.summary) + "</td><td>" + esc(j.actor || "") + "</td><td>" +
@@ -923,7 +923,9 @@
   $("evCsv").onclick = function () { bigDownload($("evCsv"), "/api/export-event-csv", "JSE_Final_Event.csv"); };
   $("jsonBtn").onclick = function () { bigDownload($("jsonBtn"), "/api/export-event-json", "JSE_Final_Event.json"); };
 
-  $("allotClear").onclick = async function () {
+  $("allotClear").onclick = function () {
+    JSE.toast("Uploaded IPO allotments are locked in the reset baseline. Reset restores them; request an explicit baseline update to change them.", "warn", 8000);
+    return;
     try { var r = await confirmed({ title: "Remove all IPO allotments?", text: "Cash is returned and the allotted shares are removed for every team.", danger: true, confirmText: "Remove all", typeWord: "REMOVE" }, "/api/ipo-allotments", { clear: true });
       if (r) JSE.toast(r.removed + " allotment rows removed.", "warn"); } catch (e) { JSE.toast(e.message, "bad"); }
     poller.now();
