@@ -56,8 +56,8 @@
           <button class="btn ev-close" data-ev="CLOSE">Close event</button>
           <button class="btn ev-finalize" data-ev="FINALIZE">Finalize event</button>
           <button class="btn ev-neutral" data-ev="REOPEN">Reopen market</button>
-          <button class="btn ev-neutral" id="undoLast" type="button">Undo last settlement</button>
-          <button class="btn ev-neutral" id="redoLast" type="button">Redo last settlement</button>
+          <button class="btn ev-neutral" id="undoLast" type="button">Undo last transaction</button>
+          <button class="btn ev-neutral" id="redoLast" type="button">Redo last transaction</button>
           <button class="btn ev-close" id="rejectOpen" type="button">Reject open orders</button>
           <button class="btn ev-reset" id="resetBtn" type="button">Reset event + base prices</button>
         </div>
@@ -88,7 +88,7 @@
   <div class="grid cols-2" style="margin-top:14px">
     <section class="card">
       <div class="card-h bar navy"><h2>Transaction Undo / Redo</h2><span class="meta">Use the action buttons on each transaction; unsafe reversals are blocked</span></div>
-      <div class="card-b"><p class="small muted" style="margin-top:0">Undo/Redo is available per journaled settlement, Exchange decision, Bank rejection, Market News price move, IPO listing and event-status transaction. Each row has its own guarded control.</p><div class="table-wrap" style="max-height:520px"><table class="t"><thead><tr><th>Time</th><th>Transaction</th><th>By</th><th>State</th><th class="actions">Action</th></tr></thead><tbody id="journal"></tbody></table></div></div>
+      <div class="card-b"><p class="small muted" style="margin-top:0">Every journaled event transaction is listed below with its own guarded Undo or Redo control: settlements, Exchange decisions, Bank rejections, Market News price moves, IPO listings and event-status changes. Locked starting roster, base prices and IPO allotments are restored by Reset and are not treated as reversible event transactions.</p><div class="table-wrap" style="max-height:520px"><table class="t"><thead><tr><th>Time</th><th>Transaction</th><th>By</th><th>State</th><th class="actions">Action</th></tr></thead><tbody id="journal"></tbody></table></div></div>
     </section>
 
         <section class="card">
@@ -267,12 +267,27 @@
     </section>
   </div>
 </main>
-<script src="/assets/config.js?v=319"></script>
-<script src="/assets/jse.js?v=318"></script>
+<script src="/assets/config.js?v=320"></script>
+<script src="/assets/jse.js?v=320"></script>
 <script>
 (function () {
   "use strict";
   var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  // Remove the obsolete clash-check panel from any cached/legacy markup without touching other admin cards.
+  function removeLegacyClashPanel() {
+    document.querySelectorAll("section.card, .card").forEach(function (card) {
+      var heading = card.querySelector("h1, h2, h3, h4");
+      var title = heading ? String(heading.textContent || "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim() : "";
+      if (title.indexOf("BROKER TEAM NAME CLASH CHECK") >= 0) card.remove();
+    });
+    document.querySelectorAll(".ver-pill").forEach(function (pill) {
+      if (/JSE\\s*SYSTEM.*VERSION/i.test(pill.textContent || "")) pill.remove();
+    });
+  }
+  removeLegacyClashPanel();
+  var legacyPanelObserver = new MutationObserver(removeLegacyClashPanel);
+  legacyPanelObserver.observe(document.body, { childList: true, subtree: true });
+
   var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null, bigBull: null };
   var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
     ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
