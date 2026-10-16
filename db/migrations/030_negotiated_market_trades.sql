@@ -570,7 +570,7 @@ CREATE OR REPLACE FUNCTION jse_event_action(a jsonb, p jsonb) RETURNS jsonb LANG
 DECLARE
   v_action text := upper(coalesce(p->>'action', ''));
   cfg event_config%ROWTYPE;
-  v_cur text; v_to text; v_open integer; v_eligible integer; v_new_limit numeric; v_listed jsonb := '[]'::jsonb; v_one jsonb; r record; v_names jsonb;
+  v_cur text; v_to text; v_open integer; v_eligible integer; v_candidates integer; v_new_limit numeric; v_listed jsonb := '[]'::jsonb; v_one jsonb; r record; v_names jsonb;
 BEGIN
   PERFORM jse_require_role(a, 'ADMIN');
   IF v_action NOT IN ('START', 'PAUSE', 'RESUME', 'CLOSE', 'REOPEN', 'FINALIZE') THEN
@@ -591,11 +591,17 @@ BEGIN
     PERFORM jse_fail('INVALID_TRANSITION', v_action || ' is not possible while the event is ' || replace(v_cur, '_', ' ') || '.', 409);
   END IF;
   IF v_action = 'FINALIZE' THEN
-    -- If cash is the only remaining barrier to two awards, raise the cash cap to the second-lowest
-    -- cash-rule amount among otherwise eligible teams. The adjustment is global, audited and consistent.
+    SELECT count(*) INTO v_open FROM orders WHERE status IN ('PIT_PENDING', 'EXCHANGE_PENDING', 'EXCHANGE_APPROVED', 'BANK_PENDING');
+    IF v_open > 0 THEN
+      PERFORM jse_fail('OPEN_ORDERS', 'Cannot finalize while ' || v_open || ' order(s) are still waiting at the Pit, Exchange or Bank. Settle or reject them first.', 409);
+    END IF;
+
+    -- Only raise the closing-cash cap when at least two teams meet every other award criterion.
+    SELECT count(*) INTO v_candidates FROM jse_team_metrics
+      WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid);
     SELECT count(*) INTO v_eligible FROM jse_team_metrics
       WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid) AND cash_rule_met;
-    IF v_eligible < 2 THEN
+    IF v_eligible < 2 AND v_candidates >= 2 THEN
       SELECT max(base_cash_counted) INTO v_new_limit FROM (
         SELECT base_cash_counted FROM jse_team_metrics
         WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid)
@@ -613,11 +619,7 @@ BEGIN
         WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid) AND cash_rule_met;
     END IF;
     IF v_eligible < 2 THEN
-      PERFORM jse_fail('NOT_ENOUGH_AWARDEES', 'Cannot finalize with fewer than two eligible teams. The closing-cash limit was adjusted where cash was the only barrier; teams must still meet the settled BUY/SELL and loan rules.', 409);
-    END IF;
-    SELECT count(*) INTO v_open FROM orders WHERE status IN ('PIT_PENDING', 'EXCHANGE_PENDING', 'EXCHANGE_APPROVED', 'BANK_PENDING');
-    IF v_open > 0 THEN
-      PERFORM jse_fail('OPEN_ORDERS', 'Cannot finalize while ' || v_open || ' order(s) are still waiting at the Pit, Exchange or Bank. Settle or reject them first.', 409);
+      PERFORM jse_fail('NOT_ENOUGH_AWARDEES', 'Cannot finalize with fewer than two eligible teams. The closing-cash limit is raised only when cash is the sole barrier; teams must still meet settled BUY/SELL and loan rules.', 409);
     END IF;
   END IF;
   IF v_action = 'START' THEN
