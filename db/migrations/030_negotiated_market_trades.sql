@@ -566,6 +566,52 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'replayed', false, 'order', jse_order_json(v_id), 'warnings', v_warnings);
 END $$;
 
+CREATE OR REPLACE FUNCTION public.jse_market_news(a jsonb, p jsonb)
+RETURNS jsonb LANGUAGE plpgsql AS $function$
+DECLARE
+  cfg event_config%ROWTYPE; v_status text; s securities%ROWTYPE;
+  v_mood text := upper(replace(trim(coalesce(p->>'mood', p->>'severity', '')), ' ', '_'));
+  v_headline text := nullif(left(trim(coalesce(p->>'headline', '')), 240), '');
+  v_band numeric[]; v_pct numeric; v_new numeric; v_lo numeric; v_hi numeric;
+  v_day_start timestamptz; v_day_base numeric; v_daily_cap constant numeric := 15;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR SHARE;
+  IF v_status NOT IN ('NOT_STARTED', 'LIVE', 'SETTLEMENT_ONLY') THEN
+    PERFORM jse_fail('EVENT_CLOSED', 'Market News is not allowed after the market has closed.', 409);
+  END IF;
+  v_band := jse_mood_band(v_mood);
+  IF v_band IS NULL THEN PERFORM jse_fail('INVALID_MOOD', 'Choose a news severity.', 400); END IF;
+  SELECT * INTO s FROM securities WHERE (p ? 'security_id' AND id = nullif(p->>'security_id', '')::integer) OR (p ? 'symbol' AND symbol = upper(trim(p->>'symbol')));
+  IF NOT FOUND THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Select a company.', 404); END IF;
+  IF s.kind = 'IPO' AND s.listed_at IS NULL THEN
+    PERFORM jse_fail('IPO_NOT_LISTED', s.symbol || ' is still in the IPO stage; Market News applies once it lists.', 409);
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('jse-news:' || s.id, 0));
+  SELECT * INTO s FROM securities WHERE id = s.id FOR UPDATE;
+
+  v_day_start := date_trunc('day', now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata';
+  SELECT previous_price INTO v_day_base
+  FROM market_news
+  WHERE security_id = s.id
+    AND created_at >= v_day_start
+    AND created_at < v_day_start + interval '1 day'
+    AND reversed_at IS NULL
+  ORDER BY created_at, id
+  LIMIT 1;
+  v_day_base := coalesce(v_day_base, s.price);
+
+  v_pct := round((v_band[1] + random() * (v_band[2] - v_band[1]))::numeric, 2);
+  v_new := jse_round_tick(s.price * (1 + v_pct / 100), cfg.price_tick);
+  v_lo := ceil(v_day_base * (1 - v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;
+  v_hi := floor(v_day_base * (1 + v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;
+  v_new := greatest(v_lo, least(v_hi, v_new));
+  IF v_new <= 0 THEN v_new := cfg.price_tick; END IF;
+  RETURN jse__apply_news_price(a, s, v_mood, v_pct, v_new,
+    coalesce(v_headline, initcap(replace(v_mood, '_', ' ')) || ' news on ' || s.name));
+END $function$;
+
 CREATE OR REPLACE FUNCTION jse_event_action(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE
   v_action text := upper(coalesce(p->>'action', ''));
