@@ -146,7 +146,7 @@ BEGIN
   INSERT INTO orders(id, order_no, account_type, team_id, broker_id, security_id, side, quantity, price, trade_value, brokerage, brokerage_rate,
                      settlement_amount, reference_price, status, negotiated_trade, short_sell_flag, cash_shortfall_flag, notes, pair_ref, idempotency_key,
                      instruction_id, created_by, created_by_name, created_role)
-  VALUES (v_id, v_no, 'TEAM', v_team.id, v_team.broker_id, v_sec.id, v_side, v_qty, v_sec.price, v_tv, v_brk, v_rate,
+  VALUES (v_id, v_no, 'TEAM', v_team.id, v_team.broker_id, v_sec.id, v_side, v_qty, v_price, v_tv, v_brk, v_rate,
           v_amount, v_sec.price, 'EXCHANGE_PENDING', (v_negotiated_price IS NOT NULL), v_short, v_shortfall, left(p->>'notes', 300), left(p->>'pair_ref', 60), v_key,
           v_ins.id, nullif(a->>'id', '')::integer, jse_actor_name(a), a->>'role');
   IF v_ins.id IS NOT NULL THEN
