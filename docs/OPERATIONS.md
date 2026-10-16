@@ -23,8 +23,8 @@ Material actions ask for your administrator password again.
 
 | Desk | Page | What to do |
 |---|---|---|
-| Controller (ADMIN) | Event Admin | **START EVENT** when you are ready (IPOs list and join the CMS 50). Market News: choose company, headline and severity → *Publish news* — the only way prices move. **PAUSE · SETTLEMENT ONLY** stops new orders while queues clear. Market Intelligence and alerts show waiting orders and risk. |
-| Brokers (BROKER-01…10) / Pit Managers (PIT-01…10, any team) | Create Order | Choose one of your teams, BUY or SELL, the stock / listed IPO and the quantity (multiples of 50). The price is always the current market price; brokerage 0.50% and the cash or holding check are shown before *Submit*. If Market News moves the price first, the order is not submitted — review it with the team and submit again. |
+| Controller (ADMIN) | Event Admin | **START EVENT** when you are ready (IPOs list and join the CMS 50). Market News: choose company, headline and severity → *Publish news*. Negotiated matched trades update the price only after both legs settle. **PAUSE · SETTLEMENT ONLY** stops new orders while queues clear. Market Intelligence and alerts show waiting orders and risk. |
+| Brokers (BROKER-01…10) / Pit Managers (PIT-01…10, any team) | Create Order | Choose one of your teams, BUY or SELL, the stock / listed IPO and the quantity (multiples of 50). Standard orders use the current market price; a negotiated team-to-team price is entered as a matched pair by a Pit Manager; brokerage 0.50% and the cash or holding check are shown before *Submit*. If Market News moves the price first, the order is not submitted — review it with the team and submit again. |
 | Exchange (EXCHANGE-01…04) | Exchange Settlement | Review created orders (holding, free cash and risk are pre-checked) → *Approve* or *Reject* with a reason. A short-selling warning needs **APPROVE ANYWAY**. Approval never moves cash, holdings or prices. |
 | Bank (BANK-01…04) | Bank Settlement | *Settle* or *Reject*. The Bank re-checks everything; settlement moves cash and holdings at the order price and charges 0.50% brokerage; a warning card asks for **APPROVE ANYWAY**. Loan repayment: *Bank loan repayment* panel (interest first). A BUY short of cash draws a loan for exactly the shortfall (2% interest, ₹5,00,000 limit); beyond that the order is rejected for insufficient balance. |
 | Institutional (INST-01…04) | Institutional Investors | When a team cannot find a counterparty: choose the team, side, security and quantity. The participant **buys at market + 2%** or **sells at market − 2%**; the order goes through the Exchange and Bank like any other, with normal brokerage to the team's broker. The desk can also apply Market News (random move inside the mood band). |
@@ -46,3 +46,13 @@ Material actions ask for your administrator password again.
 - **Forgotten password**: ADMIN → *Account controls* → *New password* on that row.
 - **Administrator locked out**: Neon Console → SQL editor on database `jse` → `SELECT jse_bootstrap_password('ADMIN');`
 - **Is the service up?** Open `https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech/api/health` — `"db": "ok"` means everything is running.
+
+
+## Negotiated team-to-team trade
+Teams may negotiate a price directly with another team. The Pit Manager records a matched BUY and SELL at the same whole-rupee agreed price using **Create Order → Negotiated Team-to-Team Trade**. Both legs pass through Exchange review and Bank settlement. The Market page price changes to the agreed price only after both matched legs have settled successfully; if one leg is rejected or fails settlement, the market price is not updated. The price change is recorded in price history and stale open orders are handled by the existing price-change control.
+
+## Institutional price
+Institutional counterparty orders use the current market price without a 2% premium or discount. Brokerage and participant-side cash/holdings checks still apply. Market News publishing is an Event Admin responsibility; institutional accounts cannot publish news.
+
+## Closing cash fallback at finalisation
+When the Event Admin finalises a closed event, if fewer than two teams qualify only because of the closing-cash cap, the system may raise the cap to the minimum level that admits the top two otherwise-qualified teams. The new limit applies uniformly and is audit-logged. Teams must still satisfy settled BUY/SELL and loan-repayment criteria. If fewer than two teams satisfy those other criteria, finalisation is blocked rather than fabricating an awardee.
