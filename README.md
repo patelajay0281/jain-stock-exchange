@@ -117,7 +117,7 @@ per role, then **Reset** with *Keep loaded IPO allotments* after the rehearsal. 
 
 **START EVENT** — every IPO lists (saved price, otherwise its issue price) and joins the CMS 50 (50 → 54 components); orders open.
 Participants tell their broker → the broker (or a Pit Manager, for any team) uses **Create Order** → **Exchange** approves →
-**Bank** settles. Market News (Event Admin or the Institutional desk) is the only way prices move. **PAUSE · SETTLEMENT ONLY** stops new orders while queues clear.
+**Bank** settles. Market News is administered by Event Admin; a negotiated team-to-team price updates the market only after both matched legs settle. **PAUSE · SETTLEMENT ONLY** stops new orders while queues clear.
 At the end: **CLOSE EVENT** (the ₹50,000 closing cash criterion is applied) → **Reject open orders** (or settle them) → **FINALIZE EVENT** →
 *Final Event Excel* and certificates. Mistakes: *Undo last settlement* (only when safe), or the journal row's Undo.
 
@@ -128,9 +128,9 @@ At the end: **CLOSE EVENT** (the ₹50,000 closing cash criterion is applied) �
 | Capital | ₹20,00,000 per team; loan sanctioned up to ₹5,00,000 (2% interest per draw, drawn automatically by the Bank only for the exact shortfall of a BUY) |
 | Orders | Created in Create Order by the team's broker (Pit Managers: any team), always at the current market price; quantity in multiples of 50; participant self entry disabled |
 | Market price changed | An open order (at the Exchange or Bank) whose market price changed is closed as MARKET PRICE CHANGED — never settled at an obsolete price |
-| Prices move only on | Market News (random % inside the severity band, max ±10%, priced to the paisa), IPO listing, and their undo / redo — never on orders or settlement |
+| Prices move on | Market News and IPO listing; negotiated team-to-team price updates apply only after both matched BUY/SELL legs settle |
 | Brokerage | 0.50% on every settled trade (shown as “0.50%”): BUY pays trade value + brokerage, SELL receives trade value − brokerage; earned by the team's broker |
-| Institutional counterparty | Participant BUY from the institution = market + 2%, SELL to it = market − 2%; normal workflow and brokerage; no institutional cash or holdings restriction |
+| Institutional counterparty | Both sides execute at current market price; normal workflow and brokerage; no institutional cash or holdings restriction |
 | Assessment | At least 5 settled BUY and 5 settled SELL trades (IPO allotments, pending or rejected orders do not count) |
 | ₹50,000 closing cash criterion | At market closing, each team can hold a maximum of 5% of the initial virtual capital (₹50,000 out of ₹20 lakh) as cash. Cash generated from profits earned during trading is exempt, provided the initial capital has been fully invested (e.g. ₹5 lakh profit with ₹4 lakh of it held as cash → not counted). Counted cash = cash − realised trading profit. |
 | Winner | Exactly one Winner and one Runner-Up: highest and second-highest Net Worth (cash + Σ quantity × closing price) among eligible teams; ties → lower team code |
