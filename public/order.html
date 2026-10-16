@@ -38,6 +38,24 @@
     </div>
   </div>
 
+  <section class="card hidden" id="negotiatedCard" style="margin-bottom:16px">
+    <div class="card-h"><h2>Negotiated Team-to-Team Trade</h2><span class="meta">Pit Manager execution</span></div>
+    <div class="card-b">
+      <p class="small muted">Use after the buyer and seller agree on a price. The Pit Manager records both sides at the same agreed price. Both orders must pass Exchange review and Bank settlement; the Market page price updates only after both legs settle.</p>
+      <form id="negotiatedForm" class="stack" autocomplete="off">
+        <div class="form-grid">
+          <div class="field"><label for="negBuyer">Buyer team</label><select class="input" id="negBuyer" required></select></div>
+          <div class="field"><label for="negSeller">Seller team</label><select class="input" id="negSeller" required></select></div>
+          <div class="field"><label for="negSec">Stock / listed IPO</label><select class="input" id="negSec" required></select></div>
+          <div class="field"><label for="negQty">Quantity (shares)</label><input class="input" id="negQty" type="number" min="50" step="50" value="50" required></div>
+          <div class="field"><label for="negPrice">Agreed price per share (₹)</label><input class="input" id="negPrice" type="number" min="1" step="1" required></div>
+        </div>
+        <div class="small muted" id="negMarketRef">Current market reference: —</div>
+        <button class="btn primary" type="submit" id="negSubmit">Record negotiated trade</button>
+        <div id="negResult" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
   <form class="card ticket" id="ticket" novalidate autocomplete="off">
     <div class="card-h"><h2>Order Entry</h2><span class="meta" id="deskMeta">Participant trading</span></div>
     <div class="card-b">
@@ -52,7 +70,7 @@
         <div class="field"><label for="qty">Quantity</label><input class="input" id="qty" type="number" inputmode="numeric" min="50" step="50" value="50" required>
           <span class="hint" id="lotHint">Multiples of 50 shares</span></div>
         <div class="field"><label for="mp">Price per share (₹)</label><input class="input" id="mp" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="" aria-describedby="mpNote" required readonly>
-          <span class="hint" id="mpNote">Shows the live Market Page price. Only Pit Managers can type a replacement price using the keyboard.</span></div>
+          <span class="hint" id="mpNote">Standard orders use the live Market Page price. Negotiated prices must be recorded as matched team-to-team trades by a Pit Manager.</span></div>
         <div class="form-sec">Settlement preview</div>
         <div class="span-2"><div class="minis pv4">
           <div class="mini"><div class="k">Total shares</div><div class="v" id="pvSh">—</div></div>
@@ -116,6 +134,56 @@
     el.innerHTML = '<option value="">' + (kind === "IPO" ? (list.length ? "Select IPO…" : "IPOs list when the market opens") : "Select stock…") + "</option>" +
       list.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.name) + "</option>"; }).join("");
     if (v && list.some(function (s) { return s.symbol === v; })) el.value = v;
+  }
+
+  function fillNegotiatedOptions() {
+    if (!S.desk || !S.market) return;
+    var teams = (S.desk.teams || []).filter(function (t) { return t.active !== false; });
+    function teamOptions() {
+      return '<option value="">Select team…</option>' + teams.map(function (t) {
+        return '<option value="' + esc(t.code) + '">' + esc(t.code + ' · ' + (t.name || t.code)) + '</option>';
+      }).join("");
+    }
+    var buyer = $("negBuyer").value, seller = $("negSeller").value, symbol = $("negSec").value;
+    $("negBuyer").innerHTML = teamOptions();
+    $("negSeller").innerHTML = teamOptions();
+    if (buyer) $("negBuyer").value = buyer;
+    if (seller) $("negSeller").value = seller;
+    var secs = (S.market.stocks || []).concat((S.market.ipos || []).filter(function (s) { return s.tradable; }));
+    $("negSec").innerHTML = '<option value="">Select listed security…</option>' + secs.filter(function (s) { return s.tradable; }).map(function (s) {
+      return '<option value="' + esc(s.symbol) + '">' + esc(s.name + ' (' + s.symbol + ')') + '</option>';
+    }).join("");
+    if (symbol && secs.some(function (s) { return s.symbol === symbol && s.tradable; })) $("negSec").value = symbol;
+    var chosen = secs.filter(function (s) { return s.symbol === $("negSec").value; })[0];
+    $("negMarketRef").textContent = "Current market reference: " + (chosen ? F.price(chosen.price) : "—");
+    if (chosen && !$("negPrice").dataset.edited) $("negPrice").value = String(Math.round(N(chosen.price)));
+    if (chosen) { $("negQty").step = String(chosen.lot_size || 50); $("negQty").min = String(chosen.lot_size || 50); }
+  }
+
+  async function submitNegotiated(e) {
+    e.preventDefault();
+    if (!S.user || !["PIT_MANAGER", "ADMIN"].includes(S.user.role)) return JSE.toast("Only a Pit Manager or Admin can record negotiated trades.", "bad");
+    var buyer = $("negBuyer").value, seller = $("negSeller").value, symbol = $("negSec").value;
+    var secObj = (S.market.stocks || []).concat(S.market.ipos || []).filter(function (s) { return s.symbol === symbol && s.tradable; })[0];
+    var qty = N($("negQty").value), price = N($("negPrice").value);
+    if (!buyer || !seller || buyer === seller) return JSE.toast("Select two different teams.", "warn");
+    if (!secObj) return JSE.toast("Select a listed security.", "warn");
+    if (!Number.isInteger(qty) || qty <= 0 || qty % (Number(secObj.lot_size) || 50) !== 0) return JSE.toast("Quantity must be a multiple of " + (secObj.lot_size || 50) + ".", "warn");
+    if (!Number.isInteger(price) || price <= 0) return JSE.toast("Agreed price must be a positive whole number of rupees.", "warn");
+    var btn = $("negSubmit"); btn.disabled = true; $("negResult").innerHTML = "";
+    try {
+      var result = await JSE.api.post("/api/orders", { idempotency_key: negotiatedKey, legs: [
+        { team: buyer, symbol: symbol, side: "BUY", quantity: qty, expected_price: N(secObj.price), negotiated_price: price, notes: "Negotiated team-to-team trade" },
+        { team: seller, symbol: symbol, side: "SELL", quantity: qty, expected_price: N(secObj.price), negotiated_price: price, notes: "Negotiated team-to-team trade" }
+      ] });
+      var legs = result.legs || [];
+      $("negResult").innerHTML = '<div class="alert good"><b>Negotiated pair recorded.</b> ' + esc(legs.map(function (x) { return x.order.order_no; }).join(" / ")) + ' at ' + F.price(price) + '. Both legs must settle before the Market page price updates.</div>';
+      negotiatedKey = JSE.uuid(); $("negPrice").dataset.edited = "";
+      if (desk) desk.now();
+    } catch (ex) {
+      $("negResult").innerHTML = '<div class="alert bad"><b>Trade not recorded.</b> ' + esc(ex.message) + '</div>';
+      if (ex.status && ex.status < 500) negotiatedKey = JSE.uuid();
+    } finally { btn.disabled = !(S.market && S.market.status === "LIVE"); }
   }
 
   function preview() {
@@ -192,11 +260,11 @@
       $("brokerSel").value = S.desk.broker.code; $("brokerSel").classList.remove("hidden");
     }
     $("deskMeta").textContent = "Participant trading" + (S.desk.broker.code !== "ALL" ? " · " + S.desk.broker.code : "");
-    fillTeams(); preview();
+    fillTeams(); fillNegotiatedOptions(); preview();
   }
   async function loadMarket() {
     S.market = await JSE.api.get("/api/market");
-    fillSecs();
+    fillSecs(); fillNegotiatedOptions();
     var live = S.market.status === "LIVE", meta = JSE.STATUS[S.market.status] || { cls: "closed", text: S.market.status };
     $("mkt").className = "pill " + meta.cls; $("mktText").textContent = meta.text;
     $("notLive").classList.toggle("hidden", live);
@@ -234,10 +302,16 @@
     if (!user) return;
     S.user = user; canAct = user.role === "BROKER" || user.role === "ADMIN" || user.role === "PIT_MANAGER";
     // Any authorized order-entry role can type a whole-number price; no mouse-wheel/spinner changes.
-    $("mp").readOnly = !canAct;
+    $("mp").readOnly = true;
     $("mp").setAttribute("inputmode", "numeric");
     if (user.role === "ADMIN" || user.role === "VIEWER") S.broker = "ALL";
     if (!canAct) { ["team", "sec", "qty", "submit", "side", "asset", "txType"].forEach(function (id) { $(id).disabled = true; }); }
+    if (user.role === "PIT_MANAGER" || user.role === "ADMIN") $("negotiatedCard").classList.remove("hidden");
+    $("negotiatedForm").addEventListener("submit", submitNegotiated);
+    $("negSec").addEventListener("change", function () { $("negPrice").dataset.edited = ""; fillNegotiatedOptions(); });
+    $("negBuyer").addEventListener("change", function () { if ($("negBuyer").value === $("negSeller").value) $("negSeller").value = ""; });
+    $("negSeller").addEventListener("change", function () { if ($("negBuyer").value === $("negSeller").value) $("negBuyer").value = ""; });
+    $("negPrice").addEventListener("input", function () { $("negPrice").dataset.edited = "1"; });
     market = JSE.poll(loadMarket, 10000, { onError: function () { $("mktText").textContent = "Reconnecting…"; } });
     desk = JSE.poll(loadDesk, 8000, { onError: function (e) { $("deskMeta").textContent = e.message; } });
   });
