@@ -39,7 +39,7 @@
   <div class="sec-label">Institutional control</div>
   <div class="kpis k6" id="kpis"></div>
 
-  <section class="card" id="newsCard">
+  <section class="card" id="newsCard" hidden aria-hidden="true">
     <div class="card-h bar"><h2>Market News → Automatic Price Impact</h2><span class="tag">Max move ±10%</span></div>
     <div class="card-b">
       <p class="small muted" style="margin:0 0 12px">Shared JSE market control — no cash or holding restriction. Each news event moves at most 10%; total movement stays within ±15% of the company’s locked base price. Reaching the band does not lock the stock for BUY/SELL trading; opposite-direction news can move it back inside.</p>
@@ -113,7 +113,7 @@
   function list() { var k = $("asset").value; return S.data ? S.data.market.filter(function (s) { return k === "IPO" ? s.type === "IPO" : s.type !== "IPO"; }) : []; }
   function sec() { var sym = $("sec").value; return S.data ? S.data.market.filter(function (s) { return s.symbol === sym; })[0] : null; }
   // Institutional trades execute at the prevailing market price.
-  function instPrice(s) { return S.side === "SELL" ? N(s.participant_buy_price) : N(s.participant_sell_price); }
+  function instPrice(s) { return N(s.price); }
 
   function preview() {
     var s = sec(), q = N($("qty").value), r = rules(), teamBuys = S.side === "SELL";
@@ -271,12 +271,12 @@
   JSE.page({ id: "institutional" }).then(function (user) {
     if (!user) return;
     S.canTrade = user.role === "ADMIN" || user.role === "INSTITUTIONAL";
-    S.canNews = S.canTrade;
+    S.canNews = false;
     S.canSwitch = user.role !== "INSTITUTIONAL";
     if (!S.canTrade) { $("go").disabled = true; $("nGo").disabled = true; }
     JSE.onStatus(applyStatus);
     poller = JSE.poll(load, 10000, { onError: function (e) { $("orders").innerHTML = '<tr><td colspan="10" class="empty">Reconnecting… ' + esc(e.message) + "</td></tr>"; } });
-    JSE.poll(loadNews, 15000);
+    // Market News is administered only from Event Admin; this desk is for institutional trades.
   });
 })();
 </script>
