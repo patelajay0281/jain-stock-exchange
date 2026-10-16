@@ -194,3 +194,12 @@ RPS=850 DURATION=60 AUDIT=1 npm run load
 ```
 
 Staging: edit `tests/ci/run.json` on the `v272` branch (suites `health, api, listing, stress, load, ui, prod_warm, cleanup`); the workflow signs in with GitHub OIDC, runs them against staging and commits the results to `tests/ci/results/`.
+
+
+## Added rule-correction test targets (migration 030)
+- Institutional orders: BUY and SELL are priced at the current market price; no 2% spread is applied.
+- Institutional role cannot publish Market News; Event Admin remains the publisher.
+- Negotiated trade: only Pit Manager/Admin can submit a positive whole-rupee agreed price, and both legs must use the same security, quantity and price.
+- Negotiated trade: no market price update after only one leg settles; update price history and market price only after both matched legs settle.
+- Market price update: stale open orders are handled by the standard price-change workflow.
+- Finalisation: if fewer than two otherwise-qualified teams pass only because of the cash cap, raise it to the second-lowest qualifying cash amount, record an audit event, and require at least two eligible teams. Do not bypass settled BUY/SELL or loan requirements.
