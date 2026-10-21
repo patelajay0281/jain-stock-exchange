@@ -1,11 +1,10 @@
 {
-  "base": "https://br-old-grass-azvo6hbo-jsetest.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
   "site": "https://v272.jse-live.pages.dev",
   "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
   "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
   "suites": [
-    "health",
-    "order_accuracy"
+    "health"
   ],
   "probes": [
     {
@@ -26,7 +25,7 @@
       "viewers": 800
     }
   ],
-  "note": "Order-accuracy run against the Neon TEST branch recon-test-2026-10-21 (copy of the event data). Never the live event API.",
+  "note": "Health check of the live event API after the 21 Oct order-accuracy deployment (read-only). The order-accuracy suite runs only against the Neon test branch copy.",
   "stress": {
     "orders": 1500,
     "workers": 16
