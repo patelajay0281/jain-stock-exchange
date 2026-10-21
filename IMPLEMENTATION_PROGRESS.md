@@ -78,3 +78,35 @@ Source and runtime bundle are committed on branch `v272`. Redeploy only the stag
 - Staging API health returned `success=true`, `db=ok`, version `3.14.0`.
 - The migration is now applied to `jse_stage`; the three new tables/alias mapping and migration record were verified. Read-only live dry-runs succeeded for roster assignment and company/base-price import.
 - The actual staging event status remains `LIVE`; this was deliberately not reset. IPO draw and issue-size/company write actions remain safely blocked by server-side pre-start/window guards until the existing event state is appropriate. Roster assignment import is available and changes only `teams.broker_id`.
+
+## Order accuracy, team isolation and reconciliation (21 Oct 2026)
+
+### What the live system is
+- The event ran on the **staging stack**: site `v272.jse-live.pages.dev` / `jse-live.pages.dev` (Pages project `jse-live`, branch `v272`) → Neon Function `jsestage` → database **`jse_stage`** (branch br-lingering-sun-azzfzwj1). 537 orders, 528 settlements, event CLOSED 15 Oct 15:33 IST.
+- `jain-stock-exchange.pages.dev` (branch `live`, 9 Oct) → function `jse` → database `jse` is empty (NOT_STARTED); it was never used.
+- During the event, migrations 022–030 were applied partly by direct SQL; function deployment 41 (14 Oct) predates most of them. The 16 Oct branch `fix/event-rules-2026-10-16` (migration 030: negotiated pair trades, market-price institutional trades, admin-only news) was applied to the DB on 16 Oct but never merged — now merged into v272.
+
+### Root causes found
+1. **Source ≠ database.** Files up to 030 no longer rebuild the live functions (011 had a literal `\n`, 012/025/026 lacked `;` after function dumps, 027 fails on a fresh DB, 024–026 were never applied by the runner). A normal deploy would have re-applied old function text and reverted event-day rules.
+2. **Market News band regression.** 030 re-created `jse_market_news` with the old daily baseline, undoing 028 (permanent ±15% band from the base price).
+3. **No reconciliation tool**, no ±15% limit on negotiated prices, institutional inventory unlimited with no admin control.
+
+### Changes (branch `fix/order-accuracy-2026-10-21`, fast-forwarded into `v272`)
+- `backend/src/db.ts`: live-baseline guard — on a DB that has 029/030 recorded, migrations up to 030 are never applied or replayed; only 031+ run. Registered 030 and 031.
+- `db/migrations/031_order_accuracy.sql` (replayable, idempotent, no data changes): restores the base-price news band (text patch on the live function); negotiated price must be within ±15% of the market price (`NEGOTIATED_PRICE_OUT_OF_BAND`); `institutional_inventory` table + triggers (order guard incl. reservations by open orders; settlement/undo updates inventory in the same transaction; negative blocked) + `jse_institution_inventory` (LIST/SET/UNLIMITED, audited, cannot go below open orders); `jse_reconcile` (16 checks, read-only) and `jse_reconcile_correct` (ledger-only correction for cash-vs-ledger gaps; reason + admin password + audit; never changes cash).
+- `backend/src/server.ts`: GET/POST `/api/reconcile`, GET/POST `/api/institution-inventory`.
+- `public/admin.html`: Reconciliation card and Institutional inventory card. `public/order.html`: negotiated ticket shows and checks the ±15% range.
+- Source fixes: 011 literal `\n`, missing semicolons in 012/025/026.
+- `tests/order_accuracy.test.mjs` + CI suite `order_accuracy` (refuses to run against the live API). CI results now commit back to the branch that ran (a branch run could previously push to v272).
+
+### Tests
+- CI run 39610638258 against function `jsetest` on Neon branch `recon-test-2026-10-21` (br-old-grass-azvo6hbo, a copy of the event data): **10/10 pass** — isolation (participant sees only its team; other team's order 403; team taken from session), buy/sell cash + holdings + brokerage + net worth, short selling refused, 5 concurrent sells, double settlement settles once, idempotent retry, price change closes pending order, news band ±15% from base, negotiated ±15%, institutional inventory + holdings, reconciliation shows no new issues.
+- Live after deployment 42 (commit a1cf9de bundle sha f793c981…): health OK (CI run 39611338418); DB verified read-only: 031 applied, orders 537 / settlements 528 unchanged, event still CLOSED.
+
+### Live reconciliation result (3 pre-existing items, not auto-corrected)
+- TEAM-001 (BIG BULL): cash ₹41,41,683 vs ledger sum −₹38,58,317 → ₹80,00,000 top-up to the ₹1 crore special balance was never written to the cash ledger. Fix: Event Admin → Reconciliation → "Record ledger correction" (ledger only). Note: its P/L (₹79.4 L, 397%) is measured against ₹20 L starting capital; it is not eligible for awards.
+- ORD-536 (TEAM-003, EXCHANGE_APPROVED) and ORD-537 (TEAM-016, EXCHANGE_PENDING) were still open when the market closed. Fix: Event Admin → Reject open orders (with a reason).
+
+### Backups
+- Neon branch `backup-before-031-2026-10-21` (br-lively-block-azehiulj): live data right before deployment 42. Test branch `recon-test-2026-10-21` holds test trades — delete when no longer needed.
+- Saved unfinished 13 Oct IPO patch (superseded by 011): scratchpad only.
