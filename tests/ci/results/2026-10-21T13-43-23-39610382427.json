@@ -1,0 +1,71 @@
+{
+  "base": "https://br-old-grass-azvo6hbo-jsetest.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-21T13:43:23.604Z",
+  "run_id": "39610382427",
+  "commit": "6ef055197b5f92c3cafa6325d1d93ad70411a445",
+  "config": {
+    "base": "https://br-old-grass-azvo6hbo-jsetest.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+    "suites": [
+      "health",
+      "order_accuracy"
+    ],
+    "probes": [
+      {
+        "rps": 200,
+        "seconds": 15,
+        "viewers": 300,
+        "pause_s": 5
+      },
+      {
+        "rps": 850,
+        "seconds": 60,
+        "viewers": 600,
+        "pause_s": 10
+      },
+      {
+        "rps": 1200,
+        "seconds": 30,
+        "viewers": 800
+      }
+    ],
+    "note": "Order-accuracy run against the Neon TEST branch recon-test-2026-10-21 (copy of the event data). Never the live event API.",
+    "stress": {
+      "orders": 1500,
+      "workers": 16
+    }
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "3.14.0",
+        "db": "ok",
+        "db_ms": 38,
+        "uptime_s": 310,
+        "node": "v24.16.0",
+        "time": "2026-10-21T13:43:24.709Z"
+      },
+      "ms": 2092,
+      "event_csv_route": 401
+    },
+    "order_accuracy": {
+      "exit_code": 1,
+      "duration_s": 26,
+      "pass": 9,
+      "fail": 1,
+      "failures": [
+        "2/3/8 buy and sell update cash, holdings, portfolio and brokerage exactly"
+      ],
+      "tail": "# Subtest: 6 a price change while an order is pending: the order is closed, never settled at the old price\nok 6 - 6 a price change while an order is pending: the order is closed, never settled at the old price\n  ---\n  duration_ms: 1193.831991\n  type: 'test'\n  ...\n# Subtest: Market News stays inside the permanent ±15% band from the base price\nok 7 - Market News stays inside the permanent ±15% band from the base price\n  ---\n  duration_ms: 4618.02991\n  type: 'test'\n  ...\n# Subtest: negotiated pair price must be within ±15% of the market price\nok 8 - negotiated pair price must be within ±15% of the market price\n  ---\n  duration_ms: 1805.758093\n  type: 'test'\n  ...\n# Subtest: 9 institutional inventory and team holdings move together\nok 9 - 9 institutional inventory and team holdings move together\n  ---\n  duration_ms: 4166.494711\n  type: 'test'\n  ...\n# Subtest: 11/12 reconciliation: no new issues from any of these trades; records intact\nok 10 - 11/12 reconciliation: no new issues from any of these trades; records intact\n  ---\n  duration_ms: 457.131586\n  type: 'test'\n  ...\n1..10\n# tests 10\n# suites 0\n# pass 9\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 25602.715475\n",
+      "failure_details": [
+        "not ok 3 - 2/3/8 buy and sell update cash, holdings, portfolio and brokerage exactly\n  ---\n  duration_ms: 1133.582763\n  type: 'test'\n  location: '/home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/order_accuracy.test.mjs:85:1'\n  failureType: 'testCodeFailure'\n  error: 'net worth = cash + market value'\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: true\n  actual: false\n  operator: '=='\n  stack: |-\n    TestContext.<anonymous> (file:///home/runner/work/jain-stock-exchange/jain-stock-exchange/tests/order_accuracy.test.mjs:94:10)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...\n# Subtest: 4/5 short selling refused; concurrent sells and double settlement cannot oversell or double-pay\nok 4 - 4/5 short selling refused; concurrent sells and double settlement cannot oversell or double-pay\n  ---\n  duration_ms: 4480.156907\n  type: 'test'\n  ...\n# Subtest: 10 a retried submission (same request key) creates one order\nok 5 - 10 a retried submission (same request key) creates one order\n  ---\n  duration_ms: 1151.505122\n  type: 'test'\n  ...\n# Subtest: 6 a price change while an order is pending: the order is closed, never settled at the old price\nok 6 - 6 a price change while an order is pending: the order is closed, never settled at the old price\n  ---\n  duration_ms: 1193.831991\n  type: 'test'\n  ...\n# Subtest: Market News stays inside the permanent ±15% band from the base price\nok 7 - Market News stays inside the permanent ±15% band from the base price\n  ---\n  duration_ms: 4618.02991\n  type: 'test'\n  ...\n# Subtest: negotiated pair price must be within ±15% of the market price\nok 8 - negotiated pair price must be within ±15% of the market price\n  ---\n  duration_ms: 1805.758093"
+      ]
+    }
+  },
+  "finished_at": "2026-10-21T13:43:51.340Z"
+}
