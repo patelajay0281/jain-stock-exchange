@@ -11,10 +11,7 @@
     pick = sessionStorage.getItem("jse_api");
   } catch (e) {}
   var api;
-  // The preview commission page is read-only and uses production because no staging Neon branch is provisioned.
-  // Keep all other preview pages isolated to staging.
-  if ((host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host)) && location.pathname.replace(/\/$/, "") === "/commissions") api = PROD;
-  else if (host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host)) api = STAGE;
+  if (host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host)) api = STAGE;
   else if (pick === "stage") api = STAGE;
   else if (pick === "prod") api = PROD;
   else if (pick === "local") api = "";

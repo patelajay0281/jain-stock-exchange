@@ -147,7 +147,7 @@
     var v = $("sec").value;
     var l = list().slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; });
     $("sec").innerHTML = '<option value="">' + ($("asset").value === "IPO" && !l.length ? "IPOs list when the market opens" : "Select security…") + "</option>" +
-      l.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.name) + "</option>"; }).join("");
+      l.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("");
     if (v && l.some(function (s) { return s.symbol === v; })) $("sec").value = v;
   }
 

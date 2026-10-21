@@ -131,9 +131,10 @@
   }
   function fillSecs() {
     var el = $("sec"), v = el.value, kind = $("asset").value;
-    var list = (kind === "IPO" ? S.market.ipos : S.market.stocks).filter(function (s) { return s.tradable; });
+    // every listed security is shown with its live Market-page price (also when the market is closed); submitting still needs LIVE
+    var list = (kind === "IPO" ? S.market.ipos : S.market.stocks).filter(function (s) { return s.tradable || s.listed || s.type !== "IPO"; });
     el.innerHTML = '<option value="">' + (kind === "IPO" ? (list.length ? "Select IPO…" : "IPOs list when the market opens") : "Select stock…") + "</option>" +
-      list.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.name) + "</option>"; }).join("");
+      list.map(function (s) { return '<option value="' + esc(s.symbol) + '">' + esc(s.name) + " · " + F.price(s.price) + "</option>"; }).join("");
     if (v && list.some(function (s) { return s.symbol === v; })) el.value = v;
   }
 
