@@ -67,6 +67,7 @@
           <div class="field"><label for="asset">Asset type</label><select class="input" id="asset"><option value="EQUITY">Listed Stock</option><option value="IPO">IPO</option></select></div>
           <div class="field"><label for="sec">Security</label><select class="input" id="sec"></select></div>
           <div class="field"><label for="qty">Quantity (shares)</label><input class="input" id="qty" type="number" min="50" step="50" value="50" inputmode="numeric" placeholder="Select quantity"><span class="hint" id="lotHint">Multiples of 50 shares.</span></div>
+          <div class="span-2 live-px" id="curPxBox"><div class="k">Current market price · same as the Market page</div><div class="v" id="curPx">—</div><div class="s" id="curPxMeta">Select a stock</div></div>
           <div class="field span-2"><label for="instPriceIn">Order price per share</label><input class="input locked" id="instPriceIn" readonly tabindex="-1" value="—">
             <span class="hint">Market price <span id="mktPrice">—</span> · <span id="instNote">market price</span></span></div>
         </div>
@@ -120,10 +121,11 @@
     $("pvBrkK").textContent = "Brokerage · " + JSE.rate(r.brokerage_rate);
     $("sideNote").textContent = teamBuys ? "SELL: the institution sells to the selected participant team at the prevailing market price; brokerage applies as configured."
                                          : "BUY: the institution buys from the selected participant team at the prevailing market price; the counterparty must meet its settlement obligations.";
-    if (!s) { $("mktPrice").textContent = "—"; $("instPriceIn").value = "—"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; return; }
+    if (!s) { JSE.livePx(null); $("mktPrice").textContent = "—"; $("instPriceIn").value = "—"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; return; }
     var ip = instPrice(s);
     $("mktPrice").textContent = F.price(s.price);
     $("instNote").textContent = "market price";
+    JSE.livePx(s);
     $("instPriceIn").value = N(ip).toFixed(2);
     var flexibleIpoSell = $("asset").value === "IPO" && S.side === "BUY";
     $("lotHint").textContent = flexibleIpoSell
@@ -275,6 +277,15 @@
     S.canSwitch = user.role !== "INSTITUTIONAL";
     if (!S.canTrade) { $("go").disabled = true; $("nGo").disabled = true; }
     JSE.onStatus(applyStatus);
+    // live prices come from the same feed as the Market page, every 5 s
+    JSE.poll(async function () {
+      var m = await JSE.api.get("/api/market"), by = {};
+      (m.stocks || []).concat(m.ipos || []).forEach(function (x) { by[x.symbol] = x; });
+      if (!S.data) return;
+      var changed = false;
+      S.data.market.forEach(function (x) { var y = by[x.symbol]; if (y && N(y.price) !== N(x.price)) { x.price = y.price; x.change_pct = y.day_change_pct; changed = true; } });
+      if (changed) { render(); } else preview();
+    }, 5000, { onError: function () {} });
     poller = JSE.poll(load, 10000, { onError: function (e) { $("orders").innerHTML = '<tr><td colspan="10" class="empty">Reconnecting… ' + esc(e.message) + "</td></tr>"; } });
     // Market News is administered only from Event Admin; this desk is for institutional trades.
   });

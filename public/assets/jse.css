@@ -459,3 +459,11 @@ table.t.compact td { padding: 9px 12px; } table.t.compact th { padding: 9px 12px
 .modal-h.review + .modal-b { text-align: center; }
 
 .sec-label { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 2px 0 10px; }
+
+/* live current-price box (Create Order, Institutional) */
+.live-px { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: #fff; transition: box-shadow .3s; }
+.live-px .k { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.live-px .v { font-size: 30px; font-weight: 900; color: var(--navy); line-height: 1.15; margin: 2px 0; }
+.live-px .s { font-size: 12px; color: var(--muted); }
+.live-px.up { background: #e9f6ed; border-color: #cfe9d8; } .live-px.down { background: #fdecef; border-color: #f4cfd5; }
+.live-px.flash { box-shadow: 0 0 0 3px rgba(37, 99, 235, .45); }

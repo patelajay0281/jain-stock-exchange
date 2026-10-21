@@ -192,6 +192,20 @@
       "Example: if a team earns a profit of ₹5 lakh and holds ₹4 lakh in cash from the profits earned, this amount will not be counted under the 5% cash limit, " +
       "provided the initial virtual capital has been fully invested.";
   }
+
+  // Live current-price box on ticket pages (Create Order, Institutional) — fed by /api/market, flashes on change
+  var lastPx = {};
+  function livePx(s) {
+    var v = document.getElementById("curPx"), m = document.getElementById("curPxMeta"), box = document.getElementById("curPxBox");
+    if (!v) return;
+    if (!s) { v.textContent = "—"; m.textContent = "Select a stock"; box.className = box.className.replace(/ (up|down|flash)/g, ""); return; }
+    var p = toNum(s.price), ch = toNum(s.day_change_pct !== undefined ? s.day_change_pct : s.change_pct);
+    v.textContent = fmt.price(p);
+    m.textContent = s.symbol + " · " + (ch > 0 ? "▲ " : ch < 0 ? "▼ " : "") + Math.abs(ch).toFixed(2) + "% today · updated " + new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    box.className = box.className.replace(/ (up|down|flash)/g, "") + (ch > 0 ? " up" : ch < 0 ? " down" : "");
+    if (lastPx[s.symbol] !== undefined && lastPx[s.symbol] !== p) { box.className += " flash"; setTimeout(function () { box.className = box.className.replace(/ flash/g, ""); }, 1500); }
+    lastPx[s.symbol] = p;
+  }
   var DISCLAIMER = "Market rumours, simulated chatter and surprise announcements are part of the Dalal Street event experience — they are not real investment advice. " +
     "Prices change only when the Event Admin publishes Market News.";
 
@@ -488,7 +502,7 @@
     config: CFG, api: api, session: session, fmt: fmt, esc: esc, el: el, poll: poll, toast: toast, dialog: dialog, badge: badge,
     uuid: uuid, debounce: debounce, download: download, page: page, applyStatus: applyStatus, offline: offlinePill, changePassword: changePassword,
     adminConfirm: adminConfirm, homeFor: homeFor, canOpen: canOpen, rate: rate, apiUrl: function (path) { return BASE + path; }, DISCLAIMER: DISCLAIMER, STATUS_TEXT: STATUS_TEXT, STAGE: STAGE,
-    STATUS_HINT: STATUS_HINT, STAGE_OF: STAGE_OF, cashRuleCard: cashRuleCard, cashRuleText: cashRuleText,
+    STATUS_HINT: STATUS_HINT, STAGE_OF: STAGE_OF, cashRuleCard: cashRuleCard, livePx: livePx, cashRuleText: cashRuleText,
     onStatus: function (cb) { shellState.statusCbs.push(cb); if (shellState.status) cb(shellState.status); },
     get status() { return shellState.status; }, teamSort: teamSort, teamCodes: teamCodes, ROLE_LABEL: ROLE_LABEL, STATUS: STATUS, toNum: toNum,
   };

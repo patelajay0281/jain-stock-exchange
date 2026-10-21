@@ -69,6 +69,7 @@
         <div class="field"><label for="side">Transaction side</label><select class="input" id="side"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
         <div class="field"><label for="qty">Quantity</label><input class="input" id="qty" type="number" inputmode="numeric" min="50" step="50" value="50" required>
           <span class="hint" id="lotHint">Multiples of 50 shares</span></div>
+        <div class="span-2 live-px" id="curPxBox"><div class="k">Current market price · same as the Market page</div><div class="v" id="curPx">—</div><div class="s" id="curPxMeta">Select a stock</div></div>
         <div class="field"><label for="mp">Price per share (₹)</label><input class="input" id="mp" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="" aria-describedby="mpNote" required readonly>
           <span class="hint" id="mpNote">Standard orders use the live Market Page price. Negotiated prices must be recorded as matched team-to-team trades by a Pit Manager.</span></div>
         <div class="form-sec">Settlement preview</div>
@@ -191,6 +192,7 @@
   function preview() {
     var s = sec(), t = team(), q = N($("qty").value), rate = N(S.desk ? S.desk.rules.brokerage_rate : 0.005), sell = S.side === "SELL";
     $("pvBrkK").textContent = "Brokerage";
+    JSE.livePx(s || null);
     if (!s) $("mp").value = "";
     else if ($("mp").dataset.edited !== "1") $("mp").value = String(Math.round(N(s.price)));
     var flexibleIpo = !!(s && $("asset").value === "IPO");
@@ -314,7 +316,7 @@
     $("negBuyer").addEventListener("change", function () { if ($("negBuyer").value === $("negSeller").value) $("negSeller").value = ""; });
     $("negSeller").addEventListener("change", function () { if ($("negBuyer").value === $("negSeller").value) $("negBuyer").value = ""; });
     $("negPrice").addEventListener("input", function () { $("negPrice").dataset.edited = "1"; });
-    market = JSE.poll(loadMarket, 10000, { onError: function () { $("mktText").textContent = "Reconnecting…"; } });
+    market = JSE.poll(loadMarket, 5000, { onError: function () { $("mktText").textContent = "Reconnecting…"; } });
     desk = JSE.poll(loadDesk, 8000, { onError: function (e) { $("deskMeta").textContent = e.message; } });
   });
 })();

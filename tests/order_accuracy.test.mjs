@@ -124,11 +124,13 @@ test("10 a retried submission (same request key) creates one order", async () =>
   await cleanup();
 });
 
-test("6 a price change while an order is pending: the order is closed, never settled at the old price", async () => {
+test("6 a price change while an order is pending: valid within ±15%, closed beyond it; executes at its own price", async () => {
   const o = await submit(T1, "BUY", 50); ok(o);
-  ok(await POST("/api/market-news", { symbol: S, mood: "POSITIVE", headline: "test move" }, ADMIN), "news");
-  const od = (await GET("/api/order?id=" + o.data.order.id, ADMIN)).data.order;
-  assert.notEqual(od.status, "BANK_SETTLED"); assert.equal(od.reject_code, "PRICE_STALE");
+  ok(await POST("/api/market-news", { symbol: S, mood: "POSITIVE", headline: "small move" }, ADMIN), "news");
+  let od = (await GET("/api/order?id=" + o.data.order.id, ADMIN)).data.order;
+  assert.equal(od.status, "EXCHANGE_PENDING", "a small move keeps the order open");
+  ok(await approve(o.data.order.id)); const st = await settle(o.data.order.id);
+  assert.equal(st.data.status, "BANK_SETTLED"); assert.equal(N(st.data.price ?? st.data.trade_value / 50), N(o.data.order.price), "settles at the order's own price");
   mkt = await price(S);
 });
 
