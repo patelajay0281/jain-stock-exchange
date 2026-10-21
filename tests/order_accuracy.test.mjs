@@ -90,7 +90,8 @@ test("2/3/8 buy and sell update cash, holdings, portfolio and brokerage exactly"
   let d = await detail(T1);
   assert.equal(N(d.team.cash), r2(N(before.team.cash) - tv - brk));
   assert.equal(holding(d, S), holding(before, S) + 100);
-  const mv = d.holdings.reduce((a, h) => a + N(h.quantity) * N(h.price ?? h.market_price), 0);
+  const mv = d.holdings.reduce((a, h) => a + N(h.quantity) * N(h.current_price), 0);
+  assert.ok(d.holdings.every((h) => Math.abs(N(h.market_value) - N(h.quantity) * N(h.current_price)) < 0.01), "market value = quantity × current price");
   assert.ok(Math.abs(N(d.team.net_worth) - (N(d.team.cash) + mv)) < 1, "net worth = cash + market value");
   const sell = await full(T1, "SELL", 50);
   const stv = 50 * N(sell.o.price), sbrk = r2(stv * N(sell.o.brokerage_rate));
