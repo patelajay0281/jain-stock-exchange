@@ -1,0 +1,57 @@
+{
+  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-21T15:22:42.147Z",
+  "run_id": "39624998901",
+  "commit": "bd68b17e54fca7825bc46212499d104495d7ddf7",
+  "config": {
+    "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+    "suites": [
+      "health"
+    ],
+    "probes": [
+      {
+        "rps": 200,
+        "seconds": 15,
+        "viewers": 300,
+        "pause_s": 5
+      },
+      {
+        "rps": 850,
+        "seconds": 60,
+        "viewers": 600,
+        "pause_s": 10
+      },
+      {
+        "rps": 1200,
+        "seconds": 30,
+        "viewers": 800
+      }
+    ],
+    "note": "Health check of the live event API (read-only).",
+    "stress": {
+      "orders": 1500,
+      "workers": 16
+    }
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "3.14.0",
+        "db": "ok",
+        "db_ms": 2,
+        "uptime_s": 1,
+        "node": "v24.16.0",
+        "time": "2026-10-21T15:22:44.894Z"
+      },
+      "ms": 3446,
+      "event_csv_route": 401
+    }
+  },
+  "finished_at": "2026-10-21T15:22:45.593Z"
+}
