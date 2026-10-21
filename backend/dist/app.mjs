@@ -1,13 +1,13 @@
 import{createRequire as __jseCR}from'module';const require=__jseCR(String(import.meta.url).startsWith('file:')?import.meta.url:'file:///tmp/jse.mjs');
-var Pi=Object.create;var Ea=Object.defineProperty;var Hi=Object.getOwnPropertyDescriptor;var Mi=Object.getOwnPropertyNames;var wi=Object.getPrototypeOf,ki=Object.prototype.hasOwnProperty;var k=(t=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(t,{get:(e,s)=>(typeof require<"u"?require:e)[s]}):t)(function(t){if(typeof require<"u")return require.apply(this,arguments);throw Error('Dynamic require of "'+t+'" is not supported')});var R=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports);var xi=(t,e,s,a)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of Mi(e))!ki.call(t,r)&&r!==s&&Ea(t,r,{get:()=>e[r],enumerable:!(a=Hi(e,r))||a.enumerable});return t};var Wi=(t,e,s)=>(s=t!=null?Pi(wi(t)):{},xi(e||!t||!t.__esModule?Ea(s,"default",{value:t,enumerable:!0}):s,t));var wt=R(ca=>{"use strict";ca.parse=function(t,e){return new Mt(t,e).parse()};var Mt=class t{constructor(e,s){this.source=e,this.transform=s||Bi,this.position=0,this.entries=[],this.recorded=[],this.dimension=0}isEof(){return this.position>=this.source.length}nextCharacter(){var e=this.source[this.position++];return e==="\\"?{value:this.source[this.position++],escaped:!0}:{value:e,escaped:!1}}record(e){this.recorded.push(e)}newEntry(e){var s;(this.recorded.length>0||e)&&(s=this.recorded.join(""),s==="NULL"&&!e&&(s=null),s!==null&&(s=this.transform(s)),this.entries.push(s),this.recorded=[])}consumeDimensions(){if(this.source[0]==="[")for(;!this.isEof();){var e=this.nextCharacter();if(e.value==="=")break}}parse(e){var s,a,r;for(this.consumeDimensions();!this.isEof();)if(s=this.nextCharacter(),s.value==="{"&&!r)this.dimension++,this.dimension>1&&(a=new t(this.source.substr(this.position-1),this.transform),this.entries.push(a.parse(!0)),this.position+=a.position-2);else if(s.value==="}"&&!r){if(this.dimension--,!this.dimension&&(this.newEntry(),e))return this.entries}else s.value==='"'&&!s.escaped?(r&&this.newEntry(!0),r=!r):s.value===","&&!r?this.newEntry():this.record(s.value);if(this.dimension!==0)throw new Error("array dimension not balanced");return this.entries}};function Bi(t){return t}});var kt=R((rc,la)=>{var Gi=wt();la.exports={create:function(t,e){return{parse:function(){return Gi.parse(t,e)}}}}});var Na=R((ic,ua)=>{"use strict";var qi=/(\d{1,})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.\d{1,})?.*?( BC)?$/,Yi=/^(\d{1,})-(\d{2})-(\d{2})( BC)?$/,$i=/([Z+-])(\d{2})?:?(\d{2})?:?(\d{2})?/,Ki=/^-?infinity$/;ua.exports=function(e){if(Ki.test(e))return Number(e.replace("i","I"));var s=qi.exec(e);if(!s)return Vi(e)||null;var a=!!s[8],r=parseInt(s[1],10);a&&(r=da(r));var i=parseInt(s[2],10)-1,n=s[3],o=parseInt(s[4],10),E=parseInt(s[5],10),_=parseInt(s[6],10),c=s[7];c=c?1e3*parseFloat(c):0;var l,d=Xi(e);return d!=null?(l=new Date(Date.UTC(r,i,n,o,E,_,c)),xt(r)&&l.setUTCFullYear(r),d!==0&&l.setTime(l.getTime()-d)):(l=new Date(r,i,n,o,E,_,c),xt(r)&&l.setFullYear(r)),l};function Vi(t){var e=Yi.exec(t);if(e){var s=parseInt(e[1],10),a=!!e[4];a&&(s=da(s));var r=parseInt(e[2],10)-1,i=e[3],n=new Date(s,r,i);return xt(s)&&n.setFullYear(s),n}}function Xi(t){if(t.endsWith("+00"))return 0;var e=$i.exec(t.split(" ")[1]);if(e){var s=e[1];if(s==="Z")return 0;var a=s==="-"?-1:1,r=parseInt(e[2],10)*3600+parseInt(e[3]||0,10)*60+parseInt(e[4]||0,10);return r*a*1e3}}function da(t){return-(t-1)}function xt(t){return t>=0&&t<100}});var Ta=R((nc,pa)=>{pa.exports=zi;var Ji=Object.prototype.hasOwnProperty;function zi(t){for(var e=1;e<arguments.length;e++){var s=arguments[e];for(var a in s)Ji.call(s,a)&&(t[a]=s[a])}return t}});var ha=R((oc,Ra)=>{"use strict";var Qi=Ta();Ra.exports=Pe;function Pe(t){if(!(this instanceof Pe))return new Pe(t);Qi(this,ln(t))}var Zi=["seconds","minutes","hours","days","months","years"];Pe.prototype.toPostgres=function(){var t=Zi.filter(this.hasOwnProperty,this);return this.milliseconds&&t.indexOf("seconds")<0&&t.push("seconds"),t.length===0?"0":t.map(function(e){var s=this[e]||0;return e==="seconds"&&this.milliseconds&&(s=(s+this.milliseconds/1e3).toFixed(6).replace(/\.?0+$/,"")),s+" "+e},this).join(" ")};var en={years:"Y",months:"M",days:"D",hours:"H",minutes:"M",seconds:"S"},tn=["years","months","days"],sn=["hours","minutes","seconds"];Pe.prototype.toISOString=Pe.prototype.toISO=function(){var t=tn.map(s,this).join(""),e=sn.map(s,this).join("");return"P"+t+"T"+e;function s(a){var r=this[a]||0;return a==="seconds"&&this.milliseconds&&(r=(r+this.milliseconds/1e3).toFixed(6).replace(/0+$/,"")),r+en[a]}};var Wt="([+-]?\\d+)",an=Wt+"\\s+years?",rn=Wt+"\\s+mons?",nn=Wt+"\\s+days?",on="([+-])?([\\d]*):(\\d\\d):(\\d\\d)\\.?(\\d{1,6})?",_n=new RegExp([an,rn,nn,on].map(function(t){return"("+t+")?"}).join("\\s*")),ma={years:2,months:4,days:6,hours:9,minutes:10,seconds:11,milliseconds:12},En=["hours","minutes","seconds","milliseconds"];function cn(t){var e=t+"000000".slice(t.length);return parseInt(e,10)/1e3}function ln(t){if(!t)return{};var e=_n.exec(t),s=e[8]==="-";return Object.keys(ma).reduce(function(a,r){var i=ma[r],n=e[i];return!n||(n=r==="milliseconds"?cn(n):parseInt(n,10),!n)||(s&&~En.indexOf(r)&&(n*=-1),a[r]=n),a},{})}});var ba=R((_c,Oa)=>{"use strict";var Ia=Buffer.from||Buffer;Oa.exports=function(e){if(/^\\x/.test(e))return Ia(e.substr(2),"hex");for(var s="",a=0;a<e.length;)if(e[a]!=="\\")s+=e[a],++a;else if(/[0-7]{3}/.test(e.substr(a+1,3)))s+=String.fromCharCode(parseInt(e.substr(a+1,3),8)),a+=4;else{for(var r=1;a+r<e.length&&e[a+r]==="\\";)r++;for(var i=0;i<Math.floor(r/2);++i)s+="\\";a+=Math.floor(r/2)*2}return Ia(s,"binary")}});var Da=R((Ec,ga)=>{var Xe=wt(),Je=kt(),Tt=Na(),va=ha(),Aa=ba();function mt(t){return function(s){return s===null?s:t(s)}}function fa(t){return t===null?t:t==="TRUE"||t==="t"||t==="true"||t==="y"||t==="yes"||t==="on"||t==="1"}function dn(t){return t?Xe.parse(t,fa):null}function un(t){return parseInt(t,10)}function Bt(t){return t?Xe.parse(t,mt(un)):null}function Nn(t){return t?Xe.parse(t,mt(function(e){return Sa(e).trim()})):null}var pn=function(t){if(!t)return null;var e=Je.create(t,function(s){return s!==null&&(s=$t(s)),s});return e.parse()},Gt=function(t){if(!t)return null;var e=Je.create(t,function(s){return s!==null&&(s=parseFloat(s)),s});return e.parse()},de=function(t){if(!t)return null;var e=Je.create(t);return e.parse()},qt=function(t){if(!t)return null;var e=Je.create(t,function(s){return s!==null&&(s=Tt(s)),s});return e.parse()},Tn=function(t){if(!t)return null;var e=Je.create(t,function(s){return s!==null&&(s=va(s)),s});return e.parse()},mn=function(t){return t?Xe.parse(t,mt(Aa)):null},Yt=function(t){return parseInt(t,10)},Sa=function(t){var e=String(t);return/^\d+$/.test(e)?e:t},La=function(t){return t?Xe.parse(t,mt(JSON.parse)):null},$t=function(t){return t[0]!=="("?null:(t=t.substring(1,t.length-1).split(","),{x:parseFloat(t[0]),y:parseFloat(t[1])})},Rn=function(t){if(t[0]!=="<"&&t[1]!=="(")return null;for(var e="(",s="",a=!1,r=2;r<t.length-1;r++){if(a||(e+=t[r]),t[r]===")"){a=!0;continue}else if(!a)continue;t[r]!==","&&(s+=t[r])}var i=$t(e);return i.radius=parseFloat(s),i},hn=function(t){t(20,Sa),t(21,Yt),t(23,Yt),t(26,Yt),t(700,parseFloat),t(701,parseFloat),t(16,fa),t(1082,Tt),t(1114,Tt),t(1184,Tt),t(600,$t),t(651,de),t(718,Rn),t(1e3,dn),t(1001,mn),t(1005,Bt),t(1007,Bt),t(1028,Bt),t(1016,Nn),t(1017,pn),t(1021,Gt),t(1022,Gt),t(1231,Gt),t(1014,de),t(1015,de),t(1008,de),t(1009,de),t(1040,de),t(1041,de),t(1115,qt),t(1182,qt),t(1185,qt),t(1186,va),t(1187,Tn),t(17,Aa),t(114,JSON.parse.bind(JSON)),t(3802,JSON.parse.bind(JSON)),t(199,La),t(3807,La),t(3907,de),t(2951,de),t(791,de),t(1183,de),t(1270,de)};ga.exports={init:hn}});var Ca=R((cc,ya)=>{"use strict";var re=1e6;function In(t){var e=t.readInt32BE(0),s=t.readUInt32BE(4),a="";e<0&&(e=~e+(s===0),s=~s+1>>>0,a="-");var r="",i,n,o,E,_,c;{if(i=e%re,e=e/re>>>0,n=4294967296*i+s,s=n/re>>>0,o=""+(n-re*s),s===0&&e===0)return a+o+r;for(E="",_=6-o.length,c=0;c<_;c++)E+="0";r=E+o+r}{if(i=e%re,e=e/re>>>0,n=4294967296*i+s,s=n/re>>>0,o=""+(n-re*s),s===0&&e===0)return a+o+r;for(E="",_=6-o.length,c=0;c<_;c++)E+="0";r=E+o+r}{if(i=e%re,e=e/re>>>0,n=4294967296*i+s,s=n/re>>>0,o=""+(n-re*s),s===0&&e===0)return a+o+r;for(E="",_=6-o.length,c=0;c<_;c++)E+="0";r=E+o+r}return i=e%re,n=4294967296*i+s,o=""+n%re,a+o+r}ya.exports=In});var Ha=R((lc,Pa)=>{var On=Ca(),F=function(t,e,s,a,r){s=s||0,a=a||!1,r=r||function(u,h,I){return u*Math.pow(2,I)+h};var i=s>>3,n=function(u){return a?~u&255:u},o=255,E=8-s%8;e<E&&(o=255<<8-e&255,E=e),s&&(o=o>>s%8);var _=0;s%8+e>=8&&(_=r(0,n(t[i])&o,E));for(var c=e+s>>3,l=i+1;l<c;l++)_=r(_,n(t[l]),8);var d=(e+s)%8;return d>0&&(_=r(_,n(t[c])>>8-d,d)),_},Ua=function(t,e,s){var a=Math.pow(2,s-1)-1,r=F(t,1),i=F(t,s,1);if(i===0)return 0;var n=1,o=function(_,c,l){_===0&&(_=1);for(var d=1;d<=l;d++)n/=2,(c&1<<l-d)>0&&(_+=n);return _},E=F(t,e,s+1,!1,o);return i==Math.pow(2,s+1)-1?E===0?r===0?1/0:-1/0:NaN:(r===0?1:-1)*Math.pow(2,i-a)*E},bn=function(t){return F(t,1)==1?-1*(F(t,15,1,!0)+1):F(t,15,1)},Fa=function(t){return F(t,1)==1?-1*(F(t,31,1,!0)+1):F(t,31,1)},Ln=function(t){return Ua(t,23,8)},vn=function(t){return Ua(t,52,11)},An=function(t){var e=F(t,16,32);if(e==49152)return NaN;for(var s=Math.pow(1e4,F(t,16,16)),a=0,r=[],i=F(t,16),n=0;n<i;n++)a+=F(t,16,64+16*n)*s,s/=1e4;var o=Math.pow(10,F(t,16,48));return(e===0?1:-1)*Math.round(a*o)/o},ja=function(t,e){var s=F(e,1),a=F(e,63,1),r=new Date((s===0?1:-1)*a/1e3+9466848e5);return t||r.setTime(r.getTime()+r.getTimezoneOffset()*6e4),r.usec=a%1e3,r.getMicroSeconds=function(){return this.usec},r.setMicroSeconds=function(i){this.usec=i},r.getUTCMicroSeconds=function(){return this.usec},r},ze=function(t){for(var e=F(t,32),s=F(t,32,32),a=F(t,32,64),r=96,i=[],n=0;n<e;n++)i[n]=F(t,32,r),r+=32,r+=32;var o=function(_){var c=F(t,32,r);if(r+=32,c==4294967295)return null;var l;if(_==23||_==20)return l=F(t,c*8,r),r+=c*8,l;if(_==25)return l=t.toString(this.encoding,r>>3,(r+=c<<3)>>3),l;console.log("ERROR: ElementType not implemented: "+_)},E=function(_,c){var l=[],d;if(_.length>1){var u=_.shift();for(d=0;d<u;d++)l[d]=E(_,c);_.unshift(u)}else for(d=0;d<_[0];d++)l[d]=o(c);return l};return E(i,a)},fn=function(t){return t.toString("utf8")},Sn=function(t){return t===null?null:F(t,8)>0},gn=function(t){t(20,On),t(21,bn),t(23,Fa),t(26,Fa),t(1700,An),t(700,Ln),t(701,vn),t(16,Sn),t(1114,ja.bind(null,!1)),t(1184,ja.bind(null,!0)),t(1e3,ze),t(1007,ze),t(1016,ze),t(1008,ze),t(1009,ze),t(25,fn)};Pa.exports={init:gn}});var wa=R((dc,Ma)=>{Ma.exports={BOOL:16,BYTEA:17,CHAR:18,INT8:20,INT2:21,INT4:23,REGPROC:24,TEXT:25,OID:26,TID:27,XID:28,CID:29,JSON:114,XML:142,PG_NODE_TREE:194,SMGR:210,PATH:602,POLYGON:604,CIDR:650,FLOAT4:700,FLOAT8:701,ABSTIME:702,RELTIME:703,TINTERVAL:704,CIRCLE:718,MACADDR8:774,MONEY:790,MACADDR:829,INET:869,ACLITEM:1033,BPCHAR:1042,VARCHAR:1043,DATE:1082,TIME:1083,TIMESTAMP:1114,TIMESTAMPTZ:1184,INTERVAL:1186,TIMETZ:1266,BIT:1560,VARBIT:1562,NUMERIC:1700,REFCURSOR:1790,REGPROCEDURE:2202,REGOPER:2203,REGOPERATOR:2204,REGCLASS:2205,REGTYPE:2206,UUID:2950,TXID_SNAPSHOT:2970,PG_LSN:3220,PG_NDISTINCT:3361,PG_DEPENDENCIES:3402,TSVECTOR:3614,TSQUERY:3615,GTSVECTOR:3642,REGCONFIG:3734,REGDICTIONARY:3769,JSONB:3802,REGNAMESPACE:4089,REGROLE:4096}});var et=R(Ze=>{var Dn=Da(),yn=Ha(),Cn=kt(),Fn=wa();Ze.getTypeParser=jn;Ze.setTypeParser=Un;Ze.arrayParser=Cn;Ze.builtins=Fn;var Qe={text:{},binary:{}};function ka(t){return String(t)}function jn(t,e){return e=e||"text",Qe[e]&&Qe[e][t]||ka}function Un(t,e,s){typeof e=="function"&&(s=e,e="text"),Qe[e][t]=s}Dn.init(function(t,e){Qe.text[t]=e});yn.init(function(t,e){Qe.binary[t]=e})});var tt=R((Nc,Kt)=>{"use strict";Kt.exports={host:"localhost",user:process.platform==="win32"?process.env.USERNAME:process.env.USER,database:void 0,password:null,connectionString:void 0,port:5432,rows:0,binary:!1,max:10,idleTimeoutMillis:3e4,client_encoding:"",ssl:!1,application_name:void 0,fallback_application_name:void 0,options:void 0,parseInputDatesAsUTC:!1,statement_timeout:!1,lock_timeout:!1,idle_in_transaction_session_timeout:!1,query_timeout:!1,connect_timeout:0,keepalives:1,keepalives_idle:0};var He=et(),Pn=He.getTypeParser(20,"text"),Hn=He.getTypeParser(1016,"text");Kt.exports.__defineSetter__("parseInt8",function(t){He.setTypeParser(20,"text",t?He.getTypeParser(23,"text"):Pn),He.setTypeParser(1016,"text",t?He.getTypeParser(1007,"text"):Hn)})});var st=R((pc,Wa)=>{"use strict";var Mn=tt();function wn(t){var e=t.replace(/\\/g,"\\\\").replace(/"/g,'\\"');return'"'+e+'"'}function xa(t){for(var e="{",s=0;s<t.length;s++)if(s>0&&(e=e+","),t[s]===null||typeof t[s]>"u")e=e+"NULL";else if(Array.isArray(t[s]))e=e+xa(t[s]);else if(ArrayBuffer.isView(t[s])){var a=t[s];if(!(a instanceof Buffer)){var r=Buffer.from(a.buffer,a.byteOffset,a.byteLength);r.length===a.byteLength?a=r:a=r.slice(a.byteOffset,a.byteOffset+a.byteLength)}e+="\\\\x"+a.toString("hex")}else e+=wn(Rt(t[s]));return e=e+"}",e}var Rt=function(t,e){if(t==null)return null;if(t instanceof Buffer)return t;if(ArrayBuffer.isView(t)){var s=Buffer.from(t.buffer,t.byteOffset,t.byteLength);return s.length===t.byteLength?s:s.slice(t.byteOffset,t.byteOffset+t.byteLength)}return t instanceof Date?Mn.parseInputDatesAsUTC?Wn(t):xn(t):Array.isArray(t)?xa(t):typeof t=="object"?kn(t,e):t.toString()};function kn(t,e){if(t&&typeof t.toPostgres=="function"){if(e=e||[],e.indexOf(t)!==-1)throw new Error('circular reference detected while preparing "'+t+'" for query');return e.push(t),Rt(t.toPostgres(Rt),e)}return JSON.stringify(t)}function Q(t,e){for(t=""+t;t.length<e;)t="0"+t;return t}function xn(t){var e=-t.getTimezoneOffset(),s=t.getFullYear(),a=s<1;a&&(s=Math.abs(s)+1);var r=Q(s,4)+"-"+Q(t.getMonth()+1,2)+"-"+Q(t.getDate(),2)+"T"+Q(t.getHours(),2)+":"+Q(t.getMinutes(),2)+":"+Q(t.getSeconds(),2)+"."+Q(t.getMilliseconds(),3);return e<0?(r+="-",e*=-1):r+="+",r+=Q(Math.floor(e/60),2)+":"+Q(e%60,2),a&&(r+=" BC"),r}function Wn(t){var e=t.getUTCFullYear(),s=e<1;s&&(e=Math.abs(e)+1);var a=Q(e,4)+"-"+Q(t.getUTCMonth()+1,2)+"-"+Q(t.getUTCDate(),2)+"T"+Q(t.getUTCHours(),2)+":"+Q(t.getUTCMinutes(),2)+":"+Q(t.getUTCSeconds(),2)+"."+Q(t.getUTCMilliseconds(),3);return a+="+00:00",s&&(a+=" BC"),a}function Bn(t,e,s){return t=typeof t=="string"?{text:t}:t,e&&(typeof e=="function"?t.callback=e:t.values=e),s&&(t.callback=s),t}var Gn=function(t){return'"'+t.replace(/"/g,'""')+'"'},qn=function(t){for(var e=!1,s="'",a=0;a<t.length;a++){var r=t[a];r==="'"?s+=r+r:r==="\\"?(s+=r+r,e=!0):s+=r}return s+="'",e===!0&&(s=" E"+s),s};Wa.exports={prepareValue:function(e){return Rt(e)},normalizeQueryConfig:Bn,escapeIdentifier:Gn,escapeLiteral:qn}});var Ga=R((Tc,Ba)=>{"use strict";var at=k("crypto");function Vt(t){return at.createHash("md5").update(t,"utf-8").digest("hex")}function Yn(t,e,s){var a=Vt(e+t),r=Vt(Buffer.concat([Buffer.from(a),s]));return"md5"+r}function $n(t){return at.createHash("sha256").update(t).digest()}function Kn(t,e){return at.createHmac("sha256",t).update(e).digest()}async function Vn(t,e,s){return at.pbkdf2Sync(t,e,s,32,"sha256")}Ba.exports={postgresMd5PasswordHash:Yn,randomBytes:at.randomBytes,deriveKey:Vn,sha256:$n,hmacSha256:Kn,md5:Vt}});var Ka=R((mc,$a)=>{var qa=k("crypto");$a.exports={postgresMd5PasswordHash:Jn,randomBytes:Xn,deriveKey:Zn,sha256:zn,hmacSha256:Qn,md5:Xt};var Ya=qa.webcrypto||globalThis.crypto,Me=Ya.subtle,Jt=new TextEncoder;function Xn(t){return Ya.getRandomValues(Buffer.alloc(t))}async function Xt(t){try{return qa.createHash("md5").update(t,"utf-8").digest("hex")}catch{let s=typeof t=="string"?Jt.encode(t):t,a=await Me.digest("MD5",s);return Array.from(new Uint8Array(a)).map(r=>r.toString(16).padStart(2,"0")).join("")}}async function Jn(t,e,s){var a=await Xt(e+t),r=await Xt(Buffer.concat([Buffer.from(a),s]));return"md5"+r}async function zn(t){return await Me.digest("SHA-256",t)}async function Qn(t,e){let s=await Me.importKey("raw",t,{name:"HMAC",hash:"SHA-256"},!1,["sign"]);return await Me.sign("HMAC",s,Jt.encode(e))}async function Zn(t,e,s){let a=await Me.importKey("raw",Jt.encode(t),"PBKDF2",!1,["deriveBits"]),r={name:"PBKDF2",hash:"SHA-256",salt:e,iterations:s};return await Me.deriveBits(r,a,32*8,["deriveBits"])}});var Qt=R((Rc,zt)=>{"use strict";var eo=parseInt(process.versions&&process.versions.node&&process.versions.node.split(".")[0])<15;eo?zt.exports=Ga():zt.exports=Ka()});var za=R((hc,Ja)=>{"use strict";var ye=Qt();function to(t){if(t.indexOf("SCRAM-SHA-256")===-1)throw new Error("SASL: Only mechanism SCRAM-SHA-256 is currently supported");let e=ye.randomBytes(18).toString("base64");return{mechanism:"SCRAM-SHA-256",clientNonce:e,response:"n,,n=*,r="+e,message:"SASLInitialResponse"}}async function so(t,e,s){if(t.message!=="SASLInitialResponse")throw new Error("SASL: Last message was not SASLInitialResponse");if(typeof e!="string")throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string");if(e==="")throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a non-empty string");if(typeof s!="string")throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: serverData must be a string");let a=io(s);if(a.nonce.startsWith(t.clientNonce)){if(a.nonce.length===t.clientNonce.length)throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: server nonce is too short")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: server nonce does not start with client nonce");var r="n=*,r="+t.clientNonce,i="r="+a.nonce+",s="+a.salt+",i="+a.iteration,n="c=biws,r="+a.nonce,o=r+","+i+","+n,E=Buffer.from(a.salt,"base64"),_=await ye.deriveKey(e,E,a.iteration),c=await ye.hmacSha256(_,"Client Key"),l=await ye.sha256(c),d=await ye.hmacSha256(l,o),u=oo(Buffer.from(c),Buffer.from(d)).toString("base64"),h=await ye.hmacSha256(_,"Server Key"),I=await ye.hmacSha256(h,o);t.message="SASLResponse",t.serverSignature=Buffer.from(I).toString("base64"),t.response=n+",p="+u}function ao(t,e){if(t.message!=="SASLResponse")throw new Error("SASL: Last message was not SASLResponse");if(typeof e!="string")throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: serverData must be a string");let{serverSignature:s}=no(e);if(s!==t.serverSignature)throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature does not match")}function ro(t){if(typeof t!="string")throw new TypeError("SASL: text must be a string");return t.split("").map((e,s)=>t.charCodeAt(s)).every(e=>e>=33&&e<=43||e>=45&&e<=126)}function Va(t){return/^(?:[a-zA-Z0-9+/]{4})*(?:[a-zA-Z0-9+/]{2}==|[a-zA-Z0-9+/]{3}=)?$/.test(t)}function Xa(t){if(typeof t!="string")throw new TypeError("SASL: attribute pairs text must be a string");return new Map(t.split(",").map(e=>{if(!/^.=/.test(e))throw new Error("SASL: Invalid attribute pair entry");let s=e[0],a=e.substring(2);return[s,a]}))}function io(t){let e=Xa(t),s=e.get("r");if(s){if(!ro(s))throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: nonce must only contain printable characters")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: nonce missing");let a=e.get("s");if(a){if(!Va(a))throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: salt must be base64")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: salt missing");let r=e.get("i");if(r){if(!/^[1-9][0-9]*$/.test(r))throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: invalid iteration count")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: iteration missing");let i=parseInt(r,10);return{nonce:s,salt:a,iteration:i}}function no(t){let s=Xa(t).get("v");if(s){if(!Va(s))throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature must be base64")}else throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature is missing");return{serverSignature:s}}function oo(t,e){if(!Buffer.isBuffer(t))throw new TypeError("first argument must be a Buffer");if(!Buffer.isBuffer(e))throw new TypeError("second argument must be a Buffer");if(t.length!==e.length)throw new Error("Buffer lengths must match");if(t.length===0)throw new Error("Buffers cannot be empty");return Buffer.from(t.map((s,a)=>t[a]^e[a]))}Ja.exports={startSession:to,continueSession:so,finalizeSession:ao}});var Zt=R((Ic,Qa)=>{"use strict";var _o=et();function ht(t){this._types=t||_o,this.text={},this.binary={}}ht.prototype.getOverrides=function(t){switch(t){case"text":return this.text;case"binary":return this.binary;default:return{}}};ht.prototype.setTypeParser=function(t,e,s){typeof e=="function"&&(s=e,e="text"),this.getOverrides(e)[t]=s};ht.prototype.getTypeParser=function(t,e){return e=e||"text",this.getOverrides(e)[t]||this._types.getTypeParser(t,e)};Qa.exports=ht});var tr=R((Oc,er)=>{"use strict";function we(t,e={}){if(t.charAt(0)==="/"){let E=t.split(" ");return{host:E[0],database:E[1]}}let s=Object.create(null),a,r=!1;/ |%[^a-f0-9]|%[a-f0-9][^a-f0-9]/i.test(t)&&(t=encodeURI(t).replace(/%25(\d\d)/g,"%$1"));try{try{a=new URL(t,"postgres://base")}catch{a=new URL(t.replace("@/","@___DUMMY___/"),"postgres://base"),r=!0}}catch(E){throw E.input&&(E.input="*****REDACTED*****"),E}for(let E of a.searchParams.entries())s[E[0]]=E[1];if(s.user=s.user||decodeURIComponent(a.username),s.password=s.password||decodeURIComponent(a.password),a.protocol=="socket:")return s.host=decodeURI(a.pathname),s.database=a.searchParams.get("db"),s.client_encoding=a.searchParams.get("encoding"),s;let i=(r?"":a.hostname).replace(/^\[(.+)\]$/,"$1");s.host?i&&/^%2f/i.test(i)&&(a.pathname=i+a.pathname):s.host=decodeURIComponent(i),s.port||(s.port=a.port);let n=a.pathname.slice(1)||null;s.database=n?decodeURI(n):null,(s.ssl==="true"||s.ssl==="1")&&(s.ssl=!0),s.ssl==="0"&&(s.ssl=!1),(s.sslcert||s.sslkey||s.sslrootcert||s.sslmode)&&(s.ssl={}),s.sslnegotiation==="direct"&&s.ssl===void 0&&(s.ssl=!0);let o=s.sslcert||s.sslkey||s.sslrootcert?k("fs"):null;if(s.sslcert&&(s.ssl.cert=o.readFileSync(s.sslcert).toString()),s.sslkey&&(s.ssl.key=o.readFileSync(s.sslkey).toString()),s.sslrootcert&&(s.ssl.ca=o.readFileSync(s.sslrootcert).toString()),e.useLibpqCompat&&s.uselibpqcompat)throw new Error("Both useLibpqCompat and uselibpqcompat are set. Please use only one of them.");if(s.uselibpqcompat==="true"||e.useLibpqCompat)switch(s.sslmode){case"disable":{s.ssl=!1;break}case"prefer":{s.ssl.rejectUnauthorized=!1;break}case"require":{s.sslrootcert?s.ssl.checkServerIdentity=function(){}:s.ssl.rejectUnauthorized=!1;break}case"verify-ca":{if(!s.ssl.ca)throw new Error("SECURITY WARNING: Using sslmode=verify-ca requires specifying a CA with sslrootcert. If a public CA is used, verify-ca allows connections to a server that somebody else may have registered with the CA, making you vulnerable to Man-in-the-Middle attacks. Either specify a custom CA certificate with sslrootcert parameter or use sslmode=verify-full for proper security.");s.ssl.checkServerIdentity=function(){};break}case"verify-full":break}else switch(s.sslmode){case"disable":{s.ssl=!1;break}case"prefer":case"require":case"verify-ca":case"verify-full":{s.sslmode!=="verify-full"&&es(s.sslmode);break}case"no-verify":{s.ssl.rejectUnauthorized=!1;break}}return s}function Eo(t){return Object.entries(t).reduce((s,[a,r])=>(r!=null&&(s[a]=r),s),Object.create(null))}function Za(t){return Object.entries(t).reduce((s,[a,r])=>{if(a==="ssl"){let i=r;typeof i=="boolean"&&(s[a]=i),typeof i=="object"&&(s[a]=Eo(i))}else if(r!=null)if(a==="port"){if(r!==""){let i=parseInt(r,10);if(isNaN(i))throw new Error(`Invalid ${a}: ${r}`);s[a]=i}}else s[a]=r;return s},Object.create(null))}function co(t){return Za(we(t))}function es(t){!es.warned&&typeof process<"u"&&process.emitWarning&&(es.warned=!0,process.emitWarning(`SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+var io=Object.create;var Es=Object.defineProperty;var ro=Object.getOwnPropertyDescriptor;var oo=Object.getOwnPropertyNames;var no=Object.getPrototypeOf,_o=Object.prototype.hasOwnProperty;var W=(t=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(t,{get:(e,a)=>(typeof require<"u"?require:e)[a]}):t)(function(t){if(typeof require<"u")return require.apply(this,arguments);throw Error('Dynamic require of "'+t+'" is not supported')});var R=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports);var Eo=(t,e,a,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let i of oo(e))!_o.call(t,i)&&i!==a&&Es(t,i,{get:()=>e[i],enumerable:!(s=ro(e,i))||s.enumerable});return t};var co=(t,e,a)=>(a=t!=null?io(no(t)):{},Eo(e||!t||!t.__esModule?Es(a,"default",{value:t,enumerable:!0}):a,t));var Mt=R(cs=>{"use strict";cs.parse=function(t,e){return new kt(t,e).parse()};var kt=class t{constructor(e,a){this.source=e,this.transform=a||lo,this.position=0,this.entries=[],this.recorded=[],this.dimension=0}isEof(){return this.position>=this.source.length}nextCharacter(){var e=this.source[this.position++];return e==="\\"?{value:this.source[this.position++],escaped:!0}:{value:e,escaped:!1}}record(e){this.recorded.push(e)}newEntry(e){var a;(this.recorded.length>0||e)&&(a=this.recorded.join(""),a==="NULL"&&!e&&(a=null),a!==null&&(a=this.transform(a)),this.entries.push(a),this.recorded=[])}consumeDimensions(){if(this.source[0]==="[")for(;!this.isEof();){var e=this.nextCharacter();if(e.value==="=")break}}parse(e){var a,s,i;for(this.consumeDimensions();!this.isEof();)if(a=this.nextCharacter(),a.value==="{"&&!i)this.dimension++,this.dimension>1&&(s=new t(this.source.substr(this.position-1),this.transform),this.entries.push(s.parse(!0)),this.position+=s.position-2);else if(a.value==="}"&&!i){if(this.dimension--,!this.dimension&&(this.newEntry(),e))return this.entries}else a.value==='"'&&!a.escaped?(i&&this.newEntry(!0),i=!i):a.value===","&&!i?this.newEntry():this.record(a.value);if(this.dimension!==0)throw new Error("array dimension not balanced");return this.entries}};function lo(t){return t}});var wt=R(($c,ls)=>{var uo=Mt();ls.exports={create:function(t,e){return{parse:function(){return uo.parse(t,e)}}}}});var Ns=R((Xc,us)=>{"use strict";var No=/(\d{1,})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.\d{1,})?.*?( BC)?$/,To=/^(\d{1,})-(\d{2})-(\d{2})( BC)?$/,mo=/([Z+-])(\d{2})?:?(\d{2})?:?(\d{2})?/,po=/^-?infinity$/;us.exports=function(e){if(po.test(e))return Number(e.replace("i","I"));var a=No.exec(e);if(!a)return Ro(e)||null;var s=!!a[8],i=parseInt(a[1],10);s&&(i=ds(i));var r=parseInt(a[2],10)-1,o=a[3],n=parseInt(a[4],10),E=parseInt(a[5],10),_=parseInt(a[6],10),c=a[7];c=c?1e3*parseFloat(c):0;var l,d=bo(e);return d!=null?(l=new Date(Date.UTC(i,r,o,n,E,_,c)),Wt(i)&&l.setUTCFullYear(i),d!==0&&l.setTime(l.getTime()-d)):(l=new Date(i,r,o,n,E,_,c),Wt(i)&&l.setFullYear(i)),l};function Ro(t){var e=To.exec(t);if(e){var a=parseInt(e[1],10),s=!!e[4];s&&(a=ds(a));var i=parseInt(e[2],10)-1,r=e[3],o=new Date(a,i,r);return Wt(a)&&o.setFullYear(a),o}}function bo(t){if(t.endsWith("+00"))return 0;var e=mo.exec(t.split(" ")[1]);if(e){var a=e[1];if(a==="Z")return 0;var s=a==="-"?-1:1,i=parseInt(e[2],10)*3600+parseInt(e[3]||0,10)*60+parseInt(e[4]||0,10);return i*s*1e3}}function ds(t){return-(t-1)}function Wt(t){return t>=0&&t<100}});var ms=R((Jc,Ts)=>{Ts.exports=vo;var Io=Object.prototype.hasOwnProperty;function vo(t){for(var e=1;e<arguments.length;e++){var a=arguments[e];for(var s in a)Io.call(a,s)&&(t[s]=a[s])}return t}});var bs=R((zc,Rs)=>{"use strict";var Oo=ms();Rs.exports=Pe;function Pe(t){if(!(this instanceof Pe))return new Pe(t);Oo(this,Uo(t))}var ho=["seconds","minutes","hours","days","months","years"];Pe.prototype.toPostgres=function(){var t=ho.filter(this.hasOwnProperty,this);return this.milliseconds&&t.indexOf("seconds")<0&&t.push("seconds"),t.length===0?"0":t.map(function(e){var a=this[e]||0;return e==="seconds"&&this.milliseconds&&(a=(a+this.milliseconds/1e3).toFixed(6).replace(/\.?0+$/,"")),a+" "+e},this).join(" ")};var Lo={years:"Y",months:"M",days:"D",hours:"H",minutes:"M",seconds:"S"},Ao=["years","months","days"],So=["hours","minutes","seconds"];Pe.prototype.toISOString=Pe.prototype.toISO=function(){var t=Ao.map(a,this).join(""),e=So.map(a,this).join("");return"P"+t+"T"+e;function a(s){var i=this[s]||0;return s==="seconds"&&this.milliseconds&&(i=(i+this.milliseconds/1e3).toFixed(6).replace(/0+$/,"")),i+Lo[s]}};var xt="([+-]?\\d+)",fo=xt+"\\s+years?",go=xt+"\\s+mons?",Do=xt+"\\s+days?",Fo="([+-])?([\\d]*):(\\d\\d):(\\d\\d)\\.?(\\d{1,6})?",yo=new RegExp([fo,go,Do,Fo].map(function(t){return"("+t+")?"}).join("\\s*")),ps={years:2,months:4,days:6,hours:9,minutes:10,seconds:11,milliseconds:12},Co=["hours","minutes","seconds","milliseconds"];function jo(t){var e=t+"000000".slice(t.length);return parseInt(e,10)/1e3}function Uo(t){if(!t)return{};var e=yo.exec(t),a=e[8]==="-";return Object.keys(ps).reduce(function(s,i){var r=ps[i],o=e[r];return!o||(o=i==="milliseconds"?jo(o):parseInt(o,10),!o)||(a&&~Co.indexOf(i)&&(o*=-1),s[i]=o),s},{})}});var Os=R((Qc,vs)=>{"use strict";var Is=Buffer.from||Buffer;vs.exports=function(e){if(/^\\x/.test(e))return Is(e.substr(2),"hex");for(var a="",s=0;s<e.length;)if(e[s]!=="\\")a+=e[s],++s;else if(/[0-7]{3}/.test(e.substr(s+1,3)))a+=String.fromCharCode(parseInt(e.substr(s+1,3),8)),s+=4;else{for(var i=1;s+i<e.length&&e[s+i]==="\\";)i++;for(var r=0;r<Math.floor(i/2);++r)a+="\\";s+=Math.floor(i/2)*2}return Is(a,"binary")}});var Ds=R((Zc,gs)=>{var Xe=Mt(),Je=wt(),mt=Ns(),Ls=bs(),As=Os();function pt(t){return function(a){return a===null?a:t(a)}}function Ss(t){return t===null?t:t==="TRUE"||t==="t"||t==="true"||t==="y"||t==="yes"||t==="on"||t==="1"}function Po(t){return t?Xe.parse(t,Ss):null}function Ho(t){return parseInt(t,10)}function Bt(t){return t?Xe.parse(t,pt(Ho)):null}function ko(t){return t?Xe.parse(t,pt(function(e){return fs(e).trim()})):null}var Mo=function(t){if(!t)return null;var e=Je.create(t,function(a){return a!==null&&(a=Vt(a)),a});return e.parse()},Gt=function(t){if(!t)return null;var e=Je.create(t,function(a){return a!==null&&(a=parseFloat(a)),a});return e.parse()},de=function(t){if(!t)return null;var e=Je.create(t);return e.parse()},qt=function(t){if(!t)return null;var e=Je.create(t,function(a){return a!==null&&(a=mt(a)),a});return e.parse()},wo=function(t){if(!t)return null;var e=Je.create(t,function(a){return a!==null&&(a=Ls(a)),a});return e.parse()},Wo=function(t){return t?Xe.parse(t,pt(As)):null},Yt=function(t){return parseInt(t,10)},fs=function(t){var e=String(t);return/^\d+$/.test(e)?e:t},hs=function(t){return t?Xe.parse(t,pt(JSON.parse)):null},Vt=function(t){return t[0]!=="("?null:(t=t.substring(1,t.length-1).split(","),{x:parseFloat(t[0]),y:parseFloat(t[1])})},xo=function(t){if(t[0]!=="<"&&t[1]!=="(")return null;for(var e="(",a="",s=!1,i=2;i<t.length-1;i++){if(s||(e+=t[i]),t[i]===")"){s=!0;continue}else if(!s)continue;t[i]!==","&&(a+=t[i])}var r=Vt(e);return r.radius=parseFloat(a),r},Bo=function(t){t(20,fs),t(21,Yt),t(23,Yt),t(26,Yt),t(700,parseFloat),t(701,parseFloat),t(16,Ss),t(1082,mt),t(1114,mt),t(1184,mt),t(600,Vt),t(651,de),t(718,xo),t(1e3,Po),t(1001,Wo),t(1005,Bt),t(1007,Bt),t(1028,Bt),t(1016,ko),t(1017,Mo),t(1021,Gt),t(1022,Gt),t(1231,Gt),t(1014,de),t(1015,de),t(1008,de),t(1009,de),t(1040,de),t(1041,de),t(1115,qt),t(1182,qt),t(1185,qt),t(1186,Ls),t(1187,wo),t(17,As),t(114,JSON.parse.bind(JSON)),t(3802,JSON.parse.bind(JSON)),t(199,hs),t(3807,hs),t(3907,de),t(2951,de),t(791,de),t(1183,de),t(1270,de)};gs.exports={init:Bo}});var ys=R((el,Fs)=>{"use strict";var ie=1e6;function Go(t){var e=t.readInt32BE(0),a=t.readUInt32BE(4),s="";e<0&&(e=~e+(a===0),a=~a+1>>>0,s="-");var i="",r,o,n,E,_,c;{if(r=e%ie,e=e/ie>>>0,o=4294967296*r+a,a=o/ie>>>0,n=""+(o-ie*a),a===0&&e===0)return s+n+i;for(E="",_=6-n.length,c=0;c<_;c++)E+="0";i=E+n+i}{if(r=e%ie,e=e/ie>>>0,o=4294967296*r+a,a=o/ie>>>0,n=""+(o-ie*a),a===0&&e===0)return s+n+i;for(E="",_=6-n.length,c=0;c<_;c++)E+="0";i=E+n+i}{if(r=e%ie,e=e/ie>>>0,o=4294967296*r+a,a=o/ie>>>0,n=""+(o-ie*a),a===0&&e===0)return s+n+i;for(E="",_=6-n.length,c=0;c<_;c++)E+="0";i=E+n+i}return r=e%ie,o=4294967296*r+a,n=""+o%ie,s+n+i}Fs.exports=Go});var Hs=R((tl,Ps)=>{var qo=ys(),j=function(t,e,a,s,i){a=a||0,s=s||!1,i=i||function(u,I,v){return u*Math.pow(2,v)+I};var r=a>>3,o=function(u){return s?~u&255:u},n=255,E=8-a%8;e<E&&(n=255<<8-e&255,E=e),a&&(n=n>>a%8);var _=0;a%8+e>=8&&(_=i(0,o(t[r])&n,E));for(var c=e+a>>3,l=r+1;l<c;l++)_=i(_,o(t[l]),8);var d=(e+a)%8;return d>0&&(_=i(_,o(t[c])>>8-d,d)),_},Us=function(t,e,a){var s=Math.pow(2,a-1)-1,i=j(t,1),r=j(t,a,1);if(r===0)return 0;var o=1,n=function(_,c,l){_===0&&(_=1);for(var d=1;d<=l;d++)o/=2,(c&1<<l-d)>0&&(_+=o);return _},E=j(t,e,a+1,!1,n);return r==Math.pow(2,a+1)-1?E===0?i===0?1/0:-1/0:NaN:(i===0?1:-1)*Math.pow(2,r-s)*E},Yo=function(t){return j(t,1)==1?-1*(j(t,15,1,!0)+1):j(t,15,1)},Cs=function(t){return j(t,1)==1?-1*(j(t,31,1,!0)+1):j(t,31,1)},Vo=function(t){return Us(t,23,8)},Ko=function(t){return Us(t,52,11)},$o=function(t){var e=j(t,16,32);if(e==49152)return NaN;for(var a=Math.pow(1e4,j(t,16,16)),s=0,i=[],r=j(t,16),o=0;o<r;o++)s+=j(t,16,64+16*o)*a,a/=1e4;var n=Math.pow(10,j(t,16,48));return(e===0?1:-1)*Math.round(s*n)/n},js=function(t,e){var a=j(e,1),s=j(e,63,1),i=new Date((a===0?1:-1)*s/1e3+9466848e5);return t||i.setTime(i.getTime()+i.getTimezoneOffset()*6e4),i.usec=s%1e3,i.getMicroSeconds=function(){return this.usec},i.setMicroSeconds=function(r){this.usec=r},i.getUTCMicroSeconds=function(){return this.usec},i},ze=function(t){for(var e=j(t,32),a=j(t,32,32),s=j(t,32,64),i=96,r=[],o=0;o<e;o++)r[o]=j(t,32,i),i+=32,i+=32;var n=function(_){var c=j(t,32,i);if(i+=32,c==4294967295)return null;var l;if(_==23||_==20)return l=j(t,c*8,i),i+=c*8,l;if(_==25)return l=t.toString(this.encoding,i>>3,(i+=c<<3)>>3),l;console.log("ERROR: ElementType not implemented: "+_)},E=function(_,c){var l=[],d;if(_.length>1){var u=_.shift();for(d=0;d<u;d++)l[d]=E(_,c);_.unshift(u)}else for(d=0;d<_[0];d++)l[d]=n(c);return l};return E(r,s)},Xo=function(t){return t.toString("utf8")},Jo=function(t){return t===null?null:j(t,8)>0},zo=function(t){t(20,qo),t(21,Yo),t(23,Cs),t(26,Cs),t(1700,$o),t(700,Vo),t(701,Ko),t(16,Jo),t(1114,js.bind(null,!1)),t(1184,js.bind(null,!0)),t(1e3,ze),t(1007,ze),t(1016,ze),t(1008,ze),t(1009,ze),t(25,Xo)};Ps.exports={init:zo}});var Ms=R((al,ks)=>{ks.exports={BOOL:16,BYTEA:17,CHAR:18,INT8:20,INT2:21,INT4:23,REGPROC:24,TEXT:25,OID:26,TID:27,XID:28,CID:29,JSON:114,XML:142,PG_NODE_TREE:194,SMGR:210,PATH:602,POLYGON:604,CIDR:650,FLOAT4:700,FLOAT8:701,ABSTIME:702,RELTIME:703,TINTERVAL:704,CIRCLE:718,MACADDR8:774,MONEY:790,MACADDR:829,INET:869,ACLITEM:1033,BPCHAR:1042,VARCHAR:1043,DATE:1082,TIME:1083,TIMESTAMP:1114,TIMESTAMPTZ:1184,INTERVAL:1186,TIMETZ:1266,BIT:1560,VARBIT:1562,NUMERIC:1700,REFCURSOR:1790,REGPROCEDURE:2202,REGOPER:2203,REGOPERATOR:2204,REGCLASS:2205,REGTYPE:2206,UUID:2950,TXID_SNAPSHOT:2970,PG_LSN:3220,PG_NDISTINCT:3361,PG_DEPENDENCIES:3402,TSVECTOR:3614,TSQUERY:3615,GTSVECTOR:3642,REGCONFIG:3734,REGDICTIONARY:3769,JSONB:3802,REGNAMESPACE:4089,REGROLE:4096}});var et=R(Ze=>{var Qo=Ds(),Zo=Hs(),en=wt(),tn=Ms();Ze.getTypeParser=an;Ze.setTypeParser=sn;Ze.arrayParser=en;Ze.builtins=tn;var Qe={text:{},binary:{}};function ws(t){return String(t)}function an(t,e){return e=e||"text",Qe[e]&&Qe[e][t]||ws}function sn(t,e,a){typeof e=="function"&&(a=e,e="text"),Qe[e][t]=a}Qo.init(function(t,e){Qe.text[t]=e});Zo.init(function(t,e){Qe.binary[t]=e})});var tt=R((il,Kt)=>{"use strict";Kt.exports={host:"localhost",user:process.platform==="win32"?process.env.USERNAME:process.env.USER,database:void 0,password:null,connectionString:void 0,port:5432,rows:0,binary:!1,max:10,idleTimeoutMillis:3e4,client_encoding:"",ssl:!1,application_name:void 0,fallback_application_name:void 0,options:void 0,parseInputDatesAsUTC:!1,statement_timeout:!1,lock_timeout:!1,idle_in_transaction_session_timeout:!1,query_timeout:!1,connect_timeout:0,keepalives:1,keepalives_idle:0};var He=et(),rn=He.getTypeParser(20,"text"),on=He.getTypeParser(1016,"text");Kt.exports.__defineSetter__("parseInt8",function(t){He.setTypeParser(20,"text",t?He.getTypeParser(23,"text"):rn),He.setTypeParser(1016,"text",t?He.getTypeParser(1007,"text"):on)})});var at=R((rl,xs)=>{"use strict";var nn=tt();function _n(t){var e=t.replace(/\\/g,"\\\\").replace(/"/g,'\\"');return'"'+e+'"'}function Ws(t){for(var e="{",a=0;a<t.length;a++)if(a>0&&(e=e+","),t[a]===null||typeof t[a]>"u")e=e+"NULL";else if(Array.isArray(t[a]))e=e+Ws(t[a]);else if(ArrayBuffer.isView(t[a])){var s=t[a];if(!(s instanceof Buffer)){var i=Buffer.from(s.buffer,s.byteOffset,s.byteLength);i.length===s.byteLength?s=i:s=i.slice(s.byteOffset,s.byteOffset+s.byteLength)}e+="\\\\x"+s.toString("hex")}else e+=_n(Rt(t[a]));return e=e+"}",e}var Rt=function(t,e){if(t==null)return null;if(t instanceof Buffer)return t;if(ArrayBuffer.isView(t)){var a=Buffer.from(t.buffer,t.byteOffset,t.byteLength);return a.length===t.byteLength?a:a.slice(t.byteOffset,t.byteOffset+t.byteLength)}return t instanceof Date?nn.parseInputDatesAsUTC?ln(t):cn(t):Array.isArray(t)?Ws(t):typeof t=="object"?En(t,e):t.toString()};function En(t,e){if(t&&typeof t.toPostgres=="function"){if(e=e||[],e.indexOf(t)!==-1)throw new Error('circular reference detected while preparing "'+t+'" for query');return e.push(t),Rt(t.toPostgres(Rt),e)}return JSON.stringify(t)}function Z(t,e){for(t=""+t;t.length<e;)t="0"+t;return t}function cn(t){var e=-t.getTimezoneOffset(),a=t.getFullYear(),s=a<1;s&&(a=Math.abs(a)+1);var i=Z(a,4)+"-"+Z(t.getMonth()+1,2)+"-"+Z(t.getDate(),2)+"T"+Z(t.getHours(),2)+":"+Z(t.getMinutes(),2)+":"+Z(t.getSeconds(),2)+"."+Z(t.getMilliseconds(),3);return e<0?(i+="-",e*=-1):i+="+",i+=Z(Math.floor(e/60),2)+":"+Z(e%60,2),s&&(i+=" BC"),i}function ln(t){var e=t.getUTCFullYear(),a=e<1;a&&(e=Math.abs(e)+1);var s=Z(e,4)+"-"+Z(t.getUTCMonth()+1,2)+"-"+Z(t.getUTCDate(),2)+"T"+Z(t.getUTCHours(),2)+":"+Z(t.getUTCMinutes(),2)+":"+Z(t.getUTCSeconds(),2)+"."+Z(t.getUTCMilliseconds(),3);return s+="+00:00",a&&(s+=" BC"),s}function dn(t,e,a){return t=typeof t=="string"?{text:t}:t,e&&(typeof e=="function"?t.callback=e:t.values=e),a&&(t.callback=a),t}var un=function(t){return'"'+t.replace(/"/g,'""')+'"'},Nn=function(t){for(var e=!1,a="'",s=0;s<t.length;s++){var i=t[s];i==="'"?a+=i+i:i==="\\"?(a+=i+i,e=!0):a+=i}return a+="'",e===!0&&(a=" E"+a),a};xs.exports={prepareValue:function(e){return Rt(e)},normalizeQueryConfig:dn,escapeIdentifier:un,escapeLiteral:Nn}});var Gs=R((ol,Bs)=>{"use strict";var st=W("crypto");function $t(t){return st.createHash("md5").update(t,"utf-8").digest("hex")}function Tn(t,e,a){var s=$t(e+t),i=$t(Buffer.concat([Buffer.from(s),a]));return"md5"+i}function mn(t){return st.createHash("sha256").update(t).digest()}function pn(t,e){return st.createHmac("sha256",t).update(e).digest()}async function Rn(t,e,a){return st.pbkdf2Sync(t,e,a,32,"sha256")}Bs.exports={postgresMd5PasswordHash:Tn,randomBytes:st.randomBytes,deriveKey:Rn,sha256:mn,hmacSha256:pn,md5:$t}});var Ks=R((nl,Vs)=>{var qs=W("crypto");Vs.exports={postgresMd5PasswordHash:In,randomBytes:bn,deriveKey:hn,sha256:vn,hmacSha256:On,md5:Xt};var Ys=qs.webcrypto||globalThis.crypto,ke=Ys.subtle,Jt=new TextEncoder;function bn(t){return Ys.getRandomValues(Buffer.alloc(t))}async function Xt(t){try{return qs.createHash("md5").update(t,"utf-8").digest("hex")}catch{let a=typeof t=="string"?Jt.encode(t):t,s=await ke.digest("MD5",a);return Array.from(new Uint8Array(s)).map(i=>i.toString(16).padStart(2,"0")).join("")}}async function In(t,e,a){var s=await Xt(e+t),i=await Xt(Buffer.concat([Buffer.from(s),a]));return"md5"+i}async function vn(t){return await ke.digest("SHA-256",t)}async function On(t,e){let a=await ke.importKey("raw",t,{name:"HMAC",hash:"SHA-256"},!1,["sign"]);return await ke.sign("HMAC",a,Jt.encode(e))}async function hn(t,e,a){let s=await ke.importKey("raw",Jt.encode(t),"PBKDF2",!1,["deriveBits"]),i={name:"PBKDF2",hash:"SHA-256",salt:e,iterations:a};return await ke.deriveBits(i,s,32*8,["deriveBits"])}});var Qt=R((_l,zt)=>{"use strict";var Ln=parseInt(process.versions&&process.versions.node&&process.versions.node.split(".")[0])<15;Ln?zt.exports=Gs():zt.exports=Ks()});var zs=R((El,Js)=>{"use strict";var Fe=Qt();function An(t){if(t.indexOf("SCRAM-SHA-256")===-1)throw new Error("SASL: Only mechanism SCRAM-SHA-256 is currently supported");let e=Fe.randomBytes(18).toString("base64");return{mechanism:"SCRAM-SHA-256",clientNonce:e,response:"n,,n=*,r="+e,message:"SASLInitialResponse"}}async function Sn(t,e,a){if(t.message!=="SASLInitialResponse")throw new Error("SASL: Last message was not SASLInitialResponse");if(typeof e!="string")throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string");if(e==="")throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a non-empty string");if(typeof a!="string")throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: serverData must be a string");let s=Dn(a);if(s.nonce.startsWith(t.clientNonce)){if(s.nonce.length===t.clientNonce.length)throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: server nonce is too short")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: server nonce does not start with client nonce");var i="n=*,r="+t.clientNonce,r="r="+s.nonce+",s="+s.salt+",i="+s.iteration,o="c=biws,r="+s.nonce,n=i+","+r+","+o,E=Buffer.from(s.salt,"base64"),_=await Fe.deriveKey(e,E,s.iteration),c=await Fe.hmacSha256(_,"Client Key"),l=await Fe.sha256(c),d=await Fe.hmacSha256(l,n),u=yn(Buffer.from(c),Buffer.from(d)).toString("base64"),I=await Fe.hmacSha256(_,"Server Key"),v=await Fe.hmacSha256(I,n);t.message="SASLResponse",t.serverSignature=Buffer.from(v).toString("base64"),t.response=o+",p="+u}function fn(t,e){if(t.message!=="SASLResponse")throw new Error("SASL: Last message was not SASLResponse");if(typeof e!="string")throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: serverData must be a string");let{serverSignature:a}=Fn(e);if(a!==t.serverSignature)throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature does not match")}function gn(t){if(typeof t!="string")throw new TypeError("SASL: text must be a string");return t.split("").map((e,a)=>t.charCodeAt(a)).every(e=>e>=33&&e<=43||e>=45&&e<=126)}function $s(t){return/^(?:[a-zA-Z0-9+/]{4})*(?:[a-zA-Z0-9+/]{2}==|[a-zA-Z0-9+/]{3}=)?$/.test(t)}function Xs(t){if(typeof t!="string")throw new TypeError("SASL: attribute pairs text must be a string");return new Map(t.split(",").map(e=>{if(!/^.=/.test(e))throw new Error("SASL: Invalid attribute pair entry");let a=e[0],s=e.substring(2);return[a,s]}))}function Dn(t){let e=Xs(t),a=e.get("r");if(a){if(!gn(a))throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: nonce must only contain printable characters")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: nonce missing");let s=e.get("s");if(s){if(!$s(s))throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: salt must be base64")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: salt missing");let i=e.get("i");if(i){if(!/^[1-9][0-9]*$/.test(i))throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: invalid iteration count")}else throw new Error("SASL: SCRAM-SERVER-FIRST-MESSAGE: iteration missing");let r=parseInt(i,10);return{nonce:a,salt:s,iteration:r}}function Fn(t){let a=Xs(t).get("v");if(a){if(!$s(a))throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature must be base64")}else throw new Error("SASL: SCRAM-SERVER-FINAL-MESSAGE: server signature is missing");return{serverSignature:a}}function yn(t,e){if(!Buffer.isBuffer(t))throw new TypeError("first argument must be a Buffer");if(!Buffer.isBuffer(e))throw new TypeError("second argument must be a Buffer");if(t.length!==e.length)throw new Error("Buffer lengths must match");if(t.length===0)throw new Error("Buffers cannot be empty");return Buffer.from(t.map((a,s)=>t[s]^e[s]))}Js.exports={startSession:An,continueSession:Sn,finalizeSession:fn}});var Zt=R((cl,Qs)=>{"use strict";var Cn=et();function bt(t){this._types=t||Cn,this.text={},this.binary={}}bt.prototype.getOverrides=function(t){switch(t){case"text":return this.text;case"binary":return this.binary;default:return{}}};bt.prototype.setTypeParser=function(t,e,a){typeof e=="function"&&(a=e,e="text"),this.getOverrides(e)[t]=a};bt.prototype.getTypeParser=function(t,e){return e=e||"text",this.getOverrides(e)[t]||this._types.getTypeParser(t,e)};Qs.exports=bt});var ti=R((ll,ei)=>{"use strict";function Me(t,e={}){if(t.charAt(0)==="/"){let E=t.split(" ");return{host:E[0],database:E[1]}}let a=Object.create(null),s,i=!1;/ |%[^a-f0-9]|%[a-f0-9][^a-f0-9]/i.test(t)&&(t=encodeURI(t).replace(/%25(\d\d)/g,"%$1"));try{try{s=new URL(t,"postgres://base")}catch{s=new URL(t.replace("@/","@___DUMMY___/"),"postgres://base"),i=!0}}catch(E){throw E.input&&(E.input="*****REDACTED*****"),E}for(let E of s.searchParams.entries())a[E[0]]=E[1];if(a.user=a.user||decodeURIComponent(s.username),a.password=a.password||decodeURIComponent(s.password),s.protocol=="socket:")return a.host=decodeURI(s.pathname),a.database=s.searchParams.get("db"),a.client_encoding=s.searchParams.get("encoding"),a;let r=(i?"":s.hostname).replace(/^\[(.+)\]$/,"$1");a.host?r&&/^%2f/i.test(r)&&(s.pathname=r+s.pathname):a.host=decodeURIComponent(r),a.port||(a.port=s.port);let o=s.pathname.slice(1)||null;a.database=o?decodeURI(o):null,(a.ssl==="true"||a.ssl==="1")&&(a.ssl=!0),a.ssl==="0"&&(a.ssl=!1),(a.sslcert||a.sslkey||a.sslrootcert||a.sslmode)&&(a.ssl={}),a.sslnegotiation==="direct"&&a.ssl===void 0&&(a.ssl=!0);let n=a.sslcert||a.sslkey||a.sslrootcert?W("fs"):null;if(a.sslcert&&(a.ssl.cert=n.readFileSync(a.sslcert).toString()),a.sslkey&&(a.ssl.key=n.readFileSync(a.sslkey).toString()),a.sslrootcert&&(a.ssl.ca=n.readFileSync(a.sslrootcert).toString()),e.useLibpqCompat&&a.uselibpqcompat)throw new Error("Both useLibpqCompat and uselibpqcompat are set. Please use only one of them.");if(a.uselibpqcompat==="true"||e.useLibpqCompat)switch(a.sslmode){case"disable":{a.ssl=!1;break}case"prefer":{a.ssl.rejectUnauthorized=!1;break}case"require":{a.sslrootcert?a.ssl.checkServerIdentity=function(){}:a.ssl.rejectUnauthorized=!1;break}case"verify-ca":{if(!a.ssl.ca)throw new Error("SECURITY WARNING: Using sslmode=verify-ca requires specifying a CA with sslrootcert. If a public CA is used, verify-ca allows connections to a server that somebody else may have registered with the CA, making you vulnerable to Man-in-the-Middle attacks. Either specify a custom CA certificate with sslrootcert parameter or use sslmode=verify-full for proper security.");a.ssl.checkServerIdentity=function(){};break}case"verify-full":break}else switch(a.sslmode){case"disable":{a.ssl=!1;break}case"prefer":case"require":case"verify-ca":case"verify-full":{a.sslmode!=="verify-full"&&ea(a.sslmode);break}case"no-verify":{a.ssl.rejectUnauthorized=!1;break}}return a}function jn(t){return Object.entries(t).reduce((a,[s,i])=>(i!=null&&(a[s]=i),a),Object.create(null))}function Zs(t){return Object.entries(t).reduce((a,[s,i])=>{if(s==="ssl"){let r=i;typeof r=="boolean"&&(a[s]=r),typeof r=="object"&&(a[s]=jn(r))}else if(i!=null)if(s==="port"){if(i!==""){let r=parseInt(i,10);if(isNaN(r))throw new Error(`Invalid ${s}: ${i}`);a[s]=r}}else a[s]=i;return a},Object.create(null))}function Un(t){return Zs(Me(t))}function ea(t){!ea.warned&&typeof process<"u"&&process.emitWarning&&(ea.warned=!0,process.emitWarning(`SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
 In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
 
 To prepare for this change:
 - If you want the current behavior, explicitly use 'sslmode=verify-full'
 - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=${t}'
 
-See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.`))}er.exports=we;we.parse=we;we.toClientConfig=Za;we.parseIntoClientConfig=co});var ss=R((bc,rr)=>{"use strict";var lo=k("dns"),ar=tt(),sr=tr().parse,Z=function(t,e,s){return s===void 0?s=process.env["PG"+t.toUpperCase()]:s===!1||(s=process.env[s]),e[t]||s||ar[t]},uo=function(){switch(process.env.PGSSLMODE){case"disable":return!1;case"prefer":case"require":case"verify-ca":case"verify-full":return!0;case"no-verify":return{rejectUnauthorized:!1}}return ar.ssl},ke=function(t){return"'"+(""+t).replace(/\\/g,"\\\\").replace(/'/g,"\\'")+"'"},ue=function(t,e,s){var a=e[s];a!=null&&t.push(s+"="+ke(a))},ts=class{constructor(e){e=typeof e=="string"?sr(e):e||{},e.connectionString&&(e=Object.assign({},e,sr(e.connectionString))),this.user=Z("user",e),this.database=Z("database",e),this.database===void 0&&(this.database=this.user),this.port=parseInt(Z("port",e),10),this.host=Z("host",e),Object.defineProperty(this,"password",{configurable:!0,enumerable:!1,writable:!0,value:Z("password",e)}),this.binary=Z("binary",e),this.options=Z("options",e),this.ssl=typeof e.ssl>"u"?uo():e.ssl,typeof this.ssl=="string"&&this.ssl==="true"&&(this.ssl=!0),this.ssl==="no-verify"&&(this.ssl={rejectUnauthorized:!1}),this.ssl&&this.ssl.key&&Object.defineProperty(this.ssl,"key",{enumerable:!1}),this.client_encoding=Z("client_encoding",e),this.replication=Z("replication",e),this.isDomainSocket=!(this.host||"").indexOf("/"),this.application_name=Z("application_name",e,"PGAPPNAME"),this.fallback_application_name=Z("fallback_application_name",e,!1),this.statement_timeout=Z("statement_timeout",e,!1),this.lock_timeout=Z("lock_timeout",e,!1),this.idle_in_transaction_session_timeout=Z("idle_in_transaction_session_timeout",e,!1),this.query_timeout=Z("query_timeout",e,!1),e.connectionTimeoutMillis===void 0?this.connect_timeout=process.env.PGCONNECT_TIMEOUT||0:this.connect_timeout=Math.floor(e.connectionTimeoutMillis/1e3),e.keepAlive===!1?this.keepalives=0:e.keepAlive===!0&&(this.keepalives=1),typeof e.keepAliveInitialDelayMillis=="number"&&(this.keepalives_idle=Math.floor(e.keepAliveInitialDelayMillis/1e3))}getLibpqConnectionString(e){var s=[];ue(s,this,"user"),ue(s,this,"password"),ue(s,this,"port"),ue(s,this,"application_name"),ue(s,this,"fallback_application_name"),ue(s,this,"connect_timeout"),ue(s,this,"options");var a=typeof this.ssl=="object"?this.ssl:this.ssl?{sslmode:this.ssl}:{};if(ue(s,a,"sslmode"),ue(s,a,"sslca"),ue(s,a,"sslkey"),ue(s,a,"sslcert"),ue(s,a,"sslrootcert"),this.database&&s.push("dbname="+ke(this.database)),this.replication&&s.push("replication="+ke(this.replication)),this.host&&s.push("host="+ke(this.host)),this.isDomainSocket)return e(null,s.join(" "));this.client_encoding&&s.push("client_encoding="+ke(this.client_encoding)),lo.lookup(this.host,function(r,i){return r?e(r,null):(s.push("hostaddr="+ke(i)),e(null,s.join(" ")))})}};rr.exports=ts});var or=R((Lc,nr)=>{"use strict";var No=et(),ir=/^([A-Za-z]+)(?: (\d+))?(?: (\d+))?/,as=class{constructor(e,s){this.command=null,this.rowCount=null,this.oid=null,this.rows=[],this.fields=[],this._parsers=void 0,this._types=s,this.RowCtor=null,this.rowAsArray=e==="array",this.rowAsArray&&(this.parseRow=this._parseRowAsArray),this._prebuiltEmptyResultObject=null}addCommandComplete(e){var s;e.text?s=ir.exec(e.text):s=ir.exec(e.command),s&&(this.command=s[1],s[3]?(this.oid=parseInt(s[2],10),this.rowCount=parseInt(s[3],10)):s[2]&&(this.rowCount=parseInt(s[2],10)))}_parseRowAsArray(e){for(var s=new Array(e.length),a=0,r=e.length;a<r;a++){var i=e[a];i!==null?s[a]=this._parsers[a](i):s[a]=null}return s}parseRow(e){for(var s={...this._prebuiltEmptyResultObject},a=0,r=e.length;a<r;a++){var i=e[a],n=this.fields[a].name;i!==null?s[n]=this._parsers[a](i):s[n]=null}return s}addRow(e){this.rows.push(e)}addFields(e){this.fields=e,this.fields.length&&(this._parsers=new Array(e.length));for(var s={},a=0;a<e.length;a++){var r=e[a];s[r.name]=null,this._types?this._parsers[a]=this._types.getTypeParser(r.dataTypeID,r.format||"text"):this._parsers[a]=No.getTypeParser(r.dataTypeID,r.format||"text")}this._prebuiltEmptyResultObject={...s}}};nr.exports=as});var lr=R((vc,cr)=>{"use strict";var{EventEmitter:po}=k("events"),_r=or(),Er=st(),rs=class extends po{constructor(e,s,a){super(),e=Er.normalizeQueryConfig(e,s,a),this.text=e.text,this.values=e.values,this.rows=e.rows,this.types=e.types,this.name=e.name,this.queryMode=e.queryMode,this.binary=e.binary,this.portal=e.portal||"",this.callback=e.callback,this._rowMode=e.rowMode,process.domain&&e.callback&&(this.callback=process.domain.bind(e.callback)),this._result=new _r(this._rowMode,this.types),this._results=this._result,this._canceledDueToError=!1}requiresPreparation(){return this.queryMode==="extended"||this.name||this.rows?!0:!this.text||!this.values?!1:this.values.length>0}_checkForMultirow(){this._result.command&&(Array.isArray(this._results)||(this._results=[this._result]),this._result=new _r(this._rowMode,this._result._types),this._results.push(this._result))}handleRowDescription(e){this._checkForMultirow(),this._result.addFields(e.fields),this._accumulateRows=this.callback||!this.listeners("row").length}handleDataRow(e){let s;if(!this._canceledDueToError){try{s=this._result.parseRow(e.fields)}catch(a){this._canceledDueToError=a;return}this.emit("row",s,this._result),this._accumulateRows&&this._result.addRow(s)}}handleCommandComplete(e,s){this._checkForMultirow(),this._result.addCommandComplete(e),this.rows&&s.sync()}handleEmptyQuery(e){this.rows&&e.sync()}handleError(e,s){if(this._canceledDueToError&&(e=this._canceledDueToError,this._canceledDueToError=!1),this.callback)return this.callback(e);this.emit("error",e)}handleReadyForQuery(e){if(this._canceledDueToError)return this.handleError(this._canceledDueToError,e);if(this.callback)try{this.callback(null,this._results)}catch(s){process.nextTick(()=>{throw s})}this.emit("end",this._results)}submit(e){if(typeof this.text!="string"&&typeof this.name!="string")return new Error("A query must have either text or a name. Supplying neither is unsupported.");let s=e.parsedStatements[this.name];return this.text&&s&&this.text!==s?new Error(`Prepared statements must be unique - '${this.name}' was used for a different statement`):this.values&&!Array.isArray(this.values)?new Error("Query values must be an array"):(this.requiresPreparation()?this.prepare(e):e.query(this.text),null)}hasBeenParsed(e){return this.name&&e.parsedStatements[this.name]}handlePortalSuspended(e){this._getRows(e,this.rows)}_getRows(e,s){e.execute({portal:this.portal,rows:s}),s?e.flush():e.sync()}prepare(e){this.hasBeenParsed(e)||e.parse({text:this.text,name:this.name,types:this.types});try{e.bind({portal:this.portal,statement:this.name,values:this.values,binary:this.binary,valueMapper:Er.prepareValue})}catch(s){this.handleError(s,e);return}e.describe({type:"P",name:this.portal||""}),this._getRows(e,this.rows)}handleCopyInResponse(e){e.sendCopyFail("No source stream defined")}handleCopyData(e,s){}};cr.exports=rs});var hs=R(N=>{"use strict";Object.defineProperty(N,"__esModule",{value:!0});N.NoticeMessage=N.DataRowMessage=N.CommandCompleteMessage=N.ReadyForQueryMessage=N.NotificationResponseMessage=N.BackendKeyDataMessage=N.AuthenticationMD5Password=N.ParameterStatusMessage=N.ParameterDescriptionMessage=N.RowDescriptionMessage=N.Field=N.CopyResponse=N.CopyDataMessage=N.DatabaseError=N.copyDone=N.emptyQuery=N.replicationStart=N.portalSuspended=N.noData=N.closeComplete=N.bindComplete=N.parseComplete=void 0;N.parseComplete={name:"parseComplete",length:5};N.bindComplete={name:"bindComplete",length:5};N.closeComplete={name:"closeComplete",length:5};N.noData={name:"noData",length:5};N.portalSuspended={name:"portalSuspended",length:5};N.replicationStart={name:"replicationStart",length:4};N.emptyQuery={name:"emptyQuery",length:4};N.copyDone={name:"copyDone",length:4};var is=class extends Error{constructor(e,s,a){super(e),this.length=s,this.name=a}};N.DatabaseError=is;var ns=class{constructor(e,s){this.length=e,this.chunk=s,this.name="copyData"}};N.CopyDataMessage=ns;var os=class{constructor(e,s,a,r){this.length=e,this.name=s,this.binary=a,this.columnTypes=new Array(r)}};N.CopyResponse=os;var _s=class{constructor(e,s,a,r,i,n,o){this.name=e,this.tableID=s,this.columnID=a,this.dataTypeID=r,this.dataTypeSize=i,this.dataTypeModifier=n,this.format=o}};N.Field=_s;var Es=class{constructor(e,s){this.length=e,this.fieldCount=s,this.name="rowDescription",this.fields=new Array(this.fieldCount)}};N.RowDescriptionMessage=Es;var cs=class{constructor(e,s){this.length=e,this.parameterCount=s,this.name="parameterDescription",this.dataTypeIDs=new Array(this.parameterCount)}};N.ParameterDescriptionMessage=cs;var ls=class{constructor(e,s,a){this.length=e,this.parameterName=s,this.parameterValue=a,this.name="parameterStatus"}};N.ParameterStatusMessage=ls;var ds=class{constructor(e,s){this.length=e,this.salt=s,this.name="authenticationMD5Password"}};N.AuthenticationMD5Password=ds;var us=class{constructor(e,s,a){this.length=e,this.processID=s,this.secretKey=a,this.name="backendKeyData"}};N.BackendKeyDataMessage=us;var Ns=class{constructor(e,s,a,r){this.length=e,this.processId=s,this.channel=a,this.payload=r,this.name="notification"}};N.NotificationResponseMessage=Ns;var ps=class{constructor(e,s){this.length=e,this.status=s,this.name="readyForQuery"}};N.ReadyForQueryMessage=ps;var Ts=class{constructor(e,s){this.length=e,this.text=s,this.name="commandComplete"}};N.CommandCompleteMessage=Ts;var ms=class{constructor(e,s){this.length=e,this.fields=s,this.name="dataRow",this.fieldCount=s.length}};N.DataRowMessage=ms;var Rs=class{constructor(e,s){this.length=e,this.message=s,this.name="notice"}};N.NoticeMessage=Rs});var dr=R(It=>{"use strict";Object.defineProperty(It,"__esModule",{value:!0});It.Writer=void 0;var Is=class{constructor(e=256){this.size=e,this.offset=5,this.headerPosition=0,this.buffer=Buffer.allocUnsafe(e)}ensure(e){if(this.buffer.length-this.offset<e){let a=this.buffer,r=a.length+(a.length>>1)+e;this.buffer=Buffer.allocUnsafe(r),a.copy(this.buffer,0,0,this.offset)}}addInt32(e){return this.ensure(4),this.buffer[this.offset++]=e>>>24&255,this.buffer[this.offset++]=e>>>16&255,this.buffer[this.offset++]=e>>>8&255,this.buffer[this.offset++]=e>>>0&255,this}addInt16(e){return this.ensure(2),this.buffer[this.offset++]=e>>>8&255,this.buffer[this.offset++]=e>>>0&255,this}addCString(e){if(!e)this.ensure(1);else{let s=Buffer.byteLength(e);this.ensure(s+1),this.buffer.write(e,this.offset,"utf-8"),this.offset+=s}return this.buffer[this.offset++]=0,this}addString(e=""){let s=Buffer.byteLength(e);return this.ensure(s),this.buffer.write(e,this.offset),this.offset+=s,this}addInt32PrefixedString(e){let s=Buffer.byteLength(e);this.ensure(4+s);let a=this.buffer,r=this.offset;return a[r++]=s>>>24&255,a[r++]=s>>>16&255,a[r++]=s>>>8&255,a[r++]=s>>>0&255,a.write(e,r,"utf-8"),this.offset=r+s,this}add(e){return this.ensure(e.length),e.copy(this.buffer,this.offset),this.offset+=e.length,this}reserveUnsafe(e){let s=this.offset;return this.ensure(e),this.offset+=e,s}join(e){if(e){this.buffer[this.headerPosition]=e;let s=this.offset-(this.headerPosition+1);this.buffer.writeInt32BE(s,this.headerPosition+1)}return this.buffer.slice(e?0:5,this.offset)}flush(e){let s=this.join(e);return this.offset=5,this.headerPosition=0,this.buffer=Buffer.allocUnsafe(this.size),s}clear(){this.offset=5,this.headerPosition=0}};It.Writer=Is});var pr=R(bt=>{"use strict";Object.defineProperty(bt,"__esModule",{value:!0});bt.serialize=void 0;var ur=dr(),f=new ur.Writer,To=t=>{f.addInt16(3).addInt16(0);for(let a of Object.keys(t))f.addCString(a).addCString(t[a]);f.addCString("client_encoding").addCString("UTF8");let e=f.addCString("").flush(),s=e.length+4;return new ur.Writer().addInt32(s).add(e).flush()},mo=()=>{let t=Buffer.allocUnsafe(8);return t.writeInt32BE(8,0),t.writeInt32BE(80877103,4),t},Ro=t=>f.addCString(t).flush(112),ho=function(t,e){return f.addCString(t).addInt32PrefixedString(e),f.flush(112)},Io=function(t){return f.addString(t).flush(112)},Oo=t=>f.addCString(t).flush(81),Nr=[],bo=t=>{let e=t.name||"";e.length>63&&(console.error("Warning! Postgres only supports 63 characters for query names."),console.error("You supplied %s (%s)",e,e.length),console.error("This can cause conflicts and silent errors executing queries"));let s=t.types||Nr,a=s.length,r=f.addCString(e).addCString(t.text).addInt16(a);for(let i=0;i<a;i++)r.addInt32(s[i]);return f.flush(80)},Lo=function(t,e,s){let a=t.length;for(let r=0;r<a;r++){let i=e?e(t[r],r):t[r],n=0;i==null?f.addInt32(-1):i instanceof Buffer?(n=1,f.addInt32(i.length),f.add(i)):f.addInt32PrefixedString(i);let o=f.buffer;o[s++]=0,o[s++]=n}},vo=(t={})=>{let e=t.portal||"",s=t.statement||"",a=t.binary||!1,r=t.values||Nr,i=r.length;f.addCString(e).addCString(s),f.addInt16(i);let n=f.reserveUnsafe(i*2);f.addInt16(i);try{Lo(r,t.valueMapper,n)}catch(o){throw f.clear(),o}return f.addInt16(1),f.addInt16(a?1:0),f.flush(66)},Ao=Buffer.from([69,0,0,0,9,0,0,0,0,0]),fo=t=>{if(!t||!t.portal&&!t.rows)return Ao;let e=t.portal||"",s=t.rows||0,a=Buffer.byteLength(e),r=4+a+1+4,i=Buffer.allocUnsafe(1+r);return i[0]=69,i.writeInt32BE(r,1),i.write(e,5,"utf-8"),i[a+5]=0,i.writeUInt32BE(s,i.length-4),i},So=(t,e)=>{let s=Buffer.allocUnsafe(16);return s.writeInt32BE(16,0),s.writeInt16BE(1234,4),s.writeInt16BE(5678,6),s.writeInt32BE(t,8),s.writeInt32BE(e,12),s},Os=(t,e)=>{let a=4+Buffer.byteLength(e)+1,r=Buffer.allocUnsafe(1+a);return r[0]=t,r.writeInt32BE(a,1),r.write(e,5,"utf-8"),r[a]=0,r},go=f.addCString("P").flush(68),Do=f.addCString("S").flush(68),yo=t=>t.name?Os(68,`${t.type}${t.name||""}`):t.type==="P"?go:Do,Co=t=>{let e=`${t.type}${t.name||""}`;return Os(67,e)},Fo=t=>f.add(t).flush(100),jo=t=>Os(102,t),Ot=t=>Buffer.from([t,0,0,0,4]),Uo=Ot(72),Po=Ot(83),Ho=Ot(88),Mo=Ot(99),wo={startup:To,password:Ro,requestSsl:mo,sendSASLInitialResponseMessage:ho,sendSCRAMClientFinalMessage:Io,query:Oo,parse:bo,bind:vo,execute:fo,describe:yo,close:Co,flush:()=>Uo,sync:()=>Po,end:()=>Ho,copyData:Fo,copyDone:()=>Mo,copyFail:jo,cancel:So};bt.serialize=wo});var Tr=R(Lt=>{"use strict";Object.defineProperty(Lt,"__esModule",{value:!0});Lt.BufferReader=void 0;var bs=class{constructor(e=0){this.offset=e,this.buffer=Buffer.allocUnsafe(0),this.encoding="utf-8"}setBuffer(e,s){this.offset=e,this.buffer=s}int16(){let e=this.buffer.readInt16BE(this.offset);return this.offset+=2,e}byte(){let e=this.buffer[this.offset];return this.offset++,e}int32(){let e=this.buffer.readInt32BE(this.offset);return this.offset+=4,e}uint32(){let e=this.buffer.readUInt32BE(this.offset);return this.offset+=4,e}string(e){let s=this.buffer.toString(this.encoding,this.offset,this.offset+e);return this.offset+=e,s}cstring(){let e=this.offset,s=e;for(;this.buffer[s++];);return this.offset=s,this.buffer.toString(this.encoding,e,s-1)}bytes(e){let s=this.buffer.slice(this.offset,this.offset+e);return this.offset+=e,s}};Lt.BufferReader=bs});var Ir=R(vt=>{"use strict";Object.defineProperty(vt,"__esModule",{value:!0});vt.Parser=void 0;var j=hs(),ko=Tr(),vs=1,xo=4,mr=vs+xo,Ee=-1,Ls=Buffer.allocUnsafe(0),As=class{constructor(e){if(this.buffer=Ls,this.bufferLength=0,this.bufferOffset=0,this.reader=new ko.BufferReader,e?.mode==="binary")throw new Error("Binary mode not supported yet");this.mode=e?.mode||"text"}parse(e,s){this.mergeBuffer(e);let a=this.bufferOffset+this.bufferLength,r=this.bufferOffset;for(;r+mr<=a;){let i=this.buffer[r],n=this.buffer.readUInt32BE(r+vs),o=vs+n;if(o+r<=a){let E=this.handlePacket(r+mr,i,n,this.buffer);s(E),r+=o}else break}r===a?(this.buffer=Ls,this.bufferLength=0,this.bufferOffset=0):(this.bufferLength=a-r,this.bufferOffset=r)}mergeBuffer(e){if(this.bufferLength>0){let s=this.bufferLength+e.byteLength;if(s+this.bufferOffset>this.buffer.byteLength){let r;if(s<=this.buffer.byteLength&&this.bufferOffset>=this.bufferLength)r=this.buffer;else{let i=this.buffer.byteLength*2;for(;s>=i;)i*=2;r=Buffer.allocUnsafe(i)}this.buffer.copy(r,0,this.bufferOffset,this.bufferOffset+this.bufferLength),this.buffer=r,this.bufferOffset=0}e.copy(this.buffer,this.bufferOffset+this.bufferLength),this.bufferLength=s}else this.buffer=e,this.bufferOffset=0,this.bufferLength=e.byteLength}handlePacket(e,s,a,r){let{reader:i}=this;i.setBuffer(e,r);let n;switch(s){case 50:n=j.bindComplete;break;case 49:n=j.parseComplete;break;case 51:n=j.closeComplete;break;case 110:n=j.noData;break;case 115:n=j.portalSuspended;break;case 99:n=j.copyDone;break;case 87:n=j.replicationStart;break;case 73:n=j.emptyQuery;break;case 68:n=Jo(i);break;case 67:n=Bo(i);break;case 90:n=Wo(i);break;case 65:n=$o(i);break;case 82:n=Zo(i,a);break;case 83:n=zo(i);break;case 75:n=Qo(i);break;case 69:n=Rr(i,"error");break;case 78:n=Rr(i,"notice");break;case 84:n=Ko(i);break;case 116:n=Xo(i);break;case 71:n=qo(i);break;case 72:n=Yo(i);break;case 100:n=Go(i,a);break;default:return new j.DatabaseError("received invalid response: "+s.toString(16),a,"error")}return i.setBuffer(0,Ls),n.length=a,n}};vt.Parser=As;var Wo=t=>{let e=t.string(1);return new j.ReadyForQueryMessage(Ee,e)},Bo=t=>{let e=t.cstring();return new j.CommandCompleteMessage(Ee,e)},Go=(t,e)=>{let s=t.bytes(e-4);return new j.CopyDataMessage(Ee,s)},qo=t=>hr(t,"copyInResponse"),Yo=t=>hr(t,"copyOutResponse"),hr=(t,e)=>{let s=t.byte()!==0,a=t.int16(),r=new j.CopyResponse(Ee,e,s,a);for(let i=0;i<a;i++)r.columnTypes[i]=t.int16();return r},$o=t=>{let e=t.int32(),s=t.cstring(),a=t.cstring();return new j.NotificationResponseMessage(Ee,e,s,a)},Ko=t=>{let e=t.int16(),s=new j.RowDescriptionMessage(Ee,e);for(let a=0;a<e;a++)s.fields[a]=Vo(t);return s},Vo=t=>{let e=t.cstring(),s=t.uint32(),a=t.int16(),r=t.uint32(),i=t.int16(),n=t.int32(),o=t.int16()===0?"text":"binary";return new j.Field(e,s,a,r,i,n,o)},Xo=t=>{let e=t.int16(),s=new j.ParameterDescriptionMessage(Ee,e);for(let a=0;a<e;a++)s.dataTypeIDs[a]=t.uint32();return s},Jo=t=>{let e=t.int16(),s=new Array(e);for(let a=0;a<e;a++){let r=t.int32();s[a]=r===-1?null:t.string(r)}return new j.DataRowMessage(Ee,s)},zo=t=>{let e=t.cstring(),s=t.cstring();return new j.ParameterStatusMessage(Ee,e,s)},Qo=t=>{let e=t.int32(),s=t.int32();return new j.BackendKeyDataMessage(Ee,e,s)},Zo=(t,e)=>{let s=t.int32(),a={name:"authenticationOk",length:e};switch(s){case 0:break;case 3:a.length===8&&(a.name="authenticationCleartextPassword");break;case 5:if(a.length===12){a.name="authenticationMD5Password";let r=t.bytes(4);return new j.AuthenticationMD5Password(Ee,r)}break;case 10:{a.name="authenticationSASL",a.mechanisms=[];let r;do r=t.cstring(),r&&a.mechanisms.push(r);while(r)}break;case 11:a.name="authenticationSASLContinue",a.data=t.string(e-8);break;case 12:a.name="authenticationSASLFinal",a.data=t.string(e-8);break;default:throw new Error("Unknown authenticationOk message type "+s)}return a},Rr=(t,e)=>{let s={},a=t.string(1);for(;a!=="\0";)s[a]=t.cstring(),a=t.string(1);let r=s.M,i=e==="notice"?new j.NoticeMessage(Ee,r):new j.DatabaseError(r,Ee,e);return i.severity=s.S,i.code=s.C,i.detail=s.D,i.hint=s.H,i.position=s.P,i.internalPosition=s.p,i.internalQuery=s.q,i.where=s.W,i.schema=s.s,i.table=s.t,i.column=s.c,i.dataType=s.d,i.constraint=s.n,i.file=s.F,i.line=s.L,i.routine=s.R,i}});var fs=R(Ce=>{"use strict";Object.defineProperty(Ce,"__esModule",{value:!0});Ce.DatabaseError=Ce.serialize=void 0;Ce.parse=a_;var e_=hs();Object.defineProperty(Ce,"DatabaseError",{enumerable:!0,get:function(){return e_.DatabaseError}});var t_=pr();Object.defineProperty(Ce,"serialize",{enumerable:!0,get:function(){return t_.serialize}});var s_=Ir();function a_(t,e){let s=new s_.Parser;return t.on("data",a=>s.parse(a,e)),new Promise(a=>t.on("end",()=>a()))}});var Or=R(Ss=>{"use strict";Object.defineProperty(Ss,"__esModule",{value:!0});Ss.default={}});var Lr=R((Fc,br)=>{var{getStream:r_,getSecureStream:i_}=E_();br.exports={getStream:r_,getSecureStream:i_};function n_(){function t(s){let a=k("net");return new a.Socket}function e(s){var a=k("tls");return a.connect(s)}return{getStream:t,getSecureStream:e}}function o_(){function t(s){let{CloudflareSocket:a}=Or();return new a(s)}function e(s){return s.socket.startTls(s),s.socket}return{getStream:t,getSecureStream:e}}function __(){if(typeof navigator=="object"&&navigator!==null&&typeof navigator.userAgent=="string")return navigator.userAgent==="Cloudflare-Workers";if(typeof Response=="function"){let t=new Response(null,{cf:{thing:!0}});if(typeof t.cf=="object"&&t.cf!==null&&t.cf.thing)return!0}return!1}function E_(){return __()?o_():n_()}});var Ds=R((jc,vr)=>{"use strict";var c_=k("events").EventEmitter,{parse:l_,serialize:$}=fs(),{getStream:d_,getSecureStream:u_}=Lr(),N_=$.flush(),p_=$.sync(),T_=$.end(),gs=class extends c_{constructor(e){super(),e=e||{},this.stream=e.stream||d_(e.ssl),typeof this.stream=="function"&&(this.stream=this.stream(e)),this._keepAlive=e.keepAlive,this._keepAliveInitialDelayMillis=e.keepAliveInitialDelayMillis,this.lastBuffer=!1,this.parsedStatements={},this.ssl=e.ssl||!1,this._ending=!1,this._emitMessage=!1;var s=this;this.on("newListener",function(a){a==="message"&&(s._emitMessage=!0)})}connect(e,s){var a=this;this._connecting=!0,this.stream.setNoDelay(!0),this.stream.connect(e,s),this.stream.once("connect",function(){a._keepAlive&&a.stream.setKeepAlive(!0,a._keepAliveInitialDelayMillis),a.emit("connect")});let r=function(i){a._ending&&(i.code==="ECONNRESET"||i.code==="EPIPE")||a.emit("error",i)};if(this.stream.on("error",r),this.stream.on("close",function(){a.emit("end")}),!this.ssl)return this.attachListeners(this.stream);this.stream.once("data",function(i){var n=i.toString("utf8");switch(n){case"S":break;case"N":return a.stream.end(),a.emit("error",new Error("The server does not support SSL connections"));default:return a.stream.end(),a.emit("error",new Error("There was an error establishing an SSL connection"))}let o={socket:a.stream};a.ssl!==!0&&(Object.assign(o,a.ssl),"key"in a.ssl&&(o.key=a.ssl.key));var E=k("net");E.isIP&&E.isIP(s)===0&&(o.servername=s);try{a.stream=u_(o)}catch(_){return a.emit("error",_)}a.attachListeners(a.stream),a.stream.on("error",r),a.emit("sslconnect")})}attachListeners(e){l_(e,s=>{var a=s.name==="error"?"errorMessage":s.name;this._emitMessage&&this.emit("message",s),this.emit(a,s)})}requestSsl(){this.stream.write($.requestSsl())}startup(e){this.stream.write($.startup(e))}cancel(e,s){this._send($.cancel(e,s))}password(e){this._send($.password(e))}sendSASLInitialResponseMessage(e,s){this._send($.sendSASLInitialResponseMessage(e,s))}sendSCRAMClientFinalMessage(e){this._send($.sendSCRAMClientFinalMessage(e))}_send(e){return this.stream.writable?this.stream.write(e):!1}query(e){this._send($.query(e))}parse(e){this._send($.parse(e))}bind(e){this._send($.bind(e))}execute(e){this._send($.execute(e))}flush(){this.stream.writable&&this.stream.write(N_)}sync(){this._ending=!0,this._send(p_)}ref(){this.stream.ref()}unref(){this.stream.unref()}end(){if(this._ending=!0,!this._connecting||!this.stream.writable){this.stream.end();return}return this.stream.write(T_,()=>{this.stream.end()})}close(e){this._send($.close(e))}describe(e){this._send($.describe(e))}sendCopyFromChunk(e){this._send($.copyData(e))}endCopyFrom(){this._send($.copyDone())}sendCopyFail(e){this._send($.copyFail(e))}};vr.exports=gs});var Sr=R((Uc,be)=>{"use strict";var Ar=k("path"),m_=k("stream").Stream,R_=k("readline").createInterface,fr=k("util"),h_=5432,At=process.platform==="win32",rt=process.stderr,I_=56,O_=7,b_=61440,L_=32768;function v_(t){return(t&b_)==L_}var xe=["host","port","database","user","password"],ys=xe.length,A_=xe[ys-1];function Cs(){var t=rt instanceof m_&&rt.writable===!0;if(t){var e=Array.prototype.slice.call(arguments).concat(`
-`);rt.write(fr.format.apply(fr,e))}}Object.defineProperty(be.exports,"isWin",{get:function(){return At},set:function(t){At=t}});be.exports.warnTo=function(t){var e=rt;return rt=t,e};be.exports.getFileName=function(t){var e=t||process.env,s=e.PGPASSFILE||(At?Ar.join(e.APPDATA||"./","postgresql","pgpass.conf"):Ar.join(e.HOME||"./",".pgpass"));return s};be.exports.usePgPass=function(t,e){return Object.prototype.hasOwnProperty.call(process.env,"PGPASSWORD")?!1:At?!0:(e=e||"<unkn>",v_(t.mode)?t.mode&(I_|O_)?(Cs('WARNING: password file "%s" has group or world access; permissions should be u=rw (0600) or less',e),!1):!0:(Cs('WARNING: password file "%s" is not a plain file',e),!1))};var f_=be.exports.match=function(t,e){return xe.slice(0,-1).reduce(function(s,a,r){return r==1&&Number(t[a]||h_)===Number(e[a])?s&&!0:s&&(e[a]==="*"||e[a]===t[a])},!0)};be.exports.getPassword=function(t,e,s){var a,r=!1,i=R_({input:e,crlfDelay:1/0});function n(c){r=!0,e.destroy(),s(c)}function o(c){var l=S_(c);l&&g_(l)&&f_(t,l)&&(a=l[A_],i.close())}var E=function(){r||n(a)},_=function(c){r||(Cs("WARNING: error on reading file: %s",c),n(void 0))};e.on("error",_),i.on("line",o).on("close",E).on("error",_)};var S_=be.exports.parseLine=function(t){if(t.length<11||t.match(/^\s+#/))return null;for(var e="",s="",a=0,r=0,i=0,n={},o=!1,E=function(c,l,d){var u=t.substring(l,d);Object.hasOwnProperty.call(process.env,"PGPASS_NO_DEESCAPE")||(u=u.replace(/\\([:\\])/g,"$1")),n[xe[c]]=u},_=0;_<t.length-1;_+=1){if(e=t.charAt(_+1),s=t.charAt(_),o=a==ys-1,o){E(a,r);break}_>=0&&e==":"&&s!=="\\"&&(E(a,r,_+1),r=_+2,a+=1)}return n=Object.keys(n).length===ys?n:null,n},g_=be.exports.isValidEntry=function(t){for(var e={0:function(n){return n.length>0},1:function(n){return n==="*"?!0:(n=Number(n),isFinite(n)&&n>0&&n<9007199254740992&&Math.floor(n)===n)},2:function(n){return n.length>0},3:function(n){return n.length>0},4:function(n){return n.length>0}},s=0;s<xe.length;s+=1){var a=e[s],r=t[xe[s]]||"",i=a(r);if(!i)return!1}return!0}});var Dr=R((Hc,Fs)=>{"use strict";var Pc=k("path"),gr=k("fs"),ft=Sr();Fs.exports=function(t,e){var s=ft.getFileName();gr.stat(s,function(a,r){if(a||!ft.usePgPass(r,s))return e(void 0);var i=gr.createReadStream(s);ft.getPassword(t,i,e)})};Fs.exports.warnTo=ft.warnTo});var jr=R((Mc,Fr)=>{"use strict";var D_=k("events").EventEmitter,yr=st(),js=za(),y_=Zt(),C_=ss(),Cr=lr(),F_=tt(),j_=Ds(),U_=Qt(),St=class extends D_{constructor(e){super(),this.connectionParameters=new C_(e),this.user=this.connectionParameters.user,this.database=this.connectionParameters.database,this.port=this.connectionParameters.port,this.host=this.connectionParameters.host,Object.defineProperty(this,"password",{configurable:!0,enumerable:!1,writable:!0,value:this.connectionParameters.password}),this.replication=this.connectionParameters.replication;var s=e||{};this._Promise=s.Promise||global.Promise,this._types=new y_(s.types),this._ending=!1,this._ended=!1,this._connecting=!1,this._connected=!1,this._connectionError=!1,this._queryable=!0,this.connection=s.connection||new j_({stream:s.stream,ssl:this.connectionParameters.ssl,keepAlive:s.keepAlive||!1,keepAliveInitialDelayMillis:s.keepAliveInitialDelayMillis||0,encoding:this.connectionParameters.client_encoding||"utf8"}),this.queryQueue=[],this.binary=s.binary||F_.binary,this.processID=null,this.secretKey=null,this.ssl=this.connectionParameters.ssl||!1,this.ssl&&this.ssl.key&&Object.defineProperty(this.ssl,"key",{enumerable:!1}),this._connectionTimeoutMillis=s.connectionTimeoutMillis||0}_errorAllQueries(e){let s=a=>{process.nextTick(()=>{a.handleError(e,this.connection)})};this.activeQuery&&(s(this.activeQuery),this.activeQuery=null),this.queryQueue.forEach(s),this.queryQueue.length=0}_connect(e){var s=this,a=this.connection;if(this._connectionCallback=e,this._connecting||this._connected){let r=new Error("Client has already been connected. You cannot reuse a client.");process.nextTick(()=>{e(r)});return}this._connecting=!0,this._connectionTimeoutMillis>0&&(this.connectionTimeoutHandle=setTimeout(()=>{a._ending=!0,a.stream.destroy(new Error("timeout expired"))},this._connectionTimeoutMillis)),this.host&&this.host.indexOf("/")===0?a.connect(this.host+"/.s.PGSQL."+this.port):a.connect(this.port,this.host),a.on("connect",function(){s.ssl?a.requestSsl():a.startup(s.getStartupConf())}),a.on("sslconnect",function(){a.startup(s.getStartupConf())}),this._attachListeners(a),a.once("end",()=>{let r=this._ending?new Error("Connection terminated"):new Error("Connection terminated unexpectedly");clearTimeout(this.connectionTimeoutHandle),this._errorAllQueries(r),this._ended=!0,this._ending||(this._connecting&&!this._connectionError?this._connectionCallback?this._connectionCallback(r):this._handleErrorEvent(r):this._connectionError||this._handleErrorEvent(r)),process.nextTick(()=>{this.emit("end")})})}connect(e){if(e){this._connect(e);return}return new this._Promise((s,a)=>{this._connect(r=>{r?a(r):s()})})}_attachListeners(e){e.on("authenticationCleartextPassword",this._handleAuthCleartextPassword.bind(this)),e.on("authenticationMD5Password",this._handleAuthMD5Password.bind(this)),e.on("authenticationSASL",this._handleAuthSASL.bind(this)),e.on("authenticationSASLContinue",this._handleAuthSASLContinue.bind(this)),e.on("authenticationSASLFinal",this._handleAuthSASLFinal.bind(this)),e.on("backendKeyData",this._handleBackendKeyData.bind(this)),e.on("error",this._handleErrorEvent.bind(this)),e.on("errorMessage",this._handleErrorMessage.bind(this)),e.on("readyForQuery",this._handleReadyForQuery.bind(this)),e.on("notice",this._handleNotice.bind(this)),e.on("rowDescription",this._handleRowDescription.bind(this)),e.on("dataRow",this._handleDataRow.bind(this)),e.on("portalSuspended",this._handlePortalSuspended.bind(this)),e.on("emptyQuery",this._handleEmptyQuery.bind(this)),e.on("commandComplete",this._handleCommandComplete.bind(this)),e.on("parseComplete",this._handleParseComplete.bind(this)),e.on("copyInResponse",this._handleCopyInResponse.bind(this)),e.on("copyData",this._handleCopyData.bind(this)),e.on("notification",this._handleNotification.bind(this))}_checkPgPass(e){let s=this.connection;if(typeof this.password=="function")this._Promise.resolve().then(()=>this.password()).then(a=>{if(a!==void 0){if(typeof a!="string"){s.emit("error",new TypeError("Password must be a string"));return}this.connectionParameters.password=this.password=a}else this.connectionParameters.password=this.password=null;e()}).catch(a=>{s.emit("error",a)});else if(this.password!==null)e();else try{Dr()(this.connectionParameters,r=>{r!==void 0&&(this.connectionParameters.password=this.password=r),e()})}catch(a){this.emit("error",a)}}_handleAuthCleartextPassword(e){this._checkPgPass(()=>{this.connection.password(this.password)})}_handleAuthMD5Password(e){this._checkPgPass(async()=>{try{let s=await U_.postgresMd5PasswordHash(this.user,this.password,e.salt);this.connection.password(s)}catch(s){this.emit("error",s)}})}_handleAuthSASL(e){this._checkPgPass(()=>{try{this.saslSession=js.startSession(e.mechanisms),this.connection.sendSASLInitialResponseMessage(this.saslSession.mechanism,this.saslSession.response)}catch(s){this.connection.emit("error",s)}})}async _handleAuthSASLContinue(e){try{await js.continueSession(this.saslSession,this.password,e.data),this.connection.sendSCRAMClientFinalMessage(this.saslSession.response)}catch(s){this.connection.emit("error",s)}}_handleAuthSASLFinal(e){try{js.finalizeSession(this.saslSession,e.data),this.saslSession=null}catch(s){this.connection.emit("error",s)}}_handleBackendKeyData(e){this.processID=e.processID,this.secretKey=e.secretKey}_handleReadyForQuery(e){this._connecting&&(this._connecting=!1,this._connected=!0,clearTimeout(this.connectionTimeoutHandle),this._connectionCallback&&(this._connectionCallback(null,this),this._connectionCallback=null),this.emit("connect"));let{activeQuery:s}=this;this.activeQuery=null,this.readyForQuery=!0,s&&s.handleReadyForQuery(this.connection),this._pulseQueryQueue()}_handleErrorWhileConnecting(e){if(!this._connectionError){if(this._connectionError=!0,clearTimeout(this.connectionTimeoutHandle),this._connectionCallback)return this._connectionCallback(e);this.emit("error",e)}}_handleErrorEvent(e){if(this._connecting)return this._handleErrorWhileConnecting(e);this._queryable=!1,this._errorAllQueries(e),this.emit("error",e)}_handleErrorMessage(e){if(this._connecting)return this._handleErrorWhileConnecting(e);let s=this.activeQuery;if(!s){this._handleErrorEvent(e);return}this.activeQuery=null,s.handleError(e,this.connection)}_handleRowDescription(e){this.activeQuery.handleRowDescription(e)}_handleDataRow(e){this.activeQuery.handleDataRow(e)}_handlePortalSuspended(e){this.activeQuery.handlePortalSuspended(this.connection)}_handleEmptyQuery(e){this.activeQuery.handleEmptyQuery(this.connection)}_handleCommandComplete(e){if(this.activeQuery==null){let s=new Error("Received unexpected commandComplete message from backend.");this._handleErrorEvent(s);return}this.activeQuery.handleCommandComplete(e,this.connection)}_handleParseComplete(){if(this.activeQuery==null){let e=new Error("Received unexpected parseComplete message from backend.");this._handleErrorEvent(e);return}this.activeQuery.name&&(this.connection.parsedStatements[this.activeQuery.name]=this.activeQuery.text)}_handleCopyInResponse(e){this.activeQuery.handleCopyInResponse(this.connection)}_handleCopyData(e){this.activeQuery.handleCopyData(e,this.connection)}_handleNotification(e){this.emit("notification",e)}_handleNotice(e){this.emit("notice",e)}getStartupConf(){var e=this.connectionParameters,s={user:e.user,database:e.database},a=e.application_name||e.fallback_application_name;return a&&(s.application_name=a),e.replication&&(s.replication=""+e.replication),e.statement_timeout&&(s.statement_timeout=String(parseInt(e.statement_timeout,10))),e.lock_timeout&&(s.lock_timeout=String(parseInt(e.lock_timeout,10))),e.idle_in_transaction_session_timeout&&(s.idle_in_transaction_session_timeout=String(parseInt(e.idle_in_transaction_session_timeout,10))),e.options&&(s.options=e.options),s}cancel(e,s){if(e.activeQuery===s){var a=this.connection;this.host&&this.host.indexOf("/")===0?a.connect(this.host+"/.s.PGSQL."+this.port):a.connect(this.port,this.host),a.on("connect",function(){a.cancel(e.processID,e.secretKey)})}else e.queryQueue.indexOf(s)!==-1&&e.queryQueue.splice(e.queryQueue.indexOf(s),1)}setTypeParser(e,s,a){return this._types.setTypeParser(e,s,a)}getTypeParser(e,s){return this._types.getTypeParser(e,s)}escapeIdentifier(e){return yr.escapeIdentifier(e)}escapeLiteral(e){return yr.escapeLiteral(e)}_pulseQueryQueue(){if(this.readyForQuery===!0)if(this.activeQuery=this.queryQueue.shift(),this.activeQuery){this.readyForQuery=!1,this.hasExecuted=!0;let e=this.activeQuery.submit(this.connection);e&&process.nextTick(()=>{this.activeQuery.handleError(e,this.connection),this.readyForQuery=!0,this._pulseQueryQueue()})}else this.hasExecuted&&(this.activeQuery=null,this.emit("drain"))}query(e,s,a){var r,i,n,o,E;if(e==null)throw new TypeError("Client was passed a null or undefined query");return typeof e.submit=="function"?(n=e.query_timeout||this.connectionParameters.query_timeout,i=r=e,typeof s=="function"&&(r.callback=r.callback||s)):(n=e.query_timeout||this.connectionParameters.query_timeout,r=new Cr(e,s,a),r.callback||(i=new this._Promise((_,c)=>{r.callback=(l,d)=>l?c(l):_(d)}).catch(_=>{throw Error.captureStackTrace(_),_}))),n&&(E=r.callback,o=setTimeout(()=>{var _=new Error("Query read timeout");process.nextTick(()=>{r.handleError(_,this.connection)}),E(_),r.callback=()=>{};var c=this.queryQueue.indexOf(r);c>-1&&this.queryQueue.splice(c,1),this._pulseQueryQueue()},n),r.callback=(_,c)=>{clearTimeout(o),E(_,c)}),this.binary&&!r.binary&&(r.binary=!0),r._result&&!r._result._types&&(r._result._types=this._types),this._queryable?this._ending?(process.nextTick(()=>{r.handleError(new Error("Client was closed and is not queryable"),this.connection)}),i):(this.queryQueue.push(r),this._pulseQueryQueue(),i):(process.nextTick(()=>{r.handleError(new Error("Client has encountered a connection error and is not queryable"),this.connection)}),i)}ref(){this.connection.ref()}unref(){this.connection.unref()}end(e){if(this._ending=!0,!this.connection._connecting||this._ended)if(e)e();else return this._Promise.resolve();if(this.activeQuery||!this._queryable?this.connection.stream.destroy():this.connection.end(),e)this.connection.once("end",e);else return new this._Promise(s=>{this.connection.once("end",s)})}};St.Query=Cr;Fr.exports=St});var Hr=R((wc,Pr)=>{"use strict";var P_=k("events").EventEmitter,Us=function(){},Ur=(t,e)=>{let s=t.findIndex(e);return s===-1?void 0:t.splice(s,1)[0]},Ps=class{constructor(e,s,a){this.client=e,this.idleListener=s,this.timeoutId=a}},We=class{constructor(e){this.callback=e}};function H_(){throw new Error("Release called on client which has already been released to the pool.")}function gt(t,e){if(e)return{callback:e,result:void 0};let s,a,r=function(n,o){n?s(n):a(o)},i=new t(function(n,o){a=n,s=o}).catch(n=>{throw Error.captureStackTrace(n),n});return{callback:r,result:i}}function M_(t,e){return function s(a){a.client=e,e.removeListener("error",s),e.on("error",()=>{t.log("additional client error after disconnection due to error",a)}),t._remove(e),t.emit("error",a,e)}}var Hs=class extends P_{constructor(e,s){super(),this.options=Object.assign({},e),e!=null&&"password"in e&&Object.defineProperty(this.options,"password",{configurable:!0,enumerable:!1,writable:!0,value:e.password}),e!=null&&e.ssl&&e.ssl.key&&Object.defineProperty(this.options.ssl,"key",{enumerable:!1}),this.options.max=this.options.max||this.options.poolSize||10,this.options.min=this.options.min||0,this.options.maxUses=this.options.maxUses||1/0,this.options.allowExitOnIdle=this.options.allowExitOnIdle||!1,this.options.maxLifetimeSeconds=this.options.maxLifetimeSeconds||0,this.log=this.options.log||function(){},this.Client=this.options.Client||s||Ms().Client,this.Promise=this.options.Promise||global.Promise,typeof this.options.idleTimeoutMillis>"u"&&(this.options.idleTimeoutMillis=1e4),this._clients=[],this._idle=[],this._expired=new WeakSet,this._pendingQueue=[],this._endCallback=void 0,this.ending=!1,this.ended=!1}_promiseTry(e){let s=this.Promise;return typeof s.try=="function"?s.try(e):new s(a=>a(e()))}_isFull(){return this._clients.length>=this.options.max}_isAboveMin(){return this._clients.length>this.options.min}_pulseQueue(){if(this.log("pulse queue"),this.ended){this.log("pulse queue ended");return}if(this.ending){this.log("pulse queue on ending"),this._idle.length&&this._idle.slice().map(s=>{this._remove(s.client)}),this._clients.length||(this.ended=!0,this._endCallback());return}if(!this._pendingQueue.length){this.log("no queued requests");return}if(!this._idle.length&&this._isFull())return;let e=this._pendingQueue.shift();if(this._idle.length){let s=this._idle.pop();clearTimeout(s.timeoutId);let a=s.client;a.ref&&a.ref();let r=s.idleListener;return this._acquireClient(a,e,r,!1)}if(!this._isFull())return this.newClient(e);throw new Error("unexpected condition")}_remove(e,s){let a=Ur(this._idle,i=>i.client===e);a!==void 0&&clearTimeout(a.timeoutId),this._clients=this._clients.filter(i=>i!==e);let r=this;e.end(()=>{r.emit("remove",e),typeof s=="function"&&s()})}connect(e){if(this.ending){let r=new Error("Cannot use a pool after calling end on the pool");return e?e(r):this.Promise.reject(r)}let s=gt(this.Promise,e),a=s.result;if(this._isFull()||this._idle.length){if(this._idle.length&&process.nextTick(()=>this._pulseQueue()),!this.options.connectionTimeoutMillis)return this._pendingQueue.push(new We(s.callback)),a;let r=(o,E,_)=>{clearTimeout(n),s.callback(o,E,_)},i=new We(r),n=setTimeout(()=>{Ur(this._pendingQueue,o=>o.callback===r),i.timedOut=!0,s.callback(new Error("timeout exceeded when trying to connect"))},this.options.connectionTimeoutMillis);return n.unref&&n.unref(),this._pendingQueue.push(i),a}return this.newClient(new We(s.callback)),a}newClient(e){let s=new this.Client(this.options);this._clients.push(s);let a=M_(this,s);this.log("checking client timeout");let r,i=!1;this.options.connectionTimeoutMillis&&(r=setTimeout(()=>{s.connection?(this.log("ending client due to timeout"),i=!0,s.connection.stream.destroy()):s.isConnected()||(this.log("ending client due to timeout"),i=!0,s.end())},this.options.connectionTimeoutMillis)),this.log("connecting new client"),s.connect(n=>{if(r&&clearTimeout(r),s.on("error",a),n)this.log("client failed to connect",n),this._clients=this._clients.filter(o=>o!==s),i&&(n=new Error("Connection terminated due to connection timeout",{cause:n})),this._pulseQueue(),e.timedOut||e.callback(n,void 0,Us);else{if(this.log("new client connected"),this.options.onConnect){this._promiseTry(()=>this.options.onConnect(s)).then(()=>{this._afterConnect(s,e,a)},o=>{this._clients=this._clients.filter(E=>E!==s),s.end(()=>{this._pulseQueue(),e.timedOut||e.callback(o,void 0,Us)})});return}return this._afterConnect(s,e,a)}})}_afterConnect(e,s,a){if(this.options.maxLifetimeSeconds!==0){let r=setTimeout(()=>{this.log("ending client due to expired lifetime"),this._expired.add(e),this._idle.findIndex(n=>n.client===e)!==-1&&this._acquireClient(e,new We((n,o,E)=>E()),a,!1)},this.options.maxLifetimeSeconds*1e3);r.unref(),e.once("end",()=>clearTimeout(r))}return this._acquireClient(e,s,a,!0)}_acquireClient(e,s,a,r){r&&this.emit("connect",e),this.emit("acquire",e),e.release=this._releaseOnce(e,a),e.removeListener("error",a),s.timedOut?r&&this.options.verify?this.options.verify(e,e.release):e.release():r&&this.options.verify?this.options.verify(e,i=>{if(i)return e.release(i),s.callback(i,void 0,Us);s.callback(void 0,e,e.release)}):s.callback(void 0,e,e.release)}_releaseOnce(e,s){let a=!1;return r=>{a&&H_(),a=!0,this._release(e,s,r)}}_release(e,s,a){if(e.on("error",s),e._poolUseCount=(e._poolUseCount||0)+1,this.emit("release",a,e),a||this.ending||!e._queryable||e._ending||e._poolUseCount>=this.options.maxUses)return e._poolUseCount>=this.options.maxUses&&this.log("remove expended client"),this._remove(e,this._pulseQueue.bind(this));if(this._expired.has(e))return this.log("remove expired client"),this._expired.delete(e),this._remove(e,this._pulseQueue.bind(this));let i;this.options.idleTimeoutMillis&&this._isAboveMin()&&(i=setTimeout(()=>{this._isAboveMin()&&(this.log("remove idle client"),this._remove(e,this._pulseQueue.bind(this)))},this.options.idleTimeoutMillis),this.options.allowExitOnIdle&&i.unref()),this.options.allowExitOnIdle&&e.unref(),this._idle.push(new Ps(e,s,i)),this._pulseQueue()}query(e,s,a){if(typeof e=="function"){let i=gt(this.Promise,e);return setImmediate(function(){return i.callback(new Error("Passing a function as the first parameter to pool.query is not supported"))}),i.result}typeof s=="function"&&(a=s,s=void 0);let r=gt(this.Promise,a);return a=r.callback,this.connect((i,n)=>{if(i)return a(i);let o=!1,E=_=>{o||(o=!0,n.release(_),a(_))};n.once("error",E),this.log("dispatching query");try{n.query(e,s,(_,c)=>{if(this.log("query dispatched"),n.removeListener("error",E),!o)return o=!0,n.release(_),_?a(_):a(void 0,c)})}catch(_){return n.release(_),a(_)}}),r.result}end(e){if(this.log("ending"),this.ending){let a=new Error("Called end on pool more than once");return e?e(a):this.Promise.reject(a)}this.ending=!0;let s=gt(this.Promise,e);return this._endCallback=s.callback,this._pulseQueue(),s.result}get waitingCount(){return this._pendingQueue.length}get idleCount(){return this._idle.length}get expiredCount(){return this._clients.reduce((e,s)=>e+(this._expired.has(s)?1:0),0)}get totalCount(){return this._clients.length}};Pr.exports=Hs});var kr=R((kc,wr)=>{"use strict";var Mr=k("events").EventEmitter,w_=k("util"),ws=st(),Be=wr.exports=function(t,e,s){Mr.call(this),t=ws.normalizeQueryConfig(t,e,s),this.text=t.text,this.values=t.values,this.name=t.name,this.queryMode=t.queryMode,this.callback=t.callback,this.state="new",this._arrayMode=t.rowMode==="array",this._emitRowEvents=!1,this.on("newListener",function(a){a==="row"&&(this._emitRowEvents=!0)}.bind(this))};w_.inherits(Be,Mr);var k_={sqlState:"code",statementPosition:"position",messagePrimary:"message",context:"where",schemaName:"schema",tableName:"table",columnName:"column",dataTypeName:"dataType",constraintName:"constraint",sourceFile:"file",sourceLine:"line",sourceFunction:"routine"};Be.prototype.handleError=function(t){var e=this.native.pq.resultErrorFields();if(e)for(var s in e){var a=k_[s]||s;t[a]=e[s]}this.callback?this.callback(t):this.emit("error",t),this.state="error"};Be.prototype.then=function(t,e){return this._getPromise().then(t,e)};Be.prototype.catch=function(t){return this._getPromise().catch(t)};Be.prototype._getPromise=function(){return this._promise?this._promise:(this._promise=new Promise(function(t,e){this._once("end",t),this._once("error",e)}.bind(this)),this._promise)};Be.prototype.submit=function(t){this.state="running";var e=this;this.native=t.native,t.native.arrayMode=this._arrayMode;var s=function(i,n,o){if(t.native.arrayMode=!1,setImmediate(function(){e.emit("_done")}),i)return e.handleError(i);e._emitRowEvents&&(o.length>1?n.forEach((E,_)=>{E.forEach(c=>{e.emit("row",c,o[_])})}):n.forEach(function(E){e.emit("row",E,o)})),e.state="end",e.emit("end",o),e.callback&&e.callback(null,o)};if(process.domain&&(s=process.domain.bind(s)),this.name){this.name.length>63&&(console.error("Warning! Postgres only supports 63 characters for query names."),console.error("You supplied %s (%s)",this.name,this.name.length),console.error("This can cause conflicts and silent errors executing queries"));var a=(this.values||[]).map(ws.prepareValue);if(t.namedQueries[this.name]){if(this.text&&t.namedQueries[this.name]!==this.text){let i=new Error(`Prepared statements must be unique - '${this.name}' was used for a different statement`);return s(i)}return t.native.execute(this.name,a,s)}return t.native.prepare(this.name,this.text,a.length,function(i){return i?s(i):(t.namedQueries[e.name]=e.text,e.native.execute(e.name,a,s))})}else if(this.values){if(!Array.isArray(this.values)){let i=new Error("Query values must be an array");return s(i)}var r=this.values.map(ws.prepareValue);t.native.query(this.text,r,s)}else this.queryMode==="extended"?t.native.query(this.text,[],s):t.native.query(this.text,s)}});var qr=R((xc,Gr)=>{"use strict";var xr;try{xr=k("pg-native")}catch(t){throw t}var x_=Zt(),Wr=k("events").EventEmitter,W_=k("util"),B_=ss(),Br=kr(),ie=Gr.exports=function(t){Wr.call(this),t=t||{},this._Promise=t.Promise||global.Promise,this._types=new x_(t.types),this.native=new xr({types:this._types}),this._queryQueue=[],this._ending=!1,this._connecting=!1,this._connected=!1,this._queryable=!0;var e=this.connectionParameters=new B_(t);t.nativeConnectionString&&(e.nativeConnectionString=t.nativeConnectionString),this.user=e.user,Object.defineProperty(this,"password",{configurable:!0,enumerable:!1,writable:!0,value:e.password}),this.database=e.database,this.host=e.host,this.port=e.port,this.namedQueries={}};ie.Query=Br;W_.inherits(ie,Wr);ie.prototype._errorAllQueries=function(t){let e=s=>{process.nextTick(()=>{s.native=this.native,s.handleError(t)})};this._hasActiveQuery()&&(e(this._activeQuery),this._activeQuery=null),this._queryQueue.forEach(e),this._queryQueue.length=0};ie.prototype._connect=function(t){var e=this;if(this._connecting){process.nextTick(()=>t(new Error("Client has already been connected. You cannot reuse a client.")));return}this._connecting=!0,this.connectionParameters.getLibpqConnectionString(function(s,a){if(e.connectionParameters.nativeConnectionString&&(a=e.connectionParameters.nativeConnectionString),s)return t(s);e.native.connect(a,function(r){if(r)return e.native.end(),t(r);e._connected=!0,e.native.on("error",function(i){e._queryable=!1,e._errorAllQueries(i),e.emit("error",i)}),e.native.on("notification",function(i){e.emit("notification",{channel:i.relname,payload:i.extra})}),e.emit("connect"),e._pulseQueryQueue(!0),t()})})};ie.prototype.connect=function(t){if(t){this._connect(t);return}return new this._Promise((e,s)=>{this._connect(a=>{a?s(a):e()})})};ie.prototype.query=function(t,e,s){var a,r,i,n,o;if(t==null)throw new TypeError("Client was passed a null or undefined query");if(typeof t.submit=="function")i=t.query_timeout||this.connectionParameters.query_timeout,r=a=t,typeof e=="function"&&(t.callback=e);else if(i=t.query_timeout||this.connectionParameters.query_timeout,a=new Br(t,e,s),!a.callback){let E,_;r=new this._Promise((c,l)=>{E=c,_=l}).catch(c=>{throw Error.captureStackTrace(c),c}),a.callback=(c,l)=>c?_(c):E(l)}return i&&(o=a.callback,n=setTimeout(()=>{var E=new Error("Query read timeout");process.nextTick(()=>{a.handleError(E,this.connection)}),o(E),a.callback=()=>{};var _=this._queryQueue.indexOf(a);_>-1&&this._queryQueue.splice(_,1),this._pulseQueryQueue()},i),a.callback=(E,_)=>{clearTimeout(n),o(E,_)}),this._queryable?this._ending?(a.native=this.native,process.nextTick(()=>{a.handleError(new Error("Client was closed and is not queryable"))}),r):(this._queryQueue.push(a),this._pulseQueryQueue(),r):(a.native=this.native,process.nextTick(()=>{a.handleError(new Error("Client has encountered a connection error and is not queryable"))}),r)};ie.prototype.end=function(t){var e=this;this._ending=!0,this._connected||this.once("connect",this.end.bind(this,t));var s;return t||(s=new this._Promise(function(a,r){t=i=>i?r(i):a()})),this.native.end(function(){e._errorAllQueries(new Error("Connection terminated")),process.nextTick(()=>{e.emit("end"),t&&t()})}),s};ie.prototype._hasActiveQuery=function(){return this._activeQuery&&this._activeQuery.state!=="error"&&this._activeQuery.state!=="end"};ie.prototype._pulseQueryQueue=function(t){if(this._connected&&!this._hasActiveQuery()){var e=this._queryQueue.shift();if(!e){t||this.emit("drain");return}this._activeQuery=e,e.submit(this);var s=this;e.once("_done",function(){s._pulseQueryQueue()})}};ie.prototype.cancel=function(t){this._activeQuery===t?this.native.cancel(function(){}):this._queryQueue.indexOf(t)!==-1&&this._queryQueue.splice(this._queryQueue.indexOf(t),1)};ie.prototype.ref=function(){};ie.prototype.unref=function(){};ie.prototype.setTypeParser=function(t,e,s){return this._types.setTypeParser(t,e,s)};ie.prototype.getTypeParser=function(t,e){return this._types.getTypeParser(t,e)}});var ks=R((Wc,Yr)=>{"use strict";Yr.exports=qr()});var Ms=R((Gc,it)=>{"use strict";var G_=jr(),q_=tt(),Y_=Ds(),$_=Hr(),{DatabaseError:K_}=fs(),{escapeIdentifier:V_,escapeLiteral:X_}=st(),J_=t=>class extends $_{constructor(s){super(s,t)}},xs=function(t){this.defaults=q_,this.Client=t,this.Query=this.Client.Query,this.Pool=J_(this.Client),this._pools=[],this.Connection=Y_,this.types=et(),this.DatabaseError=K_,this.escapeIdentifier=V_,this.escapeLiteral=X_};typeof process.env.NODE_PG_FORCE_NATIVE<"u"?it.exports=new xs(ks()):(it.exports=new xs(G_),Object.defineProperty(it.exports,"native",{configurable:!0,enumerable:!1,get(){var t=null;try{t=new xs(ks())}catch(e){if(e.code!=="MODULE_NOT_FOUND")throw e}return Object.defineProperty(it.exports,"native",{value:t}),t}}))});import{createHash as BE,randomUUID as GE}from"node:crypto";import{gzipSync as qE}from"node:zlib";var ai=Wi(Ms(),1);var $r=`-- JAIN STOCK EXCHANGE (JSE) v272
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.`))}ei.exports=Me;Me.parse=Me;Me.toClientConfig=Zs;Me.parseIntoClientConfig=Un});var aa=R((dl,ii)=>{"use strict";var Pn=W("dns"),si=tt(),ai=ti().parse,ee=function(t,e,a){return a===void 0?a=process.env["PG"+t.toUpperCase()]:a===!1||(a=process.env[a]),e[t]||a||si[t]},Hn=function(){switch(process.env.PGSSLMODE){case"disable":return!1;case"prefer":case"require":case"verify-ca":case"verify-full":return!0;case"no-verify":return{rejectUnauthorized:!1}}return si.ssl},we=function(t){return"'"+(""+t).replace(/\\/g,"\\\\").replace(/'/g,"\\'")+"'"},ue=function(t,e,a){var s=e[a];s!=null&&t.push(a+"="+we(s))},ta=class{constructor(e){e=typeof e=="string"?ai(e):e||{},e.connectionString&&(e=Object.assign({},e,ai(e.connectionString))),this.user=ee("user",e),this.database=ee("database",e),this.database===void 0&&(this.database=this.user),this.port=parseInt(ee("port",e),10),this.host=ee("host",e),Object.defineProperty(this,"password",{configurable:!0,enumerable:!1,writable:!0,value:ee("password",e)}),this.binary=ee("binary",e),this.options=ee("options",e),this.ssl=typeof e.ssl>"u"?Hn():e.ssl,typeof this.ssl=="string"&&this.ssl==="true"&&(this.ssl=!0),this.ssl==="no-verify"&&(this.ssl={rejectUnauthorized:!1}),this.ssl&&this.ssl.key&&Object.defineProperty(this.ssl,"key",{enumerable:!1}),this.client_encoding=ee("client_encoding",e),this.replication=ee("replication",e),this.isDomainSocket=!(this.host||"").indexOf("/"),this.application_name=ee("application_name",e,"PGAPPNAME"),this.fallback_application_name=ee("fallback_application_name",e,!1),this.statement_timeout=ee("statement_timeout",e,!1),this.lock_timeout=ee("lock_timeout",e,!1),this.idle_in_transaction_session_timeout=ee("idle_in_transaction_session_timeout",e,!1),this.query_timeout=ee("query_timeout",e,!1),e.connectionTimeoutMillis===void 0?this.connect_timeout=process.env.PGCONNECT_TIMEOUT||0:this.connect_timeout=Math.floor(e.connectionTimeoutMillis/1e3),e.keepAlive===!1?this.keepalives=0:e.keepAlive===!0&&(this.keepalives=1),typeof e.keepAliveInitialDelayMillis=="number"&&(this.keepalives_idle=Math.floor(e.keepAliveInitialDelayMillis/1e3))}getLibpqConnectionString(e){var a=[];ue(a,this,"user"),ue(a,this,"password"),ue(a,this,"port"),ue(a,this,"application_name"),ue(a,this,"fallback_application_name"),ue(a,this,"connect_timeout"),ue(a,this,"options");var s=typeof this.ssl=="object"?this.ssl:this.ssl?{sslmode:this.ssl}:{};if(ue(a,s,"sslmode"),ue(a,s,"sslca"),ue(a,s,"sslkey"),ue(a,s,"sslcert"),ue(a,s,"sslrootcert"),this.database&&a.push("dbname="+we(this.database)),this.replication&&a.push("replication="+we(this.replication)),this.host&&a.push("host="+we(this.host)),this.isDomainSocket)return e(null,a.join(" "));this.client_encoding&&a.push("client_encoding="+we(this.client_encoding)),Pn.lookup(this.host,function(i,r){return i?e(i,null):(a.push("hostaddr="+we(r)),e(null,a.join(" ")))})}};ii.exports=ta});var ni=R((ul,oi)=>{"use strict";var kn=et(),ri=/^([A-Za-z]+)(?: (\d+))?(?: (\d+))?/,sa=class{constructor(e,a){this.command=null,this.rowCount=null,this.oid=null,this.rows=[],this.fields=[],this._parsers=void 0,this._types=a,this.RowCtor=null,this.rowAsArray=e==="array",this.rowAsArray&&(this.parseRow=this._parseRowAsArray),this._prebuiltEmptyResultObject=null}addCommandComplete(e){var a;e.text?a=ri.exec(e.text):a=ri.exec(e.command),a&&(this.command=a[1],a[3]?(this.oid=parseInt(a[2],10),this.rowCount=parseInt(a[3],10)):a[2]&&(this.rowCount=parseInt(a[2],10)))}_parseRowAsArray(e){for(var a=new Array(e.length),s=0,i=e.length;s<i;s++){var r=e[s];r!==null?a[s]=this._parsers[s](r):a[s]=null}return a}parseRow(e){for(var a={...this._prebuiltEmptyResultObject},s=0,i=e.length;s<i;s++){var r=e[s],o=this.fields[s].name;r!==null?a[o]=this._parsers[s](r):a[o]=null}return a}addRow(e){this.rows.push(e)}addFields(e){this.fields=e,this.fields.length&&(this._parsers=new Array(e.length));for(var a={},s=0;s<e.length;s++){var i=e[s];a[i.name]=null,this._types?this._parsers[s]=this._types.getTypeParser(i.dataTypeID,i.format||"text"):this._parsers[s]=kn.getTypeParser(i.dataTypeID,i.format||"text")}this._prebuiltEmptyResultObject={...a}}};oi.exports=sa});var li=R((Nl,ci)=>{"use strict";var{EventEmitter:Mn}=W("events"),_i=ni(),Ei=at(),ia=class extends Mn{constructor(e,a,s){super(),e=Ei.normalizeQueryConfig(e,a,s),this.text=e.text,this.values=e.values,this.rows=e.rows,this.types=e.types,this.name=e.name,this.queryMode=e.queryMode,this.binary=e.binary,this.portal=e.portal||"",this.callback=e.callback,this._rowMode=e.rowMode,process.domain&&e.callback&&(this.callback=process.domain.bind(e.callback)),this._result=new _i(this._rowMode,this.types),this._results=this._result,this._canceledDueToError=!1}requiresPreparation(){return this.queryMode==="extended"||this.name||this.rows?!0:!this.text||!this.values?!1:this.values.length>0}_checkForMultirow(){this._result.command&&(Array.isArray(this._results)||(this._results=[this._result]),this._result=new _i(this._rowMode,this._result._types),this._results.push(this._result))}handleRowDescription(e){this._checkForMultirow(),this._result.addFields(e.fields),this._accumulateRows=this.callback||!this.listeners("row").length}handleDataRow(e){let a;if(!this._canceledDueToError){try{a=this._result.parseRow(e.fields)}catch(s){this._canceledDueToError=s;return}this.emit("row",a,this._result),this._accumulateRows&&this._result.addRow(a)}}handleCommandComplete(e,a){this._checkForMultirow(),this._result.addCommandComplete(e),this.rows&&a.sync()}handleEmptyQuery(e){this.rows&&e.sync()}handleError(e,a){if(this._canceledDueToError&&(e=this._canceledDueToError,this._canceledDueToError=!1),this.callback)return this.callback(e);this.emit("error",e)}handleReadyForQuery(e){if(this._canceledDueToError)return this.handleError(this._canceledDueToError,e);if(this.callback)try{this.callback(null,this._results)}catch(a){process.nextTick(()=>{throw a})}this.emit("end",this._results)}submit(e){if(typeof this.text!="string"&&typeof this.name!="string")return new Error("A query must have either text or a name. Supplying neither is unsupported.");let a=e.parsedStatements[this.name];return this.text&&a&&this.text!==a?new Error(`Prepared statements must be unique - '${this.name}' was used for a different statement`):this.values&&!Array.isArray(this.values)?new Error("Query values must be an array"):(this.requiresPreparation()?this.prepare(e):e.query(this.text),null)}hasBeenParsed(e){return this.name&&e.parsedStatements[this.name]}handlePortalSuspended(e){this._getRows(e,this.rows)}_getRows(e,a){e.execute({portal:this.portal,rows:a}),a?e.flush():e.sync()}prepare(e){this.hasBeenParsed(e)||e.parse({text:this.text,name:this.name,types:this.types});try{e.bind({portal:this.portal,statement:this.name,values:this.values,binary:this.binary,valueMapper:Ei.prepareValue})}catch(a){this.handleError(a,e);return}e.describe({type:"P",name:this.portal||""}),this._getRows(e,this.rows)}handleCopyInResponse(e){e.sendCopyFail("No source stream defined")}handleCopyData(e,a){}};ci.exports=ia});var ba=R(T=>{"use strict";Object.defineProperty(T,"__esModule",{value:!0});T.NoticeMessage=T.DataRowMessage=T.CommandCompleteMessage=T.ReadyForQueryMessage=T.NotificationResponseMessage=T.BackendKeyDataMessage=T.AuthenticationMD5Password=T.ParameterStatusMessage=T.ParameterDescriptionMessage=T.RowDescriptionMessage=T.Field=T.CopyResponse=T.CopyDataMessage=T.DatabaseError=T.copyDone=T.emptyQuery=T.replicationStart=T.portalSuspended=T.noData=T.closeComplete=T.bindComplete=T.parseComplete=void 0;T.parseComplete={name:"parseComplete",length:5};T.bindComplete={name:"bindComplete",length:5};T.closeComplete={name:"closeComplete",length:5};T.noData={name:"noData",length:5};T.portalSuspended={name:"portalSuspended",length:5};T.replicationStart={name:"replicationStart",length:4};T.emptyQuery={name:"emptyQuery",length:4};T.copyDone={name:"copyDone",length:4};var ra=class extends Error{constructor(e,a,s){super(e),this.length=a,this.name=s}};T.DatabaseError=ra;var oa=class{constructor(e,a){this.length=e,this.chunk=a,this.name="copyData"}};T.CopyDataMessage=oa;var na=class{constructor(e,a,s,i){this.length=e,this.name=a,this.binary=s,this.columnTypes=new Array(i)}};T.CopyResponse=na;var _a=class{constructor(e,a,s,i,r,o,n){this.name=e,this.tableID=a,this.columnID=s,this.dataTypeID=i,this.dataTypeSize=r,this.dataTypeModifier=o,this.format=n}};T.Field=_a;var Ea=class{constructor(e,a){this.length=e,this.fieldCount=a,this.name="rowDescription",this.fields=new Array(this.fieldCount)}};T.RowDescriptionMessage=Ea;var ca=class{constructor(e,a){this.length=e,this.parameterCount=a,this.name="parameterDescription",this.dataTypeIDs=new Array(this.parameterCount)}};T.ParameterDescriptionMessage=ca;var la=class{constructor(e,a,s){this.length=e,this.parameterName=a,this.parameterValue=s,this.name="parameterStatus"}};T.ParameterStatusMessage=la;var da=class{constructor(e,a){this.length=e,this.salt=a,this.name="authenticationMD5Password"}};T.AuthenticationMD5Password=da;var ua=class{constructor(e,a,s){this.length=e,this.processID=a,this.secretKey=s,this.name="backendKeyData"}};T.BackendKeyDataMessage=ua;var Na=class{constructor(e,a,s,i){this.length=e,this.processId=a,this.channel=s,this.payload=i,this.name="notification"}};T.NotificationResponseMessage=Na;var Ta=class{constructor(e,a){this.length=e,this.status=a,this.name="readyForQuery"}};T.ReadyForQueryMessage=Ta;var ma=class{constructor(e,a){this.length=e,this.text=a,this.name="commandComplete"}};T.CommandCompleteMessage=ma;var pa=class{constructor(e,a){this.length=e,this.fields=a,this.name="dataRow",this.fieldCount=a.length}};T.DataRowMessage=pa;var Ra=class{constructor(e,a){this.length=e,this.message=a,this.name="notice"}};T.NoticeMessage=Ra});var di=R(It=>{"use strict";Object.defineProperty(It,"__esModule",{value:!0});It.Writer=void 0;var Ia=class{constructor(e=256){this.size=e,this.offset=5,this.headerPosition=0,this.buffer=Buffer.allocUnsafe(e)}ensure(e){if(this.buffer.length-this.offset<e){let s=this.buffer,i=s.length+(s.length>>1)+e;this.buffer=Buffer.allocUnsafe(i),s.copy(this.buffer,0,0,this.offset)}}addInt32(e){return this.ensure(4),this.buffer[this.offset++]=e>>>24&255,this.buffer[this.offset++]=e>>>16&255,this.buffer[this.offset++]=e>>>8&255,this.buffer[this.offset++]=e>>>0&255,this}addInt16(e){return this.ensure(2),this.buffer[this.offset++]=e>>>8&255,this.buffer[this.offset++]=e>>>0&255,this}addCString(e){if(!e)this.ensure(1);else{let a=Buffer.byteLength(e);this.ensure(a+1),this.buffer.write(e,this.offset,"utf-8"),this.offset+=a}return this.buffer[this.offset++]=0,this}addString(e=""){let a=Buffer.byteLength(e);return this.ensure(a),this.buffer.write(e,this.offset),this.offset+=a,this}addInt32PrefixedString(e){let a=Buffer.byteLength(e);this.ensure(4+a);let s=this.buffer,i=this.offset;return s[i++]=a>>>24&255,s[i++]=a>>>16&255,s[i++]=a>>>8&255,s[i++]=a>>>0&255,s.write(e,i,"utf-8"),this.offset=i+a,this}add(e){return this.ensure(e.length),e.copy(this.buffer,this.offset),this.offset+=e.length,this}reserveUnsafe(e){let a=this.offset;return this.ensure(e),this.offset+=e,a}join(e){if(e){this.buffer[this.headerPosition]=e;let a=this.offset-(this.headerPosition+1);this.buffer.writeInt32BE(a,this.headerPosition+1)}return this.buffer.slice(e?0:5,this.offset)}flush(e){let a=this.join(e);return this.offset=5,this.headerPosition=0,this.buffer=Buffer.allocUnsafe(this.size),a}clear(){this.offset=5,this.headerPosition=0}};It.Writer=Ia});var Ti=R(Ot=>{"use strict";Object.defineProperty(Ot,"__esModule",{value:!0});Ot.serialize=void 0;var ui=di(),g=new ui.Writer,wn=t=>{g.addInt16(3).addInt16(0);for(let s of Object.keys(t))g.addCString(s).addCString(t[s]);g.addCString("client_encoding").addCString("UTF8");let e=g.addCString("").flush(),a=e.length+4;return new ui.Writer().addInt32(a).add(e).flush()},Wn=()=>{let t=Buffer.allocUnsafe(8);return t.writeInt32BE(8,0),t.writeInt32BE(80877103,4),t},xn=t=>g.addCString(t).flush(112),Bn=function(t,e){return g.addCString(t).addInt32PrefixedString(e),g.flush(112)},Gn=function(t){return g.addString(t).flush(112)},qn=t=>g.addCString(t).flush(81),Ni=[],Yn=t=>{let e=t.name||"";e.length>63&&(console.error("Warning! Postgres only supports 63 characters for query names."),console.error("You supplied %s (%s)",e,e.length),console.error("This can cause conflicts and silent errors executing queries"));let a=t.types||Ni,s=a.length,i=g.addCString(e).addCString(t.text).addInt16(s);for(let r=0;r<s;r++)i.addInt32(a[r]);return g.flush(80)},Vn=function(t,e,a){let s=t.length;for(let i=0;i<s;i++){let r=e?e(t[i],i):t[i],o=0;r==null?g.addInt32(-1):r instanceof Buffer?(o=1,g.addInt32(r.length),g.add(r)):g.addInt32PrefixedString(r);let n=g.buffer;n[a++]=0,n[a++]=o}},Kn=(t={})=>{let e=t.portal||"",a=t.statement||"",s=t.binary||!1,i=t.values||Ni,r=i.length;g.addCString(e).addCString(a),g.addInt16(r);let o=g.reserveUnsafe(r*2);g.addInt16(r);try{Vn(i,t.valueMapper,o)}catch(n){throw g.clear(),n}return g.addInt16(1),g.addInt16(s?1:0),g.flush(66)},$n=Buffer.from([69,0,0,0,9,0,0,0,0,0]),Xn=t=>{if(!t||!t.portal&&!t.rows)return $n;let e=t.portal||"",a=t.rows||0,s=Buffer.byteLength(e),i=4+s+1+4,r=Buffer.allocUnsafe(1+i);return r[0]=69,r.writeInt32BE(i,1),r.write(e,5,"utf-8"),r[s+5]=0,r.writeUInt32BE(a,r.length-4),r},Jn=(t,e)=>{let a=Buffer.allocUnsafe(16);return a.writeInt32BE(16,0),a.writeInt16BE(1234,4),a.writeInt16BE(5678,6),a.writeInt32BE(t,8),a.writeInt32BE(e,12),a},va=(t,e)=>{let s=4+Buffer.byteLength(e)+1,i=Buffer.allocUnsafe(1+s);return i[0]=t,i.writeInt32BE(s,1),i.write(e,5,"utf-8"),i[s]=0,i},zn=g.addCString("P").flush(68),Qn=g.addCString("S").flush(68),Zn=t=>t.name?va(68,`${t.type}${t.name||""}`):t.type==="P"?zn:Qn,e_=t=>{let e=`${t.type}${t.name||""}`;return va(67,e)},t_=t=>g.add(t).flush(100),a_=t=>va(102,t),vt=t=>Buffer.from([t,0,0,0,4]),s_=vt(72),i_=vt(83),r_=vt(88),o_=vt(99),n_={startup:wn,password:xn,requestSsl:Wn,sendSASLInitialResponseMessage:Bn,sendSCRAMClientFinalMessage:Gn,query:qn,parse:Yn,bind:Kn,execute:Xn,describe:Zn,close:e_,flush:()=>s_,sync:()=>i_,end:()=>r_,copyData:t_,copyDone:()=>o_,copyFail:a_,cancel:Jn};Ot.serialize=n_});var mi=R(ht=>{"use strict";Object.defineProperty(ht,"__esModule",{value:!0});ht.BufferReader=void 0;var Oa=class{constructor(e=0){this.offset=e,this.buffer=Buffer.allocUnsafe(0),this.encoding="utf-8"}setBuffer(e,a){this.offset=e,this.buffer=a}int16(){let e=this.buffer.readInt16BE(this.offset);return this.offset+=2,e}byte(){let e=this.buffer[this.offset];return this.offset++,e}int32(){let e=this.buffer.readInt32BE(this.offset);return this.offset+=4,e}uint32(){let e=this.buffer.readUInt32BE(this.offset);return this.offset+=4,e}string(e){let a=this.buffer.toString(this.encoding,this.offset,this.offset+e);return this.offset+=e,a}cstring(){let e=this.offset,a=e;for(;this.buffer[a++];);return this.offset=a,this.buffer.toString(this.encoding,e,a-1)}bytes(e){let a=this.buffer.slice(this.offset,this.offset+e);return this.offset+=e,a}};ht.BufferReader=Oa});var Ii=R(Lt=>{"use strict";Object.defineProperty(Lt,"__esModule",{value:!0});Lt.Parser=void 0;var U=ba(),__=mi(),La=1,E_=4,pi=La+E_,Ee=-1,ha=Buffer.allocUnsafe(0),Aa=class{constructor(e){if(this.buffer=ha,this.bufferLength=0,this.bufferOffset=0,this.reader=new __.BufferReader,e?.mode==="binary")throw new Error("Binary mode not supported yet");this.mode=e?.mode||"text"}parse(e,a){this.mergeBuffer(e);let s=this.bufferOffset+this.bufferLength,i=this.bufferOffset;for(;i+pi<=s;){let r=this.buffer[i],o=this.buffer.readUInt32BE(i+La),n=La+o;if(n+i<=s){let E=this.handlePacket(i+pi,r,o,this.buffer);a(E),i+=n}else break}i===s?(this.buffer=ha,this.bufferLength=0,this.bufferOffset=0):(this.bufferLength=s-i,this.bufferOffset=i)}mergeBuffer(e){if(this.bufferLength>0){let a=this.bufferLength+e.byteLength;if(a+this.bufferOffset>this.buffer.byteLength){let i;if(a<=this.buffer.byteLength&&this.bufferOffset>=this.bufferLength)i=this.buffer;else{let r=this.buffer.byteLength*2;for(;a>=r;)r*=2;i=Buffer.allocUnsafe(r)}this.buffer.copy(i,0,this.bufferOffset,this.bufferOffset+this.bufferLength),this.buffer=i,this.bufferOffset=0}e.copy(this.buffer,this.bufferOffset+this.bufferLength),this.bufferLength=a}else this.buffer=e,this.bufferOffset=0,this.bufferLength=e.byteLength}handlePacket(e,a,s,i){let{reader:r}=this;r.setBuffer(e,i);let o;switch(a){case 50:o=U.bindComplete;break;case 49:o=U.parseComplete;break;case 51:o=U.closeComplete;break;case 110:o=U.noData;break;case 115:o=U.portalSuspended;break;case 99:o=U.copyDone;break;case 87:o=U.replicationStart;break;case 73:o=U.emptyQuery;break;case 68:o=b_(r);break;case 67:o=l_(r);break;case 90:o=c_(r);break;case 65:o=T_(r);break;case 82:o=O_(r,s);break;case 83:o=I_(r);break;case 75:o=v_(r);break;case 69:o=Ri(r,"error");break;case 78:o=Ri(r,"notice");break;case 84:o=m_(r);break;case 116:o=R_(r);break;case 71:o=u_(r);break;case 72:o=N_(r);break;case 100:o=d_(r,s);break;default:return new U.DatabaseError("received invalid response: "+a.toString(16),s,"error")}return r.setBuffer(0,ha),o.length=s,o}};Lt.Parser=Aa;var c_=t=>{let e=t.string(1);return new U.ReadyForQueryMessage(Ee,e)},l_=t=>{let e=t.cstring();return new U.CommandCompleteMessage(Ee,e)},d_=(t,e)=>{let a=t.bytes(e-4);return new U.CopyDataMessage(Ee,a)},u_=t=>bi(t,"copyInResponse"),N_=t=>bi(t,"copyOutResponse"),bi=(t,e)=>{let a=t.byte()!==0,s=t.int16(),i=new U.CopyResponse(Ee,e,a,s);for(let r=0;r<s;r++)i.columnTypes[r]=t.int16();return i},T_=t=>{let e=t.int32(),a=t.cstring(),s=t.cstring();return new U.NotificationResponseMessage(Ee,e,a,s)},m_=t=>{let e=t.int16(),a=new U.RowDescriptionMessage(Ee,e);for(let s=0;s<e;s++)a.fields[s]=p_(t);return a},p_=t=>{let e=t.cstring(),a=t.uint32(),s=t.int16(),i=t.uint32(),r=t.int16(),o=t.int32(),n=t.int16()===0?"text":"binary";return new U.Field(e,a,s,i,r,o,n)},R_=t=>{let e=t.int16(),a=new U.ParameterDescriptionMessage(Ee,e);for(let s=0;s<e;s++)a.dataTypeIDs[s]=t.uint32();return a},b_=t=>{let e=t.int16(),a=new Array(e);for(let s=0;s<e;s++){let i=t.int32();a[s]=i===-1?null:t.string(i)}return new U.DataRowMessage(Ee,a)},I_=t=>{let e=t.cstring(),a=t.cstring();return new U.ParameterStatusMessage(Ee,e,a)},v_=t=>{let e=t.int32(),a=t.int32();return new U.BackendKeyDataMessage(Ee,e,a)},O_=(t,e)=>{let a=t.int32(),s={name:"authenticationOk",length:e};switch(a){case 0:break;case 3:s.length===8&&(s.name="authenticationCleartextPassword");break;case 5:if(s.length===12){s.name="authenticationMD5Password";let i=t.bytes(4);return new U.AuthenticationMD5Password(Ee,i)}break;case 10:{s.name="authenticationSASL",s.mechanisms=[];let i;do i=t.cstring(),i&&s.mechanisms.push(i);while(i)}break;case 11:s.name="authenticationSASLContinue",s.data=t.string(e-8);break;case 12:s.name="authenticationSASLFinal",s.data=t.string(e-8);break;default:throw new Error("Unknown authenticationOk message type "+a)}return s},Ri=(t,e)=>{let a={},s=t.string(1);for(;s!=="\0";)a[s]=t.cstring(),s=t.string(1);let i=a.M,r=e==="notice"?new U.NoticeMessage(Ee,i):new U.DatabaseError(i,Ee,e);return r.severity=a.S,r.code=a.C,r.detail=a.D,r.hint=a.H,r.position=a.P,r.internalPosition=a.p,r.internalQuery=a.q,r.where=a.W,r.schema=a.s,r.table=a.t,r.column=a.c,r.dataType=a.d,r.constraint=a.n,r.file=a.F,r.line=a.L,r.routine=a.R,r}});var Sa=R(ye=>{"use strict";Object.defineProperty(ye,"__esModule",{value:!0});ye.DatabaseError=ye.serialize=void 0;ye.parse=S_;var h_=ba();Object.defineProperty(ye,"DatabaseError",{enumerable:!0,get:function(){return h_.DatabaseError}});var L_=Ti();Object.defineProperty(ye,"serialize",{enumerable:!0,get:function(){return L_.serialize}});var A_=Ii();function S_(t,e){let a=new A_.Parser;return t.on("data",s=>a.parse(s,e)),new Promise(s=>t.on("end",()=>s()))}});var vi=R(fa=>{"use strict";Object.defineProperty(fa,"__esModule",{value:!0});fa.default={}});var hi=R((Ol,Oi)=>{var{getStream:f_,getSecureStream:g_}=C_();Oi.exports={getStream:f_,getSecureStream:g_};function D_(){function t(a){let s=W("net");return new s.Socket}function e(a){var s=W("tls");return s.connect(a)}return{getStream:t,getSecureStream:e}}function F_(){function t(a){let{CloudflareSocket:s}=vi();return new s(a)}function e(a){return a.socket.startTls(a),a.socket}return{getStream:t,getSecureStream:e}}function y_(){if(typeof navigator=="object"&&navigator!==null&&typeof navigator.userAgent=="string")return navigator.userAgent==="Cloudflare-Workers";if(typeof Response=="function"){let t=new Response(null,{cf:{thing:!0}});if(typeof t.cf=="object"&&t.cf!==null&&t.cf.thing)return!0}return!1}function C_(){return y_()?F_():D_()}});var Da=R((hl,Li)=>{"use strict";var j_=W("events").EventEmitter,{parse:U_,serialize:V}=Sa(),{getStream:P_,getSecureStream:H_}=hi(),k_=V.flush(),M_=V.sync(),w_=V.end(),ga=class extends j_{constructor(e){super(),e=e||{},this.stream=e.stream||P_(e.ssl),typeof this.stream=="function"&&(this.stream=this.stream(e)),this._keepAlive=e.keepAlive,this._keepAliveInitialDelayMillis=e.keepAliveInitialDelayMillis,this.lastBuffer=!1,this.parsedStatements={},this.ssl=e.ssl||!1,this._ending=!1,this._emitMessage=!1;var a=this;this.on("newListener",function(s){s==="message"&&(a._emitMessage=!0)})}connect(e,a){var s=this;this._connecting=!0,this.stream.setNoDelay(!0),this.stream.connect(e,a),this.stream.once("connect",function(){s._keepAlive&&s.stream.setKeepAlive(!0,s._keepAliveInitialDelayMillis),s.emit("connect")});let i=function(r){s._ending&&(r.code==="ECONNRESET"||r.code==="EPIPE")||s.emit("error",r)};if(this.stream.on("error",i),this.stream.on("close",function(){s.emit("end")}),!this.ssl)return this.attachListeners(this.stream);this.stream.once("data",function(r){var o=r.toString("utf8");switch(o){case"S":break;case"N":return s.stream.end(),s.emit("error",new Error("The server does not support SSL connections"));default:return s.stream.end(),s.emit("error",new Error("There was an error establishing an SSL connection"))}let n={socket:s.stream};s.ssl!==!0&&(Object.assign(n,s.ssl),"key"in s.ssl&&(n.key=s.ssl.key));var E=W("net");E.isIP&&E.isIP(a)===0&&(n.servername=a);try{s.stream=H_(n)}catch(_){return s.emit("error",_)}s.attachListeners(s.stream),s.stream.on("error",i),s.emit("sslconnect")})}attachListeners(e){U_(e,a=>{var s=a.name==="error"?"errorMessage":a.name;this._emitMessage&&this.emit("message",a),this.emit(s,a)})}requestSsl(){this.stream.write(V.requestSsl())}startup(e){this.stream.write(V.startup(e))}cancel(e,a){this._send(V.cancel(e,a))}password(e){this._send(V.password(e))}sendSASLInitialResponseMessage(e,a){this._send(V.sendSASLInitialResponseMessage(e,a))}sendSCRAMClientFinalMessage(e){this._send(V.sendSCRAMClientFinalMessage(e))}_send(e){return this.stream.writable?this.stream.write(e):!1}query(e){this._send(V.query(e))}parse(e){this._send(V.parse(e))}bind(e){this._send(V.bind(e))}execute(e){this._send(V.execute(e))}flush(){this.stream.writable&&this.stream.write(k_)}sync(){this._ending=!0,this._send(M_)}ref(){this.stream.ref()}unref(){this.stream.unref()}end(){if(this._ending=!0,!this._connecting||!this.stream.writable){this.stream.end();return}return this.stream.write(w_,()=>{this.stream.end()})}close(e){this._send(V.close(e))}describe(e){this._send(V.describe(e))}sendCopyFromChunk(e){this._send(V.copyData(e))}endCopyFrom(){this._send(V.copyDone())}sendCopyFail(e){this._send(V.copyFail(e))}};Li.exports=ga});var fi=R((Ll,Oe)=>{"use strict";var Ai=W("path"),W_=W("stream").Stream,x_=W("readline").createInterface,Si=W("util"),B_=5432,At=process.platform==="win32",it=process.stderr,G_=56,q_=7,Y_=61440,V_=32768;function K_(t){return(t&Y_)==V_}var We=["host","port","database","user","password"],Fa=We.length,$_=We[Fa-1];function ya(){var t=it instanceof W_&&it.writable===!0;if(t){var e=Array.prototype.slice.call(arguments).concat(`
+`);it.write(Si.format.apply(Si,e))}}Object.defineProperty(Oe.exports,"isWin",{get:function(){return At},set:function(t){At=t}});Oe.exports.warnTo=function(t){var e=it;return it=t,e};Oe.exports.getFileName=function(t){var e=t||process.env,a=e.PGPASSFILE||(At?Ai.join(e.APPDATA||"./","postgresql","pgpass.conf"):Ai.join(e.HOME||"./",".pgpass"));return a};Oe.exports.usePgPass=function(t,e){return Object.prototype.hasOwnProperty.call(process.env,"PGPASSWORD")?!1:At?!0:(e=e||"<unkn>",K_(t.mode)?t.mode&(G_|q_)?(ya('WARNING: password file "%s" has group or world access; permissions should be u=rw (0600) or less',e),!1):!0:(ya('WARNING: password file "%s" is not a plain file',e),!1))};var X_=Oe.exports.match=function(t,e){return We.slice(0,-1).reduce(function(a,s,i){return i==1&&Number(t[s]||B_)===Number(e[s])?a&&!0:a&&(e[s]==="*"||e[s]===t[s])},!0)};Oe.exports.getPassword=function(t,e,a){var s,i=!1,r=x_({input:e,crlfDelay:1/0});function o(c){i=!0,e.destroy(),a(c)}function n(c){var l=J_(c);l&&z_(l)&&X_(t,l)&&(s=l[$_],r.close())}var E=function(){i||o(s)},_=function(c){i||(ya("WARNING: error on reading file: %s",c),o(void 0))};e.on("error",_),r.on("line",n).on("close",E).on("error",_)};var J_=Oe.exports.parseLine=function(t){if(t.length<11||t.match(/^\s+#/))return null;for(var e="",a="",s=0,i=0,r=0,o={},n=!1,E=function(c,l,d){var u=t.substring(l,d);Object.hasOwnProperty.call(process.env,"PGPASS_NO_DEESCAPE")||(u=u.replace(/\\([:\\])/g,"$1")),o[We[c]]=u},_=0;_<t.length-1;_+=1){if(e=t.charAt(_+1),a=t.charAt(_),n=s==Fa-1,n){E(s,i);break}_>=0&&e==":"&&a!=="\\"&&(E(s,i,_+1),i=_+2,s+=1)}return o=Object.keys(o).length===Fa?o:null,o},z_=Oe.exports.isValidEntry=function(t){for(var e={0:function(o){return o.length>0},1:function(o){return o==="*"?!0:(o=Number(o),isFinite(o)&&o>0&&o<9007199254740992&&Math.floor(o)===o)},2:function(o){return o.length>0},3:function(o){return o.length>0},4:function(o){return o.length>0}},a=0;a<We.length;a+=1){var s=e[a],i=t[We[a]]||"",r=s(i);if(!r)return!1}return!0}});var Di=R((Sl,Ca)=>{"use strict";var Al=W("path"),gi=W("fs"),St=fi();Ca.exports=function(t,e){var a=St.getFileName();gi.stat(a,function(s,i){if(s||!St.usePgPass(i,a))return e(void 0);var r=gi.createReadStream(a);St.getPassword(t,r,e)})};Ca.exports.warnTo=St.warnTo});var ji=R((fl,Ci)=>{"use strict";var Q_=W("events").EventEmitter,Fi=at(),ja=zs(),Z_=Zt(),eE=aa(),yi=li(),tE=tt(),aE=Da(),sE=Qt(),ft=class extends Q_{constructor(e){super(),this.connectionParameters=new eE(e),this.user=this.connectionParameters.user,this.database=this.connectionParameters.database,this.port=this.connectionParameters.port,this.host=this.connectionParameters.host,Object.defineProperty(this,"password",{configurable:!0,enumerable:!1,writable:!0,value:this.connectionParameters.password}),this.replication=this.connectionParameters.replication;var a=e||{};this._Promise=a.Promise||global.Promise,this._types=new Z_(a.types),this._ending=!1,this._ended=!1,this._connecting=!1,this._connected=!1,this._connectionError=!1,this._queryable=!0,this.connection=a.connection||new aE({stream:a.stream,ssl:this.connectionParameters.ssl,keepAlive:a.keepAlive||!1,keepAliveInitialDelayMillis:a.keepAliveInitialDelayMillis||0,encoding:this.connectionParameters.client_encoding||"utf8"}),this.queryQueue=[],this.binary=a.binary||tE.binary,this.processID=null,this.secretKey=null,this.ssl=this.connectionParameters.ssl||!1,this.ssl&&this.ssl.key&&Object.defineProperty(this.ssl,"key",{enumerable:!1}),this._connectionTimeoutMillis=a.connectionTimeoutMillis||0}_errorAllQueries(e){let a=s=>{process.nextTick(()=>{s.handleError(e,this.connection)})};this.activeQuery&&(a(this.activeQuery),this.activeQuery=null),this.queryQueue.forEach(a),this.queryQueue.length=0}_connect(e){var a=this,s=this.connection;if(this._connectionCallback=e,this._connecting||this._connected){let i=new Error("Client has already been connected. You cannot reuse a client.");process.nextTick(()=>{e(i)});return}this._connecting=!0,this._connectionTimeoutMillis>0&&(this.connectionTimeoutHandle=setTimeout(()=>{s._ending=!0,s.stream.destroy(new Error("timeout expired"))},this._connectionTimeoutMillis)),this.host&&this.host.indexOf("/")===0?s.connect(this.host+"/.s.PGSQL."+this.port):s.connect(this.port,this.host),s.on("connect",function(){a.ssl?s.requestSsl():s.startup(a.getStartupConf())}),s.on("sslconnect",function(){s.startup(a.getStartupConf())}),this._attachListeners(s),s.once("end",()=>{let i=this._ending?new Error("Connection terminated"):new Error("Connection terminated unexpectedly");clearTimeout(this.connectionTimeoutHandle),this._errorAllQueries(i),this._ended=!0,this._ending||(this._connecting&&!this._connectionError?this._connectionCallback?this._connectionCallback(i):this._handleErrorEvent(i):this._connectionError||this._handleErrorEvent(i)),process.nextTick(()=>{this.emit("end")})})}connect(e){if(e){this._connect(e);return}return new this._Promise((a,s)=>{this._connect(i=>{i?s(i):a()})})}_attachListeners(e){e.on("authenticationCleartextPassword",this._handleAuthCleartextPassword.bind(this)),e.on("authenticationMD5Password",this._handleAuthMD5Password.bind(this)),e.on("authenticationSASL",this._handleAuthSASL.bind(this)),e.on("authenticationSASLContinue",this._handleAuthSASLContinue.bind(this)),e.on("authenticationSASLFinal",this._handleAuthSASLFinal.bind(this)),e.on("backendKeyData",this._handleBackendKeyData.bind(this)),e.on("error",this._handleErrorEvent.bind(this)),e.on("errorMessage",this._handleErrorMessage.bind(this)),e.on("readyForQuery",this._handleReadyForQuery.bind(this)),e.on("notice",this._handleNotice.bind(this)),e.on("rowDescription",this._handleRowDescription.bind(this)),e.on("dataRow",this._handleDataRow.bind(this)),e.on("portalSuspended",this._handlePortalSuspended.bind(this)),e.on("emptyQuery",this._handleEmptyQuery.bind(this)),e.on("commandComplete",this._handleCommandComplete.bind(this)),e.on("parseComplete",this._handleParseComplete.bind(this)),e.on("copyInResponse",this._handleCopyInResponse.bind(this)),e.on("copyData",this._handleCopyData.bind(this)),e.on("notification",this._handleNotification.bind(this))}_checkPgPass(e){let a=this.connection;if(typeof this.password=="function")this._Promise.resolve().then(()=>this.password()).then(s=>{if(s!==void 0){if(typeof s!="string"){a.emit("error",new TypeError("Password must be a string"));return}this.connectionParameters.password=this.password=s}else this.connectionParameters.password=this.password=null;e()}).catch(s=>{a.emit("error",s)});else if(this.password!==null)e();else try{Di()(this.connectionParameters,i=>{i!==void 0&&(this.connectionParameters.password=this.password=i),e()})}catch(s){this.emit("error",s)}}_handleAuthCleartextPassword(e){this._checkPgPass(()=>{this.connection.password(this.password)})}_handleAuthMD5Password(e){this._checkPgPass(async()=>{try{let a=await sE.postgresMd5PasswordHash(this.user,this.password,e.salt);this.connection.password(a)}catch(a){this.emit("error",a)}})}_handleAuthSASL(e){this._checkPgPass(()=>{try{this.saslSession=ja.startSession(e.mechanisms),this.connection.sendSASLInitialResponseMessage(this.saslSession.mechanism,this.saslSession.response)}catch(a){this.connection.emit("error",a)}})}async _handleAuthSASLContinue(e){try{await ja.continueSession(this.saslSession,this.password,e.data),this.connection.sendSCRAMClientFinalMessage(this.saslSession.response)}catch(a){this.connection.emit("error",a)}}_handleAuthSASLFinal(e){try{ja.finalizeSession(this.saslSession,e.data),this.saslSession=null}catch(a){this.connection.emit("error",a)}}_handleBackendKeyData(e){this.processID=e.processID,this.secretKey=e.secretKey}_handleReadyForQuery(e){this._connecting&&(this._connecting=!1,this._connected=!0,clearTimeout(this.connectionTimeoutHandle),this._connectionCallback&&(this._connectionCallback(null,this),this._connectionCallback=null),this.emit("connect"));let{activeQuery:a}=this;this.activeQuery=null,this.readyForQuery=!0,a&&a.handleReadyForQuery(this.connection),this._pulseQueryQueue()}_handleErrorWhileConnecting(e){if(!this._connectionError){if(this._connectionError=!0,clearTimeout(this.connectionTimeoutHandle),this._connectionCallback)return this._connectionCallback(e);this.emit("error",e)}}_handleErrorEvent(e){if(this._connecting)return this._handleErrorWhileConnecting(e);this._queryable=!1,this._errorAllQueries(e),this.emit("error",e)}_handleErrorMessage(e){if(this._connecting)return this._handleErrorWhileConnecting(e);let a=this.activeQuery;if(!a){this._handleErrorEvent(e);return}this.activeQuery=null,a.handleError(e,this.connection)}_handleRowDescription(e){this.activeQuery.handleRowDescription(e)}_handleDataRow(e){this.activeQuery.handleDataRow(e)}_handlePortalSuspended(e){this.activeQuery.handlePortalSuspended(this.connection)}_handleEmptyQuery(e){this.activeQuery.handleEmptyQuery(this.connection)}_handleCommandComplete(e){if(this.activeQuery==null){let a=new Error("Received unexpected commandComplete message from backend.");this._handleErrorEvent(a);return}this.activeQuery.handleCommandComplete(e,this.connection)}_handleParseComplete(){if(this.activeQuery==null){let e=new Error("Received unexpected parseComplete message from backend.");this._handleErrorEvent(e);return}this.activeQuery.name&&(this.connection.parsedStatements[this.activeQuery.name]=this.activeQuery.text)}_handleCopyInResponse(e){this.activeQuery.handleCopyInResponse(this.connection)}_handleCopyData(e){this.activeQuery.handleCopyData(e,this.connection)}_handleNotification(e){this.emit("notification",e)}_handleNotice(e){this.emit("notice",e)}getStartupConf(){var e=this.connectionParameters,a={user:e.user,database:e.database},s=e.application_name||e.fallback_application_name;return s&&(a.application_name=s),e.replication&&(a.replication=""+e.replication),e.statement_timeout&&(a.statement_timeout=String(parseInt(e.statement_timeout,10))),e.lock_timeout&&(a.lock_timeout=String(parseInt(e.lock_timeout,10))),e.idle_in_transaction_session_timeout&&(a.idle_in_transaction_session_timeout=String(parseInt(e.idle_in_transaction_session_timeout,10))),e.options&&(a.options=e.options),a}cancel(e,a){if(e.activeQuery===a){var s=this.connection;this.host&&this.host.indexOf("/")===0?s.connect(this.host+"/.s.PGSQL."+this.port):s.connect(this.port,this.host),s.on("connect",function(){s.cancel(e.processID,e.secretKey)})}else e.queryQueue.indexOf(a)!==-1&&e.queryQueue.splice(e.queryQueue.indexOf(a),1)}setTypeParser(e,a,s){return this._types.setTypeParser(e,a,s)}getTypeParser(e,a){return this._types.getTypeParser(e,a)}escapeIdentifier(e){return Fi.escapeIdentifier(e)}escapeLiteral(e){return Fi.escapeLiteral(e)}_pulseQueryQueue(){if(this.readyForQuery===!0)if(this.activeQuery=this.queryQueue.shift(),this.activeQuery){this.readyForQuery=!1,this.hasExecuted=!0;let e=this.activeQuery.submit(this.connection);e&&process.nextTick(()=>{this.activeQuery.handleError(e,this.connection),this.readyForQuery=!0,this._pulseQueryQueue()})}else this.hasExecuted&&(this.activeQuery=null,this.emit("drain"))}query(e,a,s){var i,r,o,n,E;if(e==null)throw new TypeError("Client was passed a null or undefined query");return typeof e.submit=="function"?(o=e.query_timeout||this.connectionParameters.query_timeout,r=i=e,typeof a=="function"&&(i.callback=i.callback||a)):(o=e.query_timeout||this.connectionParameters.query_timeout,i=new yi(e,a,s),i.callback||(r=new this._Promise((_,c)=>{i.callback=(l,d)=>l?c(l):_(d)}).catch(_=>{throw Error.captureStackTrace(_),_}))),o&&(E=i.callback,n=setTimeout(()=>{var _=new Error("Query read timeout");process.nextTick(()=>{i.handleError(_,this.connection)}),E(_),i.callback=()=>{};var c=this.queryQueue.indexOf(i);c>-1&&this.queryQueue.splice(c,1),this._pulseQueryQueue()},o),i.callback=(_,c)=>{clearTimeout(n),E(_,c)}),this.binary&&!i.binary&&(i.binary=!0),i._result&&!i._result._types&&(i._result._types=this._types),this._queryable?this._ending?(process.nextTick(()=>{i.handleError(new Error("Client was closed and is not queryable"),this.connection)}),r):(this.queryQueue.push(i),this._pulseQueryQueue(),r):(process.nextTick(()=>{i.handleError(new Error("Client has encountered a connection error and is not queryable"),this.connection)}),r)}ref(){this.connection.ref()}unref(){this.connection.unref()}end(e){if(this._ending=!0,!this.connection._connecting||this._ended)if(e)e();else return this._Promise.resolve();if(this.activeQuery||!this._queryable?this.connection.stream.destroy():this.connection.end(),e)this.connection.once("end",e);else return new this._Promise(a=>{this.connection.once("end",a)})}};ft.Query=yi;Ci.exports=ft});var Hi=R((gl,Pi)=>{"use strict";var iE=W("events").EventEmitter,Ua=function(){},Ui=(t,e)=>{let a=t.findIndex(e);return a===-1?void 0:t.splice(a,1)[0]},Pa=class{constructor(e,a,s){this.client=e,this.idleListener=a,this.timeoutId=s}},xe=class{constructor(e){this.callback=e}};function rE(){throw new Error("Release called on client which has already been released to the pool.")}function gt(t,e){if(e)return{callback:e,result:void 0};let a,s,i=function(o,n){o?a(o):s(n)},r=new t(function(o,n){s=o,a=n}).catch(o=>{throw Error.captureStackTrace(o),o});return{callback:i,result:r}}function oE(t,e){return function a(s){s.client=e,e.removeListener("error",a),e.on("error",()=>{t.log("additional client error after disconnection due to error",s)}),t._remove(e),t.emit("error",s,e)}}var Ha=class extends iE{constructor(e,a){super(),this.options=Object.assign({},e),e!=null&&"password"in e&&Object.defineProperty(this.options,"password",{configurable:!0,enumerable:!1,writable:!0,value:e.password}),e!=null&&e.ssl&&e.ssl.key&&Object.defineProperty(this.options.ssl,"key",{enumerable:!1}),this.options.max=this.options.max||this.options.poolSize||10,this.options.min=this.options.min||0,this.options.maxUses=this.options.maxUses||1/0,this.options.allowExitOnIdle=this.options.allowExitOnIdle||!1,this.options.maxLifetimeSeconds=this.options.maxLifetimeSeconds||0,this.log=this.options.log||function(){},this.Client=this.options.Client||a||ka().Client,this.Promise=this.options.Promise||global.Promise,typeof this.options.idleTimeoutMillis>"u"&&(this.options.idleTimeoutMillis=1e4),this._clients=[],this._idle=[],this._expired=new WeakSet,this._pendingQueue=[],this._endCallback=void 0,this.ending=!1,this.ended=!1}_promiseTry(e){let a=this.Promise;return typeof a.try=="function"?a.try(e):new a(s=>s(e()))}_isFull(){return this._clients.length>=this.options.max}_isAboveMin(){return this._clients.length>this.options.min}_pulseQueue(){if(this.log("pulse queue"),this.ended){this.log("pulse queue ended");return}if(this.ending){this.log("pulse queue on ending"),this._idle.length&&this._idle.slice().map(a=>{this._remove(a.client)}),this._clients.length||(this.ended=!0,this._endCallback());return}if(!this._pendingQueue.length){this.log("no queued requests");return}if(!this._idle.length&&this._isFull())return;let e=this._pendingQueue.shift();if(this._idle.length){let a=this._idle.pop();clearTimeout(a.timeoutId);let s=a.client;s.ref&&s.ref();let i=a.idleListener;return this._acquireClient(s,e,i,!1)}if(!this._isFull())return this.newClient(e);throw new Error("unexpected condition")}_remove(e,a){let s=Ui(this._idle,r=>r.client===e);s!==void 0&&clearTimeout(s.timeoutId),this._clients=this._clients.filter(r=>r!==e);let i=this;e.end(()=>{i.emit("remove",e),typeof a=="function"&&a()})}connect(e){if(this.ending){let i=new Error("Cannot use a pool after calling end on the pool");return e?e(i):this.Promise.reject(i)}let a=gt(this.Promise,e),s=a.result;if(this._isFull()||this._idle.length){if(this._idle.length&&process.nextTick(()=>this._pulseQueue()),!this.options.connectionTimeoutMillis)return this._pendingQueue.push(new xe(a.callback)),s;let i=(n,E,_)=>{clearTimeout(o),a.callback(n,E,_)},r=new xe(i),o=setTimeout(()=>{Ui(this._pendingQueue,n=>n.callback===i),r.timedOut=!0,a.callback(new Error("timeout exceeded when trying to connect"))},this.options.connectionTimeoutMillis);return o.unref&&o.unref(),this._pendingQueue.push(r),s}return this.newClient(new xe(a.callback)),s}newClient(e){let a=new this.Client(this.options);this._clients.push(a);let s=oE(this,a);this.log("checking client timeout");let i,r=!1;this.options.connectionTimeoutMillis&&(i=setTimeout(()=>{a.connection?(this.log("ending client due to timeout"),r=!0,a.connection.stream.destroy()):a.isConnected()||(this.log("ending client due to timeout"),r=!0,a.end())},this.options.connectionTimeoutMillis)),this.log("connecting new client"),a.connect(o=>{if(i&&clearTimeout(i),a.on("error",s),o)this.log("client failed to connect",o),this._clients=this._clients.filter(n=>n!==a),r&&(o=new Error("Connection terminated due to connection timeout",{cause:o})),this._pulseQueue(),e.timedOut||e.callback(o,void 0,Ua);else{if(this.log("new client connected"),this.options.onConnect){this._promiseTry(()=>this.options.onConnect(a)).then(()=>{this._afterConnect(a,e,s)},n=>{this._clients=this._clients.filter(E=>E!==a),a.end(()=>{this._pulseQueue(),e.timedOut||e.callback(n,void 0,Ua)})});return}return this._afterConnect(a,e,s)}})}_afterConnect(e,a,s){if(this.options.maxLifetimeSeconds!==0){let i=setTimeout(()=>{this.log("ending client due to expired lifetime"),this._expired.add(e),this._idle.findIndex(o=>o.client===e)!==-1&&this._acquireClient(e,new xe((o,n,E)=>E()),s,!1)},this.options.maxLifetimeSeconds*1e3);i.unref(),e.once("end",()=>clearTimeout(i))}return this._acquireClient(e,a,s,!0)}_acquireClient(e,a,s,i){i&&this.emit("connect",e),this.emit("acquire",e),e.release=this._releaseOnce(e,s),e.removeListener("error",s),a.timedOut?i&&this.options.verify?this.options.verify(e,e.release):e.release():i&&this.options.verify?this.options.verify(e,r=>{if(r)return e.release(r),a.callback(r,void 0,Ua);a.callback(void 0,e,e.release)}):a.callback(void 0,e,e.release)}_releaseOnce(e,a){let s=!1;return i=>{s&&rE(),s=!0,this._release(e,a,i)}}_release(e,a,s){if(e.on("error",a),e._poolUseCount=(e._poolUseCount||0)+1,this.emit("release",s,e),s||this.ending||!e._queryable||e._ending||e._poolUseCount>=this.options.maxUses)return e._poolUseCount>=this.options.maxUses&&this.log("remove expended client"),this._remove(e,this._pulseQueue.bind(this));if(this._expired.has(e))return this.log("remove expired client"),this._expired.delete(e),this._remove(e,this._pulseQueue.bind(this));let r;this.options.idleTimeoutMillis&&this._isAboveMin()&&(r=setTimeout(()=>{this._isAboveMin()&&(this.log("remove idle client"),this._remove(e,this._pulseQueue.bind(this)))},this.options.idleTimeoutMillis),this.options.allowExitOnIdle&&r.unref()),this.options.allowExitOnIdle&&e.unref(),this._idle.push(new Pa(e,a,r)),this._pulseQueue()}query(e,a,s){if(typeof e=="function"){let r=gt(this.Promise,e);return setImmediate(function(){return r.callback(new Error("Passing a function as the first parameter to pool.query is not supported"))}),r.result}typeof a=="function"&&(s=a,a=void 0);let i=gt(this.Promise,s);return s=i.callback,this.connect((r,o)=>{if(r)return s(r);let n=!1,E=_=>{n||(n=!0,o.release(_),s(_))};o.once("error",E),this.log("dispatching query");try{o.query(e,a,(_,c)=>{if(this.log("query dispatched"),o.removeListener("error",E),!n)return n=!0,o.release(_),_?s(_):s(void 0,c)})}catch(_){return o.release(_),s(_)}}),i.result}end(e){if(this.log("ending"),this.ending){let s=new Error("Called end on pool more than once");return e?e(s):this.Promise.reject(s)}this.ending=!0;let a=gt(this.Promise,e);return this._endCallback=a.callback,this._pulseQueue(),a.result}get waitingCount(){return this._pendingQueue.length}get idleCount(){return this._idle.length}get expiredCount(){return this._clients.reduce((e,a)=>e+(this._expired.has(a)?1:0),0)}get totalCount(){return this._clients.length}};Pi.exports=Ha});var wi=R((Dl,Mi)=>{"use strict";var ki=W("events").EventEmitter,nE=W("util"),Ma=at(),Be=Mi.exports=function(t,e,a){ki.call(this),t=Ma.normalizeQueryConfig(t,e,a),this.text=t.text,this.values=t.values,this.name=t.name,this.queryMode=t.queryMode,this.callback=t.callback,this.state="new",this._arrayMode=t.rowMode==="array",this._emitRowEvents=!1,this.on("newListener",function(s){s==="row"&&(this._emitRowEvents=!0)}.bind(this))};nE.inherits(Be,ki);var _E={sqlState:"code",statementPosition:"position",messagePrimary:"message",context:"where",schemaName:"schema",tableName:"table",columnName:"column",dataTypeName:"dataType",constraintName:"constraint",sourceFile:"file",sourceLine:"line",sourceFunction:"routine"};Be.prototype.handleError=function(t){var e=this.native.pq.resultErrorFields();if(e)for(var a in e){var s=_E[a]||a;t[s]=e[a]}this.callback?this.callback(t):this.emit("error",t),this.state="error"};Be.prototype.then=function(t,e){return this._getPromise().then(t,e)};Be.prototype.catch=function(t){return this._getPromise().catch(t)};Be.prototype._getPromise=function(){return this._promise?this._promise:(this._promise=new Promise(function(t,e){this._once("end",t),this._once("error",e)}.bind(this)),this._promise)};Be.prototype.submit=function(t){this.state="running";var e=this;this.native=t.native,t.native.arrayMode=this._arrayMode;var a=function(r,o,n){if(t.native.arrayMode=!1,setImmediate(function(){e.emit("_done")}),r)return e.handleError(r);e._emitRowEvents&&(n.length>1?o.forEach((E,_)=>{E.forEach(c=>{e.emit("row",c,n[_])})}):o.forEach(function(E){e.emit("row",E,n)})),e.state="end",e.emit("end",n),e.callback&&e.callback(null,n)};if(process.domain&&(a=process.domain.bind(a)),this.name){this.name.length>63&&(console.error("Warning! Postgres only supports 63 characters for query names."),console.error("You supplied %s (%s)",this.name,this.name.length),console.error("This can cause conflicts and silent errors executing queries"));var s=(this.values||[]).map(Ma.prepareValue);if(t.namedQueries[this.name]){if(this.text&&t.namedQueries[this.name]!==this.text){let r=new Error(`Prepared statements must be unique - '${this.name}' was used for a different statement`);return a(r)}return t.native.execute(this.name,s,a)}return t.native.prepare(this.name,this.text,s.length,function(r){return r?a(r):(t.namedQueries[e.name]=e.text,e.native.execute(e.name,s,a))})}else if(this.values){if(!Array.isArray(this.values)){let r=new Error("Query values must be an array");return a(r)}var i=this.values.map(Ma.prepareValue);t.native.query(this.text,i,a)}else this.queryMode==="extended"?t.native.query(this.text,[],a):t.native.query(this.text,a)}});var qi=R((Fl,Gi)=>{"use strict";var Wi;try{Wi=W("pg-native")}catch(t){throw t}var EE=Zt(),xi=W("events").EventEmitter,cE=W("util"),lE=aa(),Bi=wi(),re=Gi.exports=function(t){xi.call(this),t=t||{},this._Promise=t.Promise||global.Promise,this._types=new EE(t.types),this.native=new Wi({types:this._types}),this._queryQueue=[],this._ending=!1,this._connecting=!1,this._connected=!1,this._queryable=!0;var e=this.connectionParameters=new lE(t);t.nativeConnectionString&&(e.nativeConnectionString=t.nativeConnectionString),this.user=e.user,Object.defineProperty(this,"password",{configurable:!0,enumerable:!1,writable:!0,value:e.password}),this.database=e.database,this.host=e.host,this.port=e.port,this.namedQueries={}};re.Query=Bi;cE.inherits(re,xi);re.prototype._errorAllQueries=function(t){let e=a=>{process.nextTick(()=>{a.native=this.native,a.handleError(t)})};this._hasActiveQuery()&&(e(this._activeQuery),this._activeQuery=null),this._queryQueue.forEach(e),this._queryQueue.length=0};re.prototype._connect=function(t){var e=this;if(this._connecting){process.nextTick(()=>t(new Error("Client has already been connected. You cannot reuse a client.")));return}this._connecting=!0,this.connectionParameters.getLibpqConnectionString(function(a,s){if(e.connectionParameters.nativeConnectionString&&(s=e.connectionParameters.nativeConnectionString),a)return t(a);e.native.connect(s,function(i){if(i)return e.native.end(),t(i);e._connected=!0,e.native.on("error",function(r){e._queryable=!1,e._errorAllQueries(r),e.emit("error",r)}),e.native.on("notification",function(r){e.emit("notification",{channel:r.relname,payload:r.extra})}),e.emit("connect"),e._pulseQueryQueue(!0),t()})})};re.prototype.connect=function(t){if(t){this._connect(t);return}return new this._Promise((e,a)=>{this._connect(s=>{s?a(s):e()})})};re.prototype.query=function(t,e,a){var s,i,r,o,n;if(t==null)throw new TypeError("Client was passed a null or undefined query");if(typeof t.submit=="function")r=t.query_timeout||this.connectionParameters.query_timeout,i=s=t,typeof e=="function"&&(t.callback=e);else if(r=t.query_timeout||this.connectionParameters.query_timeout,s=new Bi(t,e,a),!s.callback){let E,_;i=new this._Promise((c,l)=>{E=c,_=l}).catch(c=>{throw Error.captureStackTrace(c),c}),s.callback=(c,l)=>c?_(c):E(l)}return r&&(n=s.callback,o=setTimeout(()=>{var E=new Error("Query read timeout");process.nextTick(()=>{s.handleError(E,this.connection)}),n(E),s.callback=()=>{};var _=this._queryQueue.indexOf(s);_>-1&&this._queryQueue.splice(_,1),this._pulseQueryQueue()},r),s.callback=(E,_)=>{clearTimeout(o),n(E,_)}),this._queryable?this._ending?(s.native=this.native,process.nextTick(()=>{s.handleError(new Error("Client was closed and is not queryable"))}),i):(this._queryQueue.push(s),this._pulseQueryQueue(),i):(s.native=this.native,process.nextTick(()=>{s.handleError(new Error("Client has encountered a connection error and is not queryable"))}),i)};re.prototype.end=function(t){var e=this;this._ending=!0,this._connected||this.once("connect",this.end.bind(this,t));var a;return t||(a=new this._Promise(function(s,i){t=r=>r?i(r):s()})),this.native.end(function(){e._errorAllQueries(new Error("Connection terminated")),process.nextTick(()=>{e.emit("end"),t&&t()})}),a};re.prototype._hasActiveQuery=function(){return this._activeQuery&&this._activeQuery.state!=="error"&&this._activeQuery.state!=="end"};re.prototype._pulseQueryQueue=function(t){if(this._connected&&!this._hasActiveQuery()){var e=this._queryQueue.shift();if(!e){t||this.emit("drain");return}this._activeQuery=e,e.submit(this);var a=this;e.once("_done",function(){a._pulseQueryQueue()})}};re.prototype.cancel=function(t){this._activeQuery===t?this.native.cancel(function(){}):this._queryQueue.indexOf(t)!==-1&&this._queryQueue.splice(this._queryQueue.indexOf(t),1)};re.prototype.ref=function(){};re.prototype.unref=function(){};re.prototype.setTypeParser=function(t,e,a){return this._types.setTypeParser(t,e,a)};re.prototype.getTypeParser=function(t,e){return this._types.getTypeParser(t,e)}});var wa=R((yl,Yi)=>{"use strict";Yi.exports=qi()});var ka=R((jl,rt)=>{"use strict";var dE=ji(),uE=tt(),NE=Da(),TE=Hi(),{DatabaseError:mE}=Sa(),{escapeIdentifier:pE,escapeLiteral:RE}=at(),bE=t=>class extends TE{constructor(a){super(a,t)}},Wa=function(t){this.defaults=uE,this.Client=t,this.Query=this.Client.Query,this.Pool=bE(this.Client),this._pools=[],this.Connection=NE,this.types=et(),this.DatabaseError=mE,this.escapeIdentifier=pE,this.escapeLiteral=RE};typeof process.env.NODE_PG_FORCE_NATIVE<"u"?rt.exports=new Wa(wa()):(rt.exports=new Wa(dE),Object.defineProperty(rt.exports,"native",{configurable:!0,enumerable:!1,get(){var t=null;try{t=new Wa(wa())}catch(e){if(e.code!=="MODULE_NOT_FOUND")throw e}return Object.defineProperty(rt.exports,"native",{value:t}),t}}))});import{createHash as Cc,randomUUID as jc}from"node:crypto";import{gzipSync as Uc}from"node:zlib";var Sr=co(ka(),1);var Vi=`-- JAIN STOCK EXCHANGE (JSE) v272
 -- 001_schema.sql: tables, constraints, indexes and compatibility views.
 -- Money is stored as numeric(\u2026,2) rupees. Prices are whole rupees by default (price_tick).
 
@@ -543,7 +543,7 @@ CREATE VIEW participants AS
   FROM app_users u JOIN teams t ON t.id = u.team_id WHERE u.role = 'PARTICIPANT';
 
 INSERT INTO schema_migrations(version) VALUES ('001_schema');
-`;var Kr=`-- JAIN STOCK EXCHANGE (JSE) v311
+`;var Ki=`-- JAIN STOCK EXCHANGE (JSE) v311
 -- 001a_upgrades.sql: additive schema changes applied right after 001_schema.
 -- Every statement is idempotent, so the file is safe to re-run on existing databases.
 
@@ -789,7 +789,7 @@ CREATE TABLE IF NOT EXISTS loan_requests (
   cash_after       numeric(16,2)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS loan_requests_one_pending ON loan_requests(team_id) WHERE status = 'PENDING';
-`;var Vr=`-- JAIN STOCK EXCHANGE (JSE) v311
+`;var $i=`-- JAIN STOCK EXCHANGE (JSE) v311
 -- 002_core.sql: helpers, authentication, broker order submission, Pit Manager execution and
 -- trading slips, Exchange review and Bank settlement.
 -- Canonical flow: PARTICIPANT INSTRUCTION \u2192 BROKER SUBMISSION \u2192 PIT MANAGER EXECUTION \u2192 EXCHANGE REVIEW
@@ -803,6 +803,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS loan_requests_one_pending ON loan_requests(tea
 -- ---------------------------------------------------------------------------
 -- Helpers
 -- ---------------------------------------------------------------------------
+-- Per-team initial capital, so BIG BULL can start at \u20B91 crore without changing normal teams.
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS initial_capital numeric(16,2);
+UPDATE teams SET initial_capital=(SELECT initial_capital FROM event_config WHERE id=1) WHERE initial_capital IS NULL;
+ALTER TABLE teams ALTER COLUMN initial_capital SET DEFAULT 2000000;
+ALTER TABLE teams ALTER COLUMN initial_capital SET NOT NULL;
+
 CREATE OR REPLACE FUNCTION jse_fail(p_code text, p_msg text, p_http integer DEFAULT 400)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
@@ -1315,8 +1321,8 @@ BEGIN
     PERFORM jse_fail('INVALID_NUMBER', 'Quantity must be a whole number of shares.', 400);
   END;
   IF v_qty IS NULL OR v_qty <= 0 THEN PERFORM jse_fail('INVALID_QUANTITY', 'Quantity must be a positive number of shares.', 400); END IF;
-  IF v_qty % v_sec.lot_size <> 0 THEN
-    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' trades in multiples of ' || v_sec.lot_size || ' shares (e.g. ' || v_sec.lot_size || ', ' || (2 * v_sec.lot_size) || ', ' || (3 * v_sec.lot_size) || ').', 400);
+  IF v_qty % 50 <> 0 THEN
+    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' normal market trading uses multiples of 50 shares (50, 100, 150 \u2026).', 400);
   END IF;
   IF v_ins.id IS NOT NULL AND (v_ins.team_id <> v_team.id OR v_ins.security_id <> v_sec.id OR v_ins.side <> v_side OR v_ins.quantity <> v_qty) THEN
     PERFORM jse_fail('INSTRUCTION_MISMATCH', 'The order must match ' || v_ins.instruction_no || ' (' || v_ins.side || ' ' || v_ins.quantity ||
@@ -1662,8 +1668,8 @@ BEGIN
   END IF;
   IF NOT t.active THEN RETURN jse__bank_reject(a, o, 'TEAM_INACTIVE', 'Team ' || t.code || ' is not active.', '{}'::jsonb); END IF;
   IF NOT s.active THEN RETURN jse__bank_reject(a, o, 'SECURITY_INACTIVE', s.symbol || ' is not tradable.', '{}'::jsonb); END IF;
-  IF o.quantity <= 0 OR o.quantity % s.lot_size <> 0 THEN
-    RETURN jse__bank_reject(a, o, 'INVALID_LOT', 'Quantity must be a multiple of ' || s.lot_size || '.', '{}'::jsonb);
+  IF o.quantity <= 0 OR o.quantity % 50 <> 0 THEN
+    RETURN jse__bank_reject(a, o, 'INVALID_LOT', 'Normal market trading requires a multiple of 50 shares.', '{}'::jsonb);
   END IF;
   IF o.price <= 0 THEN
     RETURN jse__bank_reject(a, o, 'INVALID_PRICE', 'Invalid order price.', '{}'::jsonb);
@@ -1880,7 +1886,7 @@ BEGIN
 END $$;
 
 INSERT INTO schema_migrations(version) VALUES ('002_core');
-`;var Xr=`-- JAIN STOCK EXCHANGE (JSE) v3.13
+`;var Xi=`-- JAIN STOCK EXCHANGE (JSE) v3.13
 -- 003_ops.sql: institutional orders, loans, Market News (the only price engine), event control,
 -- participant instructions, team names, IPO round (applications, allotments, prospectus, listing),
 -- reset, undo / redo and administration.
@@ -1940,8 +1946,8 @@ BEGIN
     v_qty := (p->>'quantity')::integer; v_expected := nullif(p->>'expected_price', '')::numeric;
   EXCEPTION WHEN others THEN PERFORM jse_fail('INVALID_NUMBER', 'Quantity must be a whole number of shares.', 400);
   END;
-  IF v_qty IS NULL OR v_qty <= 0 OR v_qty % v_sec.lot_size <> 0 THEN
-    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' trades in multiples of ' || v_sec.lot_size || ' shares.', 400);
+  IF v_qty IS NULL OR v_qty <= 0 OR v_qty % 50 <> 0 THEN
+    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' normal market trading uses multiples of 50 shares.', 400);
   END IF;
   -- expected_price = the prevailing MARKET price the desk saw (the institutional price is derived from it)
   IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
@@ -2424,8 +2430,8 @@ BEGIN
     IF s.kind = 'IPO' AND s.listed_at IS NULL THEN PERFORM jse_fail('IPO_NOT_LISTED', s.symbol || ' has not listed yet.', 409); END IF;
     IF v_side NOT IN ('BUY', 'SELL') THEN PERFORM jse_fail('INVALID_SIDE', 'Choose BUY or SELL.', 400); END IF;
     BEGIN v_qty := (p->>'quantity')::integer; EXCEPTION WHEN others THEN v_qty := NULL; END;
-    IF v_qty IS NULL OR v_qty <= 0 OR v_qty % s.lot_size <> 0 THEN
-      PERFORM jse_fail('INVALID_LOT', 'Quantity must be a multiple of ' || s.lot_size || ' shares.', 400);
+    IF v_qty IS NULL OR v_qty <= 0 OR v_qty % 50 <> 0 THEN
+      PERFORM jse_fail('INVALID_LOT', 'Normal market instructions must be a multiple of 50 shares.', 400);
     END IF;
     SELECT count(*) INTO v_open FROM instructions WHERE team_id = t.id AND status = 'OPEN';
     IF v_open >= 10 THEN PERFORM jse_fail('TOO_MANY_OPEN', 'You already have 10 open instructions. Wait for your broker or cancel one.', 409); END IF;
@@ -3479,7 +3485,7 @@ BEGIN
 END $$;
 
 INSERT INTO schema_migrations(version) VALUES ('003_ops');
-`;var Jr=`-- JAIN STOCK EXCHANGE (JSE) v311
+`;var Ji=`-- JAIN STOCK EXCHANGE (JSE) v311
 -- 004_reads.sql: read models used by the API (CMS 50, market board, IPO page, portfolios with assessment and
 -- eligibility, order tracking with the canonical six-step flow, Pit Manager queue, trading slips, broker desk,
 -- Exchange / Bank queues, ledgers, audit, commissions, Market Intelligence, admin state, certificates).
@@ -3532,7 +3538,7 @@ WITH cfg AS (SELECT * FROM event_config WHERE id = 1),
               coalesce(l.interest_paid, 0) AS loan_interest_paid, coalesce(l.principal_repaid, 0) AS loan_principal_repaid,
               coalesce(l.status, 'NONE') AS loan_status, cfg.loan_repayment_required,
               greatest(0, least(t.cash, t.realized_pnl)) AS profit_cash_exempt,
-              cfg.initial_capital, cfg.cash_rule_limit, ev.status AS event_status
+              coalesce(t.initial_capital, cfg.initial_capital) AS initial_capital, cfg.cash_rule_limit, ev.status AS event_status
        FROM teams t CROSS JOIN cfg CROSS JOIN ev
        LEFT JOIN brokers b ON b.id = t.broker_id
        LEFT JOIN hv ON hv.team_id = t.id
@@ -4644,7 +4650,7 @@ BEGIN
 END $$;
 
 INSERT INTO schema_migrations(version) VALUES ('004_reads');
-`;var zr=`-- JAIN STOCK EXCHANGE (JSE) v311
+`;var zi=`-- JAIN STOCK EXCHANGE (JSE) v311
 -- 005_exports.sql: one function per export sheet; rows are returned as arrays for compact transfer.
 -- Every sheet reads the same canonical tables / views as the live dashboards.
 
@@ -4823,7 +4829,7 @@ BEGIN
 END $$;
 
 INSERT INTO schema_migrations(version) VALUES ('005_exports');
-`;var Qr=`-- JAIN STOCK EXCHANGE (JSE) v311
+`;var Qi=`-- JAIN STOCK EXCHANGE (JSE) v311
 -- 006_seed.sql: event configuration, 10 brokers, 100 teams, 50 stocks, 4 IPOs, the institutional
 -- account and staff / participant accounts (fresh installs; 008_v311 brings older databases to the same state). Idempotent. Accounts start with random unknown passwords;
 -- the administrator issues real passwords with jse_admin_users(RESET_ROLE_PASSWORDS).
@@ -4916,7 +4922,7 @@ SELECT t.code, t.name, 'PARTICIPANT', t.id, crypt(encode(gen_random_bytes(18), '
 ON CONFLICT (lower(username)) DO NOTHING;
 
 INSERT INTO schema_migrations(version) VALUES ('006_seed');
-`;var Zr=`-- JAIN STOCK EXCHANGE (JSE) v311
+`;var Zi=`-- JAIN STOCK EXCHANGE (JSE) v311
 -- 007_tuning.sql: safety timeouts for this database (re-applicable).
 DO $$
 BEGIN
@@ -4925,7 +4931,7 @@ BEGIN
   EXECUTE format('ALTER DATABASE %I SET lock_timeout = %L', current_database(), '10s');
 END $$;
 ANALYZE;
-`;var ei=`-- JAIN STOCK EXCHANGE (JSE) v311
+`;var er=`-- JAIN STOCK EXCHANGE (JSE) v311
 -- 008_v311.sql: brings any database to the v311 operating model (idempotent \u2014 safe to re-run).
 --   * broker desks log in as BROKER-01\u202610; PIT-01\u202610 become dedicated Pit Manager accounts
 --   * IPO identity (IPO-01\u202604) and sector labels; CMS INDEX bases; one prospectus record per IPO
@@ -5130,7 +5136,7 @@ BEGIN
 END $$;
 
 INSERT INTO schema_migrations(version) VALUES ('008_v311');
-`;var ti=`-- JAIN STOCK EXCHANGE (JSE) v3.13
+`;var tr=`-- JAIN STOCK EXCHANGE (JSE) v3.13
 -- 009_hatchable.sql: one-time data changes to match the live Hatchable application (applied once).
 --   * Market News moves are priced to the paisa, as on Hatchable (e.g. \u20B91,714.55); base prices stay whole rupees.
 UPDATE event_config SET price_tick = 0.01 WHERE id = 1 AND price_tick = 1;
@@ -5141,7 +5147,7 @@ FROM (VALUES ('VOLTRA', 100000), ('BLUEAI', 80000), ('SHREEB', 120000), ('AAROGY
 WHERE securities.symbol = v.sym AND securities.kind = 'IPO' AND securities.ipo_shares_offered IS NULL;
 
 INSERT INTO schema_migrations(version) VALUES ('009_hatchable');
-`;var si=`-- JAIN STOCK EXCHANGE (JSE) v3.14
+`;var ar=`-- JAIN STOCK EXCHANGE (JSE) v3.14
 -- 010_safety.sql: one-time rule changes from the v3.14 master brief (applied once).
 --   * Share prices are whole rupees again (no decimals). Any price with paise is rounded once, recorded as an ADMIN price change.
 UPDATE event_config SET price_tick = 1 WHERE id = 1;
@@ -5153,37 +5159,3803 @@ UPDATE securities SET previous_price = round(previous_price) WHERE previous_pric
 --   * Loans are no longer drawn automatically at settlement: a team requests a loan, the Bank Desk approves it and the cash is released.
 UPDATE event_config SET auto_loan_on_settlement = false WHERE id = 1;
 INSERT INTO schema_migrations(version) VALUES ('010_safety');
-`;var m11sql="-- v272 targeted roster and IPO administration additions.\n-- Additive only: preserve existing tables, data, routes and financial history.\n\nALTER TABLE securities ADD COLUMN IF NOT EXISTS ipo_lot_size integer NOT NULL DEFAULT 50 CHECK (ipo_lot_size > 0);\n\nCREATE TABLE IF NOT EXISTS ipo_allotment_draws (\n  id                 bigserial PRIMARY KEY,\n  security_id        integer NOT NULL REFERENCES securities(id),\n  status             text NOT NULL DEFAULT 'GENERATED'\n                     CHECK (status IN ('GENERATED','VERIFIED','APPROVED','FINALIZED','CANCELLED')),\n  available_shares   integer NOT NULL CHECK (available_shares >= 0),\n  available_lots     integer NOT NULL CHECK (available_lots >= 0),\n  requested_lots     integer NOT NULL DEFAULT 0 CHECK (requested_lots >= 0),\n  subscription_ratio numeric(14,4),\n  algorithm_version  text NOT NULL DEFAULT 'RANDOM_ROUND_ROBIN_V1',\n  inventory_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,\n  generated_by       text,\n  generated_at       timestamptz NOT NULL DEFAULT now(),\n  verified_by        text,\n  verified_at        timestamptz,\n  approved_by        text,\n  approved_at        timestamptz,\n  finalized_by       text,\n  finalized_at       timestamptz,\n  created_at         timestamptz NOT NULL DEFAULT now()\n);\nCREATE INDEX IF NOT EXISTS ipo_allotment_draws_security_idx ON ipo_allotment_draws(security_id, id DESC);\n\nCREATE TABLE IF NOT EXISTS ipo_allotment_draw_items (\n  id                 bigserial PRIMARY KEY,\n  draw_id            bigint NOT NULL REFERENCES ipo_allotment_draws(id),\n  application_id     bigint NOT NULL,\n  team_id            integer NOT NULL REFERENCES teams(id),\n  team_code          text NOT NULL,\n  team_name          text NOT NULL,\n  draw_position      integer NOT NULL CHECK (draw_position > 0),\n  requested_lots     integer NOT NULL CHECK (requested_lots > 0),\n  allotted_lots      integer NOT NULL DEFAULT 0 CHECK (allotted_lots >= 0 AND allotted_lots <= requested_lots),\n  lot_size           integer NOT NULL CHECK (lot_size > 0),\n  application_price  numeric(12,2) NOT NULL CHECK (application_price > 0),\n  rounds             integer[] NOT NULL DEFAULT '{}',\n  UNIQUE (draw_id, application_id),\n  UNIQUE (draw_id, draw_position)\n);\nCREATE INDEX IF NOT EXISTS ipo_allotment_draw_items_order_idx ON ipo_allotment_draw_items(draw_id, draw_position);\n\n-- Official Dalal Street broker aliases map the uploaded Broker Number/Code/Name to existing internal desks.\n-- Internal BROKER-XX identifiers remain untouched, so logins and historical records are preserved.\nCREATE TABLE IF NOT EXISTS broker_roster_aliases (\n  broker_number       integer PRIMARY KEY CHECK (broker_number > 0),\n  broker_code         text NOT NULL UNIQUE,\n  broker_name         text NOT NULL,\n  internal_broker_id  integer REFERENCES brokers(id)\n);\nINSERT INTO broker_roster_aliases(broker_number,broker_code,broker_name,internal_broker_id) VALUES\n  (1,'Prajna','M Manoj',(SELECT id FROM brokers WHERE code='BROKER-09')),\n  (2,'Ganita','Harsha G',(SELECT id FROM brokers WHERE code='BROKER-05')),\n  (3,'Amrit','Nehaa',(SELECT id FROM brokers WHERE code='BROKER-04')),\n  (4,'Vikas','Vikash',(SELECT id FROM brokers WHERE code='BROKER-01')),\n  (5,'Yash','Gokul Krishna',(SELECT id FROM brokers WHERE code='BROKER-02')),\n  (6,'Arohan','Aman',(SELECT id FROM brokers WHERE code='BROKER-06')),\n  (7,'Madhava','Mayur G',(SELECT id FROM brokers WHERE code='BROKER-03')),\n  (8,'Vidura','Bhavani Reddy',(SELECT id FROM brokers WHERE code='BROKER-07')),\n  (9,'Kalidasa','Varun SB',(SELECT id FROM brokers WHERE code='BROKER-08')),\n  (10,'Suvarna','Sujatha',(SELECT id FROM brokers WHERE code='BROKER-10'))\nON CONFLICT (broker_number) DO UPDATE SET\n  broker_code=EXCLUDED.broker_code,\n  broker_name=EXCLUDED.broker_name,\n  internal_broker_id=coalesce(broker_roster_aliases.internal_broker_id,EXCLUDED.internal_broker_id);\n\n-- Five-column roster importer. This only updates the canonical broker assignment on existing teams.\nCREATE OR REPLACE FUNCTION jse_import_roster_assignments(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$\nDECLARE\n  r jsonb;\n  x jsonb;\n  v_i integer := 0;\n  v_team_no integer;\n  v_broker_no integer;\n  v_team_code text;\n  v_broker_code text;\n  v_broker_name text;\n  t teams%ROWTYPE;\n  b brokers%ROWTYPE;\n  v_alias broker_roster_aliases%ROWTYPE;\n  v_plan jsonb := '[]'::jsonb;\n  v_errors jsonb := '[]'::jsonb;\n  v_changed integer := 0;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN');\n  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;\n  -- Follow the existing team editor's policy: broker assignments can be changed without resetting team IDs or names.\n  -- The import changes only teams.broker_id and never touches historical orders or financial records.\n  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN\n    PERFORM jse_fail('NO_ROWS', 'No roster rows were supplied.', 400);\n  END IF;\n  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP\n    v_i := v_i + 1;\n    BEGIN v_team_no := nullif(trim(r->>'team_number'), '')::integer; EXCEPTION WHEN others THEN v_team_no := NULL; END;\n    BEGIN v_broker_no := nullif(trim(r->>'broker_number'), '')::integer; EXCEPTION WHEN others THEN v_broker_no := NULL; END;\n    v_team_code := upper(trim(coalesce(r->>'team_code', '')));\n    v_broker_code := upper(trim(coalesce(r->>'broker_code', '')));\n    v_broker_name := trim(coalesce(r->>'broker_name', ''));\n    IF v_team_no IS NULL OR v_team_no <= 0 THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Number must be a positive whole number'); CONTINUE;\n    END IF;\n    IF v_broker_no IS NULL OR v_broker_no <= 0 THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number must be a positive whole number'); CONTINUE;\n    END IF;\n    IF v_team_code = '' OR v_broker_code = '' OR v_broker_name = '' THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Code, Broker Code and Broker Name are required'); CONTINUE;\n    END IF;\n    SELECT * INTO t FROM teams WHERE code = v_team_code;\n    IF NOT FOUND THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown Team Code ' || v_team_code); CONTINUE;\n    END IF;\n    IF t.seq <> v_team_no THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Number ' || v_team_no || ' does not match ' || v_team_code || ' (registered number ' || t.seq || ')'); CONTINUE;\n    END IF;\n    SELECT * INTO v_alias FROM broker_roster_aliases\n    WHERE broker_number=v_broker_no AND upper(broker_code)=v_broker_code AND lower(btrim(broker_name))=lower(btrim(v_broker_name));\n    IF NOT FOUND THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number, Broker Code and Broker Name do not match the official broker roster'); CONTINUE;\n    END IF;\n    SELECT * INTO b FROM brokers WHERE id=v_alias.internal_broker_id AND active;\n    IF NOT FOUND THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'The official broker ' || v_alias.broker_code || ' has no active internal broker desk mapping'); CONTINUE;\n    END IF;\n    v_plan := v_plan || jsonb_build_object('team_id', t.id, 'team_number', t.seq, 'team_code', t.code,\n      'broker_id', b.id, 'broker_number', v_broker_no, 'broker_code', v_alias.broker_code, 'broker_name', v_alias.broker_name,\n      'before_broker_id', t.broker_id,\n      'before_broker_code', (SELECT broker_code FROM broker_roster_aliases WHERE internal_broker_id=t.broker_id LIMIT 1));\n  END LOOP;\n\n  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP\n    IF (SELECT count(*) FROM jsonb_array_elements(v_plan) e WHERE e->>'team_code' = x->>'team_code') > 1 THEN\n      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', (x->>'team_code') || ' appears more than once in the file');\n      EXIT;\n    END IF;\n  END LOOP;\n  IF jsonb_array_length(v_errors) > 0 THEN\n    RETURN jsonb_build_object('success', false, 'code', 'ROSTER_ERRORS',\n      'error', 'Nothing was saved. Fix the rows listed and import again.', 'errors', v_errors, 'http', 400);\n  END IF;\n  IF coalesce((p->>'dry_run')::boolean, false) THEN\n    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_plan), 'preview', v_plan);\n  END IF;\n\n  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP\n    UPDATE teams SET broker_id = (x->>'broker_id')::integer, updated_at = now()\n    WHERE id = (x->>'team_id')::integer AND broker_id IS DISTINCT FROM (x->>'broker_id')::integer;\n    IF FOUND THEN\n      v_changed := v_changed + 1;\n      PERFORM jse_audit(a, 'TEAM_BROKER_ASSIGNMENT_IMPORTED', 'team', x->>'team_code',\n        (x->>'team_id')::integer, NULL,\n        jsonb_build_object('broker_code', x->>'before_broker_code'),\n        jsonb_build_object('broker_code', x->>'broker_code', 'broker_number', x->>'broker_number'),\n        jsonb_build_object('import', true, 'team_number', x->>'team_number'));\n    END IF;\n  END LOOP;\n  PERFORM jse_audit(a, 'ROSTER_ASSIGNMENTS_IMPORTED', 'team', NULL, NULL, NULL, NULL, NULL,\n    jsonb_build_object('rows', jsonb_array_length(v_plan), 'changed', v_changed));\n  RETURN jsonb_build_object('success', true, 'rows', jsonb_array_length(v_plan), 'updated', jsonb_array_length(v_plan), 'changed', v_changed);\nEND $$;\n\n-- Company/base-price import. Ticker is the stable key; this deliberately does not change live prices.\nCREATE OR REPLACE FUNCTION jse_import_companies(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$\nDECLARE\n  r jsonb;\n  x jsonb;\n  v_i integer := 0;\n  v_status text;\n  v_ticker text;\n  v_name text;\n  v_price numeric;\n  s securities%ROWTYPE;\n  v_plan jsonb := '[]'::jsonb;\n  v_errors jsonb := '[]'::jsonb;\n  v_changed integer := 0;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN');\n  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;\n  SELECT status INTO v_status FROM event_control WHERE id=1;\n  IF v_status <> 'NOT_STARTED' AND NOT coalesce((p->>'dry_run')::boolean, false) THEN\n    PERFORM jse_fail('EVENT_STARTED', 'Company/base-price imports can be saved only before the event starts.', 409);\n  END IF;\n  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM 1 FROM event_control WHERE id=1 FOR UPDATE; END IF;\n  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN\n    PERFORM jse_fail('NO_ROWS', 'No company rows were supplied.', 400);\n  END IF;\n  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP\n    v_i := v_i + 1;\n    v_ticker := upper(trim(coalesce(r->>'ticker', '')));\n    v_name := trim(coalesce(r->>'name', ''));\n    BEGIN v_price := (r->>'base_price')::numeric; EXCEPTION WHEN others THEN v_price := NULL; END;\n    IF v_ticker = '' OR v_name = '' THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Company Name and Ticker are required'); CONTINUE;\n    END IF;\n    IF v_ticker !~ '^[A-Z0-9][A-Z0-9._-]{0,19}$' THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Ticker must use 1–20 letters, numbers, dots, underscores or hyphens'); CONTINUE;\n    END IF;\n    IF v_price IS NULL OR v_price <= 0 OR v_price <> trunc(v_price) THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Base Price must be a positive whole number'); CONTINUE;\n    END IF;\n    IF length(v_name) > 160 THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Company Name must be 160 characters or fewer'); CONTINUE;\n    END IF;\n    SELECT * INTO s FROM securities WHERE symbol = v_ticker;\n    IF NOT FOUND THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Ticker ' || v_ticker || ' does not exist in the current securities list. Add it through the existing company/IPO setup first.'); CONTINUE;\n    END IF;\n    v_plan := v_plan || jsonb_build_object('id', s.id, 'ticker', s.symbol, 'name', v_name, 'base_price', v_price,\n      'before_name', s.name, 'before_base_price', s.base_price, 'kind', s.kind);\n  END LOOP;\n  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP\n    IF (SELECT count(*) FROM jsonb_array_elements(v_plan) e WHERE e->>'ticker' = x->>'ticker') > 1 THEN\n      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', (x->>'ticker') || ' appears more than once in the file');\n      EXIT;\n    END IF;\n  END LOOP;\n  IF jsonb_array_length(v_errors) > 0 THEN\n    RETURN jsonb_build_object('success', false, 'code', 'COMPANY_IMPORT_ERRORS',\n      'error', 'Nothing was saved. Fix the rows listed and import again.', 'errors', v_errors, 'http', 400);\n  END IF;\n  IF coalesce((p->>'dry_run')::boolean, false) THEN\n    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_plan), 'preview', v_plan);\n  END IF;\n  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP\n    UPDATE securities SET name = x->>'name', base_price = (x->>'base_price')::numeric, updated_at = now()\n    WHERE id = (x->>'id')::integer\n      AND (name IS DISTINCT FROM x->>'name' OR base_price IS DISTINCT FROM (x->>'base_price')::numeric);\n    IF FOUND THEN\n      v_changed := v_changed + 1;\n      PERFORM jse_audit(a, 'COMPANY_BASE_PRICE_IMPORTED', 'security', x->>'ticker', NULL, NULL,\n        jsonb_build_object('name', x->>'before_name', 'base_price', x->>'before_base_price'),\n        jsonb_build_object('name', x->>'name', 'base_price', x->>'base_price'),\n        jsonb_build_object('kind', x->>'kind', 'live_price_unchanged', true));\n    END IF;\n  END LOOP;\n  PERFORM jse_audit(a, 'COMPANY_BASE_PRICES_IMPORTED', 'security', NULL, NULL, NULL, NULL, NULL,\n    jsonb_build_object('rows', jsonb_array_length(v_plan), 'changed', v_changed, 'live_prices_changed', false));\n  RETURN jsonb_build_object('success', true, 'rows', jsonb_array_length(v_plan), 'updated', jsonb_array_length(v_plan), 'changed', v_changed);\nEND $$;\n\n-- Admin-only IPO tool: persistent random draw, verification, approval, idempotent issuance, and issue-size editing.\nCREATE OR REPLACE FUNCTION jse_ipo_admin_tool(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$\nDECLARE\n  v_action text := upper(coalesce(nullif(p->>'action',''), 'STATE'));\n  v_ipo text := upper(trim(coalesce(p->>'ipo','')));\n  v_status text;\n  v_event_status text;\n  s securities%ROWTYPE;\n  d ipo_allotment_draws%ROWTYPE;\n  ap ipo_applications%ROWTYPE;\n  al ipo_allotments%ROWTYPE;\n  x record;\n  v_issued integer;\n  v_remaining integer;\n  v_available_lots integer;\n  v_requested integer := 0;\n  v_position integer := 0;\n  v_round integer := 1;\n  v_left integer := 0;\n  v_progress boolean;\n  v_count integer := 0;\n  v_total_shares integer := 0;\n  v_total_amount numeric := 0;\n  v_new_size numeric;\n  v_new_shares integer;\n  v_unit text;\n  v_reason text;\n  v_draw_id bigint;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN');\n  IF v_action <> 'STATE' THEN PERFORM jse_require_admin_password(a, p); END IF;\n\n  IF v_action = 'STATE' THEN\n    IF v_ipo <> '' THEN\n      SELECT * INTO s FROM securities WHERE kind = 'IPO' AND active AND (symbol = v_ipo OR ipo_code = v_ipo);\n      IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;\n      SELECT * INTO d FROM ipo_allotment_draws WHERE security_id = s.id ORDER BY id DESC LIMIT 1;\n    END IF;\n    RETURN jsonb_build_object(\n      'success', true,\n      'ipos', coalesce((SELECT jsonb_agg(jsonb_build_object(\n        'symbol', sec.symbol, 'ipo_code', sec.ipo_code, 'name', sec.name, 'price', sec.base_price, 'live_price', sec.price,\n        'lot_size', sec.ipo_lot_size, 'offered', sec.ipo_shares_offered,\n        'issued', (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL),\n        'remaining', CASE WHEN sec.ipo_shares_offered IS NULL THEN NULL ELSE sec.ipo_shares_offered -\n          (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL) END,\n        'applications', (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),\n        'applied_lots', (SELECT coalesce(sum(ia.lots),0) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),\n        'stage', jse_ipo_stage(sec.id),\n        'latest_draw_status', (SELECT dd.status FROM ipo_allotment_draws dd WHERE dd.security_id=sec.id ORDER BY dd.id DESC LIMIT 1)\n      ) ORDER BY sec.display_order, sec.id) FROM securities sec WHERE sec.kind='IPO' AND sec.active), '[]'::jsonb),\n      'event_status', (SELECT status FROM event_control WHERE id=1),\n      'ipo', CASE WHEN s.id IS NULL THEN NULL ELSE jsonb_build_object('symbol',s.symbol,'name',s.name,'lot_size',s.ipo_lot_size,\n        'offered',s.ipo_shares_offered,'issued',(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL),\n        'remaining',CASE WHEN s.ipo_shares_offered IS NULL THEN NULL ELSE s.ipo_shares_offered-(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL) END) END,\n      'draw', CASE WHEN d.id IS NULL THEN NULL ELSE to_jsonb(d) END,\n      'eligible_count', CASE WHEN s.id IS NULL THEN 0 ELSE (SELECT count(*) FROM ipo_applications ia\n        WHERE ia.security_id=s.id AND ia.status='APPLIED' AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000\n          AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000\n          AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL)) END,\n      'rejected_count', CASE WHEN s.id IS NULL THEN 0 ELSE greatest(0,\n        (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=s.id AND ia.status='APPLIED') -\n        (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=s.id AND ia.status='APPLIED' AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000\n          AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000\n          AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL))) END,\n      'items', CASE WHEN d.id IS NULL THEN '[]'::jsonb ELSE coalesce((SELECT jsonb_agg(jsonb_build_object(\n        'team',di.team_code,'team_name',di.team_name,'position',di.draw_position,'requested_lots',di.requested_lots,\n        'allotted_lots',di.allotted_lots,'shares',di.allotted_lots*di.lot_size,'rounds',to_jsonb(di.rounds),\n        'price',di.application_price,'amount',di.allotted_lots*di.lot_size*di.application_price)\n        ORDER BY di.draw_position) FROM ipo_allotment_draw_items di WHERE di.draw_id=d.id), '[]'::jsonb) END\n    );\n  END IF;\n\n  SELECT status INTO v_event_status FROM event_control WHERE id=1 FOR UPDATE;\n  IF v_event_status <> 'NOT_STARTED' AND v_action <> 'LOT_SIZE' THEN\n    PERFORM jse_fail('EVENT_STARTED', 'IPO allotment and issue-size changes are allowed only before the event starts.', 409);\n  END IF;\n  SELECT * INTO s FROM securities WHERE kind='IPO' AND active AND (symbol=v_ipo OR ipo_code=v_ipo) FOR UPDATE;\n  IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;\n\n  IF v_action = 'LOT_SIZE' THEN\n    IF v_event_status NOT IN ('NOT_STARTED','LIVE') THEN\n      PERFORM jse_fail('EVENT_NOT_CONFIGURABLE', 'IPO allotment lot size can only be changed before the event or during LIVE status, before IPO applications/allotments exist.', 409);\n    END IF;\n    IF jse_ipo_stage(s.id) = 'APPLICATION_OPEN' THEN\n      PERFORM jse_fail('IPO_APPLICATIONS_OPEN', 'Close the IPO application window before changing its allotment lot size.', 409);\n    END IF;\n    BEGIN v_new_size := (p->>'lot_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;\n    v_reason := trim(coalesce(p->>'reason',''));\n    IF v_new_size IS NULL OR v_new_size <= 0 OR v_new_size <> trunc(v_new_size) OR v_new_size > 2147483647 THEN\n      PERFORM jse_fail('INVALID_IPO_LOT_SIZE', 'IPO allotment lot size must be a positive whole number of shares.', 400);\n    END IF;\n    IF EXISTS (SELECT 1 FROM ipo_applications WHERE security_id=s.id)\n       OR EXISTS (SELECT 1 FROM ipo_allotments WHERE security_id=s.id)\n       OR EXISTS (SELECT 1 FROM ipo_allotment_draws WHERE security_id=s.id) THEN\n      PERFORM jse_fail('IPO_LOT_SIZE_LOCKED', 'IPO lot size cannot change after applications, allotments or a draw exist for this IPO.', 409);\n    END IF;\n    PERFORM jse_audit(a, 'IPO_LOT_SIZE_CHANGED', 'security', s.symbol, NULL, NULL,\n      jsonb_build_object('ipo_lot_size',s.ipo_lot_size),\n      jsonb_build_object('ipo_lot_size',v_new_size::integer),\n      jsonb_build_object('reason',nullif(v_reason,''),'trading_lot_size_unchanged',true));\n    UPDATE securities SET ipo_lot_size=v_new_size::integer, updated_at=now() WHERE id=s.id;\n    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_lot_size',s.ipo_lot_size,'lot_size',v_new_size::integer);\n  END IF;\n\n  IF v_action = 'SIZE' THEN\n    BEGIN v_new_size := (p->>'new_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;\n    v_unit := upper(trim(coalesce(p->>'unit','SHARES')));\n    v_reason := trim(coalesce(p->>'reason',''));\n    IF v_new_size IS NULL OR v_new_size <= 0 OR v_new_size <> trunc(v_new_size) THEN\n      PERFORM jse_fail('INVALID_ISSUE_SIZE', 'Issue size must be a positive whole number.', 400);\n    END IF;\n    IF v_unit NOT IN ('SHARES','LOTS') THEN PERFORM jse_fail('INVALID_UNIT', 'Choose Shares or Lots.', 400); END IF;\n    IF v_unit='LOTS' THEN v_new_size := v_new_size * s.ipo_lot_size; END IF;\n    IF v_new_size > 2147483647 THEN PERFORM jse_fail('ISSUE_SIZE_TOO_LARGE', 'Issue size exceeds the supported inventory range.', 400); END IF;\n    v_new_shares := v_new_size::integer;\n    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;\n    SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id ORDER BY id DESC LIMIT 1;\n    IF d.id IS NOT NULL AND d.status IN ('GENERATED','VERIFIED','APPROVED') THEN\n      PERFORM jse_fail('DRAW_IN_PROGRESS', 'Issue size cannot change while a draw is generated, verified or approved. Finalize or resolve that draw first.', 409);\n    END IF;\n    IF v_new_shares < v_issued THEN\n      PERFORM jse_fail('BELOW_ISSUED', 'Issue size cannot be lower than already allotted shares (' || v_issued || ').', 409);\n    END IF;\n    IF d.id IS NOT NULL AND d.status='FINALIZED' AND v_new_shares < coalesce(s.ipo_shares_offered,0) THEN\n      PERFORM jse_fail('FINALIZED_ISSUE_SIZE', 'After final issuance, issue size may only be increased; it cannot be reduced.', 409);\n    END IF;\n    PERFORM jse_audit(a, 'IPO_ISSUE_SIZE_CHANGED', 'security', s.symbol, NULL, NULL,\n      jsonb_build_object('offered_shares',s.ipo_shares_offered),\n      jsonb_build_object('offered_shares',v_new_shares,'unit_entered',v_unit,'value_entered',p->>'new_size'),\n      jsonb_build_object('reason',v_reason,'issued_shares',v_issued));\n    UPDATE securities SET ipo_shares_offered=v_new_shares, updated_at=now() WHERE id=s.id;\n    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_size',s.ipo_shares_offered,'new_size',v_new_shares,'issued',v_issued,'remaining',v_new_shares-v_issued);\n  END IF;\n\n  IF v_action = 'DRAW' THEN\n    IF s.ipo_shares_offered IS NULL OR s.ipo_shares_offered <= 0 THEN\n      PERFORM jse_fail('ISSUE_SIZE_REQUIRED', 'Set the IPO issue size before generating allotment.', 409);\n    END IF;\n    IF (jse_ipo_window()->>'phase') IS DISTINCT FROM 'CLOSED' THEN\n      PERFORM jse_fail('APPLICATIONS_NOT_CLOSED', 'Random allotment is available only after the IPO application window closes.', 409);\n    END IF;\n    SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id AND status<>'CANCELLED' ORDER BY id DESC LIMIT 1;\n    IF FOUND THEN\n      RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status',d.status,\n        'message','An existing saved draw was returned. The random order was not regenerated.');\n    END IF;\n    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;\n    v_remaining := s.ipo_shares_offered - v_issued;\n    IF v_remaining < 0 THEN PERFORM jse_fail('INVENTORY_MISMATCH', 'Issued shares exceed the configured IPO issue size.', 409); END IF;\n    v_available_lots := floor(v_remaining::numeric / s.ipo_lot_size)::integer;\n    INSERT INTO ipo_allotment_draws(security_id,status,available_shares,available_lots,generated_by,inventory_snapshot)\n    VALUES(s.id,'GENERATED',v_remaining,v_available_lots,jse_actor_name(a),\n      jsonb_build_object('offered_shares',s.ipo_shares_offered,'issued_shares',v_issued,'lot_size',s.ipo_lot_size,'base_price',s.base_price))\n    RETURNING id INTO v_draw_id;\n    FOR x IN\n      SELECT ia.id AS application_id, ia.team_id, t.code AS team_code, t.name AS team_name,\n        ia.lots AS requested_lots, ia.price AS application_price, s.ipo_lot_size\n      FROM ipo_applications ia JOIN teams t ON t.id=ia.team_id\n      WHERE ia.security_id=s.id AND ia.status='APPLIED'\n        AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000\n        AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000\n        AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL)\n      ORDER BY gen_random_bytes(16)\n    LOOP\n      v_position := v_position + 1;\n      v_requested := v_requested + x.requested_lots;\n      INSERT INTO ipo_allotment_draw_items(draw_id,application_id,team_id,team_code,team_name,draw_position,\n        requested_lots,allotted_lots,lot_size,application_price)\n      VALUES(v_draw_id,x.application_id,x.team_id,x.team_code,x.team_name,v_position,x.requested_lots,0,x.lot_size,x.application_price);\n    END LOOP;\n    IF v_position=0 THEN\n      DELETE FROM ipo_allotment_draws WHERE id=v_draw_id;\n      PERFORM jse_fail('NO_ELIGIBLE_APPLICATIONS', 'No eligible, unallotted applications were found for this IPO.', 409);\n    END IF;\n    UPDATE ipo_allotment_draws SET requested_lots=v_requested,\n      subscription_ratio=CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END\n    WHERE id=v_draw_id;\n    v_left := v_available_lots;\n    v_round := 1;\n    WHILE v_left>0 LOOP\n      v_progress := false;\n      FOR x IN SELECT id,requested_lots,allotted_lots FROM ipo_allotment_draw_items\n               WHERE draw_id=v_draw_id AND allotted_lots<requested_lots ORDER BY draw_position LOOP\n        UPDATE ipo_allotment_draw_items SET allotted_lots=allotted_lots+1, rounds=array_append(rounds,v_round)\n        WHERE id=x.id;\n        v_left := v_left-1;\n        v_progress := true;\n        EXIT WHEN v_left<=0;\n      END LOOP;\n      EXIT WHEN NOT v_progress;\n      v_round := v_round+1;\n    END LOOP;\n    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_GENERATED','ipo_allotment_draw',v_draw_id::text,NULL,NULL,NULL,NULL,\n      jsonb_build_object('symbol',s.symbol,'eligible',v_position,'requested_lots',v_requested,'available_lots',v_available_lots,\n        'subscription_ratio',CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END,\n        'algorithm','RANDOM_ROUND_ROBIN_V1'));\n    RETURN jsonb_build_object('success',true,'draw_id',v_draw_id,'status','GENERATED','eligible_count',v_position,\n      'requested_lots',v_requested,'available_lots',v_available_lots,\n      'subscription_ratio',CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END);\n  END IF;\n\n  SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id ORDER BY id DESC LIMIT 1 FOR UPDATE;\n  IF NOT FOUND THEN PERFORM jse_fail('NO_DRAW', 'Generate the random draw first.', 409); END IF;\n\n  IF v_action = 'VERIFY' THEN\n    IF d.status <> 'GENERATED' THEN\n      IF d.status IN ('VERIFIED','APPROVED','FINALIZED') THEN RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status',d.status); END IF;\n      PERFORM jse_fail('INVALID_DRAW_STATUS','Only a generated draw can be verified.',409);\n    END IF;\n    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;\n    v_remaining := coalesce(s.ipo_shares_offered,0)-v_issued;\n    SELECT coalesce(sum(allotted_lots*lot_size),0)::integer, coalesce(sum(allotted_lots),0)::integer\n      INTO v_total_shares,v_count FROM ipo_allotment_draw_items WHERE draw_id=d.id;\n    IF v_remaining <> d.available_shares THEN PERFORM jse_fail('INVENTORY_CHANGED','IPO inventory changed after the draw. Do not approve this stale draw.',409); END IF;\n    IF v_total_shares > d.available_shares OR EXISTS(SELECT 1 FROM ipo_allotment_draw_items WHERE draw_id=d.id AND (allotted_lots<0 OR allotted_lots>requested_lots)) THEN\n      PERFORM jse_fail('ALLOTMENT_INVALID','The proposed allotment exceeds inventory or a request.',409);\n    END IF;\n    UPDATE ipo_allotment_draws SET status='VERIFIED',verified_by=jse_actor_name(a),verified_at=now() WHERE id=d.id;\n    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_VERIFIED','ipo_allotment_draw',d.id::text,NULL,NULL,\n      jsonb_build_object('status','GENERATED'),jsonb_build_object('status','VERIFIED'),\n      jsonb_build_object('allotted_lots',v_count,'allotted_shares',v_total_shares,'available_shares',d.available_shares));\n    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','VERIFIED','allotted_lots',v_count,'allotted_shares',v_total_shares);\n  ELSIF v_action = 'APPROVE' THEN\n    IF d.status <> 'VERIFIED' THEN PERFORM jse_fail('NOT_VERIFIED','Verify the allotment before approval.',409); END IF;\n    UPDATE ipo_allotment_draws SET status='APPROVED',approved_by=jse_actor_name(a),approved_at=now() WHERE id=d.id;\n    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_APPROVED','ipo_allotment_draw',d.id::text,NULL,NULL,\n      jsonb_build_object('status','VERIFIED'),jsonb_build_object('status','APPROVED'),NULL);\n    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','APPROVED');\n  ELSIF v_action = 'FINALIZE' THEN\n    IF d.status='FINALIZED' THEN RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status','FINALIZED'); END IF;\n    IF d.status <> 'APPROVED' THEN PERFORM jse_fail('NOT_APPROVED','Approve the verified allotment before issuing shares.',409); END IF;\n    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;\n    v_remaining := coalesce(s.ipo_shares_offered,0)-v_issued;\n    SELECT coalesce(sum(allotted_lots*lot_size),0)::integer INTO v_total_shares FROM ipo_allotment_draw_items WHERE draw_id=d.id;\n    IF v_remaining <> d.available_shares OR v_total_shares>v_remaining THEN\n      PERFORM jse_fail('INVENTORY_CHANGED','IPO inventory changed after approval. No shares were issued.',409);\n    END IF;\n    IF EXISTS(SELECT 1 FROM ipo_allotment_draw_items di JOIN ipo_allotments aa ON aa.team_id=di.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL WHERE di.draw_id=d.id AND di.allotted_lots>0) THEN\n      PERFORM jse_fail('DUPLICATE_ALLOTMENT','An applicant already has an allotment for this IPO. No shares were issued.',409);\n    END IF;\n    FOR x IN SELECT di.team_id,di.allotted_lots,di.lot_size,di.application_price,t.cash,t.code\n      FROM ipo_allotment_draw_items di JOIN teams t ON t.id=di.team_id\n      WHERE di.draw_id=d.id AND di.allotted_lots>0 LOOP\n      v_total_amount := v_total_amount + x.allotted_lots*x.lot_size*x.application_price;\n      IF x.cash < x.allotted_lots*x.lot_size*x.application_price THEN\n        PERFORM jse_fail('ALLOTMENT_CASH',x.code || ' does not have enough cash for the proposed allotment. No shares were issued.',409);\n      END IF;\n    END LOOP;\n    FOR x IN SELECT di.* FROM ipo_allotment_draw_items di WHERE di.draw_id=d.id AND di.allotted_lots>0 ORDER BY di.draw_position LOOP\n      INSERT INTO ipo_allotments(team_id,security_id,lots,quantity,price,amount,batch_id,created_by,created_by_name)\n      VALUES(x.team_id,s.id,x.allotted_lots,x.allotted_lots*x.lot_size,x.application_price,\n        x.allotted_lots*x.lot_size*x.application_price,'RANDOM-IPO-'||d.id,nullif(a->>'id','')::integer,jse_actor_name(a))\n      RETURNING * INTO al;\n      PERFORM jse__apply_allotment(a,al);\n      v_count := v_count+1;\n    END LOOP;\n    UPDATE ipo_allotment_draws SET status='FINALIZED',finalized_by=jse_actor_name(a),finalized_at=now() WHERE id=d.id;\n    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_FINALIZED','ipo_allotment_draw',d.id::text,NULL,NULL,\n      jsonb_build_object('status','APPROVED'),jsonb_build_object('status','FINALIZED'),\n      jsonb_build_object('rows_issued',v_count,'shares_issued',v_total_shares,'amount_charged',v_total_amount));\n    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','FINALIZED','rows_issued',v_count,\n      'shares_issued',v_total_shares,'amount_charged',v_total_amount);\n  END IF;\n\n  PERFORM jse_fail('INVALID_ACTION','Use STATE, LOT_SIZE, SIZE, DRAW, VERIFY, APPROVE or FINALIZE.',400);\nEND $$;\n\n\n-- IPO application and allotment lots are separate from regular share-trading lots.\nCREATE OR REPLACE FUNCTION jse_ipo_application(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$\nDECLARE\n  v_action text := upper(coalesce(nullif(p->>'action', ''), 'SET'));\n  v_status text; t teams%ROWTYPE; s securities%ROWTYPE; app ipo_applications%ROWTYPE;\n  v_lots integer; v_amount numeric; v_other numeric; v_n integer;\nBEGIN\n  PERFORM jse_require_role(a, 'PARTICIPANT', 'ADMIN');\n  SELECT status INTO v_status FROM event_control WHERE id = 1;\n  IF v_action = 'CLEAR' THEN\n    PERFORM jse_require_role(a, 'ADMIN');\n    PERFORM jse_require_admin_password(a, p);\n    IF v_status <> 'NOT_STARTED' THEN PERFORM jse_fail('EVENT_STARTED', 'Applications can be cleared only before the event starts.', 409); END IF;\n    DELETE FROM ipo_applications WHERE coalesce(p->>'ipo', '') = '' OR security_id = (SELECT id FROM securities WHERE kind = 'IPO' AND symbol = upper(trim(p->>'ipo')));\n    GET DIAGNOSTICS v_n = ROW_COUNT;\n    PERFORM jse_audit(a, 'IPO_APPLICATIONS_CLEARED', 'ipo_application', coalesce(nullif(p->>'ipo', ''), 'ALL'), NULL, NULL, NULL, NULL, jsonb_build_object('rows', v_n));\n    RETURN jsonb_build_object('success', true, 'cleared', v_n);\n  END IF;\n  SELECT * INTO t FROM teams WHERE id = CASE WHEN a->>'role' = 'PARTICIPANT' THEN nullif(a->>'team_id', '')::integer\n                                             ELSE (SELECT id FROM teams WHERE code = upper(trim(coalesce(p->>'team', '')))) END FOR UPDATE;\n  IF NOT FOUND THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'Team not found.', 404); END IF;\n  SELECT * INTO s FROM securities WHERE kind = 'IPO' AND active AND (symbol = upper(trim(coalesce(p->>'ipo', p->>'symbol', ''))) OR ipo_code = upper(trim(coalesce(p->>'ipo', p->>'symbol', ''))));\n  IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose one of the IPOs.', 404); END IF;\n  IF jse_ipo_stage(s.id) <> 'APPLICATION_OPEN' THEN\n    PERFORM jse_fail('IPO_WINDOW_CLOSED', 'Applications for ' || s.name || ' are not open (stage: ' || replace(jse_ipo_stage(s.id), '_', ' ') || ').', 409);\n  END IF;\n  SELECT * INTO app FROM ipo_applications WHERE team_id = t.id AND security_id = s.id FOR UPDATE;\n  IF v_action = 'WITHDRAW' THEN\n    IF NOT FOUND OR app.status <> 'APPLIED' THEN PERFORM jse_fail('NO_APPLICATION', 'There is no application to withdraw.', 409); END IF;\n    UPDATE ipo_applications SET status = 'WITHDRAWN', updated_at = now(), updated_by_name = jse_actor_name(a) WHERE id = app.id;\n    PERFORM jse_audit(a, 'IPO_APPLICATION_WITHDRAWN', 'ipo_application', s.symbol, t.id, NULL, jsonb_build_object('lots', app.lots), NULL, NULL);\n    RETURN jsonb_build_object('success', true, 'status', 'WITHDRAWN');\n  ELSIF v_action <> 'SET' THEN\n    PERFORM jse_fail('INVALID_ACTION', 'Use SET or WITHDRAW.', 400);\n  END IF;\n  BEGIN v_lots := (p->>'lots')::integer; EXCEPTION WHEN others THEN v_lots := NULL; END;\n  IF v_lots IS NULL OR v_lots <= 0 THEN PERFORM jse_fail('INVALID_LOTS', 'Apply for a whole number of lots (1 lot = ' || s.ipo_lot_size || ' shares).', 400); END IF;\n  v_amount := v_lots * s.ipo_lot_size * s.base_price;\n  SELECT coalesce(sum(amount), 0) INTO v_other FROM ipo_applications WHERE team_id = t.id AND status = 'APPLIED' AND security_id <> s.id;\n  IF v_other + v_amount > t.cash THEN\n    PERFORM jse_fail('APPLICATION_CASH', 'All IPO applications together (' || jse_inr((v_other + v_amount)) || ') cannot exceed the team''s cash (' || jse_inr(t.cash) || ').', 409);\n  END IF;\n  INSERT INTO ipo_applications(team_id, security_id, lots, quantity, price, amount, status, created_by_name, updated_by_name)\n  VALUES (t.id, s.id, v_lots, v_lots * s.ipo_lot_size, s.base_price, v_amount, 'APPLIED', jse_actor_name(a), jse_actor_name(a))\n  ON CONFLICT (team_id, security_id) DO UPDATE SET lots = EXCLUDED.lots, quantity = EXCLUDED.quantity, price = EXCLUDED.price,\n    amount = EXCLUDED.amount, status = 'APPLIED', updated_at = now(), updated_by_name = EXCLUDED.updated_by_name\n  RETURNING * INTO app;\n  PERFORM jse_audit(a, 'IPO_APPLICATION_SUBMITTED', 'ipo_application', s.symbol, t.id, NULL, NULL,\n    jsonb_build_object('lots', v_lots, 'shares', v_lots * s.ipo_lot_size, 'amount', v_amount), jsonb_build_object('issue_price', s.base_price));\n  RETURN jsonb_build_object('success', true, 'status', 'APPLIED', 'application', to_jsonb(app) || jsonb_build_object('symbol', s.symbol));\nEND $$;\n\n-- One prospectus record per IPO, managed by the administrator. Content is supplied by the organisers.\n\nCREATE OR REPLACE FUNCTION jse_ipo_allot(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$\nDECLARE\n  v_status text; r jsonb; v_errors jsonb := '[]'::jsonb; v_rows jsonb := '[]'::jsonb;\n  v_team teams%ROWTYPE; v_sec securities%ROWTYPE; v_lots integer; v_shares integer; v_amt numeric; v_i integer := 0;\n  v_replace boolean := coalesce((p->>'replace')::boolean, false);\n  v_batch text := coalesce(nullif(p->>'batch_id', ''), to_char(now(), 'YYYYMMDD-HH24MISS'));\n  v_total numeric := 0; v_count integer := 0; v_applied integer;\n  al ipo_allotments%ROWTYPE; x record;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN');\n  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;\n  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR UPDATE;\n  IF v_status <> 'NOT_STARTED' THEN PERFORM jse_fail('EVENT_STARTED', 'IPO allotments can be loaded only before the event starts.', 409); END IF;\n  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN PERFORM jse_fail('NO_ROWS', 'No allotment rows were supplied.', 400); END IF;\n\n  -- validation pass (nothing is written unless every row is valid)\n  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP\n    v_i := v_i + 1;\n    SELECT * INTO v_team FROM teams WHERE code = upper(trim(coalesce(r->>'team', '')));\n    IF NOT FOUND THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown team ' || coalesce(r->>'team', '(blank)')); CONTINUE; END IF;\n    SELECT * INTO v_sec FROM securities WHERE kind = 'IPO' AND (symbol = upper(trim(coalesce(r->>'ipo', r->>'symbol', ''))) OR ipo_code = upper(trim(coalesce(r->>'ipo', '')))\n                                                               OR upper(name) = upper(trim(coalesce(r->>'ipo', r->>'symbol', ''))));\n    IF NOT FOUND THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown IPO ' || coalesce(r->>'ipo', r->>'symbol', '(blank)')); CONTINUE; END IF;\n    BEGIN v_lots := (r->>'lots')::integer; EXCEPTION WHEN others THEN v_lots := NULL; END;\n    IF v_lots IS NULL OR v_lots < 0 THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Lots must be a whole number'); CONTINUE; END IF;\n    IF v_lots = 0 THEN CONTINUE; END IF;\n    v_shares := v_lots * v_sec.ipo_lot_size; v_amt := v_shares * v_sec.base_price;\n    IF nullif(trim(coalesce(r->>'shares', '')), '') IS NOT NULL AND (r->>'shares')::numeric <> v_shares THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Shares ' || (r->>'shares') || ' \\u2260 ' || v_lots || ' lots \\xD7 ' || v_sec.ipo_lot_size || ' = ' || v_shares); CONTINUE;\n    END IF;\n    IF nullif(trim(coalesce(r->>'amount', '')), '') IS NOT NULL AND round((r->>'amount')::numeric, 2) <> v_amt THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Amount ' || (r->>'amount') || ' \\u2260 ' || v_shares || ' \\xD7 ' || jse_inr(v_sec.base_price) || ' = ' || jse_inr(v_amt)); CONTINUE;\n    END IF;\n    -- when the portal application process was used for this IPO, an allotment cannot exceed the team's application\n    IF EXISTS (SELECT 1 FROM ipo_applications ap WHERE ap.security_id = v_sec.id AND ap.status = 'APPLIED') THEN\n      SELECT lots INTO v_applied FROM ipo_applications ap WHERE ap.security_id = v_sec.id AND ap.team_id = v_team.id AND ap.status = 'APPLIED';\n      IF coalesce(v_applied, 0) < v_lots THEN\n        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' applied for ' || coalesce(v_applied, 0) || ' ' || v_sec.symbol || ' lot(s) but the file allots ' || v_lots); CONTINUE;\n      END IF;\n    END IF;\n    IF NOT v_replace AND EXISTS (SELECT 1 FROM ipo_allotments WHERE team_id = v_team.id AND security_id = v_sec.id AND reversed_at IS NULL) THEN\n      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' already has a ' || v_sec.symbol || ' allotment (tick \"replace\" to overwrite)'); CONTINUE;\n    END IF;\n    v_rows := v_rows || jsonb_build_object('team_id', v_team.id, 'team', v_team.code, 'security_id', v_sec.id, 'symbol', v_sec.symbol,\n                                           'lots', v_lots, 'quantity', v_shares, 'price', v_sec.base_price, 'amount', v_amt);\n  END LOOP;\n  FOR x IN SELECT e->>'team' AS team, e->>'symbol' AS symbol, count(*) AS n FROM jsonb_array_elements(v_rows) e GROUP BY 1, 2 HAVING count(*) > 1 LOOP\n    v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' / ' || x.symbol || ' appears ' || x.n || ' times in the file');\n  END LOOP;\n  FOR x IN\n    SELECT e->>'team' AS team, (e->>'team_id')::integer AS team_id, sum((e->>'amount')::numeric) AS need\n    FROM jsonb_array_elements(v_rows) e GROUP BY 1, 2\n  LOOP\n    SELECT t2.cash + (CASE WHEN v_replace THEN coalesce((\n             SELECT sum(al2.amount) FROM ipo_allotments al2\n             JOIN jsonb_array_elements(v_rows) e2 ON (e2->>'team_id')::integer = al2.team_id AND (e2->>'security_id')::integer = al2.security_id\n             WHERE al2.team_id = x.team_id AND al2.reversed_at IS NULL), 0) ELSE 0 END)\n    INTO v_total FROM teams t2 WHERE t2.id = x.team_id;\n    IF x.need > v_total THEN\n      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' does not have enough cash for ' || jse_inr(x.need) || ' of allotments (available ' || jse_inr(v_total) || ')');\n    END IF;\n  END LOOP;\n  v_total := 0;\n  IF jsonb_array_length(v_errors) > 0 THEN\n    RETURN jsonb_build_object('success', false, 'code', 'ALLOTMENT_ERRORS', 'error', 'Nothing was loaded. Fix the rows listed and upload again.', 'errors', v_errors, 'http', 400);\n  END IF;\n  IF coalesce((p->>'dry_run')::boolean, false) THEN\n    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_rows),\n      'total_amount', (SELECT coalesce(sum((e->>'amount')::numeric), 0) FROM jsonb_array_elements(v_rows) e), 'preview', v_rows);\n  END IF;\n\n  FOR r IN SELECT value FROM jsonb_array_elements(v_rows) LOOP\n    IF v_replace THEN\n      PERFORM jse__reverse_allotment(a, al2.id) FROM ipo_allotments al2\n      WHERE al2.team_id = (r->>'team_id')::integer AND al2.security_id = (r->>'security_id')::integer AND al2.reversed_at IS NULL;\n    END IF;\n    INSERT INTO ipo_allotments(team_id, security_id, lots, quantity, price, amount, batch_id, created_by, created_by_name)\n    VALUES ((r->>'team_id')::integer, (r->>'security_id')::integer, (r->>'lots')::integer, (r->>'quantity')::integer,\n            (r->>'price')::numeric, (r->>'amount')::numeric, v_batch, nullif(a->>'id', '')::integer, jse_actor_name(a))\n    RETURNING * INTO al;\n    PERFORM jse__apply_allotment(a, al);\n    v_total := v_total + al.amount; v_count := v_count + 1;\n  END LOOP;\n  PERFORM jse_audit(a, 'IPO_ALLOTMENT_LOADED', 'ipo_allotment', v_batch, NULL, NULL, NULL, NULL,\n    jsonb_build_object('rows', v_count, 'total_amount', v_total, 'replace', v_replace));\n  RETURN jsonb_build_object('success', true, 'batch_id', v_batch, 'rows', v_count, 'total_amount', v_total);\nEND $$;\n\nCREATE OR REPLACE FUNCTION jse_ipo_page() RETURNS jsonb LANGUAGE sql STABLE AS $$\n  SELECT jsonb_build_object('success', true, 'event_name', cfg.event_name, 'event_start_at', cfg.event_start_at, 'window', jse_ipo_window(),\n    'status', (SELECT status FROM event_control WHERE id = 1),\n    'ipos', coalesce((SELECT jsonb_agg(jsonb_build_object(\n        'symbol', s.symbol, 'ipo_code', s.ipo_code, 'name', s.name, 'sector', s.sector,\n        'issue_price', s.base_price, 'lot_size', s.ipo_lot_size, 'lot_value', s.ipo_lot_size * s.base_price,\n        'stage', jse_ipo_stage(s.id), 'listed', s.listed_at IS NOT NULL, 'listed_at', s.listed_at,\n        'listing_price', CASE WHEN s.listed_at IS NOT NULL THEN s.index_base_price END, 'price', s.price, 'in_index', s.listed_at IS NOT NULL,\n        'prospectus', jsonb_build_object(\n          'company_description', pr.company_description, 'issue_details', pr.issue_details, 'business_overview', pr.business_overview,\n          'financial_information', pr.financial_information, 'risk_factors', pr.risk_factors, 'use_of_proceeds', pr.use_of_proceeds,\n          'promoters_management', pr.promoters_management, 'other_information', pr.other_information,\n          'document_url', pr.document_url, 'document_name', pr.document_name, 'document_size', pr.document_size,\n          'document_uploaded_at', pr.document_uploaded_at, 'has_document', pr.document_data IS NOT NULL, 'updated_at', pr.updated_at)\n      ) ORDER BY s.display_order, s.id)\n      FROM securities s LEFT JOIN ipo_prospectus pr ON pr.security_id = s.id WHERE s.kind = 'IPO' AND s.active), '[]'::jsonb))\n  FROM event_config cfg WHERE cfg.id = 1\n$$;\n\nINSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');\n";var m12special="-- BIG BULL special participant: Team 1 is a dedicated account with a hard ₹1 crore cash ceiling.\n-- Additive and idempotent. Existing cash, holdings, orders, and team/broker identifiers are preserved.\nCREATE TABLE IF NOT EXISTS public.jse_special_accounts (\n  team_id integer PRIMARY KEY REFERENCES public.teams(id),\n  account_code text NOT NULL UNIQUE,\n  display_name text NOT NULL,\n  cash_limit numeric(14,2) NOT NULL CHECK (cash_limit >= 0),\n  created_at timestamptz NOT NULL DEFAULT now(),\n  updated_at timestamptz NOT NULL DEFAULT now()\n);\nINSERT INTO public.jse_special_accounts(team_id, account_code, display_name, cash_limit)\nSELECT id, 'BIG-BULL', 'BIG BULL', 100000000.00 FROM public.teams WHERE code='TEAM-001'\nON CONFLICT (team_id) DO UPDATE SET account_code='BIG-BULL', display_name='BIG BULL', cash_limit=100000000.00, updated_at=now();\n\nCREATE OR REPLACE FUNCTION public.jse_special_cash_limit_guard() RETURNS trigger LANGUAGE plpgsql AS $$\nDECLARE v_limit numeric;\nBEGIN\n  SELECT cash_limit INTO v_limit FROM public.jse_special_accounts WHERE team_id=NEW.id;\n  IF FOUND AND NEW.cash > v_limit THEN\n    RAISE EXCEPTION USING ERRCODE='23514', MESSAGE='BIG BULL cash limit is ₹1,00,00,000.00; this balance change is blocked.';\n  END IF;\n  RETURN NEW;\nEND $$;\nDROP TRIGGER IF EXISTS jse_special_cash_limit_guard_trg ON public.teams;\nCREATE TRIGGER jse_special_cash_limit_guard_trg BEFORE INSERT OR UPDATE ON public.teams\nFOR EACH ROW EXECUTE FUNCTION public.jse_special_cash_limit_guard();\n\nCREATE OR REPLACE FUNCTION public.jse_big_bull_admin(a jsonb, p jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  v_action text := upper(coalesce(nullif(p->>'action',''),'STATE'));\n  t teams%ROWTYPE;\n  b brokers%ROWTYPE;\n  v_amount numeric(16,2);\n  v_delta numeric(16,2);\n  v_after numeric(16,2);\n  v_reason text;\n  v_name text;\n  v_broker_code text;\n  v_broker_id integer;\n  v_section text;\n  v_members text;\n  v_active boolean;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN');\n  SELECT * INTO t FROM teams WHERE seq=1 AND code='TEAM-001' FOR UPDATE;\n  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_NOT_FOUND','Team 1 special participant was not found.',404); END IF;\n  SELECT * INTO b FROM brokers WHERE id=t.broker_id;\n\n  IF v_action = 'STATE' THEN\n    RETURN jsonb_build_object('success',true,'account',jsonb_build_object(\n      'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,\n      'broker_name',b.name,'cash',t.cash,'cash_limit',100000000,'active',t.active,'section',t.section,'members',t.members));\n  END IF;\n\n  PERFORM jse_require_admin_password(a,p);\n  v_reason := left(trim(coalesce(p->>'reason','')),300);\n  IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for the BIG BULL change.',400); END IF;\n\n  IF v_action = 'UPDATE_ACCOUNT' THEN\n    v_name := left(trim(coalesce(p->>'display_name','')),120);\n    v_broker_code := upper(trim(coalesce(p->>'broker_code','')));\n    v_section := left(trim(coalesce(p->>'section','')),120);\n    v_members := left(trim(coalesce(p->>'members','')),1000);\n    BEGIN v_active := (p->>'active')::boolean; EXCEPTION WHEN others THEN v_active := NULL; END;\n    IF v_name='' THEN PERFORM jse_fail('NAME_REQUIRED','Enter the BIG BULL display name.',400); END IF;\n    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose an account status.',400); END IF;\n    SELECT id INTO v_broker_id FROM brokers WHERE code=v_broker_code AND active;\n    IF v_broker_id IS NULL THEN PERFORM jse_fail('BROKER_NOT_FOUND','Choose an existing active broker.',400); END IF;\n    IF EXISTS (SELECT 1 FROM teams WHERE id<>t.id AND lower(name)=lower(v_name)) THEN\n      PERFORM jse_fail('DUPLICATE_TEAM_NAME','That display name is already used by another team.',409);\n    END IF;\n    UPDATE teams SET name=v_name, broker_id=v_broker_id, section=nullif(v_section,''), members=nullif(v_members,''),\n      active=v_active, updated_at=now() WHERE id=t.id;\n    UPDATE app_users SET display_name=v_name, active=v_active, updated_at=now()\n      WHERE role='PARTICIPANT' AND team_id=t.id;\n    UPDATE public.jse_special_accounts SET display_name=v_name, updated_at=now() WHERE team_id=t.id;\n    PERFORM jse_audit(a,'BIG_BULL_ACCOUNT_UPDATED','team',t.code,t.id,NULL,\n      jsonb_build_object('name',t.name,'broker_code',b.code,'section',t.section,'members',t.members,'active',t.active),\n      jsonb_build_object('name',v_name,'broker_code',v_broker_code,'section',nullif(v_section,''),'members',nullif(v_members,''),'active',v_active),\n      jsonb_build_object('reason',v_reason));\n  ELSIF v_action IN ('SET_BALANCE','ADJUST_CASH') THEN\n    BEGIN v_amount := nullif(trim(p->>'amount'),'')::numeric; EXCEPTION WHEN others THEN v_amount := NULL; END;\n    IF v_amount IS NULL OR v_amount<0 AND v_action='SET_BALANCE' THEN\n      PERFORM jse_fail('INVALID_AMOUNT','Enter a balance from ₹0 to ₹1 crore.',400);\n    END IF;\n    IF v_action='ADJUST_CASH' AND v_amount=0 THEN PERFORM jse_fail('INVALID_AMOUNT','Enter a non-zero cash adjustment.',400); END IF;\n    v_after := CASE WHEN v_action='SET_BALANCE' THEN v_amount ELSE t.cash+v_amount END;\n    IF v_after<0 OR v_after>100000000 THEN\n      PERFORM jse_fail('CASH_LIMIT','BIG BULL cash must stay between ₹0 and ₹1 crore.',400);\n    END IF;\n    v_delta := v_after-t.cash;\n    IF v_delta<>0 THEN\n      UPDATE teams SET cash=v_after, updated_at=now() WHERE id=t.id;\n      INSERT INTO cash_ledger(team_id,entry_type,debit,credit,balance_after,note,actor_id,actor_name)\n      VALUES(t.id,'ADJUSTMENT',greatest(-v_delta,0),greatest(v_delta,0),v_after,\n        'BIG BULL admin '||lower(v_action)||': '||v_reason,nullif(a->>'id','')::integer,jse_actor_name(a));\n      PERFORM jse_audit(a,CASE WHEN v_action='SET_BALANCE' THEN 'BIG_BULL_BALANCE_SET' ELSE 'BIG_BULL_CASH_ADJUSTED' END,\n        'team',t.code,t.id,NULL,jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),\n        jsonb_build_object('reason',v_reason,'amount',v_amount,'action',v_action));\n    END IF;\n  ELSE\n    PERFORM jse_fail('INVALID_ACTION','Use STATE, UPDATE_ACCOUNT, SET_BALANCE or ADJUST_CASH.',400);\n  END IF;\n\n  SELECT * INTO t FROM teams WHERE id=t.id;\n  SELECT * INTO b FROM brokers WHERE id=t.broker_id;\n  RETURN jsonb_build_object('success',true,'cash',t.cash,'account',jsonb_build_object(\n    'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,\n    'broker_name',b.name,'cash',t.cash,'cash_limit',100000000,'active',t.active,'section',t.section,'members',t.members));\nEND $function$\n\n\nCREATE OR REPLACE FUNCTION public.jse_broker_desk(a jsonb, p jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE\nAS $function$\nDECLARE b brokers%ROWTYPE; cfg event_config%ROWTYPE;\n  -- the Pit Manager records trades for every team; administrators can open the all-teams desk with broker=ALL\n  v_all boolean := a->>'role' = 'PIT_MANAGER' OR (a->>'role' IN ('ADMIN', 'VIEWER') AND upper(coalesce(p->>'broker', '')) = 'ALL');\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER', 'VIEWER');\n  SELECT * INTO cfg FROM event_config WHERE id = 1;\n  IF a->>'role' = 'BROKER' THEN\n    SELECT * INTO b FROM brokers WHERE id = nullif(a->>'broker_id', '')::integer;\n  ELSE\n    SELECT * INTO b FROM brokers WHERE code = CASE WHEN v_all THEN (SELECT min(code) FROM brokers) ELSE upper(trim(coalesce(nullif(p->>'broker', ''), (SELECT min(code) FROM brokers)))) END;\n  END IF;\n  IF NOT FOUND THEN PERFORM jse_fail('BROKER_NOT_FOUND', 'Broker not found.', 404); END IF;\n  RETURN jsonb_build_object('success', true,\n    'broker', CASE WHEN v_all THEN jsonb_build_object('code', 'ALL', 'name', 'All teams') ELSE jsonb_build_object('code', b.code, 'name', b.name, 'contact', b.contact, 'desk', b.desk) END, 'all_teams', v_all,\n    'brokers', CASE WHEN a->>'role' = 'BROKER' THEN NULL ELSE (SELECT jsonb_agg(jsonb_build_object('code', br.code, 'name', br.name, 'broker_number', coalesce(ra.broker_number,br.id), 'roster_code', coalesce(ra.broker_code,br.code), 'roster_name', coalesce(ra.broker_name,br.name)) ORDER BY coalesce(ra.broker_number,br.id)) FROM brokers br LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=br.id) END,\n    'rules', jsonb_build_object('brokerage_rate', cfg.brokerage_rate, 'max_order_value', cfg.max_order_value, 'min_order_value', cfg.min_order_value,\n      'stock_lot_size', cfg.stock_lot_size, 'loan_max_principal', cfg.loan_max_principal, 'loan_interest_rate', cfg.loan_interest_rate,\n      'min_buy_trades', cfg.min_buy_trades, 'min_sell_trades', cfg.min_sell_trades),\n    'teams', coalesce((SELECT jsonb_agg(jsonb_build_object('code', tm.code, 'seq', right(tm.code,3)::integer, 'name', CASE WHEN sa.account_code='BIG-BULL' THEN sa.display_name ELSE tm.name END, 'special_account', sa.account_code, 'cash_limit', sa.cash_limit, 'broker_number', coalesce(ra.broker_number, tm.broker_id), 'broker_code', coalesce(ra.broker_code, (SELECT code FROM brokers WHERE id=tm.broker_id)), 'broker_name', coalesce(ra.broker_name, (SELECT name FROM brokers WHERE id=tm.broker_id)), 'section', tm.section, 'members', tm.members,\n        'cash', tm.cash, 'free_cash', jse_available_cash(tm.team_id, NULL), 'loan_room', jse_loan_room(tm.team_id),\n        'holdings_value', tm.holdings_value, 'net_worth', tm.net_worth, 'settled_buys', tm.settled_buys, 'settled_sells', tm.settled_sells,\n        'assessment_met', tm.assessment_met, 'loan_liability', tm.loan_liability, 'eligibility_status', tm.eligibility_status,\n        'holdings', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'quantity', h.quantity,\n              'available', (SELECT available FROM jse_available_qty(tm.team_id, s.id, NULL)), 'avg_price', round(h.trade_cost / nullif(h.quantity, 0), 2),\n              'price', s.price, 'value', h.quantity * s.price, 'tradable', s.kind = 'EQUITY' OR s.listed_at IS NOT NULL) ORDER BY h.quantity * s.price DESC)\n            FROM holdings h JOIN securities s ON s.id = h.security_id WHERE h.team_id = tm.team_id AND h.quantity > 0), '[]'::jsonb),\n        'open_orders', (SELECT count(*) FROM orders o WHERE o.team_id = tm.team_id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')))\n        ORDER BY tm.seq)\n      FROM jse_team_metrics tm LEFT JOIN jse_special_accounts sa ON sa.team_id=tm.team_id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=tm.broker_id WHERE (v_all OR tm.broker_id = b.id) AND tm.active), '[]'::jsonb),\n    'instructions', coalesce((SELECT jsonb_agg(jsonb_build_object('id', i.id, 'instruction_no', i.instruction_no, 'team', t.code, 'team_name', t.name,\n        'symbol', s.symbol, 'security', s.name, 'side', i.side, 'quantity', i.quantity, 'note', i.note, 'price_seen', i.price_seen, 'market_price', s.price,\n        'status', i.status, 'created_at', i.created_at, 'handled_at', i.handled_at, 'handled_by', i.handled_by_name, 'decline_reason', i.decline_reason,\n        'order_no', o.order_no, 'order_status', o.status) ORDER BY (i.status = 'OPEN') DESC, i.id DESC)\n      FROM (SELECT * FROM instructions WHERE broker_id = b.id AND (status = 'OPEN' OR created_at > now() - interval '12 hours') ORDER BY id DESC LIMIT 80) i\n      JOIN teams t ON t.id = i.team_id JOIN securities s ON s.id = i.security_id LEFT JOIN orders o ON o.id = i.order_id), '[]'::jsonb),\n    'orders', coalesce((SELECT jsonb_agg(jse_order_json(x.id) ORDER BY x.id DESC) FROM (\n        SELECT o.id FROM orders o WHERE (v_all OR o.broker_id = b.id) ORDER BY o.id DESC LIMIT 60) x), '[]'::jsonb),\n    'counts', (SELECT jsonb_build_object(\n        'teams', (SELECT count(*) FROM teams WHERE broker_id = b.id AND active),\n        'open_instructions', (SELECT count(*) FROM instructions WHERE broker_id = b.id AND status = 'OPEN'),\n        'pit_pending', count(*) FILTER (WHERE status = 'PIT_PENDING'),\n        'awaiting_exchange', count(*) FILTER (WHERE status = 'EXCHANGE_PENDING'),\n        'awaiting_bank', count(*) FILTER (WHERE status IN ('EXCHANGE_APPROVED', 'BANK_PENDING')),\n        'settled', count(*) FILTER (WHERE status = 'BANK_SETTLED'),\n        'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED'))) FROM orders WHERE broker_id = b.id));\nEND $function$\n\n\nCREATE OR REPLACE FUNCTION public.jse_institutional(a jsonb, p jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE\nAS $function$\nDECLARE i institutions%ROWTYPE; cfg event_config%ROWTYPE;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL', 'VIEWER');\n  SELECT * INTO cfg FROM event_config WHERE id = 1;\n  SELECT * INTO i FROM institutions WHERE id = coalesce(CASE WHEN a->>'role' <> 'INSTITUTIONAL' THEN nullif(p->>'institution_id', '')::integer END,\n                                                        nullif(a->>'institution_id', '')::integer, (SELECT min(id) FROM institutions));\n  IF NOT FOUND THEN PERFORM jse_fail('INSTITUTION_NOT_FOUND', 'Institutional account not found.', 404); END IF;\n  -- a transaction desk: ticket inputs, the current market with institutional prices, and the transaction history.\n  -- Institutions are counterparties only — no cash or holdings restriction and no participant-style portfolio.\n  RETURN jsonb_build_object('success', true,\n    'rules', jsonb_build_object('spread_pct', jse_inst_spread_pct(), 'brokerage_rate', cfg.brokerage_rate, 'stock_lot_size', cfg.stock_lot_size,\n       'min_order_value', cfg.min_order_value, 'max_order_value', cfg.max_order_value,\n       'text', 'When a participant cannot find a counterparty, the institution trades with it: the participant BUYS from the institution at ' ||\n               to_char(jse_inst_spread_pct(), 'FM990.##') || '% ABOVE the prevailing market price and SELLS to it at ' || to_char(jse_inst_spread_pct(), 'FM990.##') ||\n               '% BELOW. The participant pays the normal brokerage (' || jse_rate_text(cfg.brokerage_rate) || '), earned by its broker. The trade goes through the Pit Manager, Exchange and Bank like any order.'),\n    'institutions', (SELECT jsonb_agg(jsonb_build_object('id', x.id, 'code', x.code, 'name', x.name) ORDER BY x.id) FROM institutions x),\n    'institution', jsonb_build_object('id', i.id, 'code', i.code, 'name', i.name),\n    -- counterparty choices: participant team code, name and broker only (no team cash or holdings)\n    'teams', coalesce((SELECT jsonb_agg(jsonb_build_object('code', t.code, 'seq', t.seq, 'name', CASE WHEN sa.account_code='BIG-BULL' THEN sa.display_name ELSE t.name END, 'special_account', sa.account_code, 'broker', coalesce(ra.broker_code,b.code), 'broker_number', coalesce(ra.broker_number,b.id), 'broker_name', coalesce(ra.broker_name,b.name)) ORDER BY t.seq) FROM teams t LEFT JOIN brokers b ON b.id = t.broker_id LEFT JOIN jse_special_accounts sa ON sa.team_id=t.id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=t.broker_id WHERE t.active), '[]'::jsonb),\n    'market', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'name', s.name, 'type', CASE WHEN s.kind = 'IPO' THEN 'IPO' ELSE 'EQUITY' END,\n        'price', s.price, 'change_pct', round(jse_pct(s.price, s.previous_price), 2), 'lot_size', s.lot_size,\n        'participant_buy_price', jse_inst_price(s.price, 'SELL'), 'participant_sell_price', jse_inst_price(s.price, 'BUY'),\n        'last_price_change_at', s.last_price_change_at) ORDER BY s.last_price_change_at DESC NULLS LAST, s.display_order, s.id)\n      FROM securities s WHERE s.active AND (s.kind = 'EQUITY' OR s.listed_at IS NOT NULL)), '[]'::jsonb),\n    'orders', coalesce((SELECT jsonb_agg(jse_order_json(o.id) ORDER BY o.id DESC) FROM (SELECT id FROM orders WHERE institution_id = i.id ORDER BY id DESC LIMIT 80) o), '[]'::jsonb),\n    'stats', (SELECT jsonb_build_object('transactions', count(*), 'settled', count(*) FILTER (WHERE status = 'BANK_SETTLED'),\n       'pending', count(*) FILTER (WHERE status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')),\n       'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED','EXCHANGE_REJECTED','BANK_REJECTED')),\n       'participants_bought_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'SELL'), 0),\n       'participants_sold_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'BUY'), 0),\n       'brokerage', coalesce(sum(brokerage) FILTER (WHERE status = 'BANK_SETTLED'), 0)) FROM orders WHERE institution_id = i.id));\nEND $function$\n\n\nINSERT INTO schema_migrations(version) VALUES ('012_big_bull_special_account');\n";var m12admin="-- BIG BULL special participant controls: Team 1 / Broker 11.\n-- Additive and replayable. Existing balances and trade history are retained.\nINSERT INTO brokers (code,name,active) VALUES ('BROKER-11','SIDDHARTH',true)\nON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, active=true;\n\nCREATE TABLE IF NOT EXISTS public.jse_special_accounts (\n  team_id integer PRIMARY KEY REFERENCES teams(id),\n  account_code text NOT NULL UNIQUE,\n  display_name text NOT NULL,\n  cash_limit numeric(16,2) NOT NULL DEFAULT 100000000 CHECK (cash_limit >= 0),\n  created_at timestamptz NOT NULL DEFAULT now(),\n  updated_at timestamptz NOT NULL DEFAULT now()\n);\nINSERT INTO public.jse_special_accounts(team_id,account_code,display_name,cash_limit)\nSELECT id,'BIG-BULL','BIG BULL',100000000 FROM teams WHERE code='TEAM-001'\nON CONFLICT (account_code) DO UPDATE SET team_id=EXCLUDED.team_id,display_name=EXCLUDED.display_name,\n  cash_limit=EXCLUDED.cash_limit,updated_at=now();\n\nINSERT INTO team_name_pool (name,category,meaning,active)\nSELECT 'BIG BULL','SPECIAL','Special participant; managed separately by the administrator',true\nWHERE NOT EXISTS (SELECT 1 FROM team_name_pool WHERE lower(name)='big bull');\n\nUPDATE teams\nSET name='BIG BULL', broker_id=(SELECT id FROM brokers WHERE code='BROKER-11'), updated_at=now()\nWHERE seq=1 AND code='TEAM-001'\n  AND (name IS DISTINCT FROM 'BIG BULL' OR broker_id IS DISTINCT FROM (SELECT id FROM brokers WHERE code='BROKER-11'));\n\nUPDATE app_users SET display_name='BIG BULL', updated_at=now()\nWHERE role='PARTICIPANT' AND team_id=(SELECT id FROM teams WHERE seq=1 AND code='TEAM-001')\n  AND display_name IS DISTINCT FROM 'BIG BULL';\n\n-- Add sequence and broker identity to the order-desk team payload so dropdowns can show\n-- 1-BIG BULL-11-SIDDHARTH without relying on hard-coded browser values.\nDO $do$\nDECLARE v_def text;\n  v_old text := '''code'', tm.code, ''name'', tm.name, ''section'', tm.section, ''members'', tm.members';\n  v_new text := '''code'', tm.code, ''seq'', right(tm.code,3)::integer, ''name'', CASE WHEN sa.account_code=''BIG-BULL'' THEN sa.display_name ELSE tm.name END, ''special_account'', sa.account_code, ''cash_limit'', sa.cash_limit, ''broker_number'', coalesce(ra.broker_number,tm.broker_id), ''broker_code'', coalesce(ra.broker_code,(SELECT code FROM brokers WHERE id=tm.broker_id)), ''broker_name'', coalesce(ra.broker_name,(SELECT name FROM brokers WHERE id=tm.broker_id)), ''section'', tm.section, ''members'', tm.members';\nBEGIN\n  SELECT pg_get_functiondef('jse_broker_desk(jsonb,jsonb)'::regprocedure) INTO v_def;\n  IF position(v_old IN v_def) > 0 THEN\n    v_def := replace(v_def, v_old, v_new);\n    v_def := replace(v_def, 'FROM jse_team_metrics tm WHERE (v_all OR tm.broker_id = b.id) AND tm.active',\n      'FROM jse_team_metrics tm LEFT JOIN jse_special_accounts sa ON sa.team_id=tm.team_id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=tm.broker_id WHERE (v_all OR tm.broker_id = b.id) AND tm.active');\n  ELSIF position('broker_name' IN v_def) = 0 THEN\n    RAISE EXCEPTION 'Could not patch broker-desk team payload';\n  END IF;\n  v_def := replace(v_def, 'WHERE (v_all OR tm.broker_id = b.id) AND tm.active ORDER BY tm.seq), ''[]''::jsonb)',\n    'WHERE (v_all OR tm.broker_id = b.id) AND tm.active), ''[]''::jsonb)');\n  EXECUTE v_def;\nEND $do$;\n\nCREATE OR REPLACE FUNCTION public.jse_big_bull_admin(a jsonb, p jsonb)\nRETURNS jsonb LANGUAGE plpgsql AS $$\nDECLARE\n  v_action text := upper(coalesce(nullif(p->>'action',''),'STATE'));\n  t teams%ROWTYPE;\n  b brokers%ROWTYPE;\n  v_amount numeric(16,2);\n  v_delta numeric(16,2);\n  v_after numeric(16,2);\n  v_reason text;\n  v_name text;\n  v_broker_code text;\n  v_broker_id integer;\n  v_section text;\n  v_members text;\n  v_active boolean;\n  v_cash_limit numeric(16,2);\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN');\n  SELECT * INTO t FROM teams WHERE seq=1 AND code='TEAM-001' FOR UPDATE;\n  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_NOT_FOUND','Team 1 special participant was not found.',404); END IF;\n  SELECT * INTO b FROM brokers WHERE id=t.broker_id;\n  SELECT cash_limit INTO v_cash_limit FROM public.jse_special_accounts WHERE team_id=t.id AND account_code='BIG-BULL';\n  v_cash_limit := coalesce(v_cash_limit,100000000);\n\n  IF v_action = 'STATE' THEN\n    RETURN jsonb_build_object('success',true,'account',jsonb_build_object(\n      'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,\n      'broker_name',b.name,'cash',t.cash,'cash_limit',v_cash_limit,'active',t.active,'section',t.section,'members',t.members));\n  END IF;\n\n  PERFORM jse_require_admin_password(a,p);\n  v_reason := left(trim(coalesce(p->>'reason','')),300);\n  IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for the BIG BULL change.',400); END IF;\n\n  IF v_action = 'UPDATE_ACCOUNT' THEN\n    v_name := left(trim(coalesce(p->>'display_name','')),120);\n    v_broker_code := upper(trim(coalesce(p->>'broker_code','')));\n    v_section := left(trim(coalesce(p->>'section','')),120);\n    v_members := left(trim(coalesce(p->>'members','')),1000);\n    BEGIN v_active := (p->>'active')::boolean; EXCEPTION WHEN others THEN v_active := NULL; END;\n    IF v_name='' THEN PERFORM jse_fail('NAME_REQUIRED','Enter the BIG BULL display name.',400); END IF;\n    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose an account status.',400); END IF;\n    SELECT id INTO v_broker_id FROM brokers WHERE code=v_broker_code AND active;\n    IF v_broker_id IS NULL THEN PERFORM jse_fail('BROKER_NOT_FOUND','Choose an existing active broker.',400); END IF;\n    IF EXISTS (SELECT 1 FROM teams WHERE id<>t.id AND lower(name)=lower(v_name)) THEN\n      PERFORM jse_fail('DUPLICATE_TEAM_NAME','That display name is already used by another team.',409);\n    END IF;\n    UPDATE teams SET name=v_name, broker_id=v_broker_id, section=nullif(v_section,''), members=nullif(v_members,''),\n      active=v_active, updated_at=now() WHERE id=t.id;\n    UPDATE app_users SET display_name=v_name, active=v_active, updated_at=now()\n      WHERE role='PARTICIPANT' AND team_id=t.id;\n    UPDATE public.jse_special_accounts SET display_name=v_name, updated_at=now() WHERE team_id=t.id;\n    PERFORM jse_audit(a,'BIG_BULL_ACCOUNT_UPDATED','team',t.code,t.id,NULL,\n      jsonb_build_object('name',t.name,'broker_code',b.code,'section',t.section,'members',t.members,'active',t.active),\n      jsonb_build_object('name',v_name,'broker_code',v_broker_code,'section',nullif(v_section,''),'members',nullif(v_members,''),'active',v_active),\n      jsonb_build_object('reason',v_reason));\n  ELSIF v_action IN ('SET_BALANCE','ADJUST_CASH') THEN\n    BEGIN v_amount := nullif(trim(p->>'amount'),'')::numeric; EXCEPTION WHEN others THEN v_amount := NULL; END;\n    IF v_amount IS NULL OR (v_amount<0 AND v_action='SET_BALANCE') THEN\n      PERFORM jse_fail('INVALID_AMOUNT','Enter a balance from ₹0 to ₹1 crore.',400);\n    END IF;\n    IF v_action='ADJUST_CASH' AND v_amount=0 THEN PERFORM jse_fail('INVALID_AMOUNT','Enter a non-zero cash adjustment.',400); END IF;\n    v_after := CASE WHEN v_action='SET_BALANCE' THEN v_amount ELSE t.cash+v_amount END;\n    IF v_after<0 OR v_after>v_cash_limit THEN\n      PERFORM jse_fail('CASH_LIMIT','BIG BULL cash must stay between ₹0 and ₹1 crore.',400);\n    END IF;\n    v_delta := v_after-t.cash;\n    IF v_delta<>0 THEN\n      UPDATE teams SET cash=v_after, updated_at=now() WHERE id=t.id;\n      INSERT INTO cash_ledger(team_id,entry_type,debit,credit,balance_after,note,actor_id,actor_name)\n      VALUES(t.id,'ADJUSTMENT',greatest(-v_delta,0),greatest(v_delta,0),v_after,\n        'BIG BULL admin '||lower(v_action)||': '||v_reason,nullif(a->>'id','')::integer,jse_actor_name(a));\n      PERFORM jse_audit(a,CASE WHEN v_action='SET_BALANCE' THEN 'BIG_BULL_BALANCE_SET' ELSE 'BIG_BULL_CASH_ADJUSTED' END,\n        'team',t.code,t.id,NULL,jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),\n        jsonb_build_object('reason',v_reason,'amount',v_amount,'action',v_action));\n    END IF;\n  ELSE\n    PERFORM jse_fail('INVALID_ACTION','Use STATE, UPDATE_ACCOUNT, SET_BALANCE or ADJUST_CASH.',400);\n  END IF;\n\n  SELECT * INTO t FROM teams WHERE id=t.id;\n  SELECT * INTO b FROM brokers WHERE id=t.broker_id;\n  RETURN jsonb_build_object('success',true,'cash',t.cash,'account',jsonb_build_object(\n    'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,\n    'broker_name',b.name,'cash',t.cash,'cash_limit',v_cash_limit,'active',t.active,'section',t.section,'members',t.members));\nEND $$;\n\nINSERT INTO schema_migrations(version) VALUES ('012_big_bull_admin');\n\nINSERT INTO broker_roster_aliases(broker_number,broker_code,broker_name,internal_broker_id)\nSELECT 11,'SIDDHARTH','SIDDHARTH',id FROM brokers WHERE code='BROKER-11'\nON CONFLICT (broker_number) DO UPDATE SET broker_code=EXCLUDED.broker_code, broker_name=EXCLUDED.broker_name, internal_broker_id=EXCLUDED.internal_broker_id;\n";var m13sql="-- One-time import of the official Dalal Street roster (73 teams) plus BIG BULL as Team 1.\n-- Existing financial histories are preserved; only roster identity/assignment and active flags change.\nINSERT INTO broker_roster_aliases(broker_number,broker_code,broker_name,internal_broker_id)\nSELECT 11,'SIDDHARTH','SIDDHARTH',id FROM brokers WHERE code='BROKER-11'\nON CONFLICT (broker_number) DO UPDATE SET broker_code=EXCLUDED.broker_code,\n broker_name=EXCLUDED.broker_name,internal_broker_id=EXCLUDED.internal_broker_id;\n\nWITH raw AS (\n SELECT line, ord FROM unnest(string_to_array($roster$Apala|Vidura|K + K|Krishnangshu Sarkar / Gourav V Rao\nDignaga|Vidura|D + A|Karanam Seebivamsikrishna / Shreya C\nKanada|Vidura|O + O|Juhi Moudekar / Sidharrth Rao\nKapila|Vidura|I + I|Swaroop Rao T / Rohit B\nKhana|Vidura|J + J|Yuvaraj Suresh Bangera / Neeraj Kamath\nMatanga|Vidura|O + O|Shraddha Yadav / Chinmay B Arya\nVagbhata|Vidura|C + M|Manisha Raj / Suhas vardhan\nArtha|Yash|M + D|Likitesh / Lakshna. S\nDhriti|Yash|I + I|Jothish N / S S S Surya\nKosh|Yash|L + L|Bhoomika Venkatachala Bhat / Mitali Basavaraj Devagi\nMangala|Yash|F + F|Vishal Bhaskaran / A Tarakeshwar\nNishtha|Yash|E + E|Thamizh Selvan E / Sri viswanath\nNyaya|Yash|D + D|LIJIN LAKSHMANAN / Albin Sanjay P\nRajat|Yash|P + P|Greeshma R / Disha M\nValabhi|Yash|F + F|Aishwarya B M / Poorvitha\nKoshya|Ganita|O + O|Drushya A / Supreeth Shekar S\nMadhava|Ganita|N + N|Ajay M / PRANAV S R\nPanini|Ganita|L + L|Arundhathy V Nambi / Aakash Darsan P M\nSangita|Ganita|P + P|Pasupathi R / R Megha\nSutra|Ganita|M + M|Joshiya J / Indhu Shree Raj Kumar\nVirahanka|Ganita|N + M|Mohammed Riyaz / Arshiya Kausar\nYukti|Ganita|H + J|Koushik Gali / Kumar Vayur\nAbhyasa|Prajna|R + R|Tanish Milind Salunkhe / John Tophy\nGhosha|Prajna|C + C|SHASWAT AGRAWAL / Mohammed Haseeb Ahmed\nJaya|Prajna|K + K|Shreya j hegde / Nidhi shetty\nJya|Prajna|N + N|Rion Dsouza / Suraj\nShree|Prajna|N + N|Rohan J / Abishek R\nUtsaha|Prajna|M + M|K PRANAVI / DARUNIKA R\nViveka|Prajna|M + M|Aaditya Mehra / Madiya Mehraj\nBhamaha|Madhava|K + K|Muhammad Irfan / Kumaraguru\nKuttaka|Madhava|P + P|Kunj Punith Kumar Maru / Raunak Bajaj\nLopamudra|Madhava|K + B|Varun Nayak / Satvik B Bellad\nMedha|Madhava|D + D|Pulagam hasini / Anusha dumpala\nNirukta|Madhava|Q + Q|Hem b davey / Ramcharan\nNivesh|Madhava|A + A|K S Monish Kumar / Guruprasad V\nVasubandhu|Madhava|K + L|Bhoomika GS / M.Madhu vandhan\nVyaya|Madhava|L + L|Yoga Shree R R / Janani Suresh\nAvvaiyar|Amrit|P + P|Anusha V Bhat / VIJAY ANANTH J\nDhan|Amrit|D + D|Abhishek Nagori / Advaith R\nHalayudha|Amrit|G + G|Lithin H Raju / Tarun P\nMaitreyi|Amrit|P + P|Mohammad Saif / Anirudh Rao\nMithila|Amrit|D + D|Sourabh Toppo / Ramkrishna Kamlakar Rao\nNilakantha|Amrit|L + L|Sri Seshasaini G / Sadhana B\nTanka|Amrit|J + J|Nichhanametla Harshita / Prachi kashyap\nCharaka|Arohan|J + J|Kartik Revankar / Payal manna\nKautilya|Arohan|F + F|Mohammed Farhan Ulla / Aviral Singh\nKriya|Arohan|K + K|Soham Organtiwar / Shikhar Sampann\nLabhya|Arohan|N + G|Siddannagari Reddeppa Reddy Nandini / Tallapalle Sai Vyshnavi\nMudra|Arohan|H + H|Mohammed raza / Ashit singla\nNidhi|Arohan|F + F|Prajwal M Bharadwaj / Samyak Shrivastav\nSridhara|Arohan|G + G|Almeera S / Sugumaran\nAkshaya|Suvarna|L + L|Devansh Srivastava / Shreya Shukla\nAryabhata|Suvarna|I + O|Swaroop mahadev pujari / Gayana N\nAryadeva|Suvarna|B + B|Aashish Reddy / Kailesh b\nDandin|Suvarna|Q + I|Manjunath Gaddad / Midhat Rahman\nSushruta|Suvarna|D + D|Arsha.P.R / Harini S M\nTantra|Suvarna|O + O|Mohammed Samadul Zain S / Shivam Periwal\nVastu|Suvarna|D + D|Shraddha Dey / Pamela Pramanick\nChandas|Kalidasa|M + M|Mohammed Riyaz K / Manisha Kumari\nKamandaka|Kalidasa|M + Q|Srishti sinha / Ashmeet kaur\nMunjala|Kalidasa|A + A|Lokesh P / MALLAMMA BASAVARAJ NITALI\nSankalpa|Kalidasa|F + M|DAKSHATA C A / SURYAPRAKASH V\nShilpa|Kalidasa|L + L|Azwath Roshan / Rithika B\nVidura|Kalidasa|C + C|Tejas Thimmaiah / Tushar Biswas\nVriddhi|Kalidasa|J + J|Kiran prasaath / Balaji T\nJaimini|Vikas|N + N|Astha Jain / K M Prajwal\nLabh|Vikas|L + L|Aditya raj / Abhijit Chakraborty\nNeeti|Vikas|B + B|SESHATHRI BALAN G / Sasi Naga Kiran Godavarthi\nNeetiya|Vikas|L + L|RAHUL TL / Shriharan RK T\nPingala|Vikas|E + E|Praveen / Rahul Kunar\nPramana|Vikas|K + K|Tanushka Rajesh Chugh / Prince Raj\nRupa|Vikas|F + J|Ashutosh Padhy / Swayam Sahu\nShiksha|Vikas|M + M|Samhita hegde / D ABHIRAMA SHASTRY$roster$, E'\\n')) WITH ORDINALITY AS x(line,ord)\n WHERE btrim(line)<>''\n), roster AS (\n SELECT ord::integer+1 AS team_no, split_part(line,'|',1) AS name,\n  split_part(line,'|',2) AS broker_code, split_part(line,'|',3) AS section,\n  split_part(line,'|',4) AS members FROM raw\n)\nINSERT INTO team_name_pool(name,category,meaning,active)\nSELECT r.name,'ROSTER','Official Dalal Street 2026 participant team',true\nFROM roster r WHERE NOT EXISTS (SELECT 1 FROM team_name_pool p WHERE lower(p.name)=lower(r.name));\n\nUPDATE teams SET name='__DALAL_ROSTER_TMP__' || seq, updated_at=now() WHERE seq BETWEEN 2 AND 100;\n\nWITH raw AS (\n SELECT line, ord FROM unnest(string_to_array($roster$Apala|Vidura|K + K|Krishnangshu Sarkar / Gourav V Rao\nDignaga|Vidura|D + A|Karanam Seebivamsikrishna / Shreya C\nKanada|Vidura|O + O|Juhi Moudekar / Sidharrth Rao\nKapila|Vidura|I + I|Swaroop Rao T / Rohit B\nKhana|Vidura|J + J|Yuvaraj Suresh Bangera / Neeraj Kamath\nMatanga|Vidura|O + O|Shraddha Yadav / Chinmay B Arya\nVagbhata|Vidura|C + M|Manisha Raj / Suhas vardhan\nArtha|Yash|M + D|Likitesh / Lakshna. S\nDhriti|Yash|I + I|Jothish N / S S S Surya\nKosh|Yash|L + L|Bhoomika Venkatachala Bhat / Mitali Basavaraj Devagi\nMangala|Yash|F + F|Vishal Bhaskaran / A Tarakeshwar\nNishtha|Yash|E + E|Thamizh Selvan E / Sri viswanath\nNyaya|Yash|D + D|LIJIN LAKSHMANAN / Albin Sanjay P\nRajat|Yash|P + P|Greeshma R / Disha M\nValabhi|Yash|F + F|Aishwarya B M / Poorvitha\nKoshya|Ganita|O + O|Drushya A / Supreeth Shekar S\nMadhava|Ganita|N + N|Ajay M / PRANAV S R\nPanini|Ganita|L + L|Arundhathy V Nambi / Aakash Darsan P M\nSangita|Ganita|P + P|Pasupathi R / R Megha\nSutra|Ganita|M + M|Joshiya J / Indhu Shree Raj Kumar\nVirahanka|Ganita|N + M|Mohammed Riyaz / Arshiya Kausar\nYukti|Ganita|H + J|Koushik Gali / Kumar Vayur\nAbhyasa|Prajna|R + R|Tanish Milind Salunkhe / John Tophy\nGhosha|Prajna|C + C|SHASWAT AGRAWAL / Mohammed Haseeb Ahmed\nJaya|Prajna|K + K|Shreya j hegde / Nidhi shetty\nJya|Prajna|N + N|Rion Dsouza / Suraj\nShree|Prajna|N + N|Rohan J / Abishek R\nUtsaha|Prajna|M + M|K PRANAVI / DARUNIKA R\nViveka|Prajna|M + M|Aaditya Mehra / Madiya Mehraj\nBhamaha|Madhava|K + K|Muhammad Irfan / Kumaraguru\nKuttaka|Madhava|P + P|Kunj Punith Kumar Maru / Raunak Bajaj\nLopamudra|Madhava|K + B|Varun Nayak / Satvik B Bellad\nMedha|Madhava|D + D|Pulagam hasini / Anusha dumpala\nNirukta|Madhava|Q + Q|Hem b davey / Ramcharan\nNivesh|Madhava|A + A|K S Monish Kumar / Guruprasad V\nVasubandhu|Madhava|K + L|Bhoomika GS / M.Madhu vandhan\nVyaya|Madhava|L + L|Yoga Shree R R / Janani Suresh\nAvvaiyar|Amrit|P + P|Anusha V Bhat / VIJAY ANANTH J\nDhan|Amrit|D + D|Abhishek Nagori / Advaith R\nHalayudha|Amrit|G + G|Lithin H Raju / Tarun P\nMaitreyi|Amrit|P + P|Mohammad Saif / Anirudh Rao\nMithila|Amrit|D + D|Sourabh Toppo / Ramkrishna Kamlakar Rao\nNilakantha|Amrit|L + L|Sri Seshasaini G / Sadhana B\nTanka|Amrit|J + J|Nichhanametla Harshita / Prachi kashyap\nCharaka|Arohan|J + J|Kartik Revankar / Payal manna\nKautilya|Arohan|F + F|Mohammed Farhan Ulla / Aviral Singh\nKriya|Arohan|K + K|Soham Organtiwar / Shikhar Sampann\nLabhya|Arohan|N + G|Siddannagari Reddeppa Reddy Nandini / Tallapalle Sai Vyshnavi\nMudra|Arohan|H + H|Mohammed raza / Ashit singla\nNidhi|Arohan|F + F|Prajwal M Bharadwaj / Samyak Shrivastav\nSridhara|Arohan|G + G|Almeera S / Sugumaran\nAkshaya|Suvarna|L + L|Devansh Srivastava / Shreya Shukla\nAryabhata|Suvarna|I + O|Swaroop mahadev pujari / Gayana N\nAryadeva|Suvarna|B + B|Aashish Reddy / Kailesh b\nDandin|Suvarna|Q + I|Manjunath Gaddad / Midhat Rahman\nSushruta|Suvarna|D + D|Arsha.P.R / Harini S M\nTantra|Suvarna|O + O|Mohammed Samadul Zain S / Shivam Periwal\nVastu|Suvarna|D + D|Shraddha Dey / Pamela Pramanick\nChandas|Kalidasa|M + M|Mohammed Riyaz K / Manisha Kumari\nKamandaka|Kalidasa|M + Q|Srishti sinha / Ashmeet kaur\nMunjala|Kalidasa|A + A|Lokesh P / MALLAMMA BASAVARAJ NITALI\nSankalpa|Kalidasa|F + M|DAKSHATA C A / SURYAPRAKASH V\nShilpa|Kalidasa|L + L|Azwath Roshan / Rithika B\nVidura|Kalidasa|C + C|Tejas Thimmaiah / Tushar Biswas\nVriddhi|Kalidasa|J + J|Kiran prasaath / Balaji T\nJaimini|Vikas|N + N|Astha Jain / K M Prajwal\nLabh|Vikas|L + L|Aditya raj / Abhijit Chakraborty\nNeeti|Vikas|B + B|SESHATHRI BALAN G / Sasi Naga Kiran Godavarthi\nNeetiya|Vikas|L + L|RAHUL TL / Shriharan RK T\nPingala|Vikas|E + E|Praveen / Rahul Kunar\nPramana|Vikas|K + K|Tanushka Rajesh Chugh / Prince Raj\nRupa|Vikas|F + J|Ashutosh Padhy / Swayam Sahu\nShiksha|Vikas|M + M|Samhita hegde / D ABHIRAMA SHASTRY$roster$, E'\\n')) WITH ORDINALITY AS x(line,ord)\n WHERE btrim(line)<>''\n), roster AS (\n SELECT ord::integer+1 AS team_no, split_part(line,'|',1) AS name,\n  split_part(line,'|',2) AS broker_code, split_part(line,'|',3) AS section,\n  split_part(line,'|',4) AS members FROM raw\n)\nUPDATE teams t SET name=r.name, section=r.section, members=r.members,\n broker_id=a.internal_broker_id, active=true, updated_at=now()\nFROM roster r JOIN broker_roster_aliases a ON lower(a.broker_code)=lower(r.broker_code)\nWHERE t.seq=r.team_no AND t.seq BETWEEN 2 AND 74;\n\nUPDATE teams SET name='INACTIVE-PLACEHOLDER-' || seq, active=false, updated_at=now() WHERE seq BETWEEN 75 AND 100;\nUPDATE teams SET name='BIG BULL', active=true, broker_id=(SELECT id FROM brokers WHERE code='BROKER-11'), updated_at=now()\nWHERE seq=1 AND code='TEAM-001';\nUPDATE app_users u SET display_name=t.name, active=t.active, updated_at=now()\nFROM teams t WHERE u.team_id=t.id AND u.role='PARTICIPANT';\nINSERT INTO audit_log(actor_username,actor_role,action,entity,entity_id,details)\nVALUES ('roster-migration','ADMIN','OFFICIAL_DALAL_ROSTER_IMPORTED','roster',NULL,\n jsonb_build_object('official_teams',73,'special_participant','1-BIG BULL-11-SIDDHARTH',\n 'broker_count',11,'active_team_numbers','1-74','inactive_placeholder_numbers','75-100',\n 'financial_history_reset',false,'source','Dalal_Street_Teams(6).xlsx + Dalal_Street_Brokers(5).xlsx'));\nINSERT INTO schema_migrations(version) VALUES ('013_dalal_roster');\n";var m14sql="-- 014: Correct BIG BULL cash ceiling, daily news price cap, and final cash eligibility.\n-- Automated price changer configuration/logic is intentionally unchanged.\n\nALTER TABLE public.jse_special_accounts\n  ALTER COLUMN cash_limit SET DEFAULT 10000000;\nUPDATE public.jse_special_accounts\n  SET cash_limit = 10000000, updated_at = now()\n  WHERE account_code = 'BIG-BULL';\nUPDATE public.event_config SET cash_rule_limit = 100000 WHERE id = 1;\n\nCREATE OR REPLACE FUNCTION public.jse_special_cash_limit_guard()\nRETURNS trigger LANGUAGE plpgsql AS $function$\nDECLARE v_limit numeric;\nBEGIN\n  SELECT cash_limit INTO v_limit FROM public.jse_special_accounts WHERE team_id = NEW.id;\n  IF FOUND AND NEW.cash > v_limit THEN\n    RAISE EXCEPTION USING ERRCODE='23514', MESSAGE='BIG BULL cash limit is ₹1,00,00,000.00; this balance change is blocked.';\n  END IF;\n  RETURN NEW;\nEND $function$;\n\n-- Keep the admin function's fallback aligned with the stored ₹1 crore limit.\nDO $do$\nDECLARE v_def text;\nBEGIN\n  SELECT pg_get_functiondef('public.jse_big_bull_admin(jsonb,jsonb)'::regprocedure) INTO v_def;\n  IF position('coalesce(v_cash_limit,100000000)' IN v_def) > 0 THEN\n    v_def := replace(v_def, 'coalesce(v_cash_limit,100000000)', 'coalesce(v_cash_limit,10000000)');\n    EXECUTE v_def;\n  END IF;\nEND $do$;\n\n-- Only the Market News mood bands use the expanded +/-15% range.\nCREATE OR REPLACE FUNCTION public.jse_mood_band(p_mood text)\nRETURNS numeric[] LANGUAGE sql IMMUTABLE AS $function$\n  SELECT CASE upper(replace(trim(p_mood), ' ', '_'))\n    WHEN 'VERY_SEVERE'    THEN ARRAY[-15.00, -7.50]\n    WHEN 'SEVERE'         THEN ARRAY[-7.49, -5.00]\n    WHEN 'NEGATIVE'       THEN ARRAY[-4.99, -1.00]\n    WHEN 'NORMAL'         THEN ARRAY[-0.99, 0.99]\n    WHEN 'POSITIVE'       THEN ARRAY[1.00, 4.99]\n    WHEN 'VERY_POSITIVE'  THEN ARRAY[5.00, 7.49]\n    WHEN 'SUPER_POSITIVE' THEN ARRAY[7.50, 15.00]\n  END::numeric[]\n$function$;\n\n-- A security's news-driven price is constrained to +/-15% of its first active news\n-- baseline for the current India-local day. The automated price changer is not changed.\nCREATE OR REPLACE FUNCTION public.jse_market_news(a jsonb, p jsonb)\nRETURNS jsonb LANGUAGE plpgsql AS $function$\nDECLARE\n  cfg event_config%ROWTYPE; v_status text; s securities%ROWTYPE;\n  v_mood text := upper(replace(trim(coalesce(p->>'mood', p->>'severity', '')), ' ', '_'));\n  v_headline text := nullif(left(trim(coalesce(p->>'headline', '')), 240), '');\n  v_band numeric[]; v_pct numeric; v_new numeric; v_lo numeric; v_hi numeric;\n  v_day_start timestamptz; v_day_base numeric; v_daily_cap constant numeric := 15;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL');\n  SELECT * INTO cfg FROM event_config WHERE id = 1;\n  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR SHARE;\n  IF v_status NOT IN ('NOT_STARTED', 'LIVE', 'SETTLEMENT_ONLY') THEN\n    PERFORM jse_fail('EVENT_CLOSED', 'Market News is not allowed after the market has closed.', 409);\n  END IF;\n  v_band := jse_mood_band(v_mood);\n  IF v_band IS NULL THEN PERFORM jse_fail('INVALID_MOOD', 'Choose a news severity.', 400); END IF;\n  SELECT * INTO s FROM securities WHERE (p ? 'security_id' AND id = nullif(p->>'security_id', '')::integer) OR (p ? 'symbol' AND symbol = upper(trim(p->>'symbol')));\n  IF NOT FOUND THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Select a company.', 404); END IF;\n  IF s.kind = 'IPO' AND s.listed_at IS NULL THEN\n    PERFORM jse_fail('IPO_NOT_LISTED', s.symbol || ' is still in the IPO stage; Market News applies once it lists.', 409);\n  END IF;\n  PERFORM pg_advisory_xact_lock(hashtextextended('jse-news:' || s.id, 0));\n  SELECT * INTO s FROM securities WHERE id = s.id FOR UPDATE;\n\n  v_day_start := date_trunc('day', now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata';\n  SELECT previous_price INTO v_day_base\n  FROM market_news\n  WHERE security_id = s.id\n    AND created_at >= v_day_start\n    AND created_at < v_day_start + interval '1 day'\n    AND reversed_at IS NULL\n  ORDER BY created_at, id\n  LIMIT 1;\n  v_day_base := coalesce(v_day_base, s.price);\n\n  v_pct := round((v_band[1] + random() * (v_band[2] - v_band[1]))::numeric, 2);\n  v_new := jse_round_tick(s.price * (1 + v_pct / 100), cfg.price_tick);\n  v_lo := ceil(v_day_base * (1 - v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;\n  v_hi := floor(v_day_base * (1 + v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;\n  v_new := greatest(v_lo, least(v_hi, v_new));\n  IF v_new <= 0 THEN v_new := cfg.price_tick; END IF;\n  RETURN jse__apply_news_price(a, s, v_mood, v_pct, v_new,\n    coalesce(v_headline, initcap(replace(v_mood, '_', ' ')) || ' news on ' || s.name));\nEND $function$;\n\nINSERT INTO schema_migrations(version) VALUES ('014_big_bull_news_assessment');\n";var m015sql="-- 015: Rename broker roster display name only; preserve broker number, code, assignments, and trade history.\nUPDATE public.broker_roster_aliases\nSET broker_name = 'SUGADEV'\nWHERE broker_number = 6\n  AND internal_broker_id = 6\n  AND lower(broker_code) = 'arohan';\n";var m016sql="-- 016: Limit each individual Market News move to +/-10%; retain the +/-15% daily cumulative cap.\nCREATE OR REPLACE FUNCTION public.jse_mood_band(p_mood text)\nRETURNS numeric[] LANGUAGE sql IMMUTABLE AS $function$\n  SELECT CASE upper(replace(trim(p_mood), ' ', '_'))\n    WHEN 'VERY_SEVERE'    THEN ARRAY[-10.00, -7.50]\n    WHEN 'SEVERE'         THEN ARRAY[-7.49, -5.00]\n    WHEN 'NEGATIVE'       THEN ARRAY[-4.99, -1.00]\n    WHEN 'NORMAL'         THEN ARRAY[-0.99, 0.99]\n    WHEN 'POSITIVE'       THEN ARRAY[1.00, 4.99]\n    WHEN 'VERY_POSITIVE'  THEN ARRAY[5.00, 7.49]\n    WHEN 'SUPER_POSITIVE' THEN ARRAY[7.50, 10.00]\n  END::numeric[]\n$function$;\n\nINSERT INTO schema_migrations(version) VALUES ('016_news_single_move_cap');\n";var m017sql="-- 017: Make per-team IPO allotments and official broker roster visible on the Portfolio list only.\n-- Does not change Team-page/account-page UI or the existing portfolio-detail/account functions.\n\nUPDATE public.broker_roster_aliases\nSET broker_name = 'SUGADEV'\nWHERE broker_number = 6\n  AND lower(broker_code) = 'arohan';\n\nCREATE OR REPLACE FUNCTION public.jse_portfolios(a jsonb, p jsonb)\nRETURNS jsonb LANGUAGE plpgsql STABLE AS $function$\nDECLARE\n  v_rows jsonb;\n  v_status text;\n  cfg event_config%ROWTYPE;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN', 'VIEWER');\n  SELECT * INTO cfg FROM event_config WHERE id = 1;\n  SELECT status INTO v_status FROM event_control WHERE id = 1;\n\n  SELECT jsonb_agg(\n    r.m || jsonb_build_object(\n      'rank', r.rank_overall,\n      'rank_eligible', r.rank_eligible,\n      'award', r.award,\n      'roster_broker_code', COALESCE(ba.broker_code, r.m->>'broker'),\n      'roster_broker_name', COALESCE(ba.broker_name, r.m->>'broker_name'),\n      'ipo_allotments', COALESCE((\n        SELECT jsonb_agg(jsonb_build_object(\n          'symbol', sec.symbol,\n          'name', sec.name,\n          'lots', al.lots,\n          'quantity', al.quantity,\n          'price', al.price,\n          'amount', al.amount\n        ) ORDER BY sec.display_order, al.id)\n        FROM public.ipo_allotments al\n        JOIN public.securities sec ON sec.id = al.security_id\n        WHERE al.team_id = (r.m->>'team_id')::integer\n          AND al.reversed_at IS NULL\n          AND al.quantity > 0\n      ), '[]'::jsonb)\n    ) ORDER BY (r.m->>'seq')::integer\n  )\n  INTO v_rows\n  FROM public.jse_ranked_teams() r\n  LEFT JOIN public.broker_roster_aliases ba\n    ON ba.internal_broker_id = nullif(r.m->>'broker_id','')::integer;\n\n  RETURN jsonb_build_object(\n    'success', true,\n    'event_status', v_status,\n    'final', v_status IN ('CLOSED', 'FINALIZED'),\n    'criterion', 'Net Worth = liquid cash + holdings × closing price (loans are not deducted). Winner = highest eligible Net Worth; Runner-Up = second highest. Ties go to the lower team code.',\n    'eligibility_rule', 'Eligible = at least ' || cfg.min_buy_trades || ' settled BUY and ' || cfg.min_sell_trades || ' settled SELL listed-stock trades (IPO allotments do not count)' ||\n      CASE WHEN cfg.loan_repayment_required THEN ' + loan fully repaid' ELSE '' END || ' + closing cash rule (base cash ≤ ' || jse_inr(cfg.cash_rule_limit::bigint) || ', evaluated at close).',\n    'initial_capital', cfg.initial_capital,\n    'cash_rule_limit', cfg.cash_rule_limit,\n    'min_buy_trades', cfg.min_buy_trades,\n    'min_sell_trades', cfg.min_sell_trades,\n    'loan_repayment_required', cfg.loan_repayment_required,\n    'stats', (\n      SELECT jsonb_build_object(\n        'teams', count(*),\n        'total_net_worth', sum(net_worth),\n        'average_net_worth', round(avg(net_worth), 2),\n        'highest_net_worth', max(net_worth),\n        'lowest_net_worth', min(net_worth),\n        'total_cash', sum(cash),\n        'total_holdings', sum(holdings_value),\n        'eligible', count(*) FILTER (WHERE eligible),\n        'assessment_met', count(*) FILTER (WHERE assessment_met),\n        'loans_unpaid', count(*) FILTER (WHERE NOT loan_repaid),\n        'cash_rule_met', count(*) FILTER (WHERE cash_rule_met),\n        'cash_rule_not_met', count(*) FILTER (WHERE NOT cash_rule_met),\n        'profitable', count(*) FILTER (WHERE pnl > 0),\n        'short_sell_attempts', sum(short_sell_attempts),\n        'cash_shortfall_attempts', sum(cash_shortfall_attempts),\n        'insufficient_balance_rejections', sum(insufficient_balance_rejections),\n        'total_brokerage', sum(brokerage_paid),\n        'loans_outstanding', sum(loan_principal + loan_interest)\n      ) FROM public.jse_team_metrics WHERE active\n    ),\n    'winner', (\n      SELECT m || jsonb_build_object('rank', rank_overall, 'rank_eligible', rank_eligible, 'award', award)\n      FROM public.jse_ranked_teams() WHERE award = 'WINNER'\n    ),\n    'runner_up', (\n      SELECT m || jsonb_build_object('rank', rank_overall, 'rank_eligible', rank_eligible, 'award', award)\n      FROM public.jse_ranked_teams() WHERE award = 'RUNNER_UP'\n    ),\n    'teams', COALESCE(v_rows, '[]'::jsonb)\n  );\nEND $function$;\n\nINSERT INTO public.schema_migrations(version) VALUES ('017_portfolio_ipo_visibility');\n";var m018sql="-- 018: Apply the official broker-to-team roster, show official broker labels,\n-- and count active assigned teams (never inactive placeholders) in commission summaries.\n-- Broker 6's official roster contact name is SUGADEV; Aman is no longer used.\nUPDATE public.broker_roster_aliases SET broker_name = 'SUGADEV' WHERE broker_number = 6 AND lower(broker_code) = 'arohan';\n\nWITH roster(team_name, broker_code) AS (VALUES\n('Viveka','Prajna'),('Jya','Prajna'),('Ghosha','Prajna'),('Shree','Prajna'),('Jaya','Prajna'),('Utsaha','Prajna'),('Abhyasa','Prajna'),\n('Panini','Ganita'),('Yukti','Ganita'),('Virahanka','Ganita'),('Sutra','Ganita'),('Koshya','Ganita'),('Madhava','Ganita'),('Sangita','Ganita'),\n('Mithila','Amrit'),('Dhan','Amrit'),('Nilakantha','Amrit'),('Maitreyi','Amrit'),('Avvaiyar','Amrit'),('Tanka','Amrit'),('Halayudha','Amrit'),\n('Pingala','Vikas'),('Pramana','Vikas'),('Labh','Vikas'),('Jaimini','Vikas'),('Neeti','Vikas'),('Rupa','Vikas'),('Neetiya','Vikas'),('Shiksha','Vikas'),\n('Artha','Yash'),('Kosh','Yash'),('Nyaya','Yash'),('Nishtha','Yash'),('Rajat','Yash'),('Mangala','Yash'),('Valabhi','Yash'),('Dhriti','Yash'),\n('Kautilya','Arohan'),('Nidhi','Arohan'),('Mudra','Arohan'),('Sridhara','Arohan'),('Labhya','Arohan'),('Charaka','Arohan'),('Kriya','Arohan'),\n('Nivesh','Madhava'),('Vasubandhu','Madhava'),('Nirukta','Madhava'),('Medha','Madhava'),('Kuttaka','Madhava'),('Vyaya','Madhava'),('Lopamudra','Madhava'),('Bhamaha','Madhava'),\n('Vagbhata','Vidura'),('Apala','Vidura'),('Khana','Vidura'),('Kanada','Vidura'),('Matanga','Vidura'),('Kapila','Vidura'),('Dignaga','Vidura'),\n('Sankalpa','Kalidasa'),('Munjala','Kalidasa'),('Vriddhi','Kalidasa'),('Shilpa','Kalidasa'),('Chandas','Kalidasa'),('Kamandaka','Kalidasa'),('Tarka','Kalidasa'),\n('Aryadeva','Suvarna'),('Vastu','Suvarna'),('Aryabhata','Suvarna'),('Akshaya','Suvarna'),('Dandin','Suvarna'),('Tantra','Suvarna'),('Sushruta','Suvarna')\n)\nUPDATE public.teams t\nSET broker_id = ba.internal_broker_id, updated_at = now()\nFROM roster r\nJOIN public.broker_roster_aliases ba ON lower(trim(ba.broker_code)) = lower(trim(r.broker_code))\nWHERE lower(trim(t.name)) = lower(trim(r.team_name))\n  AND t.active AND t.seq <> 1\n  AND t.broker_id IS DISTINCT FROM ba.internal_broker_id;\n\nCREATE OR REPLACE FUNCTION public.jse_commissions(a jsonb, p jsonb)\nRETURNS jsonb LANGUAGE plpgsql STABLE AS $function$\nDECLARE\n  v_broker integer;\n  v_page integer := greatest(1, coalesce(nullif(p->>'page', '')::integer, 1));\n  v_size integer := least(500, greatest(10, coalesce(nullif(p->>'page_size', '')::integer, 100)));\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'VIEWER');\n  IF a->>'role' = 'BROKER' THEN\n    v_broker := nullif(a->>'broker_id', '')::integer;\n  ELSIF coalesce(p->>'broker', '') <> '' THEN\n    SELECT b.id INTO v_broker\n    FROM brokers b LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id\n    WHERE upper(b.code) = upper(trim(p->>'broker'))\n       OR upper(ba.broker_code) = upper(trim(p->>'broker'))\n    ORDER BY b.id LIMIT 1;\n    v_broker := coalesce(v_broker, -1);\n  END IF;\n\n  RETURN jsonb_build_object(\n    'success', true,\n    'rate', (SELECT brokerage_rate FROM event_config WHERE id = 1),\n    'own_broker', CASE WHEN a->>'role' = 'BROKER' THEN (\n      SELECT coalesce(ba.broker_code, b.code) FROM brokers b\n      LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id\n      WHERE b.id = v_broker\n    ) END,\n    'brokers', coalesce((\n      SELECT jsonb_agg(x ORDER BY (x->>'rank')::integer)\n      FROM (\n        SELECT jsonb_build_object(\n          'rank', row_number() OVER (ORDER BY coalesce(c.amount, 0) DESC, coalesce(ba.broker_number, 999), b.code),\n          'broker', b.code,\n          'broker_number', coalesce(ba.broker_number, 999),\n          'display_code', coalesce(ba.broker_code, b.code),\n          'name', coalesce(ba.broker_name, b.name),\n          'teams', (SELECT count(*) FROM teams t WHERE t.broker_id = b.id AND t.active),\n          'orders', coalesce(c.n, 0),\n          'buy_orders', coalesce(c.nb, 0),\n          'sell_orders', coalesce(c.ns, 0),\n          'buy_volume', coalesce(c.bv, 0),\n          'sell_volume', coalesce(c.sv, 0),\n          'buy_quantity', coalesce(c.bq, 0),\n          'sell_quantity', coalesce(c.sq, 0),\n          'total_trade_value', coalesce(c.tv, 0),\n          'brokerage_earned', coalesce(c.amount, 0),\n          'pending_orders', (\n            SELECT count(*) FROM orders o\n            WHERE o.broker_id = b.id\n              AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')\n          )\n        ) AS x\n        FROM brokers b\n        LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id\n        LEFT JOIN (\n          SELECT bc.broker_id, count(*) n,\n            count(*) FILTER (WHERE bc.side = 'BUY') nb,\n            count(*) FILTER (WHERE bc.side = 'SELL') ns,\n            sum(bc.trade_value) FILTER (WHERE bc.side = 'BUY') bv,\n            sum(bc.trade_value) FILTER (WHERE bc.side = 'SELL') sv,\n            sum(o.quantity) FILTER (WHERE bc.side = 'BUY') bq,\n            sum(o.quantity) FILTER (WHERE bc.side = 'SELL') sq,\n            sum(bc.trade_value) tv, sum(bc.amount) amount\n          FROM broker_commissions bc JOIN orders o ON o.id = bc.order_id\n          WHERE bc.reversed_at IS NULL GROUP BY bc.broker_id\n        ) c ON c.broker_id = b.id\n        WHERE a->>'role' <> 'BROKER' OR b.id = v_broker\n      ) q\n    ), '[]'::jsonb),\n    'transactions_total', (\n      SELECT count(*) FROM broker_commissions bc\n      WHERE v_broker IS NULL OR bc.broker_id = v_broker\n    ),\n    'page', v_page, 'page_size', v_size,\n    'transactions', coalesce((\n      SELECT jsonb_agg(jsonb_build_object(\n        'created_at', bc.created_at, 'broker', b.code,\n        'broker_display_code', coalesce(ba.broker_code, b.code),\n        'broker_name', coalesce(ba.broker_name, b.name),\n        'order_no', o.order_no, 'account_type', o.account_type,\n        'counterparty', CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional investor' ELSE 'Market' END,\n        'team', t.code, 'team_name', t.name, 'symbol', s.symbol, 'security', s.name,\n        'side', bc.side, 'quantity', o.quantity, 'price', o.price,\n        'trade_value', bc.trade_value, 'rate', bc.rate, 'amount', bc.amount,\n        'status', CASE WHEN bc.reversed_at IS NULL THEN 'SETTLED' ELSE 'REVERSED' END,\n        'reversed_at', bc.reversed_at\n      ) ORDER BY bc.id DESC)\n      FROM (\n        SELECT * FROM broker_commissions\n        WHERE v_broker IS NULL OR broker_id = v_broker\n        ORDER BY id DESC LIMIT v_size OFFSET (v_page - 1) * v_size\n      ) bc\n      JOIN brokers b ON b.id = bc.broker_id\n      LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id\n      JOIN orders o ON o.id = bc.order_id JOIN teams t ON t.id = bc.team_id\n      JOIN securities s ON s.id = o.security_id\n    ), '[]'::jsonb),\n    'totals', (\n      SELECT jsonb_build_object('orders', count(*), 'trade_value', coalesce(sum(trade_value), 0), 'brokerage', coalesce(sum(amount), 0))\n      FROM broker_commissions WHERE reversed_at IS NULL AND (v_broker IS NULL OR broker_id = v_broker)\n    ),\n    'reconciliation', (\n      SELECT jsonb_build_object('commission_total', c.total, 'settled_brokerage_total', st.total, 'ok', c.total = st.total)\n      FROM (\n        SELECT coalesce(sum(amount), 0) total FROM broker_commissions\n        WHERE reversed_at IS NULL AND (v_broker IS NULL OR broker_id = v_broker)\n      ) c,\n      (\n        SELECT coalesce(sum(st0.brokerage), 0) total FROM settlements st0\n        JOIN orders o0 ON o0.id = st0.order_id\n        WHERE st0.reversed_at IS NULL AND o0.broker_id IS NOT NULL\n          AND (v_broker IS NULL OR o0.broker_id = v_broker)\n      ) st\n    ),\n    'institutional', (\n      SELECT jsonb_build_object('orders', count(*), 'brokerage', coalesce(sum(bc.amount), 0))\n      FROM broker_commissions bc JOIN orders o ON o.id = bc.order_id\n      WHERE bc.reversed_at IS NULL AND o.account_type = 'INSTITUTION'\n        AND (v_broker IS NULL OR bc.broker_id = v_broker)\n    )\n  );\nEND\n$function$;\n\nINSERT INTO public.schema_migrations(version) VALUES ('018_broker_assignments_and_counts');\n";var m019sql="-- 019: IPOs must surface in the top market positions on Start Event;\n-- IPO market colour remains measured against the original allotment/issue price.\nCREATE OR REPLACE FUNCTION public.jse__list_ipo(a jsonb, p_id integer)\nRETURNS jsonb LANGUAGE plpgsql AS $function$\nDECLARE s securities%ROWTYPE; v_price numeric; v_pct numeric; v_n integer;\nBEGIN\n  SELECT * INTO s FROM securities WHERE id = p_id FOR UPDATE;\n  IF NOT FOUND OR s.kind <> 'IPO' OR s.listed_at IS NOT NULL OR NOT s.active THEN RETURN NULL; END IF;\n  IF s.trade_count > 0 OR s.price <> s.base_price\n     OR EXISTS (SELECT 1 FROM market_news n WHERE n.security_id = s.id AND n.reversed_at IS NULL) THEN\n    PERFORM jse_fail('IPO_ALREADY_MOVED', s.symbol || ' has already traded or moved on Market News; it can no longer be listed.', 409);\n  END IF;\n  v_price := coalesce(s.listing_price, s.base_price);\n  v_pct := jse_pct(v_price, s.price);\n  PERFORM jse__set_price(a, s.id, v_price, 'LISTING');\n  -- Give every IPO a fresh board timestamp even if its new listing price equals issue price.\n  -- Board sorts by last_price_change_at, so all four IPOs surface at Start Event and later\n  -- stock updates naturally take precedence.\n  UPDATE securities\n     SET listed_at = clock_timestamp(),\n         index_base_price = v_price,\n         last_price_change_at = clock_timestamp(),\n         updated_at = now()\n   WHERE id = s.id;\n  SELECT count(*) INTO v_n FROM securities WHERE active AND (kind = 'EQUITY' OR listed_at IS NOT NULL);\n  PERFORM jse_audit(a, 'IPO_LISTED', 'security', s.symbol, NULL, NULL,\n    jsonb_build_object('stage', jse_ipo_stage(s.id), 'price', s.price),\n    jsonb_build_object('stage', 'LISTED', 'price', v_price, 'cms_index', 'INCLUDED'),\n    jsonb_build_object('issue_price', s.base_price, 'listing_price', v_price, 'listed_at_issue_price', s.listing_price IS NULL,\n                       'change_pct', round(v_pct, 2), 'cms_index_components', v_n, 'source', 'LISTING'));\n  PERFORM jse_journal('IPO_LISTING', s.id,\n    s.symbol || ' listed at ' || jse_inr(v_price) || ' (issue ' || jse_inr(s.base_price) || ', ' || CASE WHEN v_pct > 0 THEN '+' ELSE '' END || to_char(round(v_pct, 2), 'FM990.00') || '%) · CMS 50 ' || v_n || ' components',\n    jsonb_build_object('security_id', s.id, 'from_price', s.price, 'from_previous', s.previous_price, 'listing_price', v_price), a);\n  RETURN jsonb_build_object('symbol', s.symbol, 'name', s.name, 'issue_price', s.base_price, 'listing_price', v_price,\n                            'change_pct', round(v_pct, 2), 'at_issue_price', s.listing_price IS NULL, 'index_components', v_n);\nEND $function$;\n\nINSERT INTO public.schema_migrations(version) VALUES ('019_ipo_start_market_order');\n";var m020sql="-- 020: Remove the outdated \"Aman\" broker contact display and keep the official Arohan code.\nUPDATE public.broker_roster_aliases\nSET broker_name = 'SUGADEV'\nWHERE broker_number = 6\n  AND lower(broker_code) = 'arohan'\n  AND broker_name IS DISTINCT FROM 'SUGADEV';\n\nUPDATE public.brokers\nSET name = 'SUGADEV'\nWHERE id = (SELECT internal_broker_id FROM public.broker_roster_aliases\n           WHERE broker_number = 6 AND lower(broker_code) = 'arohan')\n  AND name IS DISTINCT FROM 'SUGADEV';\n\nUPDATE public.app_users\nSET display_name = 'SUGADEV', updated_at = now()\nWHERE role = 'BROKER'\n  AND broker_id = (SELECT internal_broker_id FROM public.broker_roster_aliases\n                   WHERE broker_number = 6 AND lower(broker_code) = 'arohan')\n  AND display_name IS DISTINCT FROM 'SUGADEV';\n\nINSERT INTO public.schema_migrations(version) VALUES ('020_broker_sugadev_name')\nON CONFLICT (version) DO NOTHING;\n";var m021sql="-- 021: Lock the official staging baseline and restore it on every event reset.\n-- IPO listing_price intentionally remains editable for the new opening price supplied by Event Admin.\n-- The allotment price/amount and all base reference prices are restored from this frozen snapshot.\n\nUPDATE public.broker_roster_aliases\nSET broker_name='SUGADEV'\nWHERE broker_number=6 AND lower(broker_code)='arohan';\n\nUPDATE public.brokers\nSET name='SUGADEV'\nWHERE id=(SELECT internal_broker_id FROM public.broker_roster_aliases WHERE broker_number=6 AND lower(broker_code)='arohan')\n  AND name IS DISTINCT FROM 'SUGADEV';\n\nUPDATE public.app_users\nSET display_name='SUGADEV', updated_at=now()\nWHERE role='BROKER'\n  AND broker_id=(SELECT internal_broker_id FROM public.broker_roster_aliases WHERE broker_number=6 AND lower(broker_code)='arohan')\n  AND display_name IS DISTINCT FROM 'SUGADEV';\n\n-- Titan's current staging price becomes its new base price.\nUPDATE public.securities\nSET base_price=price, previous_price=price, index_base_price=price, updated_at=now()\nWHERE symbol='TITAN' AND kind='EQUITY' AND active;\n\nCREATE TABLE IF NOT EXISTS public.jse_locked_baseline (\n  id smallint PRIMARY KEY CHECK (id=1),\n  version integer NOT NULL DEFAULT 1,\n  snapshot jsonb NOT NULL,\n  locked_at timestamptz NOT NULL DEFAULT now(),\n  locked_by text NOT NULL DEFAULT 'STAGING BASELINE'\n);;\n\nDROP TRIGGER IF EXISTS jse_locked_baseline_no_mutation ON public.jse_locked_baseline;\n\nINSERT INTO public.jse_locked_baseline(id,version,snapshot,locked_by)\nVALUES (\n  1,1,\n  jsonb_build_object(\n    'teams', (SELECT coalesce(jsonb_agg(jsonb_build_object(\n      'id',id,'seq',seq,'code',code,'name',name,'section',section,'members',members,\n      'broker_id',broker_id,'active',active\n    ) ORDER BY seq),'[]'::jsonb) FROM public.teams),\n    'brokers', (SELECT coalesce(jsonb_agg(jsonb_build_object(\n      'id',id,'code',code,'name',name,'active',active,'contact',contact,'desk',desk\n    ) ORDER BY id),'[]'::jsonb) FROM public.brokers),\n    'broker_roster_aliases', (SELECT coalesce(jsonb_agg(jsonb_build_object(\n      'broker_number',broker_number,'broker_code',broker_code,'broker_name',broker_name,\n      'internal_broker_id',internal_broker_id\n    ) ORDER BY broker_number),'[]'::jsonb) FROM public.broker_roster_aliases),\n    'securities', (SELECT coalesce(jsonb_agg(jsonb_build_object(\n      'id',id,'kind',kind,'symbol',symbol,'name',name,'sector',sector,\n      'base_price',base_price,'lot_size',lot_size,'display_order',display_order,'active',active,\n      'ipo_code',ipo_code,'ipo_shares_offered',ipo_shares_offered,'ipo_lot_size',ipo_lot_size\n    ) ORDER BY id),'[]'::jsonb) FROM public.securities),\n    'ipo_allotments', (SELECT coalesce(jsonb_agg(jsonb_build_object(\n      'team_id',team_id,'security_id',security_id,'lots',lots,'quantity',quantity,\n      'price',price,'amount',amount,'batch_id',batch_id\n    ) ORDER BY id),'[]'::jsonb) FROM public.ipo_allotments WHERE reversed_at IS NULL AND quantity > 0)\n  ),\n  'LOCKED OFFICIAL ROSTER + INITIAL PRICES + IPO ALLOTMENTS'\n)\nON CONFLICT (id) DO NOTHING;\n\n-- Save pre-allotment cash for every team, preserving BIG BULL's current ₹1 crore starting balance.\nUPDATE public.jse_locked_baseline b\nSET snapshot = b.snapshot || jsonb_build_object(\n  'team_starting_cash',\n  (SELECT coalesce(jsonb_agg(jsonb_build_object(\n      'team_id', t.id,\n      'cash', t.cash + coalesce(al.total_amount, 0)\n    ) ORDER BY t.seq), '[]'::jsonb)\n   FROM public.teams t\n   LEFT JOIN (\n     SELECT team_id, sum(amount) total_amount\n     FROM public.ipo_allotments\n     WHERE reversed_at IS NULL AND quantity > 0\n     GROUP BY team_id\n   ) al ON al.team_id = t.id)\n)\nWHERE b.id = 1 AND NOT (b.snapshot ? 'team_starting_cash');\n\nCREATE OR REPLACE FUNCTION public.jse_locked_baseline_immutable()\nRETURNS trigger LANGUAGE plpgsql AS $function$\nBEGIN\n  RAISE EXCEPTION 'The staging baseline is locked. Request an explicit baseline update instead.';\nEND\n$function$;\n\nDROP TRIGGER IF EXISTS jse_locked_baseline_no_mutation ON public.jse_locked_baseline;\nCREATE TRIGGER jse_locked_baseline_no_mutation\nBEFORE UPDATE OR DELETE ON public.jse_locked_baseline\nFOR EACH ROW EXECUTE FUNCTION public.jse_locked_baseline_immutable();\n\nCREATE OR REPLACE FUNCTION public.jse_reset_event(a jsonb, p jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  cfg event_config%ROWTYPE; ev event_control%ROWTYPE;\n  v_base jsonb; v_allots jsonb; r jsonb; al ipo_allotments%ROWTYPE; v_n integer := 0; v_archived integer;\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN');\n  IF coalesce(p->>'confirm', '') <> 'RESET' THEN PERFORM jse_fail('CONFIRM_REQUIRED', 'Type RESET to confirm.', 400); END IF;\n  PERFORM jse_require_admin_password(a, p);\n  SELECT * INTO cfg FROM event_config WHERE id = 1;\n  SELECT * INTO ev FROM event_control WHERE id = 1 FOR UPDATE;\n  IF ev.status IN ('LIVE', 'SETTLEMENT_ONLY') THEN\n    PERFORM jse_fail('EVENT_RUNNING', 'Close the market before resetting (current status: ' || replace(ev.status, '_', ' ') || ').', 409);\n  END IF;\n  LOCK TABLE orders, settlements, holdings, teams, securities, loans, brokers, broker_roster_aliases IN EXCLUSIVE MODE;\n  SELECT snapshot INTO v_base FROM public.jse_locked_baseline WHERE id = 1;\n  IF v_base IS NULL THEN PERFORM jse_fail('BASELINE_MISSING', 'The locked starting baseline is missing; reset was blocked.', 500); END IF;\n  v_allots := coalesce(v_base->'ipo_allotments', '[]'::jsonb);\n\n  PERFORM set_config('jse.maintenance', 'on', true);\n  INSERT INTO audit_log_archive SELECT al2.*, now(), ev.reset_count + 1 FROM audit_log al2;\n  GET DIAGNOSTICS v_archived = ROW_COUNT;\n  TRUNCATE action_journal, broker_commissions, cash_ledger, institution_ledger, loan_transactions, risk_events, price_history,\n           market_news, order_events, settlements, holdings, institutional_holdings, ipo_allotments, trading_slips, instructions, orders, audit_log\n           RESTART IDENTITY;\n  PERFORM set_config('jse.maintenance', 'off', true);\n\n  -- Restore locked roster and broker mappings. Cash/P&L is reset separately below.\n  UPDATE teams t SET name = x.name, section = x.section, members = x.members,\n      broker_id = x.broker_id, active = x.active, updated_at = now()\n  FROM jsonb_to_recordset(v_base->'teams') AS x(id integer, name text, section text, members text, broker_id integer, active boolean)\n  WHERE t.id = x.id;\n  UPDATE brokers b SET name = x.name, active = x.active, contact = x.contact, desk = x.desk\n  FROM jsonb_to_recordset(v_base->'brokers') AS x(id integer, name text, active boolean, contact text, desk text)\n  WHERE b.id = x.id;\n  DELETE FROM broker_roster_aliases;\n  INSERT INTO broker_roster_aliases(broker_number, broker_code, broker_name, internal_broker_id)\n  SELECT x.broker_number, x.broker_code, x.broker_name, x.internal_broker_id\n  FROM jsonb_to_recordset(v_base->'broker_roster_aliases') AS x(\n    broker_number integer, broker_code text, broker_name text, internal_broker_id integer\n  );\n  -- Restore company identities/base values; retain listing_price for the next START.\n  UPDATE securities s SET kind = x.kind, symbol = x.symbol, name = x.name, sector = x.sector,\n      base_price = x.base_price, lot_size = x.lot_size, display_order = x.display_order,\n      active = x.active, ipo_code = x.ipo_code, ipo_shares_offered = x.ipo_shares_offered,\n      ipo_lot_size = x.ipo_lot_size, updated_at = now()\n  FROM jsonb_to_recordset(v_base->'securities') AS x(\n    id integer, kind text, symbol text, name text, sector text, base_price numeric,\n    lot_size integer, display_order integer, active boolean, ipo_code text,\n    ipo_shares_offered integer, ipo_lot_size integer\n  )\n  WHERE s.id = x.id;\n\n  UPDATE teams t SET cash = coalesce(\n      (SELECT (x.value->>'cash')::numeric\n       FROM jsonb_array_elements(v_base->'team_starting_cash') AS x(value)\n       WHERE (x.value->>'team_id')::integer = t.id),\n      cfg.initial_capital\n    ), realized_pnl = 0, brokerage_paid = 0, short_sell_attempts = 0,\n    cash_shortfall_attempts = 0, insufficient_balance_rejections = 0, updated_at = now();\n  UPDATE loans SET original_principal = 0, principal_outstanding = 0, interest_outstanding = 0, interest_charged = 0,\n                   interest_paid = 0, principal_repaid = 0, draws = 0, status = 'NONE', updated_at = now();\n  INSERT INTO loans(team_id) SELECT id FROM teams ON CONFLICT (team_id) DO NOTHING;\n  UPDATE institutions SET cash = initial_cash, updated_at = now();\n  -- base / reference prices; IPOs back to the pre-market stage (saved listing prices are kept for the next START)\n  UPDATE securities SET price = base_price, previous_price = base_price, trade_count = 0, traded_quantity = 0, traded_value = 0,\n                        last_trade_at = NULL, listed_at = NULL, last_price_change_at = NULL,\n                        index_base_price = CASE WHEN kind = 'EQUITY' THEN base_price END, updated_at = now();\n  INSERT INTO cash_ledger(team_id, entry_type, credit, balance_after, note, actor_id, actor_name)\n  SELECT id, 'INITIAL_CAPITAL', cash, cash, 'Initial event capital', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM teams;\n  INSERT INTO institution_ledger(institution_id, entry_type, credit, balance_after, note, actor_id, actor_name)\n  SELECT id, 'INITIAL_CAPITAL', initial_cash, initial_cash, 'Initial institutional cash', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM institutions;\n\n  FOR r IN SELECT value FROM jsonb_array_elements(v_allots) LOOP\n    INSERT INTO ipo_allotments(team_id, security_id, lots, quantity, price, amount, batch_id, created_by, created_by_name)\n    VALUES ((r->>'team_id')::integer, (r->>'security_id')::integer, (r->>'lots')::integer, (r->>'quantity')::integer,\n            (r->>'price')::numeric, (r->>'amount')::numeric, r->>'batch_id', nullif(a->>'id', '')::integer, jse_actor_name(a))\n    RETURNING * INTO al;\n    PERFORM jse__apply_allotment(a, al);\n    v_n := v_n + 1;\n  END LOOP;\n\n  UPDATE event_control SET status = 'NOT_STARTED', started_at = NULL, paused_at = NULL, closed_at = NULL, finalized_at = NULL,\n         status_changed_at = now(), status_changed_by = jse_actor_name(a), reset_count = reset_count + 1, last_reset_at = now(),\n         market_updated_at = now() WHERE id = 1;\n  PERFORM jse_audit(a, 'EVENT_RESET', 'event', 'event_control', NULL, NULL, jsonb_build_object('status', ev.status),\n    jsonb_build_object('status', 'NOT_STARTED'),\n    jsonb_build_object('reset_no', ev.reset_count + 1, 'archived_audit_rows', v_archived, 'kept_ipo_allotments', v_n, 'baseline_restored', true,\n                       'team_names_locked', cfg.team_names_locked_at IS NOT NULL));\n  RETURN jsonb_build_object('success', true, 'status', 'NOT_STARTED', 'reset_no', ev.reset_count + 1, 'kept_ipo_allotments', v_n, 'archived_audit_rows', v_archived);\nEND $function$;\n\nCREATE OR REPLACE FUNCTION public.jse_admin_state(a jsonb, p jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE\nAS $function$\nDECLARE v_idx jsonb := jse_cms_index();\nBEGIN\n  PERFORM jse_require_role(a, 'ADMIN', 'VIEWER');\n  RETURN jse_event_status() || jsonb_build_object(\n    'config_full', (SELECT to_jsonb(c) - 'min_cash_buffer' - 'participant_order_entry' - 'institutional_cash' - 'institution_overdraft' - 'institution_brokerage'\n                    FROM event_config c WHERE id = 1),\n    'stats', (SELECT jsonb_build_object('total_trade_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED'), 0),\n        'total_brokerage', coalesce(sum(brokerage) FILTER (WHERE status = 'BANK_SETTLED'), 0),\n        'pit_pending', count(*) FILTER (WHERE status = 'PIT_PENDING'),\n        'pending_orders', count(*) FILTER (WHERE status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')),\n        'settled_orders', count(*) FILTER (WHERE status = 'BANK_SETTLED'),\n        'rejected_orders', count(*) FILTER (WHERE status IN ('PIT_REJECTED','EXCHANGE_REJECTED','BANK_REJECTED')),\n        'stale_orders', count(*) FILTER (WHERE reject_code = 'PRICE_STALE'),\n        'slips', (SELECT count(*) FROM trading_slips),\n        'open_instructions', (SELECT count(*) FROM instructions WHERE status = 'OPEN'),\n        'institutional_orders', count(*) FILTER (WHERE account_type = 'INSTITUTION'),\n        'news_items', (SELECT count(*) FROM market_news WHERE reversed_at IS NULL),\n        'loans_outstanding', (SELECT coalesce(sum(principal_outstanding + interest_outstanding), 0) FROM loans),\n        'risk', (SELECT jsonb_build_object('short_sell', count(*) FILTER (WHERE kind = 'SHORT_SELL_ATTEMPT'),\n                   'cash_shortfall', count(*) FILTER (WHERE kind = 'CASH_SHORTFALL_ATTEMPT'),\n                   'insufficient_balance', count(*) FILTER (WHERE kind = 'INSUFFICIENT_BALANCE_REJECTION')) FROM risk_events)) FROM orders),\n    'market', jsonb_build_object('index', v_idx, 'breadth', jse_market()->'breadth'),\n    'consistency', (SELECT jsonb_build_object(\n        'equities_active', (SELECT count(*) FROM securities WHERE kind = 'EQUITY' AND active),\n        'index_equity_components', (v_idx->>'equity_components')::integer,\n        'market_stocks', (SELECT count(*) FROM securities WHERE kind = 'EQUITY' AND active),\n        'ipos', (SELECT count(*) FROM securities WHERE kind = 'IPO' AND active),\n        'ipos_listed', (SELECT count(*) FROM securities WHERE kind = 'IPO' AND active AND listed_at IS NOT NULL),\n        'index_ipo_components', (v_idx->>'ipo_components')::integer,\n        'index_components', (v_idx->>'components')::integer,\n        'ok', (SELECT count(*) FROM securities WHERE kind = 'EQUITY' AND active) = (v_idx->>'equity_components')::integer\n              AND (SELECT count(*) FROM securities WHERE kind = 'IPO' AND active AND listed_at IS NOT NULL) = (v_idx->>'ipo_components')::integer)),\n    'journal', coalesce((SELECT jsonb_agg(jsonb_build_object('id', j.id, 'action', j.action, 'summary', j.summary, 'actor', j.actor_name, 'at', j.created_at,\n        'undone_at', j.undone_at, 'undone_by', j.undone_by, 'redone_at', j.redone_at, 'redone_by', j.redone_by,\n        'superseded', coalesce((j.payload->>'superseded')::boolean, false),\n        'state', CASE WHEN coalesce((j.payload->>'superseded')::boolean, false) THEN 'REDONE'\n                      WHEN j.undone_at IS NOT NULL AND (j.redone_at IS NULL OR j.redone_at < j.undone_at) THEN 'UNDONE' ELSE 'ACTIVE' END) ORDER BY j.id DESC)\n      FROM (SELECT * FROM action_journal ORDER BY id DESC) j), '[]'::jsonb),\n    'allotments', (SELECT jsonb_build_object('rows', count(*), 'teams', count(DISTINCT team_id), 'amount', coalesce(sum(amount), 0),\n        'by_ipo', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'name', s.name, 'teams', z.n, 'lots', z.lots, 'shares', z.q, 'amount', z.amt) ORDER BY s.display_order)\n                  FROM (SELECT security_id, count(*) n, sum(lots) lots, sum(quantity) q, sum(amount) amt FROM ipo_allotments WHERE reversed_at IS NULL GROUP BY security_id) z\n                  JOIN securities s ON s.id = z.security_id), '[]'::jsonb),\n        'list', coalesce((SELECT jsonb_agg(jsonb_build_object('team', t.code, 'team_name', t.name, 'ipo', s.symbol, 'ipo_code', s.ipo_code, 'lots', x.lots, 'shares', x.quantity, 'amount', x.amount) ORDER BY t.seq, s.display_order)\n                  FROM (SELECT * FROM ipo_allotments WHERE reversed_at IS NULL ORDER BY id LIMIT 1000) x JOIN teams t ON t.id = x.team_id JOIN securities s ON s.id = x.security_id), '[]'::jsonb))\n      FROM ipo_allotments WHERE reversed_at IS NULL),\n    'ipo_listing', jse_listing_state(a),\n    'ipo_admin', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'ipo_code', s.ipo_code, 'name', s.name, 'stage', jse_ipo_stage(s.id),\n        'price', s.base_price, 'listed', s.listed_at IS NOT NULL, 'offered', s.ipo_shares_offered,\n        'remaining', CASE WHEN s.ipo_shares_offered IS NULL THEN NULL ELSE s.ipo_shares_offered - coalesce((SELECT sum(quantity) FROM ipo_allotments al WHERE al.security_id = s.id AND al.reversed_at IS NULL), 0) END,\n        'applications', (SELECT count(*) FROM ipo_applications ap WHERE ap.security_id = s.id AND ap.status = 'APPLIED'),\n        'applied_lots', (SELECT coalesce(sum(lots), 0) FROM ipo_applications ap WHERE ap.security_id = s.id AND ap.status = 'APPLIED'),\n        'prospectus_fields', (SELECT (CASE WHEN pr.company_description IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.issue_details IS NOT NULL THEN 1 ELSE 0 END)\n              + (CASE WHEN pr.business_overview IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.financial_information IS NOT NULL THEN 1 ELSE 0 END)\n              + (CASE WHEN pr.risk_factors IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.use_of_proceeds IS NOT NULL THEN 1 ELSE 0 END)\n              + (CASE WHEN pr.promoters_management IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.other_information IS NOT NULL THEN 1 ELSE 0 END)\n              FROM ipo_prospectus pr WHERE pr.security_id = s.id),\n        'has_document', (SELECT document_data IS NOT NULL OR document_url IS NOT NULL FROM ipo_prospectus pr WHERE pr.security_id = s.id)) ORDER BY s.display_order)\n      FROM securities s WHERE s.kind = 'IPO' AND s.active), '[]'::jsonb),\n    'team_names', (SELECT jsonb_build_object('seed', team_name_seed, 'assigned_at', team_names_assigned_at, 'locked', team_names_locked_at IS NOT NULL,\n        'locked_at', team_names_locked_at, 'locked_by', team_names_locked_by, 'pool_size', (SELECT count(*) FROM team_name_pool WHERE active))\n      FROM event_config WHERE id = 1),\n    'brokers', (SELECT jsonb_agg(jsonb_build_object('code', b.code, 'display_code', coalesce(ba.broker_code, b.code), 'name', coalesce(ba.broker_name, b.name), 'contact', b.contact, 'desk', b.desk,\n        'teams', (SELECT count(*) FROM teams t WHERE t.broker_id = b.id AND t.active)) ORDER BY coalesce(ba.broker_number, 999), b.code)\n      FROM brokers b LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id),\n    'unassigned_teams', (SELECT count(*) FROM teams WHERE broker_id IS NULL),\n    'users', (SELECT jsonb_object_agg(role, n) FROM (SELECT role, count(*) n FROM app_users WHERE active GROUP BY role) u));\nEND $function$;\n\nINSERT INTO public.schema_migrations(version) VALUES ('021_locked_baseline_reset')\nON CONFLICT (version) DO NOTHING;\n";/* baseline reset ledger matches locked team starting cash */var _E=[["001_schema",$r],["001a_upgrades",Kr],["002_core",Vr],["003_ops",Xr],["004_reads",Jr],["005_exports",zr],["006_seed",Qr],["007_tuning",Zr],["008_v311",ei],["009_hatchable",ti],["010_safety",si],["011_roster_ipo",m11sql],["012_big_bull_special_account",m12special],["012_big_bull_admin",m12admin],["013_dalal_roster",m13sql],["014_big_bull_news_assessment",m14sql],["015_broker_sugadev",m015sql],["016_news_single_move_cap",m016sql],["017_portfolio_ipo_visibility",m017sql],["018_broker_assignments_and_counts",m018sql],["019_ipo_start_market_order",m019sql],["020_broker_sugadev_name",m020sql],["021_locked_baseline_reset",m021sql]],EE=new Set(["001a_upgrades","002_core","003_ops","004_reads","005_exports","007_tuning","008_v311","011_roster_ipo","012_big_bull_admin","021_locked_baseline_reset"]),b=class extends Error{constructor(s,a,r,i){super(r);this.status=s;this.code=a;this.extra=i}};function cE(){let t=process.env.DATABASE_URL||"postgres://postgres@127.0.0.1:5433/jse",e=new URL(t);process.env.DB_NAME&&(e.pathname="/"+process.env.DB_NAME);let s=e.searchParams.get("sslmode");return(s==="require"||s==="prefer"||s==="verify-ca")&&e.searchParams.set("sslmode","verify-full"),e.toString()}var Dt=null;function ri(){return Dt||(Dt=new ai.default.Pool({connectionString:cE(),max:Number(process.env.DB_POOL_MAX||8),idleTimeoutMillis:3e4,connectionTimeoutMillis:1e4,allowExitOnIdle:!1}),Dt.on("error",t=>console.warn("[db] idle client error:",t.message))),Dt}var lE=new Set(["40001","40P01","57P01","08006","08003","08000","53300"]);async function Se(t,e=[]){let s=0;for(;;)try{return await ri().query(t,e)}catch(a){if(s++,(lE.has(a?.code)||/Connection terminated|ECONNRESET|timeout exceeded when trying to connect/i.test(String(a?.message)))&&s<3){await new Promise(i=>setTimeout(i,120*s+Math.random()*120));continue}throw a}}async function O(t,e,s,a={}){if(!/^jse_[a-z0-9_]+$/.test(t))throw new Error("bad function name");try{let r;a.noActor?r=await Se(`SELECT ${t}($1::jsonb) AS r`,[JSON.stringify(s??{})]):s===void 0?r=await Se(`SELECT ${t}() AS r`):r=await Se(`SELECT ${t}($1::jsonb, $2::jsonb) AS r`,[JSON.stringify(e??{}),JSON.stringify(s??{})]);let i=r.rows[0]?.r;if(i&&i.success===!1)throw new b(Number(i.http)||400,i.code||"REQUEST_FAILED",i.error||"Request failed",i.errors?{errors:i.errors}:void 0);return i}catch(r){throw r instanceof b?r:r?.code==="JSE01"?new b(Number(r.hint)||400,r.detail||"REQUEST_FAILED",r.message):r?.code==="23505"?new b(409,"DUPLICATE","This action was already recorded (duplicate request blocked)."):r?.code==="23514"?new b(409,"RULE_VIOLATION","The request would break a financial rule (for example negative cash or holdings) and was blocked."):r?.code==="57014"?new b(503,"TIMEOUT","The database took too long to respond. Please retry."):r}}var yt=null;function ii(){return process.env.SKIP_MIGRATIONS==="1"?Promise.resolve():(yt||(yt=uE().catch(t=>{throw yt=null,t})),yt)}async function dE(t){let{createHash:e}=await import("node:crypto");return e("sha256").update(t).digest("hex").slice(0,16)}async function uE(){let t=await ri().connect();try{await t.query("BEGIN"),await t.query("SELECT pg_advisory_xact_lock(727272)"),await t.query("CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now(), checksum text)");let e=new Map((await t.query("SELECT version, checksum FROM schema_migrations")).rows.map(a=>[a.version,a.checksum])),s=[];for(let[a,r]of _E){let i=await dE(r),n=e.has(a);if(n&&(e.get(a)===i||!EE.has(a)))continue;let o=n?r.replace(/INSERT INTO schema_migrations\(version\) VALUES \('[^']+'\);/g,""):r;await t.query("SAVEPOINT m");try{await t.query(o)}catch(E){throw new Error(`migration ${a} failed: ${E.message}`)}await t.query("INSERT INTO schema_migrations(version, checksum) VALUES ($1, $2) ON CONFLICT (version) DO UPDATE SET checksum = EXCLUDED.checksum, applied_at = now()",[a,i]),await t.query("RELEASE SAVEPOINT m"),s.push(`${a} ${n?"re-applied":"applied"}`)}await t.query("COMMIT"),s.length&&console.log("[db] migrations: "+s.join(", "))}catch(e){try{await t.query("ROLLBACK")}catch{}throw e}finally{t.release()}}import{createPublicKey as NE,verify as pE}from"node:crypto";var oi="https://token.actions.githubusercontent.com",nt=null;async function ni(t=!1){if(!t&&nt&&Date.now()-nt.at<36e5)return nt.keys;let e=await fetch(oi+"/.well-known/jwks",{headers:{accept:"application/json"}});if(!e.ok)throw new Error("could not load GitHub signing keys ("+e.status+")");let s=await e.json();return nt={at:Date.now(),keys:s.keys||[]},nt.keys}var Ws=t=>Buffer.from(t.replace(/-/g,"+").replace(/_/g,"/"),"base64");async function _i(t,e){let s=t.split(".");if(s.length!==3)throw new Error("malformed token");let a=JSON.parse(Ws(s[0]).toString("utf8")),r=JSON.parse(Ws(s[1]).toString("utf8"));if(a.alg!=="RS256")throw new Error("unexpected algorithm");let i=(await ni()).find(_=>_.kid===a.kid);if(i||(i=(await ni(!0)).find(_=>_.kid===a.kid)),!i)throw new Error("unknown signing key");if(!pE("RSA-SHA256",Buffer.from(s[0]+"."+s[1]),NE({key:i,format:"jwk"}),Ws(s[2])))throw new Error("bad signature");let o=Math.floor(Date.now()/1e3);if(r.iss!==oi)throw new Error("wrong issuer");if(!(Array.isArray(r.aud)?r.aud:[r.aud]).includes(e.audience))throw new Error("wrong audience");if(typeof r.exp!="number"||r.exp<o-30)throw new Error("token expired");if(typeof r.nbf=="number"&&r.nbf>o+60)throw new Error("token not valid yet");if(r.repository!==e.repository)throw new Error("wrong repository");if(e.refs&&e.refs.length&&!e.refs.includes(r.ref))throw new Error("branch not allowed");return r}import{createRequire as TE}from"module";var mE=TE("/"),RE;try{RE=mE("worker_threads").Worker}catch{}var U=Uint8Array,ce=Uint16Array,Qs=Int32Array,Ct=new U([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),Ft=new U([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),$s=new U([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]),Ni=function(t,e){for(var s=new ce(31),a=0;a<31;++a)s[a]=e+=1<<t[a-1];for(var r=new Qs(s[30]),a=1;a<30;++a)for(var i=s[a];i<s[a+1];++i)r[i]=i-s[a]<<5|a;return{b:s,r}},pi=Ni(Ct,2),Ti=pi.b,Ks=pi.r;Ti[28]=258,Ks[258]=28;var mi=Ni(Ft,0),hE=mi.b,Ei=mi.r,Vs=new ce(32768);for(L=0;L<32768;++L)Le=(L&43690)>>1|(L&21845)<<1,Le=(Le&52428)>>2|(Le&13107)<<2,Le=(Le&61680)>>4|(Le&3855)<<4,Vs[L]=((Le&65280)>>8|(Le&255)<<8)>>1;var Le,L,Re=function(t,e,s){for(var a=t.length,r=0,i=new ce(e);r<a;++r)t[r]&&++i[t[r]-1];var n=new ce(e);for(r=1;r<e;++r)n[r]=n[r-1]+i[r-1]<<1;var o;if(s){o=new ce(1<<e);var E=15-e;for(r=0;r<a;++r)if(t[r])for(var _=r<<4|t[r],c=e-t[r],l=n[t[r]-1]++<<c,d=l|(1<<c)-1;l<=d;++l)o[Vs[l]>>E]=_}else for(o=new ce(a),r=0;r<a;++r)t[r]&&(o[r]=Vs[n[t[r]-1]++]>>15-t[r]);return o},ge=new U(288);for(L=0;L<144;++L)ge[L]=8;var L;for(L=144;L<256;++L)ge[L]=9;var L;for(L=256;L<280;++L)ge[L]=7;var L;for(L=280;L<288;++L)ge[L]=8;var L,Et=new U(32);for(L=0;L<32;++L)Et[L]=5;var L,IE=Re(ge,9,0),OE=Re(ge,9,1),bE=Re(Et,5,0),LE=Re(Et,5,1),Bs=function(t){for(var e=t[0],s=1;s<t.length;++s)t[s]>e&&(e=t[s]);return e},Ne=function(t,e,s){var a=e/8|0;return(t[a]|t[a+1]<<8)>>(e&7)&s},Gs=function(t,e){var s=e/8|0;return(t[s]|t[s+1]<<8|t[s+2]<<16)>>(e&7)},Zs=function(t){return(t+7)/8|0},ct=function(t,e,s){return(e==null||e<0)&&(e=0),(s==null||s>t.length)&&(s=t.length),new U(t.subarray(e,s))};var vE=["unexpected EOF","invalid block type","invalid length/literal","invalid distance","stream finished","no stream handler",,"no callback","invalid UTF-8 data","extra field too long","date not in range 1980-2099","filename too long","stream finishing","invalid zip data"],ee=function(t,e,s){var a=new Error(e||vE[t]);if(a.code=t,Error.captureStackTrace&&Error.captureStackTrace(a,ee),!s)throw a;return a},AE=function(t,e,s,a){var r=t.length,i=a?a.length:0;if(!r||e.f&&!e.l)return s||new U(0);var n=!s,o=n||e.i!=2,E=e.i;n&&(s=new U(r*3));var _=function(Ke){var Ve=s.length;if(Ke>Ve){var Ue=new U(Math.max(Ve*2,Ke));Ue.set(s),s=Ue}},c=e.f||0,l=e.p||0,d=e.b||0,u=e.l,h=e.d,I=e.m,S=e.n,P=r*8;do{if(!u){c=Ne(t,l,1);var B=Ne(t,l+1,3);if(l+=3,B)if(B==1)u=OE,h=LE,I=9,S=5;else if(B==2){var W=Ne(t,l,31)+257,A=Ne(t,l+10,15)+4,m=W+Ne(t,l+5,31)+1;l+=14;for(var T=new U(m),K=new U(19),G=0;G<A;++G)K[$s[G]]=Ne(t,l+G*3,7);l+=A*3;for(var z=Bs(K),fe=(1<<z)-1,ne=Re(K,z,1),G=0;G<m;){var se=ne[Ne(t,l,fe)];l+=se&15;var D=se>>4;if(D<16)T[G++]=D;else{var V=0,M=0;for(D==16?(M=3+Ne(t,l,3),l+=2,V=T[G-1]):D==17?(M=3+Ne(t,l,7),l+=3):D==18&&(M=11+Ne(t,l,127),l+=7);M--;)T[G++]=V}}var ae=T.subarray(0,W),X=T.subarray(W);I=Bs(ae),S=Bs(X),u=Re(ae,I,1),h=Re(X,S,1)}else ee(1);else{var D=Zs(l)+4,y=t[D-4]|t[D-3]<<8,H=D+y;if(H>r){E&&ee(0);break}o&&_(d+y),s.set(t.subarray(D,H),d),e.b=d+=y,e.p=l=H*8,e.f=c;continue}if(l>P){E&&ee(0);break}}o&&_(d+131072);for(var $e=(1<<I)-1,le=(1<<S)-1,Oe=l;;Oe=l){var V=u[Gs(t,l)&$e],oe=V>>4;if(l+=V&15,l>P){E&&ee(0);break}if(V||ee(2),oe<256)s[d++]=oe;else if(oe==256){Oe=l,u=null;break}else{var _e=oe-254;if(oe>264){var G=oe-257,w=Ct[G];_e=Ne(t,l,(1<<w)-1)+Ti[G],l+=w}var Te=h[Gs(t,l)&le],Fe=Te>>4;Te||ee(3),l+=Te&15;var X=hE[Fe];if(Fe>3){var w=Ft[Fe];X+=Gs(t,l)&(1<<w)-1,l+=w}if(l>P){E&&ee(0);break}o&&_(d+131072);var je=d+_e;if(d<X){var Nt=i-X,pt=Math.min(X,je);for(Nt+d<0&&ee(3);d<pt;++d)s[d]=a[Nt+d]}for(;d<je;++d)s[d]=s[d-X]}}e.l=u,e.p=Oe,e.b=d,e.f=c,u&&(c=1,e.m=I,e.d=h,e.n=S)}while(!c);return d!=s.length&&n?ct(s,0,d):s.subarray(0,d)},ve=function(t,e,s){s<<=e&7;var a=e/8|0;t[a]|=s,t[a+1]|=s>>8},ot=function(t,e,s){s<<=e&7;var a=e/8|0;t[a]|=s,t[a+1]|=s>>8,t[a+2]|=s>>16},qs=function(t,e){for(var s=[],a=0;a<t.length;++a)t[a]&&s.push({s:a,f:t[a]});var r=s.length,i=s.slice();if(!r)return{t:hi,l:0};if(r==1){var n=new U(s[0].s+1);return n[s[0].s]=1,{t:n,l:1}}s.sort(function(H,W){return H.f-W.f}),s.push({s:-1,f:25001});var o=s[0],E=s[1],_=0,c=1,l=2;for(s[0]={s:-1,f:o.f+E.f,l:o,r:E};c!=r-1;)o=s[s[_].f<s[l].f?_++:l++],E=s[_!=c&&s[_].f<s[l].f?_++:l++],s[c++]={s:-1,f:o.f+E.f,l:o,r:E};for(var d=i[0].s,a=1;a<r;++a)i[a].s>d&&(d=i[a].s);var u=new ce(d+1),h=Xs(s[c-1],u,0);if(h>e){var a=0,I=0,S=h-e,P=1<<S;for(i.sort(function(W,A){return u[A.s]-u[W.s]||W.f-A.f});a<r;++a){var B=i[a].s;if(u[B]>e)I+=P-(1<<h-u[B]),u[B]=e;else break}for(I>>=S;I>0;){var D=i[a].s;u[D]<e?I-=1<<e-u[D]++-1:++a}for(;a>=0&&I;--a){var y=i[a].s;u[y]==e&&(--u[y],++I)}h=e}return{t:new U(u),l:h}},Xs=function(t,e,s){return t.s==-1?Math.max(Xs(t.l,e,s+1),Xs(t.r,e,s+1)):e[t.s]=s},ci=function(t){for(var e=t.length;e&&!t[--e];);for(var s=new ce(++e),a=0,r=t[0],i=1,n=function(E){s[a++]=E},o=1;o<=e;++o)if(t[o]==r&&o!=e)++i;else{if(!r&&i>2){for(;i>138;i-=138)n(32754);i>2&&(n(i>10?i-11<<5|28690:i-3<<5|12305),i=0)}else if(i>3){for(n(r),--i;i>6;i-=6)n(8304);i>2&&(n(i-3<<5|8208),i=0)}for(;i--;)n(r);i=1,r=t[o]}return{c:s.subarray(0,a),n:e}},_t=function(t,e){for(var s=0,a=0;a<e.length;++a)s+=t[a]*e[a];return s},Ri=function(t,e,s){var a=s.length,r=Zs(e+2);t[r]=a&255,t[r+1]=a>>8,t[r+2]=t[r]^255,t[r+3]=t[r+1]^255;for(var i=0;i<a;++i)t[r+i+4]=s[i];return(r+4+a)*8},li=function(t,e,s,a,r,i,n,o,E,_,c){ve(e,c++,s),++r[256];for(var l=qs(r,15),d=l.t,u=l.l,h=qs(i,15),I=h.t,S=h.l,P=ci(d),B=P.c,D=P.n,y=ci(I),H=y.c,W=y.n,A=new ce(19),m=0;m<B.length;++m)++A[B[m]&31];for(var m=0;m<H.length;++m)++A[H[m]&31];for(var T=qs(A,7),K=T.t,G=T.l,z=19;z>4&&!K[$s[z-1]];--z);var fe=_+5<<3,ne=_t(r,ge)+_t(i,Et)+n,se=_t(r,d)+_t(i,I)+n+14+3*z+_t(A,K)+2*A[16]+3*A[17]+7*A[18];if(E>=0&&fe<=ne&&fe<=se)return Ri(e,c,t.subarray(E,E+_));var V,M,ae,X;if(ve(e,c,1+(se<ne)),c+=2,se<ne){V=Re(d,u,0),M=d,ae=Re(I,S,0),X=I;var $e=Re(K,G,0);ve(e,c,D-257),ve(e,c+5,W-1),ve(e,c+10,z-4),c+=14;for(var m=0;m<z;++m)ve(e,c+3*m,K[$s[m]]);c+=3*z;for(var le=[B,H],Oe=0;Oe<2;++Oe)for(var oe=le[Oe],m=0;m<oe.length;++m){var _e=oe[m]&31;ve(e,c,$e[_e]),c+=K[_e],_e>15&&(ve(e,c,oe[m]>>5&127),c+=oe[m]>>12)}}else V=IE,M=ge,ae=bE,X=Et;for(var m=0;m<o;++m){var w=a[m];if(w>255){var _e=w>>18&31;ot(e,c,V[_e+257]),c+=M[_e+257],_e>7&&(ve(e,c,w>>23&31),c+=Ct[_e]);var Te=w&31;ot(e,c,ae[Te]),c+=X[Te],Te>3&&(ot(e,c,w>>5&8191),c+=Ft[Te])}else ot(e,c,V[w]),c+=M[w]}return ot(e,c,V[256]),c+M[256]},fE=new Qs([65540,131080,131088,131104,262176,1048704,1048832,2114560,2117632]),hi=new U(0),SE=function(t,e,s,a,r,i){var n=i.z||t.length,o=new U(a+n+5*(1+Math.ceil(n/7e3))+r),E=o.subarray(a,o.length-r),_=i.l,c=(i.r||0)&7;if(e){c&&(E[0]=i.r>>3);for(var l=fE[e-1],d=l>>13,u=l&8191,h=(1<<s)-1,I=i.p||new ce(32768),S=i.h||new ce(h+1),P=Math.ceil(s/3),B=2*P,D=function(Ht){return(t[Ht]^t[Ht+1]<<P^t[Ht+2]<<B)&h},y=new Qs(25e3),H=new ce(288),W=new ce(32),A=0,m=0,T=i.i||0,K=0,G=i.w||0,z=0;T+2<n;++T){var fe=D(T),ne=T&32767,se=S[fe];if(I[ne]=se,S[fe]=ne,G<=T){var V=n-T;if((A>7e3||K>24576)&&(V>423||!_)){c=li(t,E,0,y,H,W,m,K,z,T-z,c),K=A=m=0,z=T;for(var M=0;M<286;++M)H[M]=0;for(var M=0;M<30;++M)W[M]=0}var ae=2,X=0,$e=u,le=ne-se&32767;if(V>2&&fe==D(T-le))for(var Oe=Math.min(d,V)-1,oe=Math.min(32767,T),_e=Math.min(258,V);le<=oe&&--$e&&ne!=se;){if(t[T+ae]==t[T+ae-le]){for(var w=0;w<_e&&t[T+w]==t[T+w-le];++w);if(w>ae){if(ae=w,X=le,w>Oe)break;for(var Te=Math.min(le,w-2),Fe=0,M=0;M<Te;++M){var je=T-le+M&32767,Nt=I[je],pt=je-Nt&32767;pt>Fe&&(Fe=pt,se=je)}}}ne=se,se=I[ne],le+=ne-se&32767}if(X){y[K++]=268435456|Ks[ae]<<18|Ei[X];var Ke=Ks[ae]&31,Ve=Ei[X]&31;m+=Ct[Ke]+Ft[Ve],++H[257+Ke],++W[Ve],G=T+ae,++A}else y[K++]=t[T],++H[t[T]]}}for(T=Math.max(T,G);T<n;++T)y[K++]=t[T],++H[t[T]];c=li(t,E,_,y,H,W,m,K,z,T-z,c),_||(i.r=c&7|E[c/8|0]<<3,c-=7,i.h=S,i.p=I,i.i=T,i.w=G)}else{for(var T=i.w||0;T<n+_;T+=65535){var Ue=T+65535;Ue>=n&&(E[c/8|0]=_,Ue=n),c=Ri(E,c+1,t.subarray(T,Ue))}i.i=n}return ct(o,0,a+Zs(c)+r)},gE=function(){for(var t=new Int32Array(256),e=0;e<256;++e){for(var s=e,a=9;--a;)s=(s&1&&-306674912)^s>>>1;t[e]=s}return t}(),DE=function(){var t=-1;return{p:function(e){for(var s=t,a=0;a<e.length;++a)s=gE[s&255^e[a]]^s>>>8;t=s},d:function(){return~t}}};var yE=function(t,e,s,a,r){if(!r&&(r={l:1},e.dictionary)){var i=e.dictionary.subarray(-32768),n=new U(i.length+t.length);n.set(i),n.set(t,i.length),t=n,r.w=i.length}return SE(t,e.level==null?6:e.level,e.mem==null?r.l?Math.ceil(Math.max(8,Math.min(13,Math.log(t.length)))*1.5):20:12+e.mem,s,a,r)},Ii=function(t,e){var s={};for(var a in t)s[a]=t[a];for(var a in e)s[a]=e[a];return s};var me=function(t,e){return t[e]|t[e+1]<<8},pe=function(t,e){return(t[e]|t[e+1]<<8|t[e+2]<<16|t[e+3]<<24)>>>0},Ys=function(t,e){return pe(t,e)+pe(t,e+4)*4294967296},J=function(t,e,s){for(;s;++e)t[e]=s,s>>>=8};function CE(t,e){return yE(t,e||{},0,0)}function FE(t,e){return AE(t,{i:2},e&&e.out,e&&e.dictionary)}var Oi=function(t,e,s,a){for(var r in t){var i=t[r],n=e+r,o=a;Array.isArray(i)&&(o=Ii(a,i[1]),i=i[0]),i instanceof U?s[n]=[i,o]:(s[n+="/"]=[new U(0),o],Oi(i,n,s,a))}},di=typeof TextEncoder<"u"&&new TextEncoder,Js=typeof TextDecoder<"u"&&new TextDecoder,jE=0;try{Js.decode(hi,{stream:!0}),jE=1}catch{}var UE=function(t){for(var e="",s=0;;){var a=t[s++],r=(a>127)+(a>223)+(a>239);if(s+r>t.length)return{s:e,r:ct(t,s-1)};r?r==3?(a=((a&15)<<18|(t[s++]&63)<<12|(t[s++]&63)<<6|t[s++]&63)-65536,e+=String.fromCharCode(55296|a>>10,56320|a&1023)):r&1?e+=String.fromCharCode((a&31)<<6|t[s++]&63):e+=String.fromCharCode((a&15)<<12|(t[s++]&63)<<6|t[s++]&63):e+=String.fromCharCode(a)}};function he(t,e){if(e){for(var s=new U(t.length),a=0;a<t.length;++a)s[a]=t.charCodeAt(a);return s}if(di)return di.encode(t);for(var r=t.length,i=new U(t.length+(t.length>>1)),n=0,o=function(c){i[n++]=c},a=0;a<r;++a){if(n+5>i.length){var E=new U(n+8+(r-a<<1));E.set(i),i=E}var _=t.charCodeAt(a);_<128||e?o(_):_<2048?(o(192|_>>6),o(128|_&63)):_>55295&&_<57344?(_=65536+(_&1047552)|t.charCodeAt(++a)&1023,o(240|_>>18),o(128|_>>12&63),o(128|_>>6&63),o(128|_&63)):(o(224|_>>12),o(128|_>>6&63),o(128|_&63))}return ct(i,0,n)}function ea(t,e){if(e){for(var s="",a=0;a<t.length;a+=16384)s+=String.fromCharCode.apply(null,t.subarray(a,a+16384));return s}else{if(Js)return Js.decode(t);var r=UE(t),i=r.s,s=r.r;return s.length&&ee(8),i}}var PE=function(t,e){return e+30+me(t,e+26)+me(t,e+28)},HE=function(t,e,s){var a=me(t,e+28),r=ea(t.subarray(e+46,e+46+a),!(me(t,e+8)&2048)),i=e+46+a,n=pe(t,e+20),o=s&&n==4294967295?ME(t,i):[n,pe(t,e+24),pe(t,e+42)],E=o[0],_=o[1],c=o[2];return[me(t,e+10),E,_,r,i+me(t,e+30)+me(t,e+32),c]},ME=function(t,e){for(;me(t,e)!=1;e+=4+me(t,e+2));return[Ys(t,e+12),Ys(t,e+4),Ys(t,e+20)]},zs=function(t){var e=0;if(t)for(var s in t){var a=t[s].length;a>65535&&ee(9),e+=a+4}return e},ui=function(t,e,s,a,r,i,n,o){var E=a.length,_=s.extra,c=o&&o.length,l=zs(_);J(t,e,n!=null?33639248:67324752),e+=4,n!=null&&(t[e++]=20,t[e++]=s.os),t[e]=20,e+=2,t[e++]=s.flag<<1|(i<0&&8),t[e++]=r&&8,t[e++]=s.compression&255,t[e++]=s.compression>>8;var d=new Date(s.mtime==null?Date.now():s.mtime),u=d.getFullYear()-1980;if((u<0||u>119)&&ee(10),J(t,e,u<<25|d.getMonth()+1<<21|d.getDate()<<16|d.getHours()<<11|d.getMinutes()<<5|d.getSeconds()>>1),e+=4,i!=-1&&(J(t,e,s.crc),J(t,e+4,i<0?-i-2:i),J(t,e+8,s.size)),J(t,e+12,E),J(t,e+14,l),e+=16,n!=null&&(J(t,e,c),J(t,e+6,s.attrs),J(t,e+10,n),e+=14),t.set(a,e),e+=E,l)for(var h in _){var I=_[h],S=I.length;J(t,e,+h),J(t,e+2,S),t.set(I,e+4),e+=4+S}return c&&(t.set(o,e),e+=c),e},wE=function(t,e,s,a,r){J(t,e,101010256),J(t,e+8,s),J(t,e+10,s),J(t,e+12,a),J(t,e+16,r)};function bi(t,e){e||(e={});var s={},a=[];Oi(t,"",s,e);var r=0,i=0;for(var n in s){var o=s[n],E=o[0],_=o[1],c=_.level==0?0:8,l=he(n),d=l.length,u=_.comment,h=u&&he(u),I=h&&h.length,S=zs(_.extra);d>65535&&ee(11);var P=c?CE(E,_):E,B=P.length,D=DE();D.p(E),a.push(Ii(_,{size:E.length,crc:D.d(),c:P,f:l,m:h,u:d!=n.length||h&&u.length!=I,o:r,compression:c})),r+=30+d+S+B,i+=76+2*(d+S)+(I||0)+B}for(var y=new U(i+22),H=r,W=i-r,A=0;A<a.length;++A){var l=a[A];ui(y,l.o,l,l.f,l.u,l.c.length);var m=30+l.f.length+zs(l.extra);y.set(l.c,l.o+m),ui(y,r,l,l.f,l.u,l.c.length,l.o,l.m),r+=16+m+(l.m?l.m.length:0)}return wE(y,r,a.length,W,H),y}function Li(t,e){for(var s={},a=t.length-22;pe(t,a)!=101010256;--a)(!a||t.length-a>65558)&&ee(13);var r=me(t,a+8);if(!r)return{};var i=pe(t,a+16),n=i==4294967295||r==65535;if(n){var o=pe(t,a-12);n=pe(t,o)==101075792,n&&(r=pe(t,o+32),i=pe(t,o+48))}for(var E=e&&e.filter,_=0;_<r;++_){var c=HE(t,i,n),l=c[0],d=c[1],u=c[2],h=c[3],I=c[4],S=c[5],P=PE(t,S);i=I,(!E||E({name:h,size:d,originalSize:u,compression:l}))&&(l?l==8?s[h]=FE(t.subarray(P,P+d),{out:new U(u)}):ee(14,"unknown compression type "+l):s[h]=ct(t,P,P+d))}return s}var sa=t=>t.replace(/[&<>"]/g,e=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[e]).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g,"");function ta(t){let e="";for(t++;t>0;t=Math.floor((t-1)/26))e=String.fromCharCode(65+(t-1)%26)+e;return e}var fi=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;function Si(t){let e=new Date(t);return isNaN(e.getTime())?t:new Date(e.getTime()+5.5*3600*1e3).toISOString().replace("T"," ").slice(0,19)}function vi(t,e,s){if(e==null||e==="")return"";if(typeof e=="boolean")return`<c r="${t}" t="b"${s?' s="1"':""}><v>${e?1:0}</v></c>`;if(typeof e=="number"&&isFinite(e)){let r=s?1:Number.isInteger(e)?3:2;return`<c r="${t}" s="${r}"><v>${e}</v></c>`}let a=typeof e=="string"?e:JSON.stringify(e);return!s&&fi.test(a)&&(a=Si(a)),a.length>32e3&&(a=a.slice(0,32e3)+"\u2026"),`<c r="${t}" t="inlineStr"${s?' s="1"':""}><is><t xml:space="preserve">${sa(a)}</t></is></c>`}function kE(t){let e=t.columns.map(n=>Math.min(60,Math.max(10,n.length+2)));for(let n of t.rows.slice(0,200))n.forEach((o,E)=>{let _=o==null?0:String(o).length;E<e.length&&(e[E]=Math.min(60,Math.max(e[E],_+2)))});let s=e.map((n,o)=>`<col min="${o+1}" max="${o+1}" width="${n}" customWidth="1"/>`).join(""),a=[];a.push(`<row r="1">${t.columns.map((n,o)=>vi(ta(o)+"1",n,!0)).join("")}</row>`),t.rows.forEach((n,o)=>{let E=o+2;a.push(`<row r="${E}">${n.map((_,c)=>vi(ta(c)+E,_,!1)).join("")}</row>`)});let r=ta(Math.max(0,t.columns.length-1)),i=Math.max(1,t.rows.length+1);return`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+`;var sr=`-- v272 targeted roster and IPO administration additions.
+-- Additive only: preserve existing tables, data, routes and financial history.
+
+ALTER TABLE securities ADD COLUMN IF NOT EXISTS ipo_lot_size integer NOT NULL DEFAULT 50 CHECK (ipo_lot_size > 0);
+
+CREATE TABLE IF NOT EXISTS ipo_allotment_draws (
+  id                 bigserial PRIMARY KEY,
+  security_id        integer NOT NULL REFERENCES securities(id),
+  status             text NOT NULL DEFAULT 'GENERATED'
+                     CHECK (status IN ('GENERATED','VERIFIED','APPROVED','FINALIZED','CANCELLED')),
+  available_shares   integer NOT NULL CHECK (available_shares >= 0),
+  available_lots     integer NOT NULL CHECK (available_lots >= 0),
+  requested_lots     integer NOT NULL DEFAULT 0 CHECK (requested_lots >= 0),
+  subscription_ratio numeric(14,4),
+  algorithm_version  text NOT NULL DEFAULT 'RANDOM_ROUND_ROBIN_V1',
+  inventory_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
+  generated_by       text,
+  generated_at       timestamptz NOT NULL DEFAULT now(),
+  verified_by        text,
+  verified_at        timestamptz,
+  approved_by        text,
+  approved_at        timestamptz,
+  finalized_by       text,
+  finalized_at       timestamptz,
+  created_at         timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ipo_allotment_draws_security_idx ON ipo_allotment_draws(security_id, id DESC);
+
+CREATE TABLE IF NOT EXISTS ipo_allotment_draw_items (
+  id                 bigserial PRIMARY KEY,
+  draw_id            bigint NOT NULL REFERENCES ipo_allotment_draws(id),
+  application_id     bigint NOT NULL,
+  team_id            integer NOT NULL REFERENCES teams(id),
+  team_code          text NOT NULL,
+  team_name          text NOT NULL,
+  draw_position      integer NOT NULL CHECK (draw_position > 0),
+  requested_lots     integer NOT NULL CHECK (requested_lots > 0),
+  allotted_lots      integer NOT NULL DEFAULT 0 CHECK (allotted_lots >= 0 AND allotted_lots <= requested_lots),
+  lot_size           integer NOT NULL CHECK (lot_size > 0),
+  application_price  numeric(12,2) NOT NULL CHECK (application_price > 0),
+  rounds             integer[] NOT NULL DEFAULT '{}',
+  UNIQUE (draw_id, application_id),
+  UNIQUE (draw_id, draw_position)
+);
+CREATE INDEX IF NOT EXISTS ipo_allotment_draw_items_order_idx ON ipo_allotment_draw_items(draw_id, draw_position);
+
+-- Official Dalal Street broker aliases map the uploaded Broker Number/Code/Name to existing internal desks.
+-- Internal BROKER-XX identifiers remain untouched, so logins and historical records are preserved.
+CREATE TABLE IF NOT EXISTS broker_roster_aliases (
+  broker_number       integer PRIMARY KEY CHECK (broker_number > 0),
+  broker_code         text NOT NULL UNIQUE,
+  broker_name         text NOT NULL,
+  internal_broker_id  integer REFERENCES brokers(id)
+);
+INSERT INTO broker_roster_aliases(broker_number,broker_code,broker_name,internal_broker_id) VALUES
+  (1,'Prajna','M Manoj',(SELECT id FROM brokers WHERE code='BROKER-09')),
+  (2,'Ganita','Harsha G',(SELECT id FROM brokers WHERE code='BROKER-05')),
+  (3,'Amrit','Nehaa',(SELECT id FROM brokers WHERE code='BROKER-04')),
+  (4,'Vikas','Vikash',(SELECT id FROM brokers WHERE code='BROKER-01')),
+  (5,'Yash','Gokul Krishna',(SELECT id FROM brokers WHERE code='BROKER-02')),
+  (6,'Arohan','Aman',(SELECT id FROM brokers WHERE code='BROKER-06')),
+  (7,'Madhava','Mayur G',(SELECT id FROM brokers WHERE code='BROKER-03')),
+  (8,'Vidura','Bhavani Reddy',(SELECT id FROM brokers WHERE code='BROKER-07')),
+  (9,'Kalidasa','Varun SB',(SELECT id FROM brokers WHERE code='BROKER-08')),
+  (10,'Suvarna','Sujatha',(SELECT id FROM brokers WHERE code='BROKER-10'))
+ON CONFLICT (broker_number) DO UPDATE SET
+  broker_code=EXCLUDED.broker_code,
+  broker_name=EXCLUDED.broker_name,
+  internal_broker_id=coalesce(broker_roster_aliases.internal_broker_id,EXCLUDED.internal_broker_id);
+
+-- Five-column roster importer. This only updates the canonical broker assignment on existing teams.
+CREATE OR REPLACE FUNCTION jse_import_roster_assignments(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  r jsonb;
+  x jsonb;
+  v_i integer := 0;
+  v_team_no integer;
+  v_broker_no integer;
+  v_team_code text;
+  v_broker_code text;
+  v_broker_name text;
+  t teams%ROWTYPE;
+  b brokers%ROWTYPE;
+  v_alias broker_roster_aliases%ROWTYPE;
+  v_plan jsonb := '[]'::jsonb;
+  v_errors jsonb := '[]'::jsonb;
+  v_changed integer := 0;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
+  -- Follow the existing team editor's policy: broker assignments can be changed without resetting team IDs or names.
+  -- The import changes only teams.broker_id and never touches historical orders or financial records.
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
+    PERFORM jse_fail('NO_ROWS', 'No roster rows were supplied.', 400);
+  END IF;
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i := v_i + 1;
+    BEGIN v_team_no := nullif(trim(r->>'team_number'), '')::integer; EXCEPTION WHEN others THEN v_team_no := NULL; END;
+    BEGIN v_broker_no := nullif(trim(r->>'broker_number'), '')::integer; EXCEPTION WHEN others THEN v_broker_no := NULL; END;
+    v_team_code := upper(trim(coalesce(r->>'team_code', '')));
+    v_broker_code := upper(trim(coalesce(r->>'broker_code', '')));
+    v_broker_name := trim(coalesce(r->>'broker_name', ''));
+    IF v_team_no IS NULL OR v_team_no <= 0 THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Number must be a positive whole number'); CONTINUE;
+    END IF;
+    IF v_broker_no IS NULL OR v_broker_no <= 0 THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number must be a positive whole number'); CONTINUE;
+    END IF;
+    IF v_team_code = '' OR v_broker_code = '' OR v_broker_name = '' THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Code, Broker Code and Broker Name are required'); CONTINUE;
+    END IF;
+    SELECT * INTO t FROM teams WHERE code = v_team_code;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown Team Code ' || v_team_code); CONTINUE;
+    END IF;
+    IF t.seq <> v_team_no THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Team Number ' || v_team_no || ' does not match ' || v_team_code || ' (registered number ' || t.seq || ')'); CONTINUE;
+    END IF;
+    SELECT * INTO v_alias FROM broker_roster_aliases
+    WHERE broker_number=v_broker_no AND upper(broker_code)=v_broker_code AND lower(btrim(broker_name))=lower(btrim(v_broker_name));
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Broker Number, Broker Code and Broker Name do not match the official broker roster'); CONTINUE;
+    END IF;
+    SELECT * INTO b FROM brokers WHERE id=v_alias.internal_broker_id AND active;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'The official broker ' || v_alias.broker_code || ' has no active internal broker desk mapping'); CONTINUE;
+    END IF;
+    v_plan := v_plan || jsonb_build_object('team_id', t.id, 'team_number', t.seq, 'team_code', t.code,
+      'broker_id', b.id, 'broker_number', v_broker_no, 'broker_code', v_alias.broker_code, 'broker_name', v_alias.broker_name,
+      'before_broker_id', t.broker_id,
+      'before_broker_code', (SELECT broker_code FROM broker_roster_aliases WHERE internal_broker_id=t.broker_id LIMIT 1));
+  END LOOP;
+
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    IF (SELECT count(*) FROM jsonb_array_elements(v_plan) e WHERE e->>'team_code' = x->>'team_code') > 1 THEN
+      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', (x->>'team_code') || ' appears more than once in the file');
+      EXIT;
+    END IF;
+  END LOOP;
+  IF jsonb_array_length(v_errors) > 0 THEN
+    RETURN jsonb_build_object('success', false, 'code', 'ROSTER_ERRORS',
+      'error', 'Nothing was saved. Fix the rows listed and import again.', 'errors', v_errors, 'http', 400);
+  END IF;
+  IF coalesce((p->>'dry_run')::boolean, false) THEN
+    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_plan), 'preview', v_plan);
+  END IF;
+
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    UPDATE teams SET broker_id = (x->>'broker_id')::integer, updated_at = now()
+    WHERE id = (x->>'team_id')::integer AND broker_id IS DISTINCT FROM (x->>'broker_id')::integer;
+    IF FOUND THEN
+      v_changed := v_changed + 1;
+      PERFORM jse_audit(a, 'TEAM_BROKER_ASSIGNMENT_IMPORTED', 'team', x->>'team_code',
+        (x->>'team_id')::integer, NULL,
+        jsonb_build_object('broker_code', x->>'before_broker_code'),
+        jsonb_build_object('broker_code', x->>'broker_code', 'broker_number', x->>'broker_number'),
+        jsonb_build_object('import', true, 'team_number', x->>'team_number'));
+    END IF;
+  END LOOP;
+  PERFORM jse_audit(a, 'ROSTER_ASSIGNMENTS_IMPORTED', 'team', NULL, NULL, NULL, NULL, NULL,
+    jsonb_build_object('rows', jsonb_array_length(v_plan), 'changed', v_changed));
+  RETURN jsonb_build_object('success', true, 'rows', jsonb_array_length(v_plan), 'updated', jsonb_array_length(v_plan), 'changed', v_changed);
+END $$;
+
+-- Company/base-price import. Ticker is the stable key; this deliberately does not change live prices.
+CREATE OR REPLACE FUNCTION jse_import_companies(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  r jsonb;
+  x jsonb;
+  v_i integer := 0;
+  v_status text;
+  v_ticker text;
+  v_name text;
+  v_price numeric;
+  s securities%ROWTYPE;
+  v_plan jsonb := '[]'::jsonb;
+  v_errors jsonb := '[]'::jsonb;
+  v_changed integer := 0;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
+  SELECT status INTO v_status FROM event_control WHERE id=1;
+  IF v_status <> 'NOT_STARTED' AND NOT coalesce((p->>'dry_run')::boolean, false) THEN
+    PERFORM jse_fail('EVENT_STARTED', 'Company/base-price imports can be saved only before the event starts.', 409);
+  END IF;
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM 1 FROM event_control WHERE id=1 FOR UPDATE; END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
+    PERFORM jse_fail('NO_ROWS', 'No company rows were supplied.', 400);
+  END IF;
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i := v_i + 1;
+    v_ticker := upper(trim(coalesce(r->>'ticker', '')));
+    v_name := trim(coalesce(r->>'name', ''));
+    BEGIN v_price := (r->>'base_price')::numeric; EXCEPTION WHEN others THEN v_price := NULL; END;
+    IF v_ticker = '' OR v_name = '' THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Company Name and Ticker are required'); CONTINUE;
+    END IF;
+    IF v_ticker !~ '^[A-Z0-9][A-Z0-9._-]{0,19}$' THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Ticker must use 1\u201320 letters, numbers, dots, underscores or hyphens'); CONTINUE;
+    END IF;
+    IF v_price IS NULL OR v_price <= 0 OR v_price <> trunc(v_price) THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Base Price must be a positive whole number'); CONTINUE;
+    END IF;
+    IF length(v_name) > 160 THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Company Name must be 160 characters or fewer'); CONTINUE;
+    END IF;
+    SELECT * INTO s FROM securities WHERE symbol = v_ticker;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Ticker ' || v_ticker || ' does not exist in the current securities list. Add it through the existing company/IPO setup first.'); CONTINUE;
+    END IF;
+    v_plan := v_plan || jsonb_build_object('id', s.id, 'ticker', s.symbol, 'name', v_name, 'base_price', v_price,
+      'before_name', s.name, 'before_base_price', s.base_price, 'kind', s.kind);
+  END LOOP;
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    IF (SELECT count(*) FROM jsonb_array_elements(v_plan) e WHERE e->>'ticker' = x->>'ticker') > 1 THEN
+      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', (x->>'ticker') || ' appears more than once in the file');
+      EXIT;
+    END IF;
+  END LOOP;
+  IF jsonb_array_length(v_errors) > 0 THEN
+    RETURN jsonb_build_object('success', false, 'code', 'COMPANY_IMPORT_ERRORS',
+      'error', 'Nothing was saved. Fix the rows listed and import again.', 'errors', v_errors, 'http', 400);
+  END IF;
+  IF coalesce((p->>'dry_run')::boolean, false) THEN
+    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_plan), 'preview', v_plan);
+  END IF;
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    UPDATE securities SET name = x->>'name', base_price = (x->>'base_price')::numeric, updated_at = now()
+    WHERE id = (x->>'id')::integer
+      AND (name IS DISTINCT FROM x->>'name' OR base_price IS DISTINCT FROM (x->>'base_price')::numeric);
+    IF FOUND THEN
+      v_changed := v_changed + 1;
+      PERFORM jse_audit(a, 'COMPANY_BASE_PRICE_IMPORTED', 'security', x->>'ticker', NULL, NULL,
+        jsonb_build_object('name', x->>'before_name', 'base_price', x->>'before_base_price'),
+        jsonb_build_object('name', x->>'name', 'base_price', x->>'base_price'),
+        jsonb_build_object('kind', x->>'kind', 'live_price_unchanged', true));
+    END IF;
+  END LOOP;
+  PERFORM jse_audit(a, 'COMPANY_BASE_PRICES_IMPORTED', 'security', NULL, NULL, NULL, NULL, NULL,
+    jsonb_build_object('rows', jsonb_array_length(v_plan), 'changed', v_changed, 'live_prices_changed', false));
+  RETURN jsonb_build_object('success', true, 'rows', jsonb_array_length(v_plan), 'updated', jsonb_array_length(v_plan), 'changed', v_changed);
+END $$;
+
+-- Admin-only IPO tool: persistent random draw, verification, approval, idempotent issuance, and issue-size editing.
+CREATE OR REPLACE FUNCTION jse_ipo_admin_tool(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action',''), 'STATE'));
+  v_ipo text := upper(trim(coalesce(p->>'ipo','')));
+  v_status text;
+  v_event_status text;
+  s securities%ROWTYPE;
+  d ipo_allotment_draws%ROWTYPE;
+  ap ipo_applications%ROWTYPE;
+  al ipo_allotments%ROWTYPE;
+  x record;
+  v_issued integer;
+  v_remaining integer;
+  v_available_lots integer;
+  v_requested integer := 0;
+  v_position integer := 0;
+  v_round integer := 1;
+  v_left integer := 0;
+  v_progress boolean;
+  v_count integer := 0;
+  v_total_shares integer := 0;
+  v_total_amount numeric := 0;
+  v_new_size numeric;
+  v_new_shares integer;
+  v_unit text;
+  v_reason text;
+  v_draw_id bigint;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF v_action <> 'STATE' THEN PERFORM jse_require_admin_password(a, p); END IF;
+
+  IF v_action = 'STATE' THEN
+    IF v_ipo <> '' THEN
+      SELECT * INTO s FROM securities WHERE kind = 'IPO' AND active AND (symbol = v_ipo OR ipo_code = v_ipo);
+      IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;
+      SELECT * INTO d FROM ipo_allotment_draws WHERE security_id = s.id ORDER BY id DESC LIMIT 1;
+    END IF;
+    RETURN jsonb_build_object(
+      'success', true,
+      'ipos', coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'symbol', sec.symbol, 'ipo_code', sec.ipo_code, 'name', sec.name, 'price', sec.base_price, 'live_price', sec.price,
+        'lot_size', sec.ipo_lot_size, 'offered', sec.ipo_shares_offered,
+        'issued', (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL),
+        'remaining', CASE WHEN sec.ipo_shares_offered IS NULL THEN NULL ELSE sec.ipo_shares_offered -
+          (SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=sec.id AND ia.reversed_at IS NULL) END,
+        'applications', (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),
+        'application_rows', (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=sec.id),
+        'applied_lots', (SELECT coalesce(sum(ia.lots),0) FROM ipo_applications ia WHERE ia.security_id=sec.id AND ia.status='APPLIED'),
+        'stage', jse_ipo_stage(sec.id),
+        'latest_draw_status', (SELECT dd.status FROM ipo_allotment_draws dd WHERE dd.security_id=sec.id ORDER BY dd.id DESC LIMIT 1)
+      ) ORDER BY sec.display_order, sec.id) FROM securities sec WHERE sec.kind='IPO' AND sec.active), '[]'::jsonb),
+      'event_status', (SELECT status FROM event_control WHERE id=1),
+      'ipo', CASE WHEN s.id IS NULL THEN NULL ELSE jsonb_build_object('symbol',s.symbol,'name',s.name,'lot_size',s.ipo_lot_size,
+        'offered',s.ipo_shares_offered,'issued',(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL),
+        'remaining',CASE WHEN s.ipo_shares_offered IS NULL THEN NULL ELSE s.ipo_shares_offered-(SELECT coalesce(sum(ia.quantity),0) FROM ipo_allotments ia WHERE ia.security_id=s.id AND ia.reversed_at IS NULL) END) END,
+      'draw', CASE WHEN d.id IS NULL THEN NULL ELSE to_jsonb(d) END,
+      'eligible_count', CASE WHEN s.id IS NULL THEN 0 ELSE (SELECT count(*) FROM ipo_applications ia
+        WHERE ia.security_id=s.id AND ia.status='APPLIED' AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
+          AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000
+          AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL)) END,
+      'rejected_count', CASE WHEN s.id IS NULL THEN 0 ELSE greatest(0,
+        (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=s.id AND ia.status='APPLIED') -
+        (SELECT count(*) FROM ipo_applications ia WHERE ia.security_id=s.id AND ia.status='APPLIED' AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
+          AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000
+          AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL))) END,
+      'items', CASE WHEN d.id IS NULL THEN '[]'::jsonb ELSE coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'team',di.team_code,'team_name',di.team_name,'position',di.draw_position,'requested_lots',di.requested_lots,
+        'allotted_lots',di.allotted_lots,'shares',di.allotted_lots*di.lot_size,'rounds',to_jsonb(di.rounds),
+        'price',di.application_price,'amount',di.allotted_lots*di.lot_size*di.application_price)
+        ORDER BY di.draw_position) FROM ipo_allotment_draw_items di WHERE di.draw_id=d.id), '[]'::jsonb) END
+    );
+  END IF;
+
+  SELECT status INTO v_event_status FROM event_control WHERE id=1 FOR UPDATE;
+  SELECT * INTO s FROM securities WHERE kind='IPO' AND active AND (symbol=v_ipo OR ipo_code=v_ipo) FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose an existing IPO.', 404); END IF;
+
+  IF v_action = 'LOT_SIZE' THEN
+    BEGIN v_new_size := (p->>'lot_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;
+    v_reason := nullif(trim(coalesce(p->>'reason','')), '');
+    IF v_new_size IS NULL OR v_new_size <= 0 OR v_new_size <> trunc(v_new_size) OR v_new_size > 2147483647 THEN
+      PERFORM jse_fail('INVALID_IPO_LOT_SIZE', 'IPO lot size must be a positive whole number of shares.', 400);
+    END IF;
+    IF EXISTS (SELECT 1 FROM ipo_applications WHERE security_id=s.id)
+       OR EXISTS (SELECT 1 FROM ipo_allotments WHERE security_id=s.id)
+       OR EXISTS (SELECT 1 FROM ipo_allotment_draws WHERE security_id=s.id) THEN
+      PERFORM jse_fail('IPO_LOT_SIZE_LOCKED', 'IPO lot size cannot change after applications, allotments or a draw exist for this IPO.', 409);
+    END IF;
+    PERFORM jse_audit(a, 'IPO_LOT_SIZE_CHANGED', 'security', s.symbol, NULL, NULL,
+      jsonb_build_object('lot_size',s.lot_size),
+      jsonb_build_object('lot_size',v_new_size::integer),
+      jsonb_build_object('reason',v_reason,'trading_lot_size_unchanged',true));
+    UPDATE securities SET lot_size=v_new_size::integer, updated_at=now() WHERE id=s.id;
+    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_lot_size',s.lot_size,'lot_size',v_new_size::integer,
+      'trading_lot_size',50);
+  END IF;
+
+  IF v_event_status <> 'NOT_STARTED' THEN
+    PERFORM jse_fail('EVENT_STARTED', 'IPO issue-size and allotment-draw changes are allowed only before the event starts.', 409);
+  END IF;
+
+  IF v_action = 'SIZE' THEN
+    BEGIN v_new_size := (p->>'new_size')::numeric; EXCEPTION WHEN others THEN v_new_size := NULL; END;
+    v_unit := upper(trim(coalesce(p->>'unit','SHARES')));
+    v_reason := trim(coalesce(p->>'reason',''));
+    IF v_new_size IS NULL OR v_new_size <= 0 OR v_new_size <> trunc(v_new_size) THEN
+      PERFORM jse_fail('INVALID_ISSUE_SIZE', 'Issue size must be a positive whole number.', 400);
+    END IF;
+    IF v_unit NOT IN ('SHARES','LOTS') THEN PERFORM jse_fail('INVALID_UNIT', 'Choose Shares or Lots.', 400); END IF;
+    IF v_unit='LOTS' THEN v_new_size := v_new_size * s.ipo_lot_size; END IF;
+    IF v_new_size > 2147483647 THEN PERFORM jse_fail('ISSUE_SIZE_TOO_LARGE', 'Issue size exceeds the supported inventory range.', 400); END IF;
+    v_new_shares := v_new_size::integer;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id ORDER BY id DESC LIMIT 1;
+    IF d.id IS NOT NULL AND d.status IN ('GENERATED','VERIFIED','APPROVED') THEN
+      PERFORM jse_fail('DRAW_IN_PROGRESS', 'Issue size cannot change while a draw is generated, verified or approved. Finalize or resolve that draw first.', 409);
+    END IF;
+    IF v_new_shares < v_issued THEN
+      PERFORM jse_fail('BELOW_ISSUED', 'Issue size cannot be lower than already allotted shares (' || v_issued || ').', 409);
+    END IF;
+    IF d.id IS NOT NULL AND d.status='FINALIZED' AND v_new_shares < coalesce(s.ipo_shares_offered,0) THEN
+      PERFORM jse_fail('FINALIZED_ISSUE_SIZE', 'After final issuance, issue size may only be increased; it cannot be reduced.', 409);
+    END IF;
+    PERFORM jse_audit(a, 'IPO_ISSUE_SIZE_CHANGED', 'security', s.symbol, NULL, NULL,
+      jsonb_build_object('offered_shares',s.ipo_shares_offered),
+      jsonb_build_object('offered_shares',v_new_shares,'unit_entered',v_unit,'value_entered',p->>'new_size'),
+      jsonb_build_object('reason',v_reason,'issued_shares',v_issued));
+    UPDATE securities SET ipo_shares_offered=v_new_shares, updated_at=now() WHERE id=s.id;
+    RETURN jsonb_build_object('success',true,'symbol',s.symbol,'old_size',s.ipo_shares_offered,'new_size',v_new_shares,'issued',v_issued,'remaining',v_new_shares-v_issued);
+  END IF;
+
+  IF v_action = 'DRAW' THEN
+    IF s.ipo_shares_offered IS NULL OR s.ipo_shares_offered <= 0 THEN
+      PERFORM jse_fail('ISSUE_SIZE_REQUIRED', 'Set the IPO issue size before generating allotment.', 409);
+    END IF;
+    IF (jse_ipo_window()->>'phase') IS DISTINCT FROM 'CLOSED' THEN
+      PERFORM jse_fail('APPLICATIONS_NOT_CLOSED', 'Random allotment is available only after the IPO application window closes.', 409);
+    END IF;
+    SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id AND status<>'CANCELLED' ORDER BY id DESC LIMIT 1;
+    IF FOUND THEN
+      RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status',d.status,
+        'message','An existing saved draw was returned. The random order was not regenerated.');
+    END IF;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    v_remaining := s.ipo_shares_offered - v_issued;
+    IF v_remaining < 0 THEN PERFORM jse_fail('INVENTORY_MISMATCH', 'Issued shares exceed the configured IPO issue size.', 409); END IF;
+    v_available_lots := floor(v_remaining::numeric / s.ipo_lot_size)::integer;
+    INSERT INTO ipo_allotment_draws(security_id,status,available_shares,available_lots,generated_by,inventory_snapshot)
+    VALUES(s.id,'GENERATED',v_remaining,v_available_lots,jse_actor_name(a),
+      jsonb_build_object('offered_shares',s.ipo_shares_offered,'issued_shares',v_issued,'lot_size',s.ipo_lot_size,'base_price',s.base_price))
+    RETURNING id INTO v_draw_id;
+    FOR x IN
+      SELECT ia.id AS application_id, ia.team_id, t.code AS team_code, t.name AS team_name,
+        ia.lots AS requested_lots, ia.price AS application_price, s.ipo_lot_size
+      FROM ipo_applications ia JOIN teams t ON t.id=ia.team_id
+      WHERE ia.security_id=s.id AND ia.status='APPLIED'
+        AND ia.lots BETWEEN 1 AND 10 AND ia.amount<=150000
+        AND (SELECT coalesce(sum(ax.amount),0) FROM ipo_applications ax WHERE ax.team_id=ia.team_id AND ax.status='APPLIED')<=600000
+        AND NOT EXISTS (SELECT 1 FROM ipo_allotments aa WHERE aa.team_id=ia.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL)
+      ORDER BY gen_random_bytes(16)
+    LOOP
+      v_position := v_position + 1;
+      v_requested := v_requested + x.requested_lots;
+      INSERT INTO ipo_allotment_draw_items(draw_id,application_id,team_id,team_code,team_name,draw_position,
+        requested_lots,allotted_lots,lot_size,application_price)
+      VALUES(v_draw_id,x.application_id,x.team_id,x.team_code,x.team_name,v_position,x.requested_lots,0,x.lot_size,x.application_price);
+    END LOOP;
+    IF v_position=0 THEN
+      DELETE FROM ipo_allotment_draws WHERE id=v_draw_id;
+      PERFORM jse_fail('NO_ELIGIBLE_APPLICATIONS', 'No eligible, unallotted applications were found for this IPO.', 409);
+    END IF;
+    UPDATE ipo_allotment_draws SET requested_lots=v_requested,
+      subscription_ratio=CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END
+    WHERE id=v_draw_id;
+    v_left := v_available_lots;
+    v_round := 1;
+    WHILE v_left>0 LOOP
+      v_progress := false;
+      FOR x IN SELECT id,requested_lots,allotted_lots FROM ipo_allotment_draw_items
+               WHERE draw_id=v_draw_id AND allotted_lots<requested_lots ORDER BY draw_position LOOP
+        UPDATE ipo_allotment_draw_items SET allotted_lots=allotted_lots+1, rounds=array_append(rounds,v_round)
+        WHERE id=x.id;
+        v_left := v_left-1;
+        v_progress := true;
+        EXIT WHEN v_left<=0;
+      END LOOP;
+      EXIT WHEN NOT v_progress;
+      v_round := v_round+1;
+    END LOOP;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_GENERATED','ipo_allotment_draw',v_draw_id::text,NULL,NULL,NULL,NULL,
+      jsonb_build_object('symbol',s.symbol,'eligible',v_position,'requested_lots',v_requested,'available_lots',v_available_lots,
+        'subscription_ratio',CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END,
+        'algorithm','RANDOM_ROUND_ROBIN_V1'));
+    RETURN jsonb_build_object('success',true,'draw_id',v_draw_id,'status','GENERATED','eligible_count',v_position,
+      'requested_lots',v_requested,'available_lots',v_available_lots,
+      'subscription_ratio',CASE WHEN v_available_lots>0 THEN round(v_requested::numeric/v_available_lots,4) ELSE NULL END);
+  END IF;
+
+  SELECT * INTO d FROM ipo_allotment_draws WHERE security_id=s.id ORDER BY id DESC LIMIT 1 FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('NO_DRAW', 'Generate the random draw first.', 409); END IF;
+
+  IF v_action = 'VERIFY' THEN
+    IF d.status <> 'GENERATED' THEN
+      IF d.status IN ('VERIFIED','APPROVED','FINALIZED') THEN RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status',d.status); END IF;
+      PERFORM jse_fail('INVALID_DRAW_STATUS','Only a generated draw can be verified.',409);
+    END IF;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    v_remaining := coalesce(s.ipo_shares_offered,0)-v_issued;
+    SELECT coalesce(sum(allotted_lots*lot_size),0)::integer, coalesce(sum(allotted_lots),0)::integer
+      INTO v_total_shares,v_count FROM ipo_allotment_draw_items WHERE draw_id=d.id;
+    IF v_remaining <> d.available_shares THEN PERFORM jse_fail('INVENTORY_CHANGED','IPO inventory changed after the draw. Do not approve this stale draw.',409); END IF;
+    IF v_total_shares > d.available_shares OR EXISTS(SELECT 1 FROM ipo_allotment_draw_items WHERE draw_id=d.id AND (allotted_lots<0 OR allotted_lots>requested_lots)) THEN
+      PERFORM jse_fail('ALLOTMENT_INVALID','The proposed allotment exceeds inventory or a request.',409);
+    END IF;
+    UPDATE ipo_allotment_draws SET status='VERIFIED',verified_by=jse_actor_name(a),verified_at=now() WHERE id=d.id;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_VERIFIED','ipo_allotment_draw',d.id::text,NULL,NULL,
+      jsonb_build_object('status','GENERATED'),jsonb_build_object('status','VERIFIED'),
+      jsonb_build_object('allotted_lots',v_count,'allotted_shares',v_total_shares,'available_shares',d.available_shares));
+    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','VERIFIED','allotted_lots',v_count,'allotted_shares',v_total_shares);
+  ELSIF v_action = 'APPROVE' THEN
+    IF d.status <> 'VERIFIED' THEN PERFORM jse_fail('NOT_VERIFIED','Verify the allotment before approval.',409); END IF;
+    UPDATE ipo_allotment_draws SET status='APPROVED',approved_by=jse_actor_name(a),approved_at=now() WHERE id=d.id;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_APPROVED','ipo_allotment_draw',d.id::text,NULL,NULL,
+      jsonb_build_object('status','VERIFIED'),jsonb_build_object('status','APPROVED'),NULL);
+    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','APPROVED');
+  ELSIF v_action = 'FINALIZE' THEN
+    IF d.status='FINALIZED' THEN RETURN jsonb_build_object('success',true,'replay',true,'draw_id',d.id,'status','FINALIZED'); END IF;
+    IF d.status <> 'APPROVED' THEN PERFORM jse_fail('NOT_APPROVED','Approve the verified allotment before issuing shares.',409); END IF;
+    SELECT coalesce(sum(quantity),0)::integer INTO v_issued FROM ipo_allotments WHERE security_id=s.id AND reversed_at IS NULL;
+    v_remaining := coalesce(s.ipo_shares_offered,0)-v_issued;
+    SELECT coalesce(sum(allotted_lots*lot_size),0)::integer INTO v_total_shares FROM ipo_allotment_draw_items WHERE draw_id=d.id;
+    IF v_remaining <> d.available_shares OR v_total_shares>v_remaining THEN
+      PERFORM jse_fail('INVENTORY_CHANGED','IPO inventory changed after approval. No shares were issued.',409);
+    END IF;
+    IF EXISTS(SELECT 1 FROM ipo_allotment_draw_items di JOIN ipo_allotments aa ON aa.team_id=di.team_id AND aa.security_id=s.id AND aa.reversed_at IS NULL WHERE di.draw_id=d.id AND di.allotted_lots>0) THEN
+      PERFORM jse_fail('DUPLICATE_ALLOTMENT','An applicant already has an allotment for this IPO. No shares were issued.',409);
+    END IF;
+    FOR x IN SELECT di.team_id,di.allotted_lots,di.lot_size,di.application_price,t.cash,t.code
+      FROM ipo_allotment_draw_items di JOIN teams t ON t.id=di.team_id
+      WHERE di.draw_id=d.id AND di.allotted_lots>0 LOOP
+      v_total_amount := v_total_amount + x.allotted_lots*x.lot_size*x.application_price;
+      IF x.cash < x.allotted_lots*x.lot_size*x.application_price THEN
+        PERFORM jse_fail('ALLOTMENT_CASH',x.code || ' does not have enough cash for the proposed allotment. No shares were issued.',409);
+      END IF;
+    END LOOP;
+    FOR x IN SELECT di.* FROM ipo_allotment_draw_items di WHERE di.draw_id=d.id AND di.allotted_lots>0 ORDER BY di.draw_position LOOP
+      INSERT INTO ipo_allotments(team_id,security_id,lots,quantity,price,amount,batch_id,created_by,created_by_name)
+      VALUES(x.team_id,s.id,x.allotted_lots,x.allotted_lots*x.lot_size,x.application_price,
+        x.allotted_lots*x.lot_size*x.application_price,'RANDOM-IPO-'||d.id,nullif(a->>'id','')::integer,jse_actor_name(a))
+      RETURNING * INTO al;
+      PERFORM jse__apply_allotment(a,al);
+      v_count := v_count+1;
+    END LOOP;
+    UPDATE ipo_allotment_draws SET status='FINALIZED',finalized_by=jse_actor_name(a),finalized_at=now() WHERE id=d.id;
+    PERFORM jse_audit(a,'IPO_RANDOM_DRAW_FINALIZED','ipo_allotment_draw',d.id::text,NULL,NULL,
+      jsonb_build_object('status','APPROVED'),jsonb_build_object('status','FINALIZED'),
+      jsonb_build_object('rows_issued',v_count,'shares_issued',v_total_shares,'amount_charged',v_total_amount));
+    RETURN jsonb_build_object('success',true,'draw_id',d.id,'status','FINALIZED','rows_issued',v_count,
+      'shares_issued',v_total_shares,'amount_charged',v_total_amount);
+  END IF;
+
+  PERFORM jse_fail('INVALID_ACTION','Use STATE, LOT_SIZE, SIZE, DRAW, VERIFY, APPROVE or FINALIZE.',400);
+END $$;
+
+
+-- IPO application and allotment lots are separate from regular share-trading lots.
+CREATE OR REPLACE FUNCTION jse_ipo_application(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action', ''), 'SET'));
+  v_status text; t teams%ROWTYPE; s securities%ROWTYPE; app ipo_applications%ROWTYPE;
+  v_lots integer; v_amount numeric; v_other numeric; v_n integer;
+BEGIN
+  PERFORM jse_require_role(a, 'PARTICIPANT', 'ADMIN');
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  IF v_action = 'CLEAR' THEN
+    PERFORM jse_require_role(a, 'ADMIN');
+    PERFORM jse_require_admin_password(a, p);
+    IF v_status <> 'NOT_STARTED' THEN PERFORM jse_fail('EVENT_STARTED', 'Applications can be cleared only before the event starts.', 409); END IF;
+    DELETE FROM ipo_applications WHERE coalesce(p->>'ipo', '') = '' OR security_id = (SELECT id FROM securities WHERE kind = 'IPO' AND symbol = upper(trim(p->>'ipo')));
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    PERFORM jse_audit(a, 'IPO_APPLICATIONS_CLEARED', 'ipo_application', coalesce(nullif(p->>'ipo', ''), 'ALL'), NULL, NULL, NULL, NULL, jsonb_build_object('rows', v_n));
+    RETURN jsonb_build_object('success', true, 'cleared', v_n);
+  END IF;
+  SELECT * INTO t FROM teams WHERE id = CASE WHEN a->>'role' = 'PARTICIPANT' THEN nullif(a->>'team_id', '')::integer
+                                             ELSE (SELECT id FROM teams WHERE code = upper(trim(coalesce(p->>'team', '')))) END FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'Team not found.', 404); END IF;
+  SELECT * INTO s FROM securities WHERE kind = 'IPO' AND active AND (symbol = upper(trim(coalesce(p->>'ipo', p->>'symbol', ''))) OR ipo_code = upper(trim(coalesce(p->>'ipo', p->>'symbol', ''))));
+  IF NOT FOUND THEN PERFORM jse_fail('IPO_NOT_FOUND', 'Choose one of the IPOs.', 404); END IF;
+  IF jse_ipo_stage(s.id) <> 'APPLICATION_OPEN' THEN
+    PERFORM jse_fail('IPO_WINDOW_CLOSED', 'Applications for ' || s.name || ' are not open (stage: ' || replace(jse_ipo_stage(s.id), '_', ' ') || ').', 409);
+  END IF;
+  SELECT * INTO app FROM ipo_applications WHERE team_id = t.id AND security_id = s.id FOR UPDATE;
+  IF v_action = 'WITHDRAW' THEN
+    IF NOT FOUND OR app.status <> 'APPLIED' THEN PERFORM jse_fail('NO_APPLICATION', 'There is no application to withdraw.', 409); END IF;
+    UPDATE ipo_applications SET status = 'WITHDRAWN', updated_at = now(), updated_by_name = jse_actor_name(a) WHERE id = app.id;
+    PERFORM jse_audit(a, 'IPO_APPLICATION_WITHDRAWN', 'ipo_application', s.symbol, t.id, NULL, jsonb_build_object('lots', app.lots), NULL, NULL);
+    RETURN jsonb_build_object('success', true, 'status', 'WITHDRAWN');
+  ELSIF v_action <> 'SET' THEN
+    PERFORM jse_fail('INVALID_ACTION', 'Use SET or WITHDRAW.', 400);
+  END IF;
+  BEGIN v_lots := (p->>'lots')::integer; EXCEPTION WHEN others THEN v_lots := NULL; END;
+  IF v_lots IS NULL OR v_lots <= 0 THEN PERFORM jse_fail('INVALID_LOTS', 'Apply for a whole number of lots (1 lot = ' || s.ipo_lot_size || ' shares).', 400); END IF;
+  v_amount := v_lots * s.ipo_lot_size * s.base_price;
+  SELECT coalesce(sum(amount), 0) INTO v_other FROM ipo_applications WHERE team_id = t.id AND status = 'APPLIED' AND security_id <> s.id;
+  IF v_other + v_amount > t.cash THEN
+    PERFORM jse_fail('APPLICATION_CASH', 'All IPO applications together (' || jse_inr((v_other + v_amount)) || ') cannot exceed the team''s cash (' || jse_inr(t.cash) || ').', 409);
+  END IF;
+  INSERT INTO ipo_applications(team_id, security_id, lots, quantity, price, amount, status, created_by_name, updated_by_name)
+  VALUES (t.id, s.id, v_lots, v_lots * s.ipo_lot_size, s.base_price, v_amount, 'APPLIED', jse_actor_name(a), jse_actor_name(a))
+  ON CONFLICT (team_id, security_id) DO UPDATE SET lots = EXCLUDED.lots, quantity = EXCLUDED.quantity, price = EXCLUDED.price,
+    amount = EXCLUDED.amount, status = 'APPLIED', updated_at = now(), updated_by_name = EXCLUDED.updated_by_name
+  RETURNING * INTO app;
+  PERFORM jse_audit(a, 'IPO_APPLICATION_SUBMITTED', 'ipo_application', s.symbol, t.id, NULL, NULL,
+    jsonb_build_object('lots', v_lots, 'shares', v_lots * s.ipo_lot_size, 'amount', v_amount), jsonb_build_object('issue_price', s.base_price));
+  RETURN jsonb_build_object('success', true, 'status', 'APPLIED', 'application', to_jsonb(app) || jsonb_build_object('symbol', s.symbol));
+END $$;
+
+-- One prospectus record per IPO, managed by the administrator. Content is supplied by the organisers.
+
+CREATE OR REPLACE FUNCTION jse_ipo_allot(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_status text; r jsonb; v_errors jsonb := '[]'::jsonb; v_rows jsonb := '[]'::jsonb;
+  v_team teams%ROWTYPE; v_sec securities%ROWTYPE; v_lots integer; v_shares integer; v_amt numeric; v_i integer := 0;
+  v_replace boolean := coalesce((p->>'replace')::boolean, false);
+  v_batch text := coalesce(nullif(p->>'batch_id', ''), to_char(now(), 'YYYYMMDD-HH24MISS'));
+  v_total numeric := 0; v_count integer := 0; v_applied integer;
+  al ipo_allotments%ROWTYPE; x record;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN PERFORM jse_require_admin_password(a, p); END IF;
+  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR UPDATE;
+  IF v_status <> 'NOT_STARTED' THEN PERFORM jse_fail('EVENT_STARTED', 'IPO allotments can be loaded only before the event starts.', 409); END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN PERFORM jse_fail('NO_ROWS', 'No allotment rows were supplied.', 400); END IF;
+
+  -- validation pass (nothing is written unless every row is valid)
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i := v_i + 1;
+    SELECT * INTO v_team FROM teams WHERE code = upper(trim(coalesce(r->>'team', '')));
+    IF NOT FOUND THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown team ' || coalesce(r->>'team', '(blank)')); CONTINUE; END IF;
+    SELECT * INTO v_sec FROM securities WHERE kind = 'IPO' AND (symbol = upper(trim(coalesce(r->>'ipo', r->>'symbol', ''))) OR ipo_code = upper(trim(coalesce(r->>'ipo', '')))
+                                                               OR upper(name) = upper(trim(coalesce(r->>'ipo', r->>'symbol', ''))));
+    IF NOT FOUND THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Unknown IPO ' || coalesce(r->>'ipo', r->>'symbol', '(blank)')); CONTINUE; END IF;
+    BEGIN v_lots := (r->>'lots')::integer; EXCEPTION WHEN others THEN v_lots := NULL; END;
+    IF v_lots IS NULL OR v_lots < 0 THEN v_errors := v_errors || jsonb_build_object('row', v_i, 'error', 'Lots must be a whole number'); CONTINUE; END IF;
+    IF v_lots = 0 THEN CONTINUE; END IF;
+    v_shares := v_lots * v_sec.ipo_lot_size; v_amt := v_shares * v_sec.base_price;
+    IF nullif(trim(coalesce(r->>'shares', '')), '') IS NOT NULL AND (r->>'shares')::numeric <> v_shares THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Shares ' || (r->>'shares') || ' \\u2260 ' || v_lots || ' lots \\xD7 ' || v_sec.ipo_lot_size || ' = ' || v_shares); CONTINUE;
+    END IF;
+    IF nullif(trim(coalesce(r->>'amount', '')), '') IS NOT NULL AND round((r->>'amount')::numeric, 2) <> v_amt THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' / ' || v_sec.symbol || ': Amount ' || (r->>'amount') || ' \\u2260 ' || v_shares || ' \\xD7 ' || jse_inr(v_sec.base_price) || ' = ' || jse_inr(v_amt)); CONTINUE;
+    END IF;
+    -- when the portal application process was used for this IPO, an allotment cannot exceed the team's application
+    IF EXISTS (SELECT 1 FROM ipo_applications ap WHERE ap.security_id = v_sec.id AND ap.status = 'APPLIED') THEN
+      SELECT lots INTO v_applied FROM ipo_applications ap WHERE ap.security_id = v_sec.id AND ap.team_id = v_team.id AND ap.status = 'APPLIED';
+      IF coalesce(v_applied, 0) < v_lots THEN
+        v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' applied for ' || coalesce(v_applied, 0) || ' ' || v_sec.symbol || ' lot(s) but the file allots ' || v_lots); CONTINUE;
+      END IF;
+    END IF;
+    IF NOT v_replace AND EXISTS (SELECT 1 FROM ipo_allotments WHERE team_id = v_team.id AND security_id = v_sec.id AND reversed_at IS NULL) THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', v_team.code || ' already has a ' || v_sec.symbol || ' allotment (tick "replace" to overwrite)'); CONTINUE;
+    END IF;
+    v_rows := v_rows || jsonb_build_object('team_id', v_team.id, 'team', v_team.code, 'security_id', v_sec.id, 'symbol', v_sec.symbol,
+                                           'lots', v_lots, 'quantity', v_shares, 'price', v_sec.base_price, 'amount', v_amt);
+  END LOOP;
+  FOR x IN SELECT e->>'team' AS team, e->>'symbol' AS symbol, count(*) AS n FROM jsonb_array_elements(v_rows) e GROUP BY 1, 2 HAVING count(*) > 1 LOOP
+    v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' / ' || x.symbol || ' appears ' || x.n || ' times in the file');
+  END LOOP;
+  FOR x IN
+    SELECT e->>'team' AS team, (e->>'team_id')::integer AS team_id, sum((e->>'amount')::numeric) AS need
+    FROM jsonb_array_elements(v_rows) e GROUP BY 1, 2
+  LOOP
+    SELECT t2.cash + (CASE WHEN v_replace THEN coalesce((
+             SELECT sum(al2.amount) FROM ipo_allotments al2
+             JOIN jsonb_array_elements(v_rows) e2 ON (e2->>'team_id')::integer = al2.team_id AND (e2->>'security_id')::integer = al2.security_id
+             WHERE al2.team_id = x.team_id AND al2.reversed_at IS NULL), 0) ELSE 0 END)
+    INTO v_total FROM teams t2 WHERE t2.id = x.team_id;
+    IF x.need > v_total THEN
+      v_errors := v_errors || jsonb_build_object('row', NULL, 'error', x.team || ' does not have enough cash for ' || jse_inr(x.need) || ' of allotments (available ' || jse_inr(v_total) || ')');
+    END IF;
+  END LOOP;
+  v_total := 0;
+  IF jsonb_array_length(v_errors) > 0 THEN
+    RETURN jsonb_build_object('success', false, 'code', 'ALLOTMENT_ERRORS', 'error', 'Nothing was loaded. Fix the rows listed and upload again.', 'errors', v_errors, 'http', 400);
+  END IF;
+  IF coalesce((p->>'dry_run')::boolean, false) THEN
+    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_rows),
+      'total_amount', (SELECT coalesce(sum((e->>'amount')::numeric), 0) FROM jsonb_array_elements(v_rows) e), 'preview', v_rows);
+  END IF;
+
+  FOR r IN SELECT value FROM jsonb_array_elements(v_rows) LOOP
+    IF v_replace THEN
+      PERFORM jse__reverse_allotment(a, al2.id) FROM ipo_allotments al2
+      WHERE al2.team_id = (r->>'team_id')::integer AND al2.security_id = (r->>'security_id')::integer AND al2.reversed_at IS NULL;
+    END IF;
+    INSERT INTO ipo_allotments(team_id, security_id, lots, quantity, price, amount, batch_id, created_by, created_by_name)
+    VALUES ((r->>'team_id')::integer, (r->>'security_id')::integer, (r->>'lots')::integer, (r->>'quantity')::integer,
+            (r->>'price')::numeric, (r->>'amount')::numeric, v_batch, nullif(a->>'id', '')::integer, jse_actor_name(a))
+    RETURNING * INTO al;
+    PERFORM jse__apply_allotment(a, al);
+    v_total := v_total + al.amount; v_count := v_count + 1;
+  END LOOP;
+  PERFORM jse_audit(a, 'IPO_ALLOTMENT_LOADED', 'ipo_allotment', v_batch, NULL, NULL, NULL, NULL,
+    jsonb_build_object('rows', v_count, 'total_amount', v_total, 'replace', v_replace));
+  RETURN jsonb_build_object('success', true, 'batch_id', v_batch, 'rows', v_count, 'total_amount', v_total);
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_ipo_page() RETURNS jsonb LANGUAGE sql STABLE AS $$
+  SELECT jsonb_build_object('success', true, 'event_name', cfg.event_name, 'event_start_at', cfg.event_start_at, 'window', jse_ipo_window(),
+    'status', (SELECT status FROM event_control WHERE id = 1),
+    'ipos', coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'symbol', s.symbol, 'ipo_code', s.ipo_code, 'name', s.name, 'sector', s.sector,
+        'issue_price', s.base_price, 'lot_size', s.ipo_lot_size, 'lot_value', s.ipo_lot_size * s.base_price,
+        'stage', jse_ipo_stage(s.id), 'listed', s.listed_at IS NOT NULL, 'listed_at', s.listed_at,
+        'listing_price', CASE WHEN s.listed_at IS NOT NULL THEN s.index_base_price END, 'price', s.price, 'in_index', s.listed_at IS NOT NULL,
+        'prospectus', jsonb_build_object(
+          'company_description', pr.company_description, 'issue_details', pr.issue_details, 'business_overview', pr.business_overview,
+          'financial_information', pr.financial_information, 'risk_factors', pr.risk_factors, 'use_of_proceeds', pr.use_of_proceeds,
+          'promoters_management', pr.promoters_management, 'other_information', pr.other_information,
+          'document_url', pr.document_url, 'document_name', pr.document_name, 'document_size', pr.document_size,
+          'document_uploaded_at', pr.document_uploaded_at, 'has_document', pr.document_data IS NOT NULL, 'updated_at', pr.updated_at)
+      ) ORDER BY s.display_order, s.id)
+      FROM securities s LEFT JOIN ipo_prospectus pr ON pr.security_id = s.id WHERE s.kind = 'IPO' AND s.active), '[]'::jsonb))
+  FROM event_config cfg WHERE cfg.id = 1
+$$;
+
+-- Admin-only special controls for BIG BULL, a dedicated participant with its own capital baseline.
+CREATE OR REPLACE FUNCTION jse_big_bull_admin(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action',''), 'STATE'));
+  t teams%ROWTYPE; u app_users%ROWTYPE; b brokers%ROWTYPE;
+  v_delta numeric; v_after numeric; v_capital numeric; v_reason text; v_active boolean;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF v_action <> 'STATE' THEN PERFORM jse_require_admin_password(a, p); END IF;
+  SELECT * INTO t FROM teams WHERE code='TEAM-101' AND lower(name)='big bull' FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_NOT_FOUND', 'BIG BULL special participant team has not been provisioned.', 404); END IF;
+  SELECT * INTO u FROM app_users WHERE lower(username)='bigbull' AND team_id=t.id;
+  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_USER_NOT_FOUND', 'BIGBULL participant login has not been provisioned.', 404); END IF;
+  IF v_action = 'STATE' THEN
+    RETURN jsonb_build_object('success',true,'team_code',t.code,'name',t.name,'cash',t.cash,'active',t.active AND u.active,
+      'team_active',t.active,'user_active',u.active,'username',u.username,'display_name',u.display_name,
+      'starting_capital',t.initial_capital,'broker',(SELECT code FROM brokers WHERE id=t.broker_id),
+      'broker_name',(SELECT name FROM brokers WHERE id=t.broker_id),
+      'brokers',coalesce((SELECT jsonb_agg(jsonb_build_object('code',code,'name',name) ORDER BY code) FROM brokers WHERE active),'[]'::jsonb),
+      'holdings',coalesce((SELECT jsonb_agg(jsonb_build_object('symbol',s.symbol,'name',s.name,'quantity',h.quantity,'price',s.price,'market_value',h.quantity*s.price,'cost_basis',h.cost_basis,'trade_cost',h.trade_cost) ORDER BY s.symbol)
+        FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),'[]'::jsonb),
+      'holdings_value',coalesce((SELECT sum(h.quantity*s.price) FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),0),
+      'net_worth',t.cash+coalesce((SELECT sum(h.quantity*s.price) FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),0),
+      'pnl',t.cash+coalesce((SELECT sum(h.quantity*s.price) FROM holdings h JOIN securities s ON s.id=h.security_id WHERE h.team_id=t.id AND h.quantity>0),0)-t.initial_capital,
+      'orders_pending',(SELECT count(*) FROM orders o WHERE o.team_id=t.id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')),
+      'settled_trades',(SELECT count(*) FROM settlements st JOIN orders o ON o.id=st.order_id WHERE o.team_id=t.id AND st.reversed_at IS NULL));
+  ELSIF v_action = 'CASH_ADJUST' THEN
+    BEGIN v_delta := (p->>'delta')::numeric; EXCEPTION WHEN others THEN v_delta := NULL; END;
+    v_reason := trim(coalesce(p->>'reason',''));
+    IF v_delta IS NULL OR v_delta=0 THEN PERFORM jse_fail('INVALID_CASH_ADJUSTMENT','Enter a non-zero cash adjustment amount.',400); END IF;
+    IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for this financial adjustment.',400); END IF;
+    v_after := t.cash+v_delta;
+    IF v_after<0 THEN PERFORM jse_fail('NEGATIVE_CASH','BIG BULL cash cannot be negative.',409); END IF;
+    IF v_delta<0 AND EXISTS(SELECT 1 FROM orders o WHERE o.team_id=t.id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')) THEN
+      PERFORM jse_fail('BIG_BULL_PENDING_ORDERS','Resolve BIG BULL pending orders before reducing its available cash.',409);
+    END IF;
+    UPDATE teams SET cash=v_after,updated_at=now() WHERE id=t.id;
+    PERFORM jse_ledger(t.id,NULL,NULL,'ADJUSTMENT',greatest(-v_delta,0),greatest(v_delta,0),v_after,'BIG BULL cash adjustment: '||v_reason,a);
+    PERFORM jse_audit(a,'BIG_BULL_CASH_ADJUSTED','team',t.code,t.id,NULL,jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),jsonb_build_object('delta',v_delta,'reason',v_reason));
+    RETURN jsonb_build_object('success',true,'old_cash',t.cash,'new_cash',v_after,'delta',v_delta);
+  ELSIF v_action = 'CAPITAL_SET' THEN
+    BEGIN v_capital := (p->>'capital')::numeric; EXCEPTION WHEN others THEN v_capital := NULL; END;
+    v_reason := trim(coalesce(p->>'reason',''));
+    IF v_capital IS NULL OR v_capital<=0 OR v_capital>1000000000 THEN PERFORM jse_fail('INVALID_CAPITAL','Enter capital between \u20B91 and \u20B91,000,000,000.',400); END IF;
+    IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for the capital-baseline change.',400); END IF;
+    PERFORM jse_audit(a,'BIG_BULL_CAPITAL_CHANGED','team',t.code,t.id,NULL,jsonb_build_object('initial_capital',t.initial_capital),jsonb_build_object('initial_capital',v_capital),jsonb_build_object('reason',v_reason));
+    UPDATE teams SET initial_capital=v_capital,updated_at=now() WHERE id=t.id;
+    RETURN jsonb_build_object('success',true,'old_capital',t.initial_capital,'capital',v_capital);
+  ELSIF v_action = 'SET_BROKER' THEN
+    SELECT * INTO b FROM brokers WHERE code=upper(trim(coalesce(p->>'broker',''))) AND active;
+    IF NOT FOUND THEN PERFORM jse_fail('BROKER_NOT_FOUND','Choose an active broker.',404); END IF;
+    PERFORM jse_audit(a,'BIG_BULL_BROKER_CHANGED','team',t.code,t.id,NULL,jsonb_build_object('broker',(SELECT code FROM brokers WHERE id=t.broker_id)),jsonb_build_object('broker',b.code),NULL);
+    UPDATE teams SET broker_id=b.id,updated_at=now() WHERE id=t.id;
+    RETURN jsonb_build_object('success',true,'broker',b.code,'broker_name',b.name);
+  ELSIF v_action = 'SET_ACTIVE' THEN
+    BEGIN v_active := (p->>'active')::boolean; EXCEPTION WHEN others THEN v_active := NULL; END;
+    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose whether BIG BULL should be enabled.',400); END IF;
+    UPDATE teams SET active=v_active,updated_at=now() WHERE id=t.id;
+    UPDATE app_users SET active=v_active,updated_at=now() WHERE id=u.id;
+    IF NOT v_active THEN UPDATE sessions SET revoked_at=now() WHERE user_id=u.id AND revoked_at IS NULL; END IF;
+    PERFORM jse_audit(a,CASE WHEN v_active THEN 'BIG_BULL_ENABLED' ELSE 'BIG_BULL_DISABLED' END,'team',t.code,t.id,NULL,jsonb_build_object('team_active',t.active,'user_active',u.active),jsonb_build_object('team_active',v_active,'user_active',v_active),NULL);
+    RETURN jsonb_build_object('success',true,'active',v_active);
+  END IF;
+  PERFORM jse_fail('INVALID_ACTION','Use STATE, CASH_ADJUST, CAPITAL_SET, SET_BROKER or SET_ACTIVE.',400);
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_import_dalal_roster(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE r jsonb; x jsonb; t teams%ROWTYPE; v_alias broker_roster_aliases%ROWTYPE;
+  v_i integer:=0; v_input text; v_broker_code text; v_section text; v_members text;
+  v_plan jsonb:='[]'::jsonb; v_errors jsonb:='[]'::jsonb; v_skipped jsonb:='[]'::jsonb; v_changed integer:=0;
+BEGIN
+  PERFORM jse_require_role(a,'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean,false) THEN PERFORM jse_require_admin_password(a,p); END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows')=0 THEN PERFORM jse_fail('NO_ROWS','No roster rows were supplied.',400); END IF;
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i:=v_i+1; v_input:=trim(coalesce(r->>'team','')); v_broker_code:=trim(coalesce(r->>'broker_code',''));
+    v_section:=trim(coalesce(r->>'section','')); v_members:=trim(coalesce(r->>'members',''));
+    SELECT * INTO t FROM teams WHERE code=upper(v_input);
+    IF NOT FOUND THEN SELECT * INTO t FROM teams WHERE lower(name)=lower(v_input); END IF;
+    IF NOT FOUND THEN v_skipped:=v_skipped||jsonb_build_object('row',v_i,'team',v_input,'reason','No exact existing team name/code; code was not guessed.'); CONTINUE; END IF;
+    IF EXISTS(SELECT 1 FROM jsonb_array_elements(v_plan) q WHERE q->>'code'=t.code) THEN v_errors:=v_errors||jsonb_build_object('row',v_i,'team',v_input,'error','Duplicate existing team row.'); CONTINUE; END IF;
+    SELECT * INTO v_alias FROM broker_roster_aliases WHERE lower(broker_code)=lower(v_broker_code);
+    IF NOT FOUND THEN v_errors:=v_errors||jsonb_build_object('row',v_i,'team',v_input,'error','Unknown official broker code: '||v_broker_code); CONTINUE; END IF;
+    IF length(v_section)>120 OR length(v_members)>1000 THEN v_errors:=v_errors||jsonb_build_object('row',v_i,'team',v_input,'error','Section or participant text too long.'); CONTINUE; END IF;
+    v_plan:=v_plan||jsonb_build_object('id',t.id,'code',t.code,'team_name',t.name,'section',nullif(v_section,''),'members',nullif(v_members,''),'broker_id',v_alias.internal_broker_id,
+      'before',jsonb_build_object('section',t.section,'members',t.members,'broker_id',t.broker_id,'broker',(SELECT code FROM brokers WHERE id=t.broker_id)));
+  END LOOP;
+  IF jsonb_array_length(v_errors)>0 THEN RETURN jsonb_build_object('success',false,'code','ROSTER_ERRORS','error','Nothing saved; correct invalid rows first.','errors',v_errors,'http',400); END IF;
+  IF jsonb_array_length(v_plan)=0 THEN PERFORM jse_fail('NO_MATCHING_TEAMS','No rows matched existing team names or codes.',400); END IF;
+  IF coalesce((p->>'dry_run')::boolean,false) THEN RETURN jsonb_build_object('success',true,'dry_run',true,'matched',jsonb_array_length(v_plan),'skipped_count',jsonb_array_length(v_skipped),'skipped',v_skipped); END IF;
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    UPDATE teams SET section=x->>'section',members=x->>'members',broker_id=(x->>'broker_id')::integer,updated_at=now() WHERE id=(x->>'id')::integer;
+    IF (x->'before') IS DISTINCT FROM jsonb_build_object('section',x->>'section','members',x->>'members','broker_id',(x->>'broker_id')::integer,'broker',(SELECT code FROM brokers WHERE id=(x->>'broker_id')::integer)) THEN
+      PERFORM jse_audit(a,'DALAL_ROSTER_IMPORTED','team',x->>'code',(x->>'id')::integer,NULL,x->'before',jsonb_build_object('team_name',x->>'team_name','section',x->>'section','members',x->>'members','broker',(SELECT code FROM brokers WHERE id=(x->>'broker_id')::integer)),jsonb_build_object('source','Dalal Street Teams spreadsheet'));
+      v_changed:=v_changed+1;
+    END IF;
+  END LOOP;
+  PERFORM jse_audit(a,'DALAL_ROSTER_UPLOAD','team',NULL,NULL,NULL,NULL,NULL,jsonb_build_object('matched',jsonb_array_length(v_plan),'changed',v_changed,'skipped',jsonb_array_length(v_skipped),'cash_or_history_changed',false));
+  RETURN jsonb_build_object('success',true,'matched',jsonb_array_length(v_plan),'updated',v_changed,'skipped_count',jsonb_array_length(v_skipped),'skipped',v_skipped,'cash_or_history_changed',false);
+END $$;
+INSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');
+`;var ir=`-- BIG BULL special participant: Team 1 is a dedicated account with a hard \u20B91 crore cash ceiling.
+-- Additive and idempotent. Existing cash, holdings, orders, and team/broker identifiers are preserved.
+CREATE TABLE IF NOT EXISTS public.jse_special_accounts (
+  team_id integer PRIMARY KEY REFERENCES public.teams(id),
+  account_code text NOT NULL UNIQUE,
+  display_name text NOT NULL,
+  cash_limit numeric(14,2) NOT NULL CHECK (cash_limit >= 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO public.jse_special_accounts(team_id, account_code, display_name, cash_limit)
+SELECT id, 'BIG-BULL', 'BIG BULL', 100000000.00 FROM public.teams WHERE code='TEAM-001'
+ON CONFLICT (team_id) DO UPDATE SET account_code='BIG-BULL', display_name='BIG BULL', cash_limit=100000000.00, updated_at=now();
+
+CREATE OR REPLACE FUNCTION public.jse_special_cash_limit_guard() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE v_limit numeric;
+BEGIN
+  SELECT cash_limit INTO v_limit FROM public.jse_special_accounts WHERE team_id=NEW.id;
+  IF FOUND AND NEW.cash > v_limit THEN
+    RAISE EXCEPTION USING ERRCODE='23514', MESSAGE='BIG BULL cash limit is \u20B91,00,00,000.00; this balance change is blocked.';
+  END IF;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS jse_special_cash_limit_guard_trg ON public.teams;
+CREATE TRIGGER jse_special_cash_limit_guard_trg BEFORE INSERT OR UPDATE ON public.teams
+FOR EACH ROW EXECUTE FUNCTION public.jse_special_cash_limit_guard();
+
+CREATE OR REPLACE FUNCTION public.jse_big_bull_admin(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action',''),'STATE'));
+  t teams%ROWTYPE;
+  b brokers%ROWTYPE;
+  v_amount numeric(16,2);
+  v_delta numeric(16,2);
+  v_after numeric(16,2);
+  v_reason text;
+  v_name text;
+  v_broker_code text;
+  v_broker_id integer;
+  v_section text;
+  v_members text;
+  v_active boolean;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  SELECT * INTO t FROM teams WHERE seq=1 AND code='TEAM-001' FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_NOT_FOUND','Team 1 special participant was not found.',404); END IF;
+  SELECT * INTO b FROM brokers WHERE id=t.broker_id;
+
+  IF v_action = 'STATE' THEN
+    RETURN jsonb_build_object('success',true,'account',jsonb_build_object(
+      'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,
+      'broker_name',b.name,'cash',t.cash,'cash_limit',100000000,'active',t.active,'section',t.section,'members',t.members));
+  END IF;
+
+  PERFORM jse_require_admin_password(a,p);
+  v_reason := left(trim(coalesce(p->>'reason','')),300);
+  IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for the BIG BULL change.',400); END IF;
+
+  IF v_action = 'UPDATE_ACCOUNT' THEN
+    v_name := left(trim(coalesce(p->>'display_name','')),120);
+    v_broker_code := upper(trim(coalesce(p->>'broker_code','')));
+    v_section := left(trim(coalesce(p->>'section','')),120);
+    v_members := left(trim(coalesce(p->>'members','')),1000);
+    BEGIN v_active := (p->>'active')::boolean; EXCEPTION WHEN others THEN v_active := NULL; END;
+    IF v_name='' THEN PERFORM jse_fail('NAME_REQUIRED','Enter the BIG BULL display name.',400); END IF;
+    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose an account status.',400); END IF;
+    SELECT id INTO v_broker_id FROM brokers WHERE code=v_broker_code AND active;
+    IF v_broker_id IS NULL THEN PERFORM jse_fail('BROKER_NOT_FOUND','Choose an existing active broker.',400); END IF;
+    IF EXISTS (SELECT 1 FROM teams WHERE id<>t.id AND lower(name)=lower(v_name)) THEN
+      PERFORM jse_fail('DUPLICATE_TEAM_NAME','That display name is already used by another team.',409);
+    END IF;
+    UPDATE teams SET name=v_name, broker_id=v_broker_id, section=nullif(v_section,''), members=nullif(v_members,''),
+      active=v_active, updated_at=now() WHERE id=t.id;
+    UPDATE app_users SET display_name=v_name, active=v_active, updated_at=now()
+      WHERE role='PARTICIPANT' AND team_id=t.id;
+    UPDATE public.jse_special_accounts SET display_name=v_name, updated_at=now() WHERE team_id=t.id;
+    PERFORM jse_audit(a,'BIG_BULL_ACCOUNT_UPDATED','team',t.code,t.id,NULL,
+      jsonb_build_object('name',t.name,'broker_code',b.code,'section',t.section,'members',t.members,'active',t.active),
+      jsonb_build_object('name',v_name,'broker_code',v_broker_code,'section',nullif(v_section,''),'members',nullif(v_members,''),'active',v_active),
+      jsonb_build_object('reason',v_reason));
+  ELSIF v_action IN ('SET_BALANCE','ADJUST_CASH') THEN
+    BEGIN v_amount := nullif(trim(p->>'amount'),'')::numeric; EXCEPTION WHEN others THEN v_amount := NULL; END;
+    IF v_amount IS NULL OR v_amount<0 AND v_action='SET_BALANCE' THEN
+      PERFORM jse_fail('INVALID_AMOUNT','Enter a balance from \u20B90 to \u20B91 crore.',400);
+    END IF;
+    IF v_action='ADJUST_CASH' AND v_amount=0 THEN PERFORM jse_fail('INVALID_AMOUNT','Enter a non-zero cash adjustment.',400); END IF;
+    v_after := CASE WHEN v_action='SET_BALANCE' THEN v_amount ELSE t.cash+v_amount END;
+    IF v_after<0 OR v_after>100000000 THEN
+      PERFORM jse_fail('CASH_LIMIT','BIG BULL cash must stay between \u20B90 and \u20B91 crore.',400);
+    END IF;
+    v_delta := v_after-t.cash;
+    IF v_delta<>0 THEN
+      UPDATE teams SET cash=v_after, updated_at=now() WHERE id=t.id;
+      INSERT INTO cash_ledger(team_id,entry_type,debit,credit,balance_after,note,actor_id,actor_name)
+      VALUES(t.id,'ADJUSTMENT',greatest(-v_delta,0),greatest(v_delta,0),v_after,
+        'BIG BULL admin '||lower(v_action)||': '||v_reason,nullif(a->>'id','')::integer,jse_actor_name(a));
+      PERFORM jse_audit(a,CASE WHEN v_action='SET_BALANCE' THEN 'BIG_BULL_BALANCE_SET' ELSE 'BIG_BULL_CASH_ADJUSTED' END,
+        'team',t.code,t.id,NULL,jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),
+        jsonb_build_object('reason',v_reason,'amount',v_amount,'action',v_action));
+    END IF;
+  ELSE
+    PERFORM jse_fail('INVALID_ACTION','Use STATE, UPDATE_ACCOUNT, SET_BALANCE or ADJUST_CASH.',400);
+  END IF;
+
+  SELECT * INTO t FROM teams WHERE id=t.id;
+  SELECT * INTO b FROM brokers WHERE id=t.broker_id;
+  RETURN jsonb_build_object('success',true,'cash',t.cash,'account',jsonb_build_object(
+    'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,
+    'broker_name',b.name,'cash',t.cash,'cash_limit',100000000,'active',t.active,'section',t.section,'members',t.members));
+END $function$;
+
+
+CREATE OR REPLACE FUNCTION public.jse_broker_desk(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE b brokers%ROWTYPE; cfg event_config%ROWTYPE;
+  -- the Pit Manager records trades for every team; administrators can open the all-teams desk with broker=ALL
+  v_all boolean := a->>'role' = 'PIT_MANAGER' OR (a->>'role' IN ('ADMIN', 'VIEWER') AND upper(coalesce(p->>'broker', '')) = 'ALL');
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER', 'VIEWER');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  IF a->>'role' = 'BROKER' THEN
+    SELECT * INTO b FROM brokers WHERE id = nullif(a->>'broker_id', '')::integer;
+  ELSE
+    SELECT * INTO b FROM brokers WHERE code = CASE WHEN v_all THEN (SELECT min(code) FROM brokers) ELSE upper(trim(coalesce(nullif(p->>'broker', ''), (SELECT min(code) FROM brokers)))) END;
+  END IF;
+  IF NOT FOUND THEN PERFORM jse_fail('BROKER_NOT_FOUND', 'Broker not found.', 404); END IF;
+  RETURN jsonb_build_object('success', true,
+    'broker', CASE WHEN v_all THEN jsonb_build_object('code', 'ALL', 'name', 'All teams') ELSE jsonb_build_object('code', b.code, 'name', b.name, 'contact', b.contact, 'desk', b.desk) END, 'all_teams', v_all,
+    'brokers', CASE WHEN a->>'role' = 'BROKER' THEN NULL ELSE (SELECT jsonb_agg(jsonb_build_object('code', br.code, 'name', br.name, 'broker_number', coalesce(ra.broker_number,br.id), 'roster_code', coalesce(ra.broker_code,br.code), 'roster_name', coalesce(ra.broker_name,br.name)) ORDER BY coalesce(ra.broker_number,br.id)) FROM brokers br LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=br.id) END,
+    'rules', jsonb_build_object('brokerage_rate', cfg.brokerage_rate, 'max_order_value', cfg.max_order_value, 'min_order_value', cfg.min_order_value,
+      'stock_lot_size', cfg.stock_lot_size, 'loan_max_principal', cfg.loan_max_principal, 'loan_interest_rate', cfg.loan_interest_rate,
+      'min_buy_trades', cfg.min_buy_trades, 'min_sell_trades', cfg.min_sell_trades),
+    'teams', coalesce((SELECT jsonb_agg(jsonb_build_object('code', tm.code, 'seq', right(tm.code,3)::integer, 'name', CASE WHEN sa.account_code='BIG-BULL' THEN sa.display_name ELSE tm.name END, 'special_account', sa.account_code, 'cash_limit', sa.cash_limit, 'broker_number', coalesce(ra.broker_number, tm.broker_id), 'broker_code', coalesce(ra.broker_code, (SELECT code FROM brokers WHERE id=tm.broker_id)), 'broker_name', coalesce(ra.broker_name, (SELECT name FROM brokers WHERE id=tm.broker_id)), 'section', tm.section, 'members', tm.members,
+        'cash', tm.cash, 'free_cash', jse_available_cash(tm.team_id, NULL), 'loan_room', jse_loan_room(tm.team_id),
+        'holdings_value', tm.holdings_value, 'net_worth', tm.net_worth, 'settled_buys', tm.settled_buys, 'settled_sells', tm.settled_sells,
+        'assessment_met', tm.assessment_met, 'loan_liability', tm.loan_liability, 'eligibility_status', tm.eligibility_status,
+        'holdings', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'quantity', h.quantity,
+              'available', (SELECT available FROM jse_available_qty(tm.team_id, s.id, NULL)), 'avg_price', round(h.trade_cost / nullif(h.quantity, 0), 2),
+              'price', s.price, 'value', h.quantity * s.price, 'tradable', s.kind = 'EQUITY' OR s.listed_at IS NOT NULL) ORDER BY h.quantity * s.price DESC)
+            FROM holdings h JOIN securities s ON s.id = h.security_id WHERE h.team_id = tm.team_id AND h.quantity > 0), '[]'::jsonb),
+        'open_orders', (SELECT count(*) FROM orders o WHERE o.team_id = tm.team_id AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')))
+        ORDER BY tm.seq)
+      FROM jse_team_metrics tm LEFT JOIN jse_special_accounts sa ON sa.team_id=tm.team_id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=tm.broker_id WHERE (v_all OR tm.broker_id = b.id) AND tm.active), '[]'::jsonb),
+    'instructions', coalesce((SELECT jsonb_agg(jsonb_build_object('id', i.id, 'instruction_no', i.instruction_no, 'team', t.code, 'team_name', t.name,
+        'symbol', s.symbol, 'security', s.name, 'side', i.side, 'quantity', i.quantity, 'note', i.note, 'price_seen', i.price_seen, 'market_price', s.price,
+        'status', i.status, 'created_at', i.created_at, 'handled_at', i.handled_at, 'handled_by', i.handled_by_name, 'decline_reason', i.decline_reason,
+        'order_no', o.order_no, 'order_status', o.status) ORDER BY (i.status = 'OPEN') DESC, i.id DESC)
+      FROM (SELECT * FROM instructions WHERE broker_id = b.id AND (status = 'OPEN' OR created_at > now() - interval '12 hours') ORDER BY id DESC LIMIT 80) i
+      JOIN teams t ON t.id = i.team_id JOIN securities s ON s.id = i.security_id LEFT JOIN orders o ON o.id = i.order_id), '[]'::jsonb),
+    'orders', coalesce((SELECT jsonb_agg(jse_order_json(x.id) ORDER BY x.id DESC) FROM (
+        SELECT o.id FROM orders o WHERE (v_all OR o.broker_id = b.id) ORDER BY o.id DESC LIMIT 60) x), '[]'::jsonb),
+    'counts', (SELECT jsonb_build_object(
+        'teams', (SELECT count(*) FROM teams WHERE broker_id = b.id AND active),
+        'open_instructions', (SELECT count(*) FROM instructions WHERE broker_id = b.id AND status = 'OPEN'),
+        'pit_pending', count(*) FILTER (WHERE status = 'PIT_PENDING'),
+        'awaiting_exchange', count(*) FILTER (WHERE status = 'EXCHANGE_PENDING'),
+        'awaiting_bank', count(*) FILTER (WHERE status IN ('EXCHANGE_APPROVED', 'BANK_PENDING')),
+        'settled', count(*) FILTER (WHERE status = 'BANK_SETTLED'),
+        'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED'))) FROM orders WHERE broker_id = b.id));
+END $function$;
+
+
+CREATE OR REPLACE FUNCTION public.jse_institutional(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE i institutions%ROWTYPE; cfg event_config%ROWTYPE;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL', 'VIEWER');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT * INTO i FROM institutions WHERE id = coalesce(CASE WHEN a->>'role' <> 'INSTITUTIONAL' THEN nullif(p->>'institution_id', '')::integer END,
+                                                        nullif(a->>'institution_id', '')::integer, (SELECT min(id) FROM institutions));
+  IF NOT FOUND THEN PERFORM jse_fail('INSTITUTION_NOT_FOUND', 'Institutional account not found.', 404); END IF;
+  -- a transaction desk: ticket inputs, the current market with institutional prices, and the transaction history.
+  -- Institutions are counterparties only \u2014 no cash or holdings restriction and no participant-style portfolio.
+  RETURN jsonb_build_object('success', true,
+    'rules', jsonb_build_object('spread_pct', jse_inst_spread_pct(), 'brokerage_rate', cfg.brokerage_rate, 'stock_lot_size', cfg.stock_lot_size,
+       'min_order_value', cfg.min_order_value, 'max_order_value', cfg.max_order_value,
+       'text', 'When a participant cannot find a counterparty, the institution trades with it: the participant BUYS from the institution at ' ||
+               to_char(jse_inst_spread_pct(), 'FM990.##') || '% ABOVE the prevailing market price and SELLS to it at ' || to_char(jse_inst_spread_pct(), 'FM990.##') ||
+               '% BELOW. The participant pays the normal brokerage (' || jse_rate_text(cfg.brokerage_rate) || '), earned by its broker. The trade goes through the Pit Manager, Exchange and Bank like any order.'),
+    'institutions', (SELECT jsonb_agg(jsonb_build_object('id', x.id, 'code', x.code, 'name', x.name) ORDER BY x.id) FROM institutions x),
+    'institution', jsonb_build_object('id', i.id, 'code', i.code, 'name', i.name),
+    -- counterparty choices: participant team code, name and broker only (no team cash or holdings)
+    'teams', coalesce((SELECT jsonb_agg(jsonb_build_object('code', t.code, 'seq', t.seq, 'name', CASE WHEN sa.account_code='BIG-BULL' THEN sa.display_name ELSE t.name END, 'special_account', sa.account_code, 'broker', coalesce(ra.broker_code,b.code), 'broker_number', coalesce(ra.broker_number,b.id), 'broker_name', coalesce(ra.broker_name,b.name)) ORDER BY t.seq) FROM teams t LEFT JOIN brokers b ON b.id = t.broker_id LEFT JOIN jse_special_accounts sa ON sa.team_id=t.id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=t.broker_id WHERE t.active), '[]'::jsonb),
+    'market', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'name', s.name, 'type', CASE WHEN s.kind = 'IPO' THEN 'IPO' ELSE 'EQUITY' END,
+        'price', s.price, 'change_pct', round(jse_pct(s.price, s.previous_price), 2), 'lot_size', s.lot_size,
+        'participant_buy_price', jse_inst_price(s.price, 'SELL'), 'participant_sell_price', jse_inst_price(s.price, 'BUY'),
+        'last_price_change_at', s.last_price_change_at) ORDER BY s.last_price_change_at DESC NULLS LAST, s.display_order, s.id)
+      FROM securities s WHERE s.active AND (s.kind = 'EQUITY' OR s.listed_at IS NOT NULL)), '[]'::jsonb),
+    'orders', coalesce((SELECT jsonb_agg(jse_order_json(o.id) ORDER BY o.id DESC) FROM (SELECT id FROM orders WHERE institution_id = i.id ORDER BY id DESC LIMIT 80) o), '[]'::jsonb),
+    'stats', (SELECT jsonb_build_object('transactions', count(*), 'settled', count(*) FILTER (WHERE status = 'BANK_SETTLED'),
+       'pending', count(*) FILTER (WHERE status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')),
+       'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED','EXCHANGE_REJECTED','BANK_REJECTED')),
+       'participants_bought_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'SELL'), 0),
+       'participants_sold_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'BUY'), 0),
+       'brokerage', coalesce(sum(brokerage) FILTER (WHERE status = 'BANK_SETTLED'), 0)) FROM orders WHERE institution_id = i.id));
+END $function$;
+
+
+INSERT INTO schema_migrations(version) VALUES ('012_big_bull_special_account');
+`;var rr=`-- BIG BULL special participant controls: Team 1 / Broker 11.
+-- Additive and replayable. Existing balances and trade history are retained.
+INSERT INTO brokers (code,name,active) VALUES ('BROKER-11','SIDDHARTH',true)
+ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, active=true;
+
+CREATE TABLE IF NOT EXISTS public.jse_special_accounts (
+  team_id integer PRIMARY KEY REFERENCES teams(id),
+  account_code text NOT NULL UNIQUE,
+  display_name text NOT NULL,
+  cash_limit numeric(16,2) NOT NULL DEFAULT 100000000 CHECK (cash_limit >= 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO public.jse_special_accounts(team_id,account_code,display_name,cash_limit)
+SELECT id,'BIG-BULL','BIG BULL',100000000 FROM teams WHERE code='TEAM-001'
+ON CONFLICT (account_code) DO UPDATE SET team_id=EXCLUDED.team_id,display_name=EXCLUDED.display_name,
+  cash_limit=EXCLUDED.cash_limit,updated_at=now();
+
+INSERT INTO team_name_pool (name,category,meaning,active)
+SELECT 'BIG BULL','SPECIAL','Special participant; managed separately by the administrator',true
+WHERE NOT EXISTS (SELECT 1 FROM team_name_pool WHERE lower(name)='big bull');
+
+UPDATE teams
+SET name='BIG BULL', broker_id=(SELECT id FROM brokers WHERE code='BROKER-11'), updated_at=now()
+WHERE seq=1 AND code='TEAM-001'
+  AND (name IS DISTINCT FROM 'BIG BULL' OR broker_id IS DISTINCT FROM (SELECT id FROM brokers WHERE code='BROKER-11'));
+
+UPDATE app_users SET display_name='BIG BULL', updated_at=now()
+WHERE role='PARTICIPANT' AND team_id=(SELECT id FROM teams WHERE seq=1 AND code='TEAM-001')
+  AND display_name IS DISTINCT FROM 'BIG BULL';
+
+-- Add sequence and broker identity to the order-desk team payload so dropdowns can show
+-- 1-BIG BULL-11-SIDDHARTH without relying on hard-coded browser values.
+DO $do$
+DECLARE v_def text;
+  v_old text := '''code'', tm.code, ''name'', tm.name, ''section'', tm.section, ''members'', tm.members';
+  v_new text := '''code'', tm.code, ''seq'', right(tm.code,3)::integer, ''name'', CASE WHEN sa.account_code=''BIG-BULL'' THEN sa.display_name ELSE tm.name END, ''special_account'', sa.account_code, ''cash_limit'', sa.cash_limit, ''broker_number'', coalesce(ra.broker_number,tm.broker_id), ''broker_code'', coalesce(ra.broker_code,(SELECT code FROM brokers WHERE id=tm.broker_id)), ''broker_name'', coalesce(ra.broker_name,(SELECT name FROM brokers WHERE id=tm.broker_id)), ''section'', tm.section, ''members'', tm.members';
+BEGIN
+  SELECT pg_get_functiondef('jse_broker_desk(jsonb,jsonb)'::regprocedure) INTO v_def;
+  IF position(v_old IN v_def) > 0 THEN
+    v_def := replace(v_def, v_old, v_new);
+    v_def := replace(v_def, 'FROM jse_team_metrics tm WHERE (v_all OR tm.broker_id = b.id) AND tm.active',
+      'FROM jse_team_metrics tm LEFT JOIN jse_special_accounts sa ON sa.team_id=tm.team_id LEFT JOIN broker_roster_aliases ra ON ra.internal_broker_id=tm.broker_id WHERE (v_all OR tm.broker_id = b.id) AND tm.active');
+  ELSIF position('broker_name' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'Could not patch broker-desk team payload';
+  END IF;
+  v_def := replace(v_def, 'WHERE (v_all OR tm.broker_id = b.id) AND tm.active ORDER BY tm.seq), ''[]''::jsonb)',
+    'WHERE (v_all OR tm.broker_id = b.id) AND tm.active), ''[]''::jsonb)');
+  EXECUTE v_def;
+END $do$;
+
+CREATE OR REPLACE FUNCTION public.jse_big_bull_admin(a jsonb, p jsonb)
+RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(nullif(p->>'action',''),'STATE'));
+  t teams%ROWTYPE;
+  b brokers%ROWTYPE;
+  v_amount numeric(16,2);
+  v_delta numeric(16,2);
+  v_after numeric(16,2);
+  v_reason text;
+  v_name text;
+  v_broker_code text;
+  v_broker_id integer;
+  v_section text;
+  v_members text;
+  v_active boolean;
+  v_cash_limit numeric(16,2);
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  SELECT * INTO t FROM teams WHERE seq=1 AND code='TEAM-001' FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('BIG_BULL_NOT_FOUND','Team 1 special participant was not found.',404); END IF;
+  SELECT * INTO b FROM brokers WHERE id=t.broker_id;
+  SELECT cash_limit INTO v_cash_limit FROM public.jse_special_accounts WHERE team_id=t.id AND account_code='BIG-BULL';
+  v_cash_limit := coalesce(v_cash_limit,100000000);
+
+  IF v_action = 'STATE' THEN
+    RETURN jsonb_build_object('success',true,'account',jsonb_build_object(
+      'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,
+      'broker_name',b.name,'cash',t.cash,'cash_limit',v_cash_limit,'active',t.active,'section',t.section,'members',t.members));
+  END IF;
+
+  PERFORM jse_require_admin_password(a,p);
+  v_reason := left(trim(coalesce(p->>'reason','')),300);
+  IF v_reason='' THEN PERFORM jse_fail('REASON_REQUIRED','Enter a reason for the BIG BULL change.',400); END IF;
+
+  IF v_action = 'UPDATE_ACCOUNT' THEN
+    v_name := left(trim(coalesce(p->>'display_name','')),120);
+    v_broker_code := upper(trim(coalesce(p->>'broker_code','')));
+    v_section := left(trim(coalesce(p->>'section','')),120);
+    v_members := left(trim(coalesce(p->>'members','')),1000);
+    BEGIN v_active := (p->>'active')::boolean; EXCEPTION WHEN others THEN v_active := NULL; END;
+    IF v_name='' THEN PERFORM jse_fail('NAME_REQUIRED','Enter the BIG BULL display name.',400); END IF;
+    IF v_active IS NULL THEN PERFORM jse_fail('INVALID_ACTIVE','Choose an account status.',400); END IF;
+    SELECT id INTO v_broker_id FROM brokers WHERE code=v_broker_code AND active;
+    IF v_broker_id IS NULL THEN PERFORM jse_fail('BROKER_NOT_FOUND','Choose an existing active broker.',400); END IF;
+    IF EXISTS (SELECT 1 FROM teams WHERE id<>t.id AND lower(name)=lower(v_name)) THEN
+      PERFORM jse_fail('DUPLICATE_TEAM_NAME','That display name is already used by another team.',409);
+    END IF;
+    UPDATE teams SET name=v_name, broker_id=v_broker_id, section=nullif(v_section,''), members=nullif(v_members,''),
+      active=v_active, updated_at=now() WHERE id=t.id;
+    UPDATE app_users SET display_name=v_name, active=v_active, updated_at=now()
+      WHERE role='PARTICIPANT' AND team_id=t.id;
+    UPDATE public.jse_special_accounts SET display_name=v_name, updated_at=now() WHERE team_id=t.id;
+    PERFORM jse_audit(a,'BIG_BULL_ACCOUNT_UPDATED','team',t.code,t.id,NULL,
+      jsonb_build_object('name',t.name,'broker_code',b.code,'section',t.section,'members',t.members,'active',t.active),
+      jsonb_build_object('name',v_name,'broker_code',v_broker_code,'section',nullif(v_section,''),'members',nullif(v_members,''),'active',v_active),
+      jsonb_build_object('reason',v_reason));
+  ELSIF v_action IN ('SET_BALANCE','ADJUST_CASH') THEN
+    BEGIN v_amount := nullif(trim(p->>'amount'),'')::numeric; EXCEPTION WHEN others THEN v_amount := NULL; END;
+    IF v_amount IS NULL OR (v_amount<0 AND v_action='SET_BALANCE') THEN
+      PERFORM jse_fail('INVALID_AMOUNT','Enter a balance from \u20B90 to \u20B91 crore.',400);
+    END IF;
+    IF v_action='ADJUST_CASH' AND v_amount=0 THEN PERFORM jse_fail('INVALID_AMOUNT','Enter a non-zero cash adjustment.',400); END IF;
+    v_after := CASE WHEN v_action='SET_BALANCE' THEN v_amount ELSE t.cash+v_amount END;
+    IF v_after<0 OR v_after>v_cash_limit THEN
+      PERFORM jse_fail('CASH_LIMIT','BIG BULL cash must stay between \u20B90 and \u20B91 crore.',400);
+    END IF;
+    v_delta := v_after-t.cash;
+    IF v_delta<>0 THEN
+      UPDATE teams SET cash=v_after, updated_at=now() WHERE id=t.id;
+      INSERT INTO cash_ledger(team_id,entry_type,debit,credit,balance_after,note,actor_id,actor_name)
+      VALUES(t.id,'ADJUSTMENT',greatest(-v_delta,0),greatest(v_delta,0),v_after,
+        'BIG BULL admin '||lower(v_action)||': '||v_reason,nullif(a->>'id','')::integer,jse_actor_name(a));
+      PERFORM jse_audit(a,CASE WHEN v_action='SET_BALANCE' THEN 'BIG_BULL_BALANCE_SET' ELSE 'BIG_BULL_CASH_ADJUSTED' END,
+        'team',t.code,t.id,NULL,jsonb_build_object('cash',t.cash),jsonb_build_object('cash',v_after),
+        jsonb_build_object('reason',v_reason,'amount',v_amount,'action',v_action));
+    END IF;
+  ELSE
+    PERFORM jse_fail('INVALID_ACTION','Use STATE, UPDATE_ACCOUNT, SET_BALANCE or ADJUST_CASH.',400);
+  END IF;
+
+  SELECT * INTO t FROM teams WHERE id=t.id;
+  SELECT * INTO b FROM brokers WHERE id=t.broker_id;
+  RETURN jsonb_build_object('success',true,'cash',t.cash,'account',jsonb_build_object(
+    'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,
+    'broker_name',b.name,'cash',t.cash,'cash_limit',v_cash_limit,'active',t.active,'section',t.section,'members',t.members));
+END $$;
+
+INSERT INTO schema_migrations(version) VALUES ('012_big_bull_admin');
+`;var or=`-- One-time import of the official Dalal Street roster (73 teams) plus BIG BULL as Team 1.
+-- Existing financial histories are preserved; only roster identity/assignment and active flags change.
+INSERT INTO broker_roster_aliases(broker_number,broker_code,broker_name,internal_broker_id)
+SELECT 11,'SIDDHARTH','SIDDHARTH',id FROM brokers WHERE code='BROKER-11'
+ON CONFLICT (broker_number) DO UPDATE SET broker_code=EXCLUDED.broker_code,
+ broker_name=EXCLUDED.broker_name,internal_broker_id=EXCLUDED.internal_broker_id;
+
+WITH raw AS (
+ SELECT line, ord FROM unnest(string_to_array($roster$Apala|Vidura|K + K|Krishnangshu Sarkar / Gourav V Rao
+Dignaga|Vidura|D + A|Karanam Seebivamsikrishna / Shreya C
+Kanada|Vidura|O + O|Juhi Moudekar / Sidharrth Rao
+Kapila|Vidura|I + I|Swaroop Rao T / Rohit B
+Khana|Vidura|J + J|Yuvaraj Suresh Bangera / Neeraj Kamath
+Matanga|Vidura|O + O|Shraddha Yadav / Chinmay B Arya
+Vagbhata|Vidura|C + M|Manisha Raj / Suhas vardhan
+Artha|Yash|M + D|Likitesh / Lakshna. S
+Dhriti|Yash|I + I|Jothish N / S S S Surya
+Kosh|Yash|L + L|Bhoomika Venkatachala Bhat / Mitali Basavaraj Devagi
+Mangala|Yash|F + F|Vishal Bhaskaran / A Tarakeshwar
+Nishtha|Yash|E + E|Thamizh Selvan E / Sri viswanath
+Nyaya|Yash|D + D|LIJIN LAKSHMANAN / Albin Sanjay P
+Rajat|Yash|P + P|Greeshma R / Disha M
+Valabhi|Yash|F + F|Aishwarya B M / Poorvitha
+Koshya|Ganita|O + O|Drushya A / Supreeth Shekar S
+Madhava|Ganita|N + N|Ajay M / PRANAV S R
+Panini|Ganita|L + L|Arundhathy V Nambi / Aakash Darsan P M
+Sangita|Ganita|P + P|Pasupathi R / R Megha
+Sutra|Ganita|M + M|Joshiya J / Indhu Shree Raj Kumar
+Virahanka|Ganita|N + M|Mohammed Riyaz / Arshiya Kausar
+Yukti|Ganita|H + J|Koushik Gali / Kumar Vayur
+Abhyasa|Prajna|R + R|Tanish Milind Salunkhe / John Tophy
+Ghosha|Prajna|C + C|SHASWAT AGRAWAL / Mohammed Haseeb Ahmed
+Jaya|Prajna|K + K|Shreya j hegde / Nidhi shetty
+Jya|Prajna|N + N|Rion Dsouza / Suraj
+Shree|Prajna|N + N|Rohan J / Abishek R
+Utsaha|Prajna|M + M|K PRANAVI / DARUNIKA R
+Viveka|Prajna|M + M|Aaditya Mehra / Madiya Mehraj
+Bhamaha|Madhava|K + K|Muhammad Irfan / Kumaraguru
+Kuttaka|Madhava|P + P|Kunj Punith Kumar Maru / Raunak Bajaj
+Lopamudra|Madhava|K + B|Varun Nayak / Satvik B Bellad
+Medha|Madhava|D + D|Pulagam hasini / Anusha dumpala
+Nirukta|Madhava|Q + Q|Hem b davey / Ramcharan
+Nivesh|Madhava|A + A|K S Monish Kumar / Guruprasad V
+Vasubandhu|Madhava|K + L|Bhoomika GS / M.Madhu vandhan
+Vyaya|Madhava|L + L|Yoga Shree R R / Janani Suresh
+Avvaiyar|Amrit|P + P|Anusha V Bhat / VIJAY ANANTH J
+Dhan|Amrit|D + D|Abhishek Nagori / Advaith R
+Halayudha|Amrit|G + G|Lithin H Raju / Tarun P
+Maitreyi|Amrit|P + P|Mohammad Saif / Anirudh Rao
+Mithila|Amrit|D + D|Sourabh Toppo / Ramkrishna Kamlakar Rao
+Nilakantha|Amrit|L + L|Sri Seshasaini G / Sadhana B
+Tanka|Amrit|J + J|Nichhanametla Harshita / Prachi kashyap
+Charaka|Arohan|J + J|Kartik Revankar / Payal manna
+Kautilya|Arohan|F + F|Mohammed Farhan Ulla / Aviral Singh
+Kriya|Arohan|K + K|Soham Organtiwar / Shikhar Sampann
+Labhya|Arohan|N + G|Siddannagari Reddeppa Reddy Nandini / Tallapalle Sai Vyshnavi
+Mudra|Arohan|H + H|Mohammed raza / Ashit singla
+Nidhi|Arohan|F + F|Prajwal M Bharadwaj / Samyak Shrivastav
+Sridhara|Arohan|G + G|Almeera S / Sugumaran
+Akshaya|Suvarna|L + L|Devansh Srivastava / Shreya Shukla
+Aryabhata|Suvarna|I + O|Swaroop mahadev pujari / Gayana N
+Aryadeva|Suvarna|B + B|Aashish Reddy / Kailesh b
+Dandin|Suvarna|Q + I|Manjunath Gaddad / Midhat Rahman
+Sushruta|Suvarna|D + D|Arsha.P.R / Harini S M
+Tantra|Suvarna|O + O|Mohammed Samadul Zain S / Shivam Periwal
+Vastu|Suvarna|D + D|Shraddha Dey / Pamela Pramanick
+Chandas|Kalidasa|M + M|Mohammed Riyaz K / Manisha Kumari
+Kamandaka|Kalidasa|M + Q|Srishti sinha / Ashmeet kaur
+Munjala|Kalidasa|A + A|Lokesh P / MALLAMMA BASAVARAJ NITALI
+Sankalpa|Kalidasa|F + M|DAKSHATA C A / SURYAPRAKASH V
+Shilpa|Kalidasa|L + L|Azwath Roshan / Rithika B
+Vidura|Kalidasa|C + C|Tejas Thimmaiah / Tushar Biswas
+Vriddhi|Kalidasa|J + J|Kiran prasaath / Balaji T
+Jaimini|Vikas|N + N|Astha Jain / K M Prajwal
+Labh|Vikas|L + L|Aditya raj / Abhijit Chakraborty
+Neeti|Vikas|B + B|SESHATHRI BALAN G / Sasi Naga Kiran Godavarthi
+Neetiya|Vikas|L + L|RAHUL TL / Shriharan RK T
+Pingala|Vikas|E + E|Praveen / Rahul Kunar
+Pramana|Vikas|K + K|Tanushka Rajesh Chugh / Prince Raj
+Rupa|Vikas|F + J|Ashutosh Padhy / Swayam Sahu
+Shiksha|Vikas|M + M|Samhita hegde / D ABHIRAMA SHASTRY$roster$, E'\\n')) WITH ORDINALITY AS x(line,ord)
+ WHERE btrim(line)<>''
+), roster AS (
+ SELECT ord::integer+1 AS team_no, split_part(line,'|',1) AS name,
+  split_part(line,'|',2) AS broker_code, split_part(line,'|',3) AS section,
+  split_part(line,'|',4) AS members FROM raw
+)
+INSERT INTO team_name_pool(name,category,meaning,active)
+SELECT r.name,'ROSTER','Official Dalal Street 2026 participant team',true
+FROM roster r WHERE NOT EXISTS (SELECT 1 FROM team_name_pool p WHERE lower(p.name)=lower(r.name));
+
+UPDATE teams SET name='__DALAL_ROSTER_TMP__' || seq, updated_at=now() WHERE seq BETWEEN 2 AND 100;
+
+WITH raw AS (
+ SELECT line, ord FROM unnest(string_to_array($roster$Apala|Vidura|K + K|Krishnangshu Sarkar / Gourav V Rao
+Dignaga|Vidura|D + A|Karanam Seebivamsikrishna / Shreya C
+Kanada|Vidura|O + O|Juhi Moudekar / Sidharrth Rao
+Kapila|Vidura|I + I|Swaroop Rao T / Rohit B
+Khana|Vidura|J + J|Yuvaraj Suresh Bangera / Neeraj Kamath
+Matanga|Vidura|O + O|Shraddha Yadav / Chinmay B Arya
+Vagbhata|Vidura|C + M|Manisha Raj / Suhas vardhan
+Artha|Yash|M + D|Likitesh / Lakshna. S
+Dhriti|Yash|I + I|Jothish N / S S S Surya
+Kosh|Yash|L + L|Bhoomika Venkatachala Bhat / Mitali Basavaraj Devagi
+Mangala|Yash|F + F|Vishal Bhaskaran / A Tarakeshwar
+Nishtha|Yash|E + E|Thamizh Selvan E / Sri viswanath
+Nyaya|Yash|D + D|LIJIN LAKSHMANAN / Albin Sanjay P
+Rajat|Yash|P + P|Greeshma R / Disha M
+Valabhi|Yash|F + F|Aishwarya B M / Poorvitha
+Koshya|Ganita|O + O|Drushya A / Supreeth Shekar S
+Madhava|Ganita|N + N|Ajay M / PRANAV S R
+Panini|Ganita|L + L|Arundhathy V Nambi / Aakash Darsan P M
+Sangita|Ganita|P + P|Pasupathi R / R Megha
+Sutra|Ganita|M + M|Joshiya J / Indhu Shree Raj Kumar
+Virahanka|Ganita|N + M|Mohammed Riyaz / Arshiya Kausar
+Yukti|Ganita|H + J|Koushik Gali / Kumar Vayur
+Abhyasa|Prajna|R + R|Tanish Milind Salunkhe / John Tophy
+Ghosha|Prajna|C + C|SHASWAT AGRAWAL / Mohammed Haseeb Ahmed
+Jaya|Prajna|K + K|Shreya j hegde / Nidhi shetty
+Jya|Prajna|N + N|Rion Dsouza / Suraj
+Shree|Prajna|N + N|Rohan J / Abishek R
+Utsaha|Prajna|M + M|K PRANAVI / DARUNIKA R
+Viveka|Prajna|M + M|Aaditya Mehra / Madiya Mehraj
+Bhamaha|Madhava|K + K|Muhammad Irfan / Kumaraguru
+Kuttaka|Madhava|P + P|Kunj Punith Kumar Maru / Raunak Bajaj
+Lopamudra|Madhava|K + B|Varun Nayak / Satvik B Bellad
+Medha|Madhava|D + D|Pulagam hasini / Anusha dumpala
+Nirukta|Madhava|Q + Q|Hem b davey / Ramcharan
+Nivesh|Madhava|A + A|K S Monish Kumar / Guruprasad V
+Vasubandhu|Madhava|K + L|Bhoomika GS / M.Madhu vandhan
+Vyaya|Madhava|L + L|Yoga Shree R R / Janani Suresh
+Avvaiyar|Amrit|P + P|Anusha V Bhat / VIJAY ANANTH J
+Dhan|Amrit|D + D|Abhishek Nagori / Advaith R
+Halayudha|Amrit|G + G|Lithin H Raju / Tarun P
+Maitreyi|Amrit|P + P|Mohammad Saif / Anirudh Rao
+Mithila|Amrit|D + D|Sourabh Toppo / Ramkrishna Kamlakar Rao
+Nilakantha|Amrit|L + L|Sri Seshasaini G / Sadhana B
+Tanka|Amrit|J + J|Nichhanametla Harshita / Prachi kashyap
+Charaka|Arohan|J + J|Kartik Revankar / Payal manna
+Kautilya|Arohan|F + F|Mohammed Farhan Ulla / Aviral Singh
+Kriya|Arohan|K + K|Soham Organtiwar / Shikhar Sampann
+Labhya|Arohan|N + G|Siddannagari Reddeppa Reddy Nandini / Tallapalle Sai Vyshnavi
+Mudra|Arohan|H + H|Mohammed raza / Ashit singla
+Nidhi|Arohan|F + F|Prajwal M Bharadwaj / Samyak Shrivastav
+Sridhara|Arohan|G + G|Almeera S / Sugumaran
+Akshaya|Suvarna|L + L|Devansh Srivastava / Shreya Shukla
+Aryabhata|Suvarna|I + O|Swaroop mahadev pujari / Gayana N
+Aryadeva|Suvarna|B + B|Aashish Reddy / Kailesh b
+Dandin|Suvarna|Q + I|Manjunath Gaddad / Midhat Rahman
+Sushruta|Suvarna|D + D|Arsha.P.R / Harini S M
+Tantra|Suvarna|O + O|Mohammed Samadul Zain S / Shivam Periwal
+Vastu|Suvarna|D + D|Shraddha Dey / Pamela Pramanick
+Chandas|Kalidasa|M + M|Mohammed Riyaz K / Manisha Kumari
+Kamandaka|Kalidasa|M + Q|Srishti sinha / Ashmeet kaur
+Munjala|Kalidasa|A + A|Lokesh P / MALLAMMA BASAVARAJ NITALI
+Sankalpa|Kalidasa|F + M|DAKSHATA C A / SURYAPRAKASH V
+Shilpa|Kalidasa|L + L|Azwath Roshan / Rithika B
+Vidura|Kalidasa|C + C|Tejas Thimmaiah / Tushar Biswas
+Vriddhi|Kalidasa|J + J|Kiran prasaath / Balaji T
+Jaimini|Vikas|N + N|Astha Jain / K M Prajwal
+Labh|Vikas|L + L|Aditya raj / Abhijit Chakraborty
+Neeti|Vikas|B + B|SESHATHRI BALAN G / Sasi Naga Kiran Godavarthi
+Neetiya|Vikas|L + L|RAHUL TL / Shriharan RK T
+Pingala|Vikas|E + E|Praveen / Rahul Kunar
+Pramana|Vikas|K + K|Tanushka Rajesh Chugh / Prince Raj
+Rupa|Vikas|F + J|Ashutosh Padhy / Swayam Sahu
+Shiksha|Vikas|M + M|Samhita hegde / D ABHIRAMA SHASTRY$roster$, E'\\n')) WITH ORDINALITY AS x(line,ord)
+ WHERE btrim(line)<>''
+), roster AS (
+ SELECT ord::integer+1 AS team_no, split_part(line,'|',1) AS name,
+  split_part(line,'|',2) AS broker_code, split_part(line,'|',3) AS section,
+  split_part(line,'|',4) AS members FROM raw
+)
+UPDATE teams t SET name=r.name, section=r.section, members=r.members,
+ broker_id=a.internal_broker_id, active=true, updated_at=now()
+FROM roster r JOIN broker_roster_aliases a ON lower(a.broker_code)=lower(r.broker_code)
+WHERE t.seq=r.team_no AND t.seq BETWEEN 2 AND 74;
+
+UPDATE teams SET name='INACTIVE-PLACEHOLDER-' || seq, active=false, updated_at=now() WHERE seq BETWEEN 75 AND 100;
+UPDATE teams SET name='BIG BULL', active=true, broker_id=(SELECT id FROM brokers WHERE code='BROKER-11'), updated_at=now()
+WHERE seq=1 AND code='TEAM-001';
+UPDATE app_users u SET display_name=t.name, active=t.active, updated_at=now()
+FROM teams t WHERE u.team_id=t.id AND u.role='PARTICIPANT';
+INSERT INTO audit_log(actor_username,actor_role,action,entity,entity_id,details)
+VALUES ('roster-migration','ADMIN','OFFICIAL_DALAL_ROSTER_IMPORTED','roster',NULL,
+ jsonb_build_object('official_teams',73,'special_participant','1-BIG BULL-11-SIDDHARTH',
+ 'broker_count',11,'active_team_numbers','1-74','inactive_placeholder_numbers','75-100',
+ 'financial_history_reset',false,'source','Dalal_Street_Teams(6).xlsx + Dalal_Street_Brokers(5).xlsx'));
+INSERT INTO schema_migrations(version) VALUES ('013_dalal_roster');
+`;var nr=`-- 014: Correct BIG BULL cash ceiling, daily news price cap, and final cash eligibility.
+-- Automated price changer configuration/logic is intentionally unchanged.
+
+ALTER TABLE public.jse_special_accounts
+  ALTER COLUMN cash_limit SET DEFAULT 10000000;
+UPDATE public.jse_special_accounts
+  SET cash_limit = 10000000, updated_at = now()
+  WHERE account_code = 'BIG-BULL';
+UPDATE public.event_config SET cash_rule_limit = 100000 WHERE id = 1;
+
+CREATE OR REPLACE FUNCTION public.jse_special_cash_limit_guard()
+RETURNS trigger LANGUAGE plpgsql AS $function$
+DECLARE v_limit numeric;
+BEGIN
+  SELECT cash_limit INTO v_limit FROM public.jse_special_accounts WHERE team_id = NEW.id;
+  IF FOUND AND NEW.cash > v_limit THEN
+    RAISE EXCEPTION USING ERRCODE='23514', MESSAGE='BIG BULL cash limit is \u20B91,00,00,000.00; this balance change is blocked.';
+  END IF;
+  RETURN NEW;
+END $function$;
+
+-- Keep the admin function's fallback aligned with the stored \u20B91 crore limit.
+DO $do$
+DECLARE v_def text;
+BEGIN
+  SELECT pg_get_functiondef('public.jse_big_bull_admin(jsonb,jsonb)'::regprocedure) INTO v_def;
+  IF position('coalesce(v_cash_limit,100000000)' IN v_def) > 0 THEN
+    v_def := replace(v_def, 'coalesce(v_cash_limit,100000000)', 'coalesce(v_cash_limit,10000000)');
+    EXECUTE v_def;
+  END IF;
+END $do$;
+
+-- Only the Market News mood bands use the expanded +/-15% range.
+CREATE OR REPLACE FUNCTION public.jse_mood_band(p_mood text)
+RETURNS numeric[] LANGUAGE sql IMMUTABLE AS $function$
+  SELECT CASE upper(replace(trim(p_mood), ' ', '_'))
+    WHEN 'VERY_SEVERE'    THEN ARRAY[-15.00, -7.50]
+    WHEN 'SEVERE'         THEN ARRAY[-7.49, -5.00]
+    WHEN 'NEGATIVE'       THEN ARRAY[-4.99, -1.00]
+    WHEN 'NORMAL'         THEN ARRAY[-0.99, 0.99]
+    WHEN 'POSITIVE'       THEN ARRAY[1.00, 4.99]
+    WHEN 'VERY_POSITIVE'  THEN ARRAY[5.00, 7.49]
+    WHEN 'SUPER_POSITIVE' THEN ARRAY[7.50, 15.00]
+  END::numeric[]
+$function$;
+
+-- A security's news-driven price is constrained to +/-15% of its first active news
+-- baseline for the current India-local day. The automated price changer is not changed.
+CREATE OR REPLACE FUNCTION public.jse_market_news(a jsonb, p jsonb)
+RETURNS jsonb LANGUAGE plpgsql AS $function$
+DECLARE
+  cfg event_config%ROWTYPE; v_status text; s securities%ROWTYPE;
+  v_mood text := upper(replace(trim(coalesce(p->>'mood', p->>'severity', '')), ' ', '_'));
+  v_headline text := nullif(left(trim(coalesce(p->>'headline', '')), 240), '');
+  v_band numeric[]; v_pct numeric; v_new numeric; v_lo numeric; v_hi numeric;
+  v_day_start timestamptz; v_day_base numeric; v_daily_cap constant numeric := 15;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR SHARE;
+  IF v_status NOT IN ('NOT_STARTED', 'LIVE', 'SETTLEMENT_ONLY') THEN
+    PERFORM jse_fail('EVENT_CLOSED', 'Market News is not allowed after the market has closed.', 409);
+  END IF;
+  v_band := jse_mood_band(v_mood);
+  IF v_band IS NULL THEN PERFORM jse_fail('INVALID_MOOD', 'Choose a news severity.', 400); END IF;
+  SELECT * INTO s FROM securities WHERE (p ? 'security_id' AND id = nullif(p->>'security_id', '')::integer) OR (p ? 'symbol' AND symbol = upper(trim(p->>'symbol')));
+  IF NOT FOUND THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Select a company.', 404); END IF;
+  IF s.kind = 'IPO' AND s.listed_at IS NULL THEN
+    PERFORM jse_fail('IPO_NOT_LISTED', s.symbol || ' is still in the IPO stage; Market News applies once it lists.', 409);
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('jse-news:' || s.id, 0));
+  SELECT * INTO s FROM securities WHERE id = s.id FOR UPDATE;
+
+  v_day_start := date_trunc('day', now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata';
+  SELECT previous_price INTO v_day_base
+  FROM market_news
+  WHERE security_id = s.id
+    AND created_at >= v_day_start
+    AND created_at < v_day_start + interval '1 day'
+    AND reversed_at IS NULL
+  ORDER BY created_at, id
+  LIMIT 1;
+  v_day_base := coalesce(v_day_base, s.price);
+
+  v_pct := round((v_band[1] + random() * (v_band[2] - v_band[1]))::numeric, 2);
+  v_new := jse_round_tick(s.price * (1 + v_pct / 100), cfg.price_tick);
+  v_lo := ceil(v_day_base * (1 - v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;
+  v_hi := floor(v_day_base * (1 + v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;
+  v_new := greatest(v_lo, least(v_hi, v_new));
+  IF v_new <= 0 THEN v_new := cfg.price_tick; END IF;
+  RETURN jse__apply_news_price(a, s, v_mood, v_pct, v_new,
+    coalesce(v_headline, initcap(replace(v_mood, '_', ' ')) || ' news on ' || s.name));
+END $function$;
+
+INSERT INTO schema_migrations(version) VALUES ('014_big_bull_news_assessment');
+`;var _r=`-- 015: Rename broker roster display name only; preserve broker number, code, assignments, and trade history.
+UPDATE public.broker_roster_aliases
+SET broker_name = 'SUGADEV'
+WHERE broker_number = 6
+  AND internal_broker_id = 6
+  AND lower(broker_code) = 'arohan';
+`;var Er=`-- 016: Limit each individual Market News move to +/-10%; retain the +/-15% daily cumulative cap.
+CREATE OR REPLACE FUNCTION public.jse_mood_band(p_mood text)
+RETURNS numeric[] LANGUAGE sql IMMUTABLE AS $function$
+  SELECT CASE upper(replace(trim(p_mood), ' ', '_'))
+    WHEN 'VERY_SEVERE'    THEN ARRAY[-10.00, -7.50]
+    WHEN 'SEVERE'         THEN ARRAY[-7.49, -5.00]
+    WHEN 'NEGATIVE'       THEN ARRAY[-4.99, -1.00]
+    WHEN 'NORMAL'         THEN ARRAY[-0.99, 0.99]
+    WHEN 'POSITIVE'       THEN ARRAY[1.00, 4.99]
+    WHEN 'VERY_POSITIVE'  THEN ARRAY[5.00, 7.49]
+    WHEN 'SUPER_POSITIVE' THEN ARRAY[7.50, 10.00]
+  END::numeric[]
+$function$;
+
+INSERT INTO schema_migrations(version) VALUES ('016_news_single_move_cap');
+`;var cr=`-- 017: Make per-team IPO allotments and official broker roster visible on the Portfolio list only.
+-- Does not change Team-page/account-page UI or the existing portfolio-detail/account functions.
+
+UPDATE public.broker_roster_aliases
+SET broker_name = 'SUGADEV'
+WHERE broker_number = 6
+  AND lower(broker_code) = 'arohan';
+
+CREATE OR REPLACE FUNCTION public.jse_portfolios(a jsonb, p jsonb)
+RETURNS jsonb LANGUAGE plpgsql STABLE AS $function$
+DECLARE
+  v_rows jsonb;
+  v_status text;
+  cfg event_config%ROWTYPE;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'VIEWER');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+
+  SELECT jsonb_agg(
+    r.m || jsonb_build_object(
+      'rank', r.rank_overall,
+      'rank_eligible', r.rank_eligible,
+      'award', r.award,
+      'roster_broker_code', COALESCE(ba.broker_code, r.m->>'broker'),
+      'roster_broker_name', COALESCE(ba.broker_name, r.m->>'broker_name'),
+      'ipo_allotments', COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+          'symbol', sec.symbol,
+          'name', sec.name,
+          'lots', al.lots,
+          'quantity', al.quantity,
+          'price', al.price,
+          'amount', al.amount
+        ) ORDER BY sec.display_order, al.id)
+        FROM public.ipo_allotments al
+        JOIN public.securities sec ON sec.id = al.security_id
+        WHERE al.team_id = (r.m->>'team_id')::integer
+          AND al.reversed_at IS NULL
+          AND al.quantity > 0
+      ), '[]'::jsonb)
+    ) ORDER BY (r.m->>'seq')::integer
+  )
+  INTO v_rows
+  FROM public.jse_ranked_teams() r
+  LEFT JOIN public.broker_roster_aliases ba
+    ON ba.internal_broker_id = nullif(r.m->>'broker_id','')::integer;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'event_status', v_status,
+    'final', v_status IN ('CLOSED', 'FINALIZED'),
+    'criterion', 'Net Worth = liquid cash + holdings \xD7 closing price (loans are not deducted). Winner = highest eligible Net Worth; Runner-Up = second highest. Ties go to the lower team code.',
+    'eligibility_rule', 'Eligible = at least ' || cfg.min_buy_trades || ' settled BUY and ' || cfg.min_sell_trades || ' settled SELL listed-stock trades (IPO allotments do not count)' ||
+      CASE WHEN cfg.loan_repayment_required THEN ' + loan fully repaid' ELSE '' END || ' + closing cash rule (base cash \u2264 ' || jse_inr(cfg.cash_rule_limit::bigint) || ', evaluated at close).',
+    'initial_capital', cfg.initial_capital,
+    'cash_rule_limit', cfg.cash_rule_limit,
+    'min_buy_trades', cfg.min_buy_trades,
+    'min_sell_trades', cfg.min_sell_trades,
+    'loan_repayment_required', cfg.loan_repayment_required,
+    'stats', (
+      SELECT jsonb_build_object(
+        'teams', count(*),
+        'total_net_worth', sum(net_worth),
+        'average_net_worth', round(avg(net_worth), 2),
+        'highest_net_worth', max(net_worth),
+        'lowest_net_worth', min(net_worth),
+        'total_cash', sum(cash),
+        'total_holdings', sum(holdings_value),
+        'eligible', count(*) FILTER (WHERE eligible),
+        'assessment_met', count(*) FILTER (WHERE assessment_met),
+        'loans_unpaid', count(*) FILTER (WHERE NOT loan_repaid),
+        'cash_rule_met', count(*) FILTER (WHERE cash_rule_met),
+        'cash_rule_not_met', count(*) FILTER (WHERE NOT cash_rule_met),
+        'profitable', count(*) FILTER (WHERE pnl > 0),
+        'short_sell_attempts', sum(short_sell_attempts),
+        'cash_shortfall_attempts', sum(cash_shortfall_attempts),
+        'insufficient_balance_rejections', sum(insufficient_balance_rejections),
+        'total_brokerage', sum(brokerage_paid),
+        'loans_outstanding', sum(loan_principal + loan_interest)
+      ) FROM public.jse_team_metrics WHERE active
+    ),
+    'winner', (
+      SELECT m || jsonb_build_object('rank', rank_overall, 'rank_eligible', rank_eligible, 'award', award)
+      FROM public.jse_ranked_teams() WHERE award = 'WINNER'
+    ),
+    'runner_up', (
+      SELECT m || jsonb_build_object('rank', rank_overall, 'rank_eligible', rank_eligible, 'award', award)
+      FROM public.jse_ranked_teams() WHERE award = 'RUNNER_UP'
+    ),
+    'teams', COALESCE(v_rows, '[]'::jsonb)
+  );
+END $function$;
+
+INSERT INTO public.schema_migrations(version) VALUES ('017_portfolio_ipo_visibility');
+`;var lr=`-- 018: Apply the official broker-to-team roster, show official broker labels,
+-- and count active assigned teams (never inactive placeholders) in commission summaries.
+-- Broker 6's official roster contact name is SUGADEV; Aman is no longer used.
+UPDATE public.broker_roster_aliases SET broker_name = 'SUGADEV' WHERE broker_number = 6 AND lower(broker_code) = 'arohan';
+
+WITH roster(team_name, broker_code) AS (VALUES
+('Viveka','Prajna'),('Jya','Prajna'),('Ghosha','Prajna'),('Shree','Prajna'),('Jaya','Prajna'),('Utsaha','Prajna'),('Abhyasa','Prajna'),
+('Panini','Ganita'),('Yukti','Ganita'),('Virahanka','Ganita'),('Sutra','Ganita'),('Koshya','Ganita'),('Madhava','Ganita'),('Sangita','Ganita'),
+('Mithila','Amrit'),('Dhan','Amrit'),('Nilakantha','Amrit'),('Maitreyi','Amrit'),('Avvaiyar','Amrit'),('Tanka','Amrit'),('Halayudha','Amrit'),
+('Pingala','Vikas'),('Pramana','Vikas'),('Labh','Vikas'),('Jaimini','Vikas'),('Neeti','Vikas'),('Rupa','Vikas'),('Neetiya','Vikas'),('Shiksha','Vikas'),
+('Artha','Yash'),('Kosh','Yash'),('Nyaya','Yash'),('Nishtha','Yash'),('Rajat','Yash'),('Mangala','Yash'),('Valabhi','Yash'),('Dhriti','Yash'),
+('Kautilya','Arohan'),('Nidhi','Arohan'),('Mudra','Arohan'),('Sridhara','Arohan'),('Labhya','Arohan'),('Charaka','Arohan'),('Kriya','Arohan'),
+('Nivesh','Madhava'),('Vasubandhu','Madhava'),('Nirukta','Madhava'),('Medha','Madhava'),('Kuttaka','Madhava'),('Vyaya','Madhava'),('Lopamudra','Madhava'),('Bhamaha','Madhava'),
+('Vagbhata','Vidura'),('Apala','Vidura'),('Khana','Vidura'),('Kanada','Vidura'),('Matanga','Vidura'),('Kapila','Vidura'),('Dignaga','Vidura'),
+('Sankalpa','Kalidasa'),('Munjala','Kalidasa'),('Vriddhi','Kalidasa'),('Shilpa','Kalidasa'),('Chandas','Kalidasa'),('Kamandaka','Kalidasa'),('Tarka','Kalidasa'),
+('Aryadeva','Suvarna'),('Vastu','Suvarna'),('Aryabhata','Suvarna'),('Akshaya','Suvarna'),('Dandin','Suvarna'),('Tantra','Suvarna'),('Sushruta','Suvarna')
+)
+UPDATE public.teams t
+SET broker_id = ba.internal_broker_id, updated_at = now()
+FROM roster r
+JOIN public.broker_roster_aliases ba ON lower(trim(ba.broker_code)) = lower(trim(r.broker_code))
+WHERE lower(trim(t.name)) = lower(trim(r.team_name))
+  AND t.active AND t.seq <> 1
+  AND t.broker_id IS DISTINCT FROM ba.internal_broker_id;
+
+CREATE OR REPLACE FUNCTION public.jse_commissions(a jsonb, p jsonb)
+RETURNS jsonb LANGUAGE plpgsql STABLE AS $function$
+DECLARE
+  v_broker integer;
+  v_page integer := greatest(1, coalesce(nullif(p->>'page', '')::integer, 1));
+  v_size integer := least(500, greatest(10, coalesce(nullif(p->>'page_size', '')::integer, 100)));
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'VIEWER');
+  IF a->>'role' = 'BROKER' THEN
+    v_broker := nullif(a->>'broker_id', '')::integer;
+  ELSIF coalesce(p->>'broker', '') <> '' THEN
+    SELECT b.id INTO v_broker
+    FROM brokers b LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id
+    WHERE upper(b.code) = upper(trim(p->>'broker'))
+       OR upper(ba.broker_code) = upper(trim(p->>'broker'))
+    ORDER BY b.id LIMIT 1;
+    v_broker := coalesce(v_broker, -1);
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'rate', (SELECT brokerage_rate FROM event_config WHERE id = 1),
+    'own_broker', CASE WHEN a->>'role' = 'BROKER' THEN (
+      SELECT coalesce(ba.broker_code, b.code) FROM brokers b
+      LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id
+      WHERE b.id = v_broker
+    ) END,
+    'brokers', coalesce((
+      SELECT jsonb_agg(x ORDER BY (x->>'rank')::integer)
+      FROM (
+        SELECT jsonb_build_object(
+          'rank', row_number() OVER (ORDER BY coalesce(c.amount, 0) DESC, coalesce(ba.broker_number, 999), b.code),
+          'broker', b.code,
+          'broker_number', coalesce(ba.broker_number, 999),
+          'display_code', coalesce(ba.broker_code, b.code),
+          'name', coalesce(ba.broker_name, b.name),
+          'teams', (SELECT count(*) FROM teams t WHERE t.broker_id = b.id AND t.active),
+          'orders', coalesce(c.n, 0),
+          'buy_orders', coalesce(c.nb, 0),
+          'sell_orders', coalesce(c.ns, 0),
+          'buy_volume', coalesce(c.bv, 0),
+          'sell_volume', coalesce(c.sv, 0),
+          'buy_quantity', coalesce(c.bq, 0),
+          'sell_quantity', coalesce(c.sq, 0),
+          'total_trade_value', coalesce(c.tv, 0),
+          'brokerage_earned', coalesce(c.amount, 0),
+          'pending_orders', (
+            SELECT count(*) FROM orders o
+            WHERE o.broker_id = b.id
+              AND o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')
+          )
+        ) AS x
+        FROM brokers b
+        LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id
+        LEFT JOIN (
+          SELECT bc.broker_id, count(*) n,
+            count(*) FILTER (WHERE bc.side = 'BUY') nb,
+            count(*) FILTER (WHERE bc.side = 'SELL') ns,
+            sum(bc.trade_value) FILTER (WHERE bc.side = 'BUY') bv,
+            sum(bc.trade_value) FILTER (WHERE bc.side = 'SELL') sv,
+            sum(o.quantity) FILTER (WHERE bc.side = 'BUY') bq,
+            sum(o.quantity) FILTER (WHERE bc.side = 'SELL') sq,
+            sum(bc.trade_value) tv, sum(bc.amount) amount
+          FROM broker_commissions bc JOIN orders o ON o.id = bc.order_id
+          WHERE bc.reversed_at IS NULL GROUP BY bc.broker_id
+        ) c ON c.broker_id = b.id
+        WHERE a->>'role' <> 'BROKER' OR b.id = v_broker
+      ) q
+    ), '[]'::jsonb),
+    'transactions_total', (
+      SELECT count(*) FROM broker_commissions bc
+      WHERE v_broker IS NULL OR bc.broker_id = v_broker
+    ),
+    'page', v_page, 'page_size', v_size,
+    'transactions', coalesce((
+      SELECT jsonb_agg(jsonb_build_object(
+        'created_at', bc.created_at, 'broker', b.code,
+        'broker_display_code', coalesce(ba.broker_code, b.code),
+        'broker_name', coalesce(ba.broker_name, b.name),
+        'order_no', o.order_no, 'account_type', o.account_type,
+        'counterparty', CASE WHEN o.account_type = 'INSTITUTION' THEN 'Institutional investor' ELSE 'Market' END,
+        'team', t.code, 'team_name', t.name, 'symbol', s.symbol, 'security', s.name,
+        'side', bc.side, 'quantity', o.quantity, 'price', o.price,
+        'trade_value', bc.trade_value, 'rate', bc.rate, 'amount', bc.amount,
+        'status', CASE WHEN bc.reversed_at IS NULL THEN 'SETTLED' ELSE 'REVERSED' END,
+        'reversed_at', bc.reversed_at
+      ) ORDER BY bc.id DESC)
+      FROM (
+        SELECT * FROM broker_commissions
+        WHERE v_broker IS NULL OR broker_id = v_broker
+        ORDER BY id DESC LIMIT v_size OFFSET (v_page - 1) * v_size
+      ) bc
+      JOIN brokers b ON b.id = bc.broker_id
+      LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id
+      JOIN orders o ON o.id = bc.order_id JOIN teams t ON t.id = bc.team_id
+      JOIN securities s ON s.id = o.security_id
+    ), '[]'::jsonb),
+    'totals', (
+      SELECT jsonb_build_object('orders', count(*), 'trade_value', coalesce(sum(trade_value), 0), 'brokerage', coalesce(sum(amount), 0))
+      FROM broker_commissions WHERE reversed_at IS NULL AND (v_broker IS NULL OR broker_id = v_broker)
+    ),
+    'reconciliation', (
+      SELECT jsonb_build_object('commission_total', c.total, 'settled_brokerage_total', st.total, 'ok', c.total = st.total)
+      FROM (
+        SELECT coalesce(sum(amount), 0) total FROM broker_commissions
+        WHERE reversed_at IS NULL AND (v_broker IS NULL OR broker_id = v_broker)
+      ) c,
+      (
+        SELECT coalesce(sum(st0.brokerage), 0) total FROM settlements st0
+        JOIN orders o0 ON o0.id = st0.order_id
+        WHERE st0.reversed_at IS NULL AND o0.broker_id IS NOT NULL
+          AND (v_broker IS NULL OR o0.broker_id = v_broker)
+      ) st
+    ),
+    'institutional', (
+      SELECT jsonb_build_object('orders', count(*), 'brokerage', coalesce(sum(bc.amount), 0))
+      FROM broker_commissions bc JOIN orders o ON o.id = bc.order_id
+      WHERE bc.reversed_at IS NULL AND o.account_type = 'INSTITUTION'
+        AND (v_broker IS NULL OR bc.broker_id = v_broker)
+    )
+  );
+END
+$function$;
+
+INSERT INTO public.schema_migrations(version) VALUES ('018_broker_assignments_and_counts');
+`;var dr=`-- 019: IPOs must surface in the top market positions on Start Event;
+-- IPO market colour remains measured against the original allotment/issue price.
+CREATE OR REPLACE FUNCTION public.jse__list_ipo(a jsonb, p_id integer)
+RETURNS jsonb LANGUAGE plpgsql AS $function$
+DECLARE s securities%ROWTYPE; v_price numeric; v_pct numeric; v_n integer;
+BEGIN
+  SELECT * INTO s FROM securities WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND OR s.kind <> 'IPO' OR s.listed_at IS NOT NULL OR NOT s.active THEN RETURN NULL; END IF;
+  IF s.trade_count > 0 OR s.price <> s.base_price
+     OR EXISTS (SELECT 1 FROM market_news n WHERE n.security_id = s.id AND n.reversed_at IS NULL) THEN
+    PERFORM jse_fail('IPO_ALREADY_MOVED', s.symbol || ' has already traded or moved on Market News; it can no longer be listed.', 409);
+  END IF;
+  v_price := coalesce(s.listing_price, s.base_price);
+  v_pct := jse_pct(v_price, s.price);
+  PERFORM jse__set_price(a, s.id, v_price, 'LISTING');
+  -- Give every IPO a fresh board timestamp even if its new listing price equals issue price.
+  -- Board sorts by last_price_change_at, so all four IPOs surface at Start Event and later
+  -- stock updates naturally take precedence.
+  UPDATE securities
+     SET listed_at = clock_timestamp(),
+         index_base_price = v_price,
+         last_price_change_at = clock_timestamp(),
+         updated_at = now()
+   WHERE id = s.id;
+  SELECT count(*) INTO v_n FROM securities WHERE active AND (kind = 'EQUITY' OR listed_at IS NOT NULL);
+  PERFORM jse_audit(a, 'IPO_LISTED', 'security', s.symbol, NULL, NULL,
+    jsonb_build_object('stage', jse_ipo_stage(s.id), 'price', s.price),
+    jsonb_build_object('stage', 'LISTED', 'price', v_price, 'cms_index', 'INCLUDED'),
+    jsonb_build_object('issue_price', s.base_price, 'listing_price', v_price, 'listed_at_issue_price', s.listing_price IS NULL,
+                       'change_pct', round(v_pct, 2), 'cms_index_components', v_n, 'source', 'LISTING'));
+  PERFORM jse_journal('IPO_LISTING', s.id,
+    s.symbol || ' listed at ' || jse_inr(v_price) || ' (issue ' || jse_inr(s.base_price) || ', ' || CASE WHEN v_pct > 0 THEN '+' ELSE '' END || to_char(round(v_pct, 2), 'FM990.00') || '%) \xB7 CMS 50 ' || v_n || ' components',
+    jsonb_build_object('security_id', s.id, 'from_price', s.price, 'from_previous', s.previous_price, 'listing_price', v_price), a);
+  RETURN jsonb_build_object('symbol', s.symbol, 'name', s.name, 'issue_price', s.base_price, 'listing_price', v_price,
+                            'change_pct', round(v_pct, 2), 'at_issue_price', s.listing_price IS NULL, 'index_components', v_n);
+END $function$;
+
+INSERT INTO public.schema_migrations(version) VALUES ('019_ipo_start_market_order');
+`;var ur=`-- 020: Remove the outdated "Aman" broker contact display and keep the official Arohan code.
+UPDATE public.broker_roster_aliases
+SET broker_name = 'SUGADEV'
+WHERE broker_number = 6
+  AND lower(broker_code) = 'arohan'
+  AND broker_name IS DISTINCT FROM 'SUGADEV';
+
+UPDATE public.brokers
+SET name = 'SUGADEV'
+WHERE id = (SELECT internal_broker_id FROM public.broker_roster_aliases
+           WHERE broker_number = 6 AND lower(broker_code) = 'arohan')
+  AND name IS DISTINCT FROM 'SUGADEV';
+
+UPDATE public.app_users
+SET display_name = 'SUGADEV', updated_at = now()
+WHERE role = 'BROKER'
+  AND broker_id = (SELECT internal_broker_id FROM public.broker_roster_aliases
+                   WHERE broker_number = 6 AND lower(broker_code) = 'arohan')
+  AND display_name IS DISTINCT FROM 'SUGADEV';
+
+INSERT INTO public.schema_migrations(version) VALUES ('020_broker_sugadev_name')
+ON CONFLICT (version) DO NOTHING;
+`;var Nr=`-- 021: Lock the official staging baseline and restore it on every event reset.
+-- IPO listing_price intentionally remains editable for the new opening price supplied by Event Admin.
+-- The allotment price/amount and all base reference prices are restored from this frozen snapshot.
+
+UPDATE public.broker_roster_aliases
+SET broker_name='SUGADEV'
+WHERE broker_number=6 AND lower(broker_code)='arohan';
+
+UPDATE public.brokers
+SET name='SUGADEV'
+WHERE id=(SELECT internal_broker_id FROM public.broker_roster_aliases WHERE broker_number=6 AND lower(broker_code)='arohan')
+  AND name IS DISTINCT FROM 'SUGADEV';
+
+UPDATE public.app_users
+SET display_name='SUGADEV', updated_at=now()
+WHERE role='BROKER'
+  AND broker_id=(SELECT internal_broker_id FROM public.broker_roster_aliases WHERE broker_number=6 AND lower(broker_code)='arohan')
+  AND display_name IS DISTINCT FROM 'SUGADEV';
+
+-- Titan's current staging price becomes its new base price.
+UPDATE public.securities
+SET base_price=price, previous_price=price, index_base_price=price, updated_at=now()
+WHERE symbol='TITAN' AND kind='EQUITY' AND active;
+
+CREATE TABLE IF NOT EXISTS public.jse_locked_baseline (
+  id smallint PRIMARY KEY CHECK (id=1),
+  version integer NOT NULL DEFAULT 1,
+  snapshot jsonb NOT NULL,
+  locked_at timestamptz NOT NULL DEFAULT now(),
+  locked_by text NOT NULL DEFAULT 'STAGING BASELINE'
+);;
+
+DROP TRIGGER IF EXISTS jse_locked_baseline_no_mutation ON public.jse_locked_baseline;
+
+INSERT INTO public.jse_locked_baseline(id,version,snapshot,locked_by)
+VALUES (
+  1,1,
+  jsonb_build_object(
+    'teams', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'id',id,'seq',seq,'code',code,'name',name,'section',section,'members',members,
+      'broker_id',broker_id,'active',active
+    ) ORDER BY seq),'[]'::jsonb) FROM public.teams),
+    'brokers', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'id',id,'code',code,'name',name,'active',active,'contact',contact,'desk',desk
+    ) ORDER BY id),'[]'::jsonb) FROM public.brokers),
+    'broker_roster_aliases', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'broker_number',broker_number,'broker_code',broker_code,'broker_name',broker_name,
+      'internal_broker_id',internal_broker_id
+    ) ORDER BY broker_number),'[]'::jsonb) FROM public.broker_roster_aliases),
+    'securities', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'id',id,'kind',kind,'symbol',symbol,'name',name,'sector',sector,
+      'base_price',base_price,'lot_size',lot_size,'display_order',display_order,'active',active,
+      'ipo_code',ipo_code,'ipo_shares_offered',ipo_shares_offered,'ipo_lot_size',ipo_lot_size
+    ) ORDER BY id),'[]'::jsonb) FROM public.securities),
+    'ipo_allotments', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'team_id',team_id,'security_id',security_id,'lots',lots,'quantity',quantity,
+      'price',price,'amount',amount,'batch_id',batch_id
+    ) ORDER BY id),'[]'::jsonb) FROM public.ipo_allotments WHERE reversed_at IS NULL AND quantity > 0)
+  ),
+  'LOCKED OFFICIAL ROSTER + INITIAL PRICES + IPO ALLOTMENTS'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Save pre-allotment cash for every team, preserving BIG BULL's current \u20B91 crore starting balance.
+UPDATE public.jse_locked_baseline b
+SET snapshot = b.snapshot || jsonb_build_object(
+  'team_starting_cash',
+  (SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'team_id', t.id,
+      'cash', t.cash + coalesce(al.total_amount, 0)
+    ) ORDER BY t.seq), '[]'::jsonb)
+   FROM public.teams t
+   LEFT JOIN (
+     SELECT team_id, sum(amount) total_amount
+     FROM public.ipo_allotments
+     WHERE reversed_at IS NULL AND quantity > 0
+     GROUP BY team_id
+   ) al ON al.team_id = t.id)
+)
+WHERE b.id = 1 AND NOT (b.snapshot ? 'team_starting_cash');
+
+CREATE OR REPLACE FUNCTION public.jse_locked_baseline_immutable()
+RETURNS trigger LANGUAGE plpgsql AS $function$
+BEGIN
+  RAISE EXCEPTION 'The staging baseline is locked. Request an explicit baseline update instead.';
+END
+$function$;
+
+DROP TRIGGER IF EXISTS jse_locked_baseline_no_mutation ON public.jse_locked_baseline;
+CREATE TRIGGER jse_locked_baseline_no_mutation
+BEFORE UPDATE OR DELETE ON public.jse_locked_baseline
+FOR EACH ROW EXECUTE FUNCTION public.jse_locked_baseline_immutable();
+
+CREATE OR REPLACE FUNCTION public.jse_reset_event(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  cfg event_config%ROWTYPE; ev event_control%ROWTYPE;
+  v_base jsonb; v_allots jsonb; r jsonb; al ipo_allotments%ROWTYPE; v_n integer := 0; v_archived integer;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF coalesce(p->>'confirm', '') <> 'RESET' THEN PERFORM jse_fail('CONFIRM_REQUIRED', 'Type RESET to confirm.', 400); END IF;
+  PERFORM jse_require_admin_password(a, p);
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT * INTO ev FROM event_control WHERE id = 1 FOR UPDATE;
+  IF ev.status IN ('LIVE', 'SETTLEMENT_ONLY') THEN
+    PERFORM jse_fail('EVENT_RUNNING', 'Close the market before resetting (current status: ' || replace(ev.status, '_', ' ') || ').', 409);
+  END IF;
+  LOCK TABLE orders, settlements, holdings, teams, securities, loans, brokers, broker_roster_aliases IN EXCLUSIVE MODE;
+  SELECT snapshot INTO v_base FROM public.jse_locked_baseline WHERE id = 1;
+  IF v_base IS NULL THEN PERFORM jse_fail('BASELINE_MISSING', 'The locked starting baseline is missing; reset was blocked.', 500); END IF;
+  v_allots := coalesce(v_base->'ipo_allotments', '[]'::jsonb);
+
+  PERFORM set_config('jse.maintenance', 'on', true);
+  INSERT INTO audit_log_archive SELECT al2.*, now(), ev.reset_count + 1 FROM audit_log al2;
+  GET DIAGNOSTICS v_archived = ROW_COUNT;
+  TRUNCATE action_journal, broker_commissions, cash_ledger, institution_ledger, loan_transactions, risk_events, price_history,
+           market_news, order_events, settlements, holdings, institutional_holdings, ipo_allotments, trading_slips, instructions, orders, audit_log
+           RESTART IDENTITY;
+  PERFORM set_config('jse.maintenance', 'off', true);
+
+  -- Restore locked roster and broker mappings. Cash/P&L is reset separately below.
+  UPDATE teams t SET name = x.name, section = x.section, members = x.members,
+      broker_id = x.broker_id, active = x.active, updated_at = now()
+  FROM jsonb_to_recordset(v_base->'teams') AS x(id integer, name text, section text, members text, broker_id integer, active boolean)
+  WHERE t.id = x.id;
+  UPDATE brokers b SET name = x.name, active = x.active, contact = x.contact, desk = x.desk
+  FROM jsonb_to_recordset(v_base->'brokers') AS x(id integer, name text, active boolean, contact text, desk text)
+  WHERE b.id = x.id;
+  DELETE FROM broker_roster_aliases;
+  INSERT INTO broker_roster_aliases(broker_number, broker_code, broker_name, internal_broker_id)
+  SELECT x.broker_number, x.broker_code, x.broker_name, x.internal_broker_id
+  FROM jsonb_to_recordset(v_base->'broker_roster_aliases') AS x(
+    broker_number integer, broker_code text, broker_name text, internal_broker_id integer
+  );
+  -- Restore company identities/base values; retain listing_price for the next START.
+  UPDATE securities s SET kind = x.kind, symbol = x.symbol, name = x.name, sector = x.sector,
+      base_price = x.base_price, lot_size = x.lot_size, display_order = x.display_order,
+      active = x.active, ipo_code = x.ipo_code, ipo_shares_offered = x.ipo_shares_offered,
+      ipo_lot_size = x.ipo_lot_size, updated_at = now()
+  FROM jsonb_to_recordset(v_base->'securities') AS x(
+    id integer, kind text, symbol text, name text, sector text, base_price numeric,
+    lot_size integer, display_order integer, active boolean, ipo_code text,
+    ipo_shares_offered integer, ipo_lot_size integer
+  )
+  WHERE s.id = x.id;
+
+  UPDATE teams t SET cash = coalesce(
+      (SELECT (x.value->>'cash')::numeric
+       FROM jsonb_array_elements(v_base->'team_starting_cash') AS x(value)
+       WHERE (x.value->>'team_id')::integer = t.id),
+      cfg.initial_capital
+    ), realized_pnl = 0, brokerage_paid = 0, short_sell_attempts = 0,
+    cash_shortfall_attempts = 0, insufficient_balance_rejections = 0, updated_at = now();
+  UPDATE loans SET original_principal = 0, principal_outstanding = 0, interest_outstanding = 0, interest_charged = 0,
+                   interest_paid = 0, principal_repaid = 0, draws = 0, status = 'NONE', updated_at = now();
+  INSERT INTO loans(team_id) SELECT id FROM teams ON CONFLICT (team_id) DO NOTHING;
+  UPDATE institutions SET cash = initial_cash, updated_at = now();
+  -- base / reference prices; IPOs back to the pre-market stage (saved listing prices are kept for the next START)
+  UPDATE securities SET price = base_price, previous_price = base_price, trade_count = 0, traded_quantity = 0, traded_value = 0,
+                        last_trade_at = NULL, listed_at = NULL, last_price_change_at = NULL,
+                        index_base_price = CASE WHEN kind = 'EQUITY' THEN base_price END, updated_at = now();
+  INSERT INTO cash_ledger(team_id, entry_type, credit, balance_after, note, actor_id, actor_name)
+  SELECT id, 'INITIAL_CAPITAL', cash, cash, 'Initial event capital', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM teams;
+  INSERT INTO institution_ledger(institution_id, entry_type, credit, balance_after, note, actor_id, actor_name)
+  SELECT id, 'INITIAL_CAPITAL', initial_cash, initial_cash, 'Initial institutional cash', nullif(a->>'id', '')::integer, jse_actor_name(a) FROM institutions;
+
+  FOR r IN SELECT value FROM jsonb_array_elements(v_allots) LOOP
+    INSERT INTO ipo_allotments(team_id, security_id, lots, quantity, price, amount, batch_id, created_by, created_by_name)
+    VALUES ((r->>'team_id')::integer, (r->>'security_id')::integer, (r->>'lots')::integer, (r->>'quantity')::integer,
+            (r->>'price')::numeric, (r->>'amount')::numeric, r->>'batch_id', nullif(a->>'id', '')::integer, jse_actor_name(a))
+    RETURNING * INTO al;
+    PERFORM jse__apply_allotment(a, al);
+    v_n := v_n + 1;
+  END LOOP;
+
+  UPDATE event_control SET status = 'NOT_STARTED', started_at = NULL, paused_at = NULL, closed_at = NULL, finalized_at = NULL,
+         status_changed_at = now(), status_changed_by = jse_actor_name(a), reset_count = reset_count + 1, last_reset_at = now(),
+         market_updated_at = now() WHERE id = 1;
+  PERFORM jse_audit(a, 'EVENT_RESET', 'event', 'event_control', NULL, NULL, jsonb_build_object('status', ev.status),
+    jsonb_build_object('status', 'NOT_STARTED'),
+    jsonb_build_object('reset_no', ev.reset_count + 1, 'archived_audit_rows', v_archived, 'kept_ipo_allotments', v_n, 'baseline_restored', true,
+                       'team_names_locked', cfg.team_names_locked_at IS NOT NULL));
+  RETURN jsonb_build_object('success', true, 'status', 'NOT_STARTED', 'reset_no', ev.reset_count + 1, 'kept_ipo_allotments', v_n, 'archived_audit_rows', v_archived);
+END $function$;
+
+CREATE OR REPLACE FUNCTION public.jse_admin_state(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE v_idx jsonb := jse_cms_index();
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'VIEWER');
+  RETURN jse_event_status() || jsonb_build_object(
+    'config_full', (SELECT to_jsonb(c) - 'min_cash_buffer' - 'participant_order_entry' - 'institutional_cash' - 'institution_overdraft' - 'institution_brokerage'
+                    FROM event_config c WHERE id = 1),
+    'stats', (SELECT jsonb_build_object('total_trade_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED'), 0),
+        'total_brokerage', coalesce(sum(brokerage) FILTER (WHERE status = 'BANK_SETTLED'), 0),
+        'pit_pending', count(*) FILTER (WHERE status = 'PIT_PENDING'),
+        'pending_orders', count(*) FILTER (WHERE status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')),
+        'settled_orders', count(*) FILTER (WHERE status = 'BANK_SETTLED'),
+        'rejected_orders', count(*) FILTER (WHERE status IN ('PIT_REJECTED','EXCHANGE_REJECTED','BANK_REJECTED')),
+        'stale_orders', count(*) FILTER (WHERE reject_code = 'PRICE_STALE'),
+        'slips', (SELECT count(*) FROM trading_slips),
+        'open_instructions', (SELECT count(*) FROM instructions WHERE status = 'OPEN'),
+        'institutional_orders', count(*) FILTER (WHERE account_type = 'INSTITUTION'),
+        'news_items', (SELECT count(*) FROM market_news WHERE reversed_at IS NULL),
+        'loans_outstanding', (SELECT coalesce(sum(principal_outstanding + interest_outstanding), 0) FROM loans),
+        'risk', (SELECT jsonb_build_object('short_sell', count(*) FILTER (WHERE kind = 'SHORT_SELL_ATTEMPT'),
+                   'cash_shortfall', count(*) FILTER (WHERE kind = 'CASH_SHORTFALL_ATTEMPT'),
+                   'insufficient_balance', count(*) FILTER (WHERE kind = 'INSUFFICIENT_BALANCE_REJECTION')) FROM risk_events)) FROM orders),
+    'market', jsonb_build_object('index', v_idx, 'breadth', jse_market()->'breadth'),
+    'consistency', (SELECT jsonb_build_object(
+        'equities_active', (SELECT count(*) FROM securities WHERE kind = 'EQUITY' AND active),
+        'index_equity_components', (v_idx->>'equity_components')::integer,
+        'market_stocks', (SELECT count(*) FROM securities WHERE kind = 'EQUITY' AND active),
+        'ipos', (SELECT count(*) FROM securities WHERE kind = 'IPO' AND active),
+        'ipos_listed', (SELECT count(*) FROM securities WHERE kind = 'IPO' AND active AND listed_at IS NOT NULL),
+        'index_ipo_components', (v_idx->>'ipo_components')::integer,
+        'index_components', (v_idx->>'components')::integer,
+        'ok', (SELECT count(*) FROM securities WHERE kind = 'EQUITY' AND active) = (v_idx->>'equity_components')::integer
+              AND (SELECT count(*) FROM securities WHERE kind = 'IPO' AND active AND listed_at IS NOT NULL) = (v_idx->>'ipo_components')::integer)),
+    'journal', coalesce((SELECT jsonb_agg(jsonb_build_object('id', j.id, 'action', j.action, 'summary', j.summary, 'actor', j.actor_name, 'at', j.created_at,
+        'undone_at', j.undone_at, 'undone_by', j.undone_by, 'redone_at', j.redone_at, 'redone_by', j.redone_by,
+        'superseded', coalesce((j.payload->>'superseded')::boolean, false),
+        'state', CASE WHEN coalesce((j.payload->>'superseded')::boolean, false) THEN 'REDONE'
+                      WHEN j.undone_at IS NOT NULL AND (j.redone_at IS NULL OR j.redone_at < j.undone_at) THEN 'UNDONE' ELSE 'ACTIVE' END) ORDER BY j.id DESC)
+      FROM (SELECT * FROM action_journal ORDER BY id DESC) j), '[]'::jsonb),
+    'allotments', (SELECT jsonb_build_object('rows', count(*), 'teams', count(DISTINCT team_id), 'amount', coalesce(sum(amount), 0),
+        'by_ipo', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'name', s.name, 'teams', z.n, 'lots', z.lots, 'shares', z.q, 'amount', z.amt) ORDER BY s.display_order)
+                  FROM (SELECT security_id, count(*) n, sum(lots) lots, sum(quantity) q, sum(amount) amt FROM ipo_allotments WHERE reversed_at IS NULL GROUP BY security_id) z
+                  JOIN securities s ON s.id = z.security_id), '[]'::jsonb),
+        'list', coalesce((SELECT jsonb_agg(jsonb_build_object('team', t.code, 'team_name', t.name, 'ipo', s.symbol, 'ipo_code', s.ipo_code, 'lots', x.lots, 'shares', x.quantity, 'amount', x.amount) ORDER BY t.seq, s.display_order)
+                  FROM (SELECT * FROM ipo_allotments WHERE reversed_at IS NULL ORDER BY id LIMIT 1000) x JOIN teams t ON t.id = x.team_id JOIN securities s ON s.id = x.security_id), '[]'::jsonb))
+      FROM ipo_allotments WHERE reversed_at IS NULL),
+    'ipo_listing', jse_listing_state(a),
+    'ipo_admin', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'ipo_code', s.ipo_code, 'name', s.name, 'stage', jse_ipo_stage(s.id),
+        'price', s.base_price, 'listed', s.listed_at IS NOT NULL, 'offered', s.ipo_shares_offered,
+        'remaining', CASE WHEN s.ipo_shares_offered IS NULL THEN NULL ELSE s.ipo_shares_offered - coalesce((SELECT sum(quantity) FROM ipo_allotments al WHERE al.security_id = s.id AND al.reversed_at IS NULL), 0) END,
+        'applications', (SELECT count(*) FROM ipo_applications ap WHERE ap.security_id = s.id AND ap.status = 'APPLIED'),
+        'applied_lots', (SELECT coalesce(sum(lots), 0) FROM ipo_applications ap WHERE ap.security_id = s.id AND ap.status = 'APPLIED'),
+        'prospectus_fields', (SELECT (CASE WHEN pr.company_description IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.issue_details IS NOT NULL THEN 1 ELSE 0 END)
+              + (CASE WHEN pr.business_overview IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.financial_information IS NOT NULL THEN 1 ELSE 0 END)
+              + (CASE WHEN pr.risk_factors IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.use_of_proceeds IS NOT NULL THEN 1 ELSE 0 END)
+              + (CASE WHEN pr.promoters_management IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN pr.other_information IS NOT NULL THEN 1 ELSE 0 END)
+              FROM ipo_prospectus pr WHERE pr.security_id = s.id),
+        'has_document', (SELECT document_data IS NOT NULL OR document_url IS NOT NULL FROM ipo_prospectus pr WHERE pr.security_id = s.id)) ORDER BY s.display_order)
+      FROM securities s WHERE s.kind = 'IPO' AND s.active), '[]'::jsonb),
+    'team_names', (SELECT jsonb_build_object('seed', team_name_seed, 'assigned_at', team_names_assigned_at, 'locked', team_names_locked_at IS NOT NULL,
+        'locked_at', team_names_locked_at, 'locked_by', team_names_locked_by, 'pool_size', (SELECT count(*) FROM team_name_pool WHERE active))
+      FROM event_config WHERE id = 1),
+    'brokers', (SELECT jsonb_agg(jsonb_build_object('code', b.code, 'display_code', coalesce(ba.broker_code, b.code), 'name', coalesce(ba.broker_name, b.name), 'contact', b.contact, 'desk', b.desk,
+        'teams', (SELECT count(*) FROM teams t WHERE t.broker_id = b.id AND t.active)) ORDER BY coalesce(ba.broker_number, 999), b.code)
+      FROM brokers b LEFT JOIN broker_roster_aliases ba ON ba.internal_broker_id = b.id),
+    'unassigned_teams', (SELECT count(*) FROM teams WHERE broker_id IS NULL),
+    'users', (SELECT jsonb_object_agg(role, n) FROM (SELECT role, count(*) n FROM app_users WHERE active GROUP BY role) u));
+END $function$;
+
+INSERT INTO public.schema_migrations(version) VALUES ('021_locked_baseline_reset')
+ON CONFLICT (version) DO NOTHING;
+`;var Tr=`-- 022: Refresh the immutable staging reset baseline to the currently approved data.
+-- Preserves official roster assignments, Team 65's current IKS name (Tarka),
+-- SUGADEV's broker display name, current base prices, and all uploaded positive IPO allotments.
+-- IPO listing_price remains a separate start-event value supplied later by the administrator.
+
+UPDATE public.securities
+SET base_price = price,
+    previous_price = price,
+    index_base_price = price,
+    updated_at = now()
+WHERE symbol = 'TITAN' AND kind = 'EQUITY' AND active;
+
+UPDATE public.broker_roster_aliases
+SET broker_name = 'SUGADEV'
+WHERE broker_number = 6 AND lower(broker_code) = 'arohan'
+  AND broker_name IS DISTINCT FROM 'SUGADEV';
+
+UPDATE public.brokers
+SET name = 'SUGADEV'
+WHERE id = (SELECT internal_broker_id FROM public.broker_roster_aliases
+            WHERE broker_number = 6 AND lower(broker_code) = 'arohan')
+  AND name IS DISTINCT FROM 'SUGADEV';
+
+UPDATE public.app_users
+SET display_name = 'SUGADEV', updated_at = now()
+WHERE role = 'BROKER'
+  AND broker_id = (SELECT internal_broker_id FROM public.broker_roster_aliases
+                   WHERE broker_number = 6 AND lower(broker_code) = 'arohan')
+  AND display_name IS DISTINCT FROM 'SUGADEV';
+
+DROP TRIGGER IF EXISTS jse_locked_baseline_no_mutation ON public.jse_locked_baseline;
+
+UPDATE public.jse_locked_baseline
+SET version = 2,
+    locked_at = now(),
+    locked_by = 'LOCKED OFFICIAL STAGING BASELINE v2',
+    snapshot = jsonb_build_object(
+      'teams', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'id',id,'seq',seq,'code',code,'name',name,'section',section,'members',members,
+        'broker_id',broker_id,'active',active
+      ) ORDER BY seq),'[]'::jsonb) FROM public.teams),
+      'brokers', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'id',id,'code',code,'name',name,'active',active,'contact',contact,'desk',desk
+      ) ORDER BY id),'[]'::jsonb) FROM public.brokers),
+      'broker_roster_aliases', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'broker_number',broker_number,'broker_code',broker_code,'broker_name',broker_name,
+        'internal_broker_id',internal_broker_id
+      ) ORDER BY broker_number),'[]'::jsonb) FROM public.broker_roster_aliases),
+      'securities', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'id',id,'kind',kind,'symbol',symbol,'name',name,'sector',sector,
+        'base_price',base_price,'lot_size',lot_size,'display_order',display_order,'active',active,
+        'ipo_code',ipo_code,'ipo_shares_offered',ipo_shares_offered,'ipo_lot_size',ipo_lot_size
+      ) ORDER BY id),'[]'::jsonb) FROM public.securities),
+      'ipo_allotments', (SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'team_id',team_id,'security_id',security_id,'lots',lots,'quantity',quantity,
+        'price',price,'amount',amount,'batch_id',batch_id
+      ) ORDER BY id),'[]'::jsonb) FROM public.ipo_allotments WHERE reversed_at IS NULL AND quantity > 0),
+      'team_starting_cash',
+      (SELECT coalesce(jsonb_agg(jsonb_build_object(
+          'team_id', t.id,
+          'cash', t.cash + coalesce(al.total_amount, 0)
+        ) ORDER BY t.seq), '[]'::jsonb)
+       FROM public.teams t
+       LEFT JOIN (
+         SELECT team_id, sum(amount) total_amount
+         FROM public.ipo_allotments
+         WHERE reversed_at IS NULL AND quantity > 0
+         GROUP BY team_id
+       ) al ON al.team_id = t.id)
+    )
+WHERE id = 1;
+
+DROP TRIGGER IF EXISTS jse_locked_baseline_no_mutation ON public.jse_locked_baseline;
+CREATE TRIGGER jse_locked_baseline_no_mutation
+BEFORE UPDATE OR DELETE ON public.jse_locked_baseline
+FOR EACH ROW EXECUTE FUNCTION public.jse_locked_baseline_immutable();
+
+INSERT INTO public.schema_migrations(version) VALUES ('022_locked_baseline_refresh')
+ON CONFLICT (version) DO NOTHING;
+`;var mr=`-- 023: Prevent clearing or editing the locked baseline IPO allotments.
+-- Event Reset is the only routine action that temporarily truncates and then restores these rows.
+CREATE OR REPLACE FUNCTION public.jse_guard_locked_ipo_allotment()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+  v_matches_baseline boolean;
+BEGIN
+  IF current_setting('jse.maintenance', true) = 'on' THEN
+    IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.jse_locked_baseline b
+    CROSS JOIN LATERAL jsonb_array_elements(coalesce(b.snapshot->'ipo_allotments','[]'::jsonb)) AS x(value)
+    WHERE b.id = 1
+      AND (x.value->>'team_id')::integer = OLD.team_id
+      AND (x.value->>'security_id')::integer = OLD.security_id
+      AND (x.value->>'lots')::integer = OLD.lots
+      AND (x.value->>'quantity')::integer = OLD.quantity
+      AND (x.value->>'price')::numeric = OLD.price
+      AND (x.value->>'amount')::numeric = OLD.amount
+      AND coalesce(x.value->>'batch_id','') = coalesce(OLD.batch_id,'')
+  ) INTO v_matches_baseline;
+
+  IF v_matches_baseline THEN
+    RAISE EXCEPTION 'This IPO allotment is part of the locked baseline. Use Event Reset to restore it; update the baseline only through an explicit administrator change.';
+  END IF;
+
+  IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+END
+$function$;
+
+DROP TRIGGER IF EXISTS jse_guard_locked_ipo_allotment ON public.ipo_allotments;
+CREATE TRIGGER jse_guard_locked_ipo_allotment
+BEFORE UPDATE OR DELETE ON public.ipo_allotments
+FOR EACH ROW EXECUTE FUNCTION public.jse_guard_locked_ipo_allotment();
+
+INSERT INTO public.schema_migrations(version) VALUES ('023_lock_baseline_ipo_allotments')
+ON CONFLICT (version) DO NOTHING;
+`;var pr=`-- 024: Keep the official broker roster editable from Event Admin without breaking the
+-- internal broker desk identifiers used by accounts, orders, and historical trades.
+CREATE OR REPLACE FUNCTION public.jse_update_brokers(a jsonb, p jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+  r jsonb;
+  x jsonb;
+  v_i integer := 0;
+  v_plan jsonb := '[]'::jsonb;
+  v_errors jsonb := '[]'::jsonb;
+  v_input_code text;
+  v_name text;
+  b public.brokers%ROWTYPE;
+  ali public.broker_roster_aliases%ROWTYPE;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF NOT coalesce((p->>'dry_run')::boolean, false) THEN
+    PERFORM jse_require_admin_password(a, p);
+  END IF;
+  IF jsonb_typeof(p->'rows') IS DISTINCT FROM 'array' OR jsonb_array_length(p->'rows') = 0 THEN
+    PERFORM jse_fail('NO_ROWS', 'No broker rows were supplied.', 400);
+  END IF;
+
+  FOR r IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+    v_i := v_i + 1;
+    v_input_code := upper(trim(coalesce(r->>'broker', r->>'code', '')));
+    SELECT br.* INTO b
+      FROM public.brokers br
+      LEFT JOIN public.broker_roster_aliases ba ON ba.internal_broker_id = br.id
+     WHERE upper(br.code) = v_input_code OR upper(ba.broker_code) = v_input_code
+     ORDER BY CASE WHEN upper(ba.broker_code) = v_input_code THEN 0 ELSE 1 END, br.id
+     LIMIT 1;
+    IF NOT FOUND THEN
+      v_errors := v_errors || jsonb_build_object(
+        'row', v_i, 'error', 'Unknown official broker code or internal broker code ' ||
+        coalesce(nullif(v_input_code, ''), '(blank)')
+      );
+      CONTINUE;
+    END IF;
+
+    SELECT * INTO ali
+      FROM public.broker_roster_aliases
+     WHERE internal_broker_id = b.id
+     ORDER BY broker_number
+     LIMIT 1;
+
+    v_name := coalesce(nullif(trim(r->>'name'), ''), ali.broker_name, b.name);
+    IF length(v_name) > 120
+       OR length(coalesce(r->>'contact', '')) > 200
+       OR length(coalesce(r->>'desk', '')) > 120 THEN
+      v_errors := v_errors || jsonb_build_object('row', v_i, 'error', b.code || ': text too long');
+      CONTINUE;
+    END IF;
+
+    v_plan := v_plan || jsonb_build_object(
+      'id', b.id,
+      'internal_code', b.code,
+      'broker_number', ali.broker_number,
+      'display_code', coalesce(ali.broker_code, b.code),
+      'name', v_name,
+      'contact', CASE WHEN r ? 'contact' THEN nullif(trim(r->>'contact'), '') ELSE b.contact END,
+      'desk', CASE WHEN r ? 'desk' THEN nullif(trim(r->>'desk'), '') ELSE b.desk END,
+      'before', jsonb_build_object(
+        'name', coalesce(ali.broker_name, b.name),
+        'internal_name', b.name,
+        'contact', b.contact,
+        'desk', b.desk
+      )
+    );
+  END LOOP;
+
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements(v_plan) e
+     GROUP BY e->>'id' HAVING count(*) > 1
+  ) THEN
+    v_errors := v_errors || jsonb_build_object('row', NULL, 'error', 'A broker code appears more than once in the file');
+  END IF;
+
+  IF jsonb_array_length(v_errors) > 0 THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'code', 'ROSTER_ERRORS',
+      'error', 'Nothing was saved. Fix the rows listed and try again.',
+      'errors', v_errors,
+      'http', 400
+    );
+  END IF;
+
+  IF coalesce((p->>'dry_run')::boolean, false) THEN
+    RETURN jsonb_build_object('success', true, 'dry_run', true, 'rows', jsonb_array_length(v_plan), 'preview',
+      (SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'broker_code', e->'display_code',
+        'broker_number', e->'broker_number',
+        'broker_name', e->'name',
+        'internal_code', e->'internal_code'
+      ) ORDER BY (e->>'broker_number')::integer NULLS LAST), '[]'::jsonb)
+       FROM jsonb_array_elements(v_plan) e));
+  END IF;
+
+  FOR x IN SELECT value FROM jsonb_array_elements(v_plan) LOOP
+    UPDATE public.brokers
+       SET name = x->>'name',
+           contact = x->>'contact',
+           desk = x->>'desk'
+     WHERE id = (x->>'id')::integer;
+
+    UPDATE public.broker_roster_aliases
+       SET broker_name = x->>'name'
+     WHERE internal_broker_id = (x->>'id')::integer
+       AND broker_name IS DISTINCT FROM x->>'name';
+
+    UPDATE public.app_users
+       SET display_name = x->>'name', updated_at = now()
+     WHERE role = 'BROKER'
+       AND broker_id = (x->>'id')::integer
+       AND display_name IS DISTINCT FROM x->>'name';
+
+    IF (x->'before'->>'name') IS DISTINCT FROM x->>'name'
+       OR (x->'before'->>'internal_name') IS DISTINCT FROM x->>'name'
+       OR (x->'before'->>'contact') IS DISTINCT FROM x->>'contact'
+       OR (x->'before'->>'desk') IS DISTINCT FROM x->>'desk' THEN
+      PERFORM public.jse_audit(
+        a, 'BROKER_UPDATED', 'broker', x->>'display_code',
+        NULL, NULL, x->'before',
+        jsonb_build_object(
+          'name', x->>'name',
+          'internal_name', x->>'name',
+          'contact', x->>'contact',
+          'desk', x->>'desk'
+        ), NULL
+      );
+    END IF;
+  END LOOP;
+
+  PERFORM public.jse_audit(
+    a, 'BROKERS_UPDATED', 'broker', NULL,
+    NULL, NULL, NULL, NULL,
+    jsonb_build_object('rows', jsonb_array_length(v_plan))
+  );
+  RETURN jsonb_build_object('success', true, 'updated', jsonb_array_length(v_plan));
+END
+$function$;
+`;var Rr=`-- 025: Institutional orders have no maximum order-value cap. The institution itself has
+-- unlimited cash and holdings; normal participant counterparty settlement rules remain intact.
+CREATE OR REPLACE FUNCTION public.jse_place_institutional_order(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  cfg event_config%ROWTYPE;
+  v_status text;
+  v_inst institutions%ROWTYPE;
+  v_team teams%ROWTYPE;
+  v_sec securities%ROWTYPE;
+  v_side text := upper(trim(coalesce(p->>'side', '')));
+  v_key text := nullif(trim(coalesce(p->>'idempotency_key', '')), '');
+  v_qty integer; v_expected numeric; v_tv numeric; v_brk numeric := 0; v_rate numeric := 0;
+  v_price numeric; v_amount numeric; v_team_side text;
+  v_id bigint; v_no text; v_existing bigint;
+  v_warnings jsonb := '[]'::jsonb;
+  v_avail record; v_free_cash numeric; v_room numeric;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL');
+  IF v_key IS NULL OR length(v_key) > 120 THEN
+    PERFORM jse_fail('IDEMPOTENCY_KEY_REQUIRED', 'Order submission is missing its request key. Reload the page and try again.', 400);
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('jse-order:' || v_key, 0));
+  SELECT id INTO v_existing FROM orders WHERE idempotency_key = v_key;
+  IF FOUND THEN RETURN jsonb_build_object('success', true, 'replayed', true, 'order', jse_order_json(v_existing), 'warnings', '[]'::jsonb); END IF;
+
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  IF v_status <> 'LIVE' THEN
+    PERFORM jse_fail('EVENT_NOT_LIVE', 'New orders are accepted only while the market is LIVE (current status: ' || replace(v_status, '_', ' ') || ').', 409);
+  END IF;
+  SELECT * INTO v_inst FROM institutions
+  WHERE id = coalesce(CASE WHEN a->>'role' = 'ADMIN' THEN nullif(p->>'institution_id', '')::integer END,
+                      nullif(a->>'institution_id', '')::integer, (SELECT min(id) FROM institutions));
+  IF NOT FOUND THEN PERFORM jse_fail('INSTITUTION_NOT_FOUND', 'Institutional account not found.', 404); END IF;
+  SELECT * INTO v_team FROM teams WHERE code = upper(trim(coalesce(p->>'counterparty_team', p->>'team', '')));
+  IF NOT FOUND THEN PERFORM jse_fail('COUNTERPARTY_REQUIRED', 'Select the counterparty participant team.', 400); END IF;
+  IF NOT v_team.active THEN PERFORM jse_fail('TEAM_INACTIVE', 'Team ' || v_team.code || ' is not active.', 409); END IF;
+  SELECT * INTO v_sec FROM securities
+  WHERE (p ? 'security_id' AND id = nullif(p->>'security_id', '')::integer) OR (p ? 'symbol' AND symbol = upper(trim(p->>'symbol')))
+  FOR KEY SHARE;
+  IF NOT FOUND OR NOT v_sec.active THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Select a valid listed stock.', 404); END IF;
+  IF v_sec.kind = 'IPO' AND v_sec.listed_at IS NULL THEN
+    PERFORM jse_fail('IPO_NOT_LISTED', v_sec.symbol || ' is still in the IPO stage and cannot be traded yet.', 409);
+  END IF;
+  IF v_side NOT IN ('BUY', 'SELL') THEN PERFORM jse_fail('INVALID_SIDE', 'Choose BUY or SELL.', 400); END IF;
+  BEGIN
+    v_qty := (p->>'quantity')::integer; v_expected := nullif(p->>'expected_price', '')::numeric;
+  EXCEPTION WHEN others THEN PERFORM jse_fail('INVALID_NUMBER', 'Quantity must be a whole number of shares.', 400);
+  END;
+  IF v_qty IS NULL OR v_qty <= 0 OR v_qty % v_sec.lot_size <> 0 THEN
+    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' trades in multiples of ' || v_sec.lot_size || ' shares.', 400);
+  END IF;
+  -- expected_price = the prevailing MARKET price the desk saw (the institutional price is derived from it)
+  IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
+    RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
+      MESSAGE = 'MARKET PRICE CHANGED: ' || v_sec.symbol || ' moved from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
+                ' (Market News). The institutional price is recalculated from the new market price \u2014 review and submit again.';
+  END IF;
+  v_team_side := jse_team_side('INSTITUTION', v_side);
+  v_price := jse_inst_price(v_sec.price, v_side);
+  v_tv := round(v_qty * v_price, 2);
+  v_rate := cfg.brokerage_rate;
+  v_brk := round(v_tv * v_rate, 2);
+  v_amount := CASE WHEN v_team_side = 'BUY' THEN v_tv + v_brk ELSE v_tv - v_brk END;
+  IF v_tv < cfg.min_order_value THEN
+    PERFORM jse_fail('ORDER_VALUE_LIMIT', 'Order value must be between ' || jse_inr(cfg.min_order_value) || ' and ' || jse_inr(cfg.max_order_value) ||
+      ' per order (this order: ' || jse_inr(v_tv) || ').', 400);
+  END IF;
+
+  -- the participant side is checked like any participant trade (v3.14: refused, not only flagged); team row locked
+  PERFORM 1 FROM teams WHERE id = v_team.id FOR UPDATE;
+  IF v_team_side = 'SELL' THEN
+    SELECT * INTO v_avail FROM jse_available_qty(v_team.id, v_sec.id, NULL);
+    IF v_qty > v_avail.available THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_NOT_ALLOWED', HINT = '409',
+        MESSAGE = 'Short selling is not allowed. You can sell only the shares available in your portfolio. Please reduce the quantity or check your holdings. (' ||
+                  v_team.code || ' can sell ' || greatest(v_avail.available, 0) || ' ' || v_sec.symbol || ')';
+    END IF;
+  ELSE
+    v_free_cash := jse_available_cash(v_team.id, NULL);
+    IF v_amount > v_free_cash THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSUFFICIENT_BALANCE', HINT = '409',
+        MESSAGE = 'Insufficient balance! Your available cash is ' || jse_inr(greatest(v_free_cash, 0)) || ', but this order requires ' || jse_inr(v_amount) ||
+                  ', including applicable charges. Please reduce the order quantity or obtain an approved loan before placing this order.';
+    END IF;
+    PERFORM jse_check_company_limit(v_team.id, v_sec.id, v_amount, NULL);
+  END IF;
+
+  v_id := nextval(pg_get_serial_sequence('orders', 'id'));
+  v_no := 'INS-' || v_id::text;
+  INSERT INTO orders(id, order_no, account_type, team_id, institution_id, broker_id, security_id, side, quantity, price, trade_value, brokerage,
+                     brokerage_rate, settlement_amount, reference_price, status, notes, idempotency_key, created_by, created_by_name, created_role)
+  VALUES (v_id, v_no, 'INSTITUTION', v_team.id, v_inst.id, v_team.broker_id, v_sec.id, v_side, v_qty, v_price, v_tv, v_brk,
+          v_rate, v_amount, v_sec.price, 'EXCHANGE_PENDING', left(p->>'notes', 300), v_key,
+          nullif(a->>'id', '')::integer, jse_actor_name(a), a->>'role');
+  PERFORM jse_order_event(v_id, 'INSTITUTION_SUBMITTED', NULL, 'EXCHANGE_PENDING', a,
+    v_team.code || ' ' || CASE WHEN v_team_side = 'BUY' THEN 'buys from ' ELSE 'sells to ' END || v_inst.code || ' at ' || jse_inr(v_price) ||
+    ' (market ' || jse_inr(v_sec.price) || CASE WHEN v_team_side = 'BUY' THEN ' + ' ELSE ' \u2212 ' END || to_char(jse_inst_spread_pct(), 'FM990.##') || '%)' ||
+    ' \xB7 brokerage ' || jse_rate_text(v_rate) || ' = ' || jse_inr(v_brk),
+    jsonb_build_object('price', v_price, 'market_price', v_sec.price, 'spread_pct', jse_inst_spread_pct(), 'trade_value', v_tv, 'brokerage', v_brk,
+                       'institution', v_inst.code));
+  PERFORM jse_audit(a, 'INSTITUTIONAL_ORDER_SUBMITTED', 'order', v_no, v_team.id, v_id, NULL,
+    jsonb_build_object('status', 'EXCHANGE_PENDING', 'side', v_side, 'team_side', v_team_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_price),
+    jsonb_build_object('account_type', 'INSTITUTION', 'institution', v_inst.code, 'counterparty', v_team.code, 'market_price', v_sec.price,
+                       'spread_pct', jse_inst_spread_pct(), 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'settlement_amount', v_amount,
+                       'broker', (SELECT code FROM brokers WHERE id = v_team.broker_id)));
+  RETURN jsonb_build_object('success', true, 'replayed', false, 'order', jse_order_json(v_id), 'warnings', v_warnings);
+END $function$;
+;
+ 
+CREATE OR REPLACE FUNCTION public.jse__settle(a jsonb, p_order_id bigint, p_source text DEFAULT 'BANK'::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  cfg event_config%ROWTYPE;
+  o orders%ROWTYPE;
+  s securities%ROWTYPE;
+  t teams%ROWTYPE;
+  inst institutions%ROWTYPE;
+  ln loans%ROWTYPE;
+  v_hold integer := 0; v_cost numeric := 0; v_tcost numeric := 0;
+  v_tv numeric; v_brk numeric; v_rate numeric; v_req numeric;
+  v_cash numeric; v_cash_after numeric;
+  v_draw numeric := 0; v_interest numeric := 0; v_room numeric;
+  v_cost_moved numeric := 0; v_tcost_moved numeric := 0; v_icost_moved numeric := 0;
+  v_realized numeric := 0;
+  v_inst_before numeric; v_inst_after numeric;
+  v_settle_id bigint;
+  v_bal numeric;
+  v_team_delta numeric;
+  v_hold_after integer;
+  v_note text;
+  v_team_buys boolean;
+BEGIN
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT * INTO o FROM orders WHERE id = p_order_id FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('ORDER_NOT_FOUND', 'Order not found.', 404); END IF;
+  IF o.status = 'BANK_SETTLED' OR EXISTS (SELECT 1 FROM settlements WHERE order_id = o.id AND reversed_at IS NULL) THEN
+    PERFORM jse_fail('ALREADY_SETTLED', o.order_no || ' has already been settled. Duplicate settlement blocked.', 409);
+  END IF;
+  IF o.status NOT IN ('EXCHANGE_APPROVED', 'BANK_PENDING') THEN
+    PERFORM jse_fail('NOT_AWAITING_BANK', o.order_no || ' is not waiting for the Bank (status: ' || replace(o.status, '_', ' ') || ').', 409);
+  END IF;
+  IF o.status = 'BANK_PENDING' AND o.bank_claimed_by IS NOT NULL AND o.bank_claimed_by IS DISTINCT FROM nullif(a->>'id', '')::integer
+     AND o.bank_claimed_at > now() - interval '2 minutes' AND p_source = 'BANK' THEN
+    PERFORM jse_fail('ALREADY_CLAIMED', o.order_no || ' is being verified by ' || coalesce(o.bank_claimed_name, 'another bank operator') || '.', 409);
+  END IF;
+
+  -- lock order: security -> team -> loan -> holdings -> institution
+  SELECT * INTO s FROM securities WHERE id = o.security_id FOR NO KEY UPDATE;
+  SELECT * INTO t FROM teams WHERE id = o.team_id FOR UPDATE;
+  INSERT INTO loans(team_id) VALUES (o.team_id) ON CONFLICT (team_id) DO NOTHING;
+  SELECT * INTO ln FROM loans WHERE team_id = o.team_id FOR UPDATE;
+  SELECT quantity, cost_basis, trade_cost INTO v_hold, v_cost, v_tcost FROM holdings WHERE team_id = o.team_id AND security_id = o.security_id FOR UPDATE;
+  v_hold := coalesce(v_hold, 0); v_cost := coalesce(v_cost, 0); v_tcost := coalesce(v_tcost, 0);
+  -- institutions are transaction-based counterparties: no cash or holdings restriction and no portfolio;
+  -- the institution ledger only records each settled transaction (running net settlement flow)
+  IF o.account_type = 'INSTITUTION' THEN
+    SELECT * INTO inst FROM institutions WHERE id = o.institution_id FOR UPDATE;
+  END IF;
+
+  -- independent re-validation (never trust earlier desks alone)
+  IF coalesce(o.reference_price, o.price) <> s.price AND p_source = 'BANK' THEN
+    RETURN jse__bank_reject(a, o, 'PRICE_STALE', 'MARKET PRICE CHANGED: ' || o.order_no || ' was created at the market price ' || jse_inr(coalesce(o.reference_price, o.price)) ||
+      ' but the market price is now ' || jse_inr(s.price) || '. It is not settled at an obsolete price \u2014 create a fresh order.', jsonb_build_object('market_price', s.price));
+  END IF;
+  IF NOT t.active THEN RETURN jse__bank_reject(a, o, 'TEAM_INACTIVE', 'Team ' || t.code || ' is not active.', '{}'::jsonb); END IF;
+  IF NOT s.active THEN RETURN jse__bank_reject(a, o, 'SECURITY_INACTIVE', s.symbol || ' is not tradable.', '{}'::jsonb); END IF;
+  IF o.quantity <= 0 OR o.quantity % s.lot_size <> 0 THEN
+    RETURN jse__bank_reject(a, o, 'INVALID_LOT', 'Quantity must be a multiple of ' || s.lot_size || '.', '{}'::jsonb);
+  END IF;
+  IF o.price <= 0 THEN
+    RETURN jse__bank_reject(a, o, 'INVALID_PRICE', 'Invalid order price.', '{}'::jsonb);
+  END IF;
+  v_tv := round(o.quantity * o.price, 2);
+  IF v_tv < cfg.min_order_value OR (o.account_type <> 'INSTITUTION' AND v_tv > cfg.max_order_value) THEN
+    RETURN jse__bank_reject(a, o, 'ORDER_VALUE_LIMIT', 'Order value ' || jse_inr(v_tv) || ' is outside the allowed ' || jse_inr(cfg.min_order_value) || ' to ' || jse_inr(cfg.max_order_value) || '.', '{}'::jsonb);
+  END IF;
+  -- the brokerage rate is fixed on the order when it is created. The participant team
+  -- pays it on every trade, including trades with an institutional counterparty; its broker earns the commission.
+  v_rate := coalesce(o.brokerage_rate, cfg.brokerage_rate);
+  v_brk := round(v_tv * v_rate, 2);
+
+  v_cash := t.cash;
+  v_team_buys := jse_team_side(o.account_type, o.side) = 'BUY';
+
+  IF v_team_buys THEN
+    v_req := v_tv + v_brk;
+    IF o.account_type = 'TEAM' THEN
+      BEGIN
+        PERFORM jse_check_company_limit(t.id, s.id, v_req, o.id);
+      EXCEPTION WHEN SQLSTATE 'JSE01' THEN
+        RETURN jse__bank_reject(a, o, 'COMPANY_LIMIT', SQLERRM, '{}'::jsonb);
+      END;
+    END IF;
+    IF v_cash < v_req THEN
+      -- own money first: only the shortfall is borrowed, automatically, within the loan limit
+      v_room := CASE WHEN cfg.loans_enabled THEN greatest(0, cfg.loan_max_principal - ln.original_principal) ELSE 0 END;
+      v_draw := v_req - v_cash;
+      IF NOT (cfg.loans_enabled AND cfg.auto_loan_on_settlement) OR v_draw > v_room THEN
+        PERFORM jse_risk(t.id, o.id, s.id, 'INSUFFICIENT_BALANCE_REJECTION', 'BANK', 'BUY', o.quantity, v_hold, v_req, v_cash,
+                         'Loan room ' || jse_inr(v_room));
+        PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_REJECTED', 'order', o.order_no, t.id, o.id, NULL, NULL,
+          jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room, 'account_type', o.account_type));
+        RETURN jse__bank_reject(a, o, 'INSUFFICIENT_BALANCE',
+          'Insufficient balance: ' || jse_inr(v_req) || ' is needed but ' || t.code || ' has ' || jse_inr(v_cash) ||
+          CASE WHEN cfg.loans_enabled AND cfg.auto_loan_on_settlement THEN ' plus ' || jse_inr(v_room) || ' of loan room' ELSE '' END || '.',
+          jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room));
+      END IF;
+      v_interest := round(v_draw * cfg.loan_interest_rate, 2);
+    END IF;
+  ELSE
+    IF v_hold < o.quantity THEN
+      PERFORM jse_risk(t.id, o.id, s.id, 'SHORT_SELL_ATTEMPT', 'BANK', 'SELL', o.quantity, v_hold, NULL, NULL, 'Rejected at Bank');
+      PERFORM jse_audit(a, 'SHORT_SELLING_ATTEMPT', 'order', o.order_no, t.id, o.id, NULL, NULL,
+        jsonb_build_object('quantity', o.quantity, 'holding', v_hold, 'stage', 'BANK', 'exchange_approved', coalesce(o.short_sell_approved, false),
+                           'account_type', o.account_type));
+      RETURN jse__bank_reject(a, o, 'SHORT_SELLING_NOT_ALLOWED',
+        'Short selling is not allowed: ' || t.code || ' holds ' || v_hold || ' ' || s.symbol || ' shares but the order sells ' || o.quantity || '.',
+        jsonb_build_object('holding', v_hold, 'quantity', o.quantity));
+    END IF;
+  END IF;
+
+  -- ===== all checks passed: apply =====
+  INSERT INTO settlements(order_id, account_type, team_id, institution_id, security_id, side, quantity, price, trade_value, brokerage,
+                          team_cash_delta, team_cash_before, team_cash_after, holding_before, holding_after,
+                          price_before, price_after, previous_price_before, settled_by, settled_by_name)
+  VALUES (o.id, o.account_type, t.id, o.institution_id, s.id, o.side, o.quantity, o.price, v_tv, v_brk,
+          0, v_cash, v_cash, v_hold, v_hold, s.price, s.price, s.previous_price,
+          nullif(a->>'id', '')::integer, jse_actor_name(a))
+  RETURNING id INTO v_settle_id;
+
+  v_bal := v_cash;
+  IF v_team_buys THEN
+    IF v_draw > 0 THEN
+      v_bal := v_bal + v_draw;
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'LOAN_DRAW', 0, v_draw, v_bal,
+        'Automatic loan draw for the cash shortfall on ' || o.order_no, a);
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'INTEREST_CHARGE', 0, 0, v_bal,
+        'Loan interest charged ' || jse_inr(v_interest) || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on ' || jse_inr(v_draw) || ') \u2014 added to the loan balance, no cash moved', a);
+      UPDATE loans SET original_principal = original_principal + v_draw, principal_outstanding = principal_outstanding + v_draw,
+             interest_outstanding = interest_outstanding + v_interest, interest_charged = interest_charged + v_interest,
+             draws = draws + 1, status = 'OUTSTANDING', updated_at = now()
+      WHERE team_id = t.id;
+      INSERT INTO loan_transactions(team_id, kind, amount, order_id, settlement_id, automatic, note, actor_id, actor_name)
+      VALUES (t.id, 'DRAW', v_draw, o.id, v_settle_id, true, 'Automatic draw at settlement of ' || o.order_no, nullif(a->>'id', '')::integer, jse_actor_name(a)),
+             (t.id, 'INTEREST_CHARGE', v_interest, o.id, v_settle_id, true, jse_rate_text(cfg.loan_interest_rate) || ' interest on draw', nullif(a->>'id', '')::integer, jse_actor_name(a));
+      PERFORM jse_audit(a, 'LOAN_DRAW', 'loan', t.code, t.id, o.id, NULL, NULL,
+        jsonb_build_object('amount', v_draw, 'interest', v_interest, 'automatic', true, 'order_no', o.order_no));
+      PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_SETTLED', 'order', o.order_no, t.id, o.id, NULL, NULL,
+        jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_drawn', v_draw, 'interest', v_interest, 'symbol', s.symbol,
+                           'account_type', o.account_type));
+    END IF;
+    v_bal := v_bal - v_tv;
+    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' from ' || inst.code
+                   ELSE 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) END;
+    PERFORM jse_ledger(t.id, o.id, v_settle_id, 'BUY', v_tv, 0, v_bal, v_note, a);
+    IF v_brk > 0 THEN
+      v_bal := v_bal - v_brk;
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'BROKERAGE', v_brk, 0, v_bal, 'Brokerage ' || jse_rate_text(v_rate) || ' on ' || o.order_no, a);
+    END IF;
+    INSERT INTO holdings(team_id, security_id, quantity, cost_basis, trade_cost) VALUES (t.id, s.id, o.quantity, v_tv + v_brk, v_tv)
+    ON CONFLICT (team_id, security_id) DO UPDATE SET quantity = holdings.quantity + EXCLUDED.quantity,
+      cost_basis = holdings.cost_basis + EXCLUDED.cost_basis, trade_cost = holdings.trade_cost + EXCLUDED.trade_cost, updated_at = now();
+    v_hold_after := v_hold + o.quantity;
+    v_cost_moved := v_tv + v_brk; v_tcost_moved := v_tv;
+    v_team_delta := v_draw - v_tv - v_brk;
+    IF o.account_type = 'INSTITUTION' THEN
+      v_inst_before := inst.cash; v_inst_after := inst.cash + v_tv;
+      UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
+      PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'SELL', 0, v_tv, v_inst_after,
+        'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' to ' || t.code, a);
+    END IF;
+  ELSE
+    v_cost_moved := CASE WHEN v_hold = o.quantity THEN v_cost ELSE round(v_cost * o.quantity / v_hold, 4) END;
+    v_tcost_moved := CASE WHEN v_hold = o.quantity THEN v_tcost ELSE round(v_tcost * o.quantity / v_hold, 4) END;
+    UPDATE holdings SET quantity = quantity - o.quantity, cost_basis = greatest(0, cost_basis - v_cost_moved),
+           trade_cost = greatest(0, trade_cost - v_tcost_moved), updated_at = now()
+    WHERE team_id = t.id AND security_id = s.id;
+    DELETE FROM holdings WHERE team_id = t.id AND security_id = s.id AND quantity = 0;
+    v_hold_after := v_hold - o.quantity;
+    v_bal := v_bal + v_tv;
+    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' to ' || inst.code
+                   ELSE 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) END;
+    PERFORM jse_ledger(t.id, o.id, v_settle_id, 'SELL', 0, v_tv, v_bal, v_note, a);
+    IF v_brk > 0 THEN
+      v_bal := v_bal - v_brk;
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'BROKERAGE', v_brk, 0, v_bal, 'Brokerage ' || jse_rate_text(v_rate) || ' on ' || o.order_no, a);
+    END IF;
+    v_realized := round(v_tv - v_brk - v_cost_moved, 2);
+    v_team_delta := v_tv - v_brk;
+    IF o.account_type = 'INSTITUTION' THEN
+      v_inst_before := inst.cash; v_inst_after := inst.cash - v_tv;
+      UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
+      PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'BUY', v_tv, 0, v_inst_after,
+        'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' from ' || t.code, a);
+    END IF;
+  END IF;
+
+  v_cash_after := v_bal;
+  IF v_cash_after < 0 THEN
+    RAISE EXCEPTION 'JSE invariant: negative cash for % on %', t.code, o.order_no;
+  END IF;
+  UPDATE teams SET cash = v_cash_after, realized_pnl = realized_pnl + v_realized, brokerage_paid = brokerage_paid + v_brk, updated_at = now()
+  WHERE id = t.id;
+
+  -- the team's broker earns the brokerage on every settled trade of its team (institutional counterparty trades too);
+  -- the commission register records the team's side of the trade
+  IF v_brk > 0 AND o.broker_id IS NOT NULL THEN
+    INSERT INTO broker_commissions(order_id, settlement_id, broker_id, team_id, side, trade_value, rate, amount)
+    VALUES (o.id, v_settle_id, o.broker_id, t.id, jse_team_side(o.account_type, o.side), v_tv, v_rate, v_brk);
+  END IF;
+
+  -- trade statistics only: settlement never changes the market price (Market News is the only price engine)
+  UPDATE securities SET trade_count = trade_count + 1, traded_quantity = traded_quantity + o.quantity, traded_value = traded_value + v_tv,
+         last_trade_at = now() WHERE id = s.id;
+
+  UPDATE settlements SET brokerage = v_brk, team_cash_delta = v_team_delta, team_cash_after = v_cash_after, holding_after = v_hold_after,
+         cost_moved = v_cost_moved, trade_cost_moved = v_tcost_moved, inst_cost_moved = v_icost_moved, realized_pnl = v_realized,
+         loan_drawn = v_draw, loan_interest = v_interest, institution_cash_before = v_inst_before, institution_cash_after = v_inst_after
+  WHERE id = v_settle_id;
+
+  UPDATE orders SET status = 'BANK_SETTLED',
+         bank_by = nullif(a->>'id', '')::integer, bank_by_name = jse_actor_name(a), bank_at = now(),
+         bank_claimed_by = NULL, bank_claimed_name = NULL, bank_claimed_at = NULL,
+         reject_code = NULL, reject_reason = NULL, updated_at = now()
+  WHERE id = o.id;
+
+  PERFORM jse_order_event(o.id, 'BANK_SETTLED', o.status, 'BANK_SETTLED', a, NULL,
+    jsonb_build_object('trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'cash_before', v_cash, 'cash_after', v_cash_after,
+                       'loan_drawn', v_draw, 'loan_interest', v_interest));
+  PERFORM jse_order_event(o.id, 'HOLDINGS_UPDATED', 'BANK_SETTLED', 'BANK_SETTLED', a,
+    t.code || ' cash ' || jse_inr(v_cash) || ' \u2192 ' || jse_inr(v_cash_after) || '; ' || s.symbol || ' holding ' || v_hold || ' \u2192 ' || v_hold_after ||
+    '; market price unchanged at ' || jse_inr(s.price) || ' (prices move only on Market News)',
+    jsonb_build_object('holding_before', v_hold, 'holding_after', v_hold_after, 'market_price', s.price));
+  PERFORM jse_audit(a, 'BANK_SETTLED', 'order', o.order_no, t.id, o.id,
+    jsonb_build_object('status', o.status, 'cash', v_cash, 'holding', v_hold),
+    jsonb_build_object('status', 'BANK_SETTLED', 'cash', v_cash_after, 'holding', v_hold_after),
+    jsonb_build_object('account_type', o.account_type, 'side', o.side, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate,
+                       'loan_drawn', v_draw, 'interest', v_interest, 'realized_pnl', v_realized, 'market_price', s.price, 'source', p_source));
+  PERFORM jse_journal('BANK_SETTLE', v_settle_id, o.order_no || ' settled (' || o.side || ' ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ')',
+                      jsonb_build_object('order_id', o.id, 'settlement_id', v_settle_id), a);
+
+  RETURN jsonb_build_object('success', true, 'status', 'BANK_SETTLED', 'settlement_id', v_settle_id,
+    'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'cash_before', v_cash, 'cash_after', v_cash_after,
+    'loan_drawn', v_draw, 'loan_interest', v_interest, 'realized_pnl', v_realized,
+    'holding_before', v_hold, 'holding_after', v_hold_after, 'market_price', s.price, 'order', jse_order_json(o.id));
+END $function$;
+;
+`;var br=`-- 026: Show borrowed funds still held as cash in the Base Cash Left figure. Loan liability remains separately tracked.
+CREATE OR REPLACE FUNCTION public.jse_portfolio_detail(a jsonb, p jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE t teams%ROWTYPE; v_m jsonb; cfg event_config%ROWTYPE; b brokers%ROWTYPE;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'VIEWER', 'BROKER', 'PARTICIPANT');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT * INTO t FROM teams WHERE code = upper(trim(coalesce(p->>'team', '')));
+  IF NOT FOUND THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'Team not found.', 404); END IF;
+  IF a->>'role' = 'PARTICIPANT' AND (a->>'team_id')::integer IS DISTINCT FROM t.id THEN
+    PERFORM jse_fail('FORBIDDEN', 'You can view only your own team.', 403);
+  END IF;
+  IF a->>'role' = 'BROKER' AND t.broker_id IS DISTINCT FROM nullif(a->>'broker_id', '')::integer THEN
+    PERFORM jse_fail('FORBIDDEN', 'You can view only the teams assigned to you.', 403);
+  END IF;
+  SELECT * INTO b FROM brokers WHERE id = t.broker_id;
+  SELECT m || jsonb_build_object('rank', rank_overall, 'rank_eligible', rank_eligible, 'award', award) INTO v_m
+  FROM jse_ranked_teams() WHERE (m->>'team_id')::integer = t.id;
+  RETURN jsonb_build_object('success', true, 'team', v_m,
+    'identity', jsonb_build_object('code', t.code, 'name', t.name, 'section', t.section, 'members', t.members,
+      'name_meaning', (SELECT meaning FROM team_name_pool WHERE lower(name) = lower(t.name)),
+      'name_category', (SELECT category FROM team_name_pool WHERE lower(name) = lower(t.name))),
+    'broker', CASE WHEN b.id IS NULL THEN NULL ELSE jsonb_build_object('code', b.code, 'name', b.name, 'contact', b.contact, 'desk', b.desk) END,
+    -- the participant capital strip (one server-side calculation): own starting capital vs the loan credit facility
+    'capital', jsonb_build_object('base_capital', cfg.initial_capital, 'loan_sanctioned', cfg.loan_max_principal,
+      'loan_available', CASE WHEN cfg.loans_enabled THEN greatest(0, cfg.loan_max_principal - (v_m->>'loan_original')::numeric) ELSE 0 END,
+      'base_money_left', greatest(0, (v_m->>'cash')::numeric - (v_m->>'profit_cash_exempt')::numeric),
+      'liquid_cash', (v_m->>'cash')::numeric, 'holdings_value', (v_m->>'holdings_value')::numeric, 'net_worth', (v_m->>'net_worth')::numeric,
+      'portfolio_pnl', (v_m->>'pnl')::numeric, 'realized_pnl', (v_m->>'realized_pnl')::numeric, 'unrealized_pnl', (v_m->>'unrealized_pnl')::numeric,
+      'brokerage_paid', (v_m->>'brokerage_paid')::numeric, 'max_financing', cfg.initial_capital + cfg.loan_max_principal),
+    'rules', jsonb_build_object('starting_capital', cfg.initial_capital, 'cash_limit', cfg.cash_rule_limit, 'loan_limit', cfg.loan_max_principal,
+      'loan_rate', cfg.loan_interest_rate, 'brokerage_rate', cfg.brokerage_rate, 'max_order_value', cfg.max_order_value, 'min_order_value', cfg.min_order_value,
+      'min_buy_trades', cfg.min_buy_trades, 'min_sell_trades', cfg.min_sell_trades, 'loan_repayment_required', cfg.loan_repayment_required),
+    'assessment', jsonb_build_object('buy', (v_m->>'settled_buys')::integer, 'sell', (v_m->>'settled_sells')::integer,
+      'min_buy', cfg.min_buy_trades, 'min_sell', cfg.min_sell_trades, 'met', (v_m->>'assessment_met')::boolean,
+      'basis', 'Settled listed-stock trades of your team (including trades with an institutional counterparty, counted from your side). IPO allotments, rejected and unsettled orders do not count.'),
+    'eligibility', jsonb_build_object('eligible', (v_m->>'eligible')::boolean, 'status', v_m->>'eligibility_status', 'gaps', v_m->'eligibility_gaps',
+      'final', (v_m->>'final_evaluation')::boolean),
+    'holdings', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'security', s.name, 'type', CASE WHEN s.kind = 'IPO' THEN 'IPO' ELSE 'EQUITY' END,
+        'quantity', h.quantity, 'avg_price', round(h.trade_cost / nullif(h.quantity, 0), 2), 'cost_basis', round(h.cost_basis, 2),
+        'current_price', s.price, 'market_value', h.quantity * s.price, 'unrealized_pnl', round(h.quantity * s.price - h.cost_basis, 2),
+        'change_pct', round(jse_pct(s.price, s.previous_price), 2), 'listed', s.kind = 'EQUITY' OR s.listed_at IS NOT NULL) ORDER BY h.quantity * s.price DESC)
+      FROM holdings h JOIN securities s ON s.id = h.security_id WHERE h.team_id = t.id AND h.quantity > 0), '[]'::jsonb),
+    'sold', coalesce((SELECT jsonb_agg(jsonb_build_object('order_no', o.order_no, 'symbol', s.symbol, 'security', s.name,
+        'type', CASE WHEN s.kind = 'IPO' THEN 'IPO' ELSE 'EQUITY' END, 'quantity', st.quantity, 'sell_price', st.price,
+        'trade_value', st.trade_value, 'brokerage', st.brokerage, 'net_proceeds', st.trade_value - st.brokerage,
+        'realized_pnl', st.realized_pnl, 'counterparty', CASE WHEN st.account_type = 'INSTITUTION' THEN 'Institutional investor' ELSE 'Market' END,
+        'settled_at', st.settled_at) ORDER BY st.settled_at DESC)
+      FROM settlements st JOIN orders o ON o.id = st.order_id JOIN securities s ON s.id = st.security_id
+      WHERE st.team_id = t.id AND st.reversed_at IS NULL
+        AND ((st.account_type = 'TEAM' AND st.side = 'SELL') OR (st.account_type = 'INSTITUTION' AND st.side = 'BUY'))), '[]'::jsonb),
+    'bought', coalesce((SELECT jsonb_agg(jsonb_build_object('order_no', o.order_no, 'symbol', s.symbol, 'type', CASE WHEN s.kind = 'IPO' THEN 'IPO' ELSE 'EQUITY' END,
+        'quantity', st.quantity, 'price', st.price, 'trade_value', st.trade_value, 'brokerage', st.brokerage, 'loan_drawn', st.loan_drawn,
+        'counterparty', CASE WHEN st.account_type = 'INSTITUTION' THEN 'Institutional investor' ELSE 'Market' END,
+        'settled_at', st.settled_at) ORDER BY st.settled_at DESC)
+      FROM settlements st JOIN orders o ON o.id = st.order_id JOIN securities s ON s.id = st.security_id
+      WHERE st.team_id = t.id AND st.reversed_at IS NULL
+        AND ((st.account_type = 'TEAM' AND st.side = 'BUY') OR (st.account_type = 'INSTITUTION' AND st.side = 'SELL'))), '[]'::jsonb),
+    'ipo_allotments', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'name', s.name, 'lots', al.lots, 'quantity', al.quantity, 'price', al.price, 'amount', al.amount))
+      FROM ipo_allotments al JOIN securities s ON s.id = al.security_id WHERE al.team_id = t.id AND al.reversed_at IS NULL), '[]'::jsonb),
+    'ipo_applications', coalesce((SELECT jsonb_agg(jsonb_build_object('symbol', s.symbol, 'lots', ap.lots, 'amount', ap.amount, 'status', ap.status))
+      FROM ipo_applications ap JOIN securities s ON s.id = ap.security_id WHERE ap.team_id = t.id), '[]'::jsonb),
+    'loan', (SELECT jsonb_build_object('original_principal', l.original_principal, 'current_principal', l.principal_outstanding,
+        'interest', l.interest_outstanding, 'interest_charged', l.interest_charged, 'interest_paid', l.interest_paid,
+        'principal_repaid', l.principal_repaid, 'total_liability', l.principal_outstanding + l.interest_outstanding,
+        'remaining_limit', greatest(0, cfg.loan_max_principal - l.original_principal), 'draws', l.draws,
+        'repaid', l.principal_outstanding + l.interest_outstanding = 0,
+        'repayment_status', CASE l.status WHEN 'NONE' THEN 'NO LOAN' WHEN 'REPAID' THEN 'REPAID' ELSE 'OUTSTANDING' END)
+      FROM loans l WHERE l.team_id = t.id),
+    'loan_transactions', coalesce((SELECT jsonb_agg(jsonb_build_object('kind', lt.kind, 'amount', lt.amount, 'automatic', lt.automatic,
+        'order_no', o.order_no, 'note', lt.note, 'created_at', lt.created_at) ORDER BY lt.id DESC)
+      FROM loan_transactions lt LEFT JOIN orders o ON o.id = lt.order_id WHERE lt.team_id = t.id), '[]'::jsonb),
+    'short_sell_history', coalesce((SELECT jsonb_agg(jsonb_build_object('order_no', o.order_no, 'symbol', s.symbol, 'security', s.name,
+        'quantity', r.quantity, 'holding_before', r.holding_before, 'stage', r.stage, 'status', o.status, 'created_at', r.created_at) ORDER BY r.created_at DESC)
+      FROM risk_events r LEFT JOIN orders o ON o.id = r.order_id LEFT JOIN securities s ON s.id = r.security_id
+      WHERE r.team_id = t.id AND r.kind = 'SHORT_SELL_ATTEMPT'), '[]'::jsonb),
+    'cash_shortfall_history', coalesce((SELECT jsonb_agg(jsonb_build_object('order_no', o.order_no, 'symbol', s.symbol, 'security', s.name,
+        'required_cash', r.required_amount, 'available_cash', r.available_cash, 'shortage', r.shortage, 'status', o.status, 'created_at', r.created_at) ORDER BY r.created_at DESC)
+      FROM risk_events r LEFT JOIN orders o ON o.id = r.order_id LEFT JOIN securities s ON s.id = r.security_id
+      WHERE r.team_id = t.id AND r.kind = 'CASH_SHORTFALL_ATTEMPT'), '[]'::jsonb),
+    'insufficient_balance_history', coalesce((SELECT jsonb_agg(jsonb_build_object('order_no', o.order_no, 'symbol', s.symbol,
+        'required_cash', r.required_amount, 'available_cash', r.available_cash, 'shortage', r.shortage, 'note', r.note, 'status', o.status, 'created_at', r.created_at) ORDER BY r.created_at DESC)
+      FROM risk_events r LEFT JOIN orders o ON o.id = r.order_id LEFT JOIN securities s ON s.id = r.security_id
+      WHERE r.team_id = t.id AND r.kind = 'INSUFFICIENT_BALANCE_REJECTION'), '[]'::jsonb),
+    'recent_orders', coalesce((SELECT jsonb_agg(x ORDER BY (x->>'id')::bigint DESC) FROM (
+        SELECT jse_order_json(o.id) AS x FROM orders o WHERE o.team_id = t.id ORDER BY o.id DESC LIMIT 25) q), '[]'::jsonb),
+    'slips', coalesce((SELECT jsonb_agg(jsonb_build_object('slip_no', sl.slip_no, 'order_no', o.order_no, 'issued_at', sl.issued_at, 'symbol', s.symbol,
+        'side', o.side, 'quantity', o.quantity, 'price', o.executed_price, 'status', o.status) ORDER BY sl.id DESC)
+      FROM (SELECT * FROM trading_slips WHERE order_id IN (SELECT id FROM orders WHERE team_id = t.id) ORDER BY id DESC LIMIT 25) sl
+      JOIN orders o ON o.id = sl.order_id JOIN securities s ON s.id = o.security_id), '[]'::jsonb),
+    'recent_ledger', coalesce((SELECT jsonb_agg(jsonb_build_object('id', c.id, 'type', c.entry_type, 'debit', c.debit, 'credit', c.credit,
+        'balance_after', c.balance_after, 'note', c.note, 'order_no', o.order_no, 'created_at', c.created_at) ORDER BY c.id DESC)
+      FROM (SELECT * FROM cash_ledger WHERE team_id = t.id ORDER BY id DESC LIMIT 30) c LEFT JOIN orders o ON o.id = c.order_id), '[]'::jsonb));
+END $function$;
+;
+`;var Ir=`-- 027: Only IPO SELL transactions may use quantities outside the standard lot size.
+-- IPO sells still require a positive whole-share quantity, sufficient holdings, and the normal value/settlement rules.
+DO $jse_migration$
+DECLARE
+  v_fn text;
+  v_old text;
+BEGIN
+  v_fn := pg_get_functiondef('public.jse_place_order(jsonb,jsonb)'::regprocedure);
+  v_old := $old$IF v_qty % v_sec.lot_size <> 0 THEN$old$;
+  IF position(v_old IN v_fn) = 0 THEN RAISE EXCEPTION '027: expected lot check not found in jse_place_order'; END IF;
+  v_fn := replace(v_fn, v_old, $new$IF v_qty % v_sec.lot_size <> 0 AND NOT (v_sec.kind = 'IPO' AND v_side = 'SELL') THEN$new$);
+  EXECUTE v_fn;
+
+  v_fn := pg_get_functiondef('public.jse_place_institutional_order(jsonb,jsonb)'::regprocedure);
+  v_old := $old$IF v_qty IS NULL OR v_qty <= 0 OR v_qty % v_sec.lot_size <> 0 THEN$old$;
+  IF position(v_old IN v_fn) = 0 THEN RAISE EXCEPTION '027: expected lot check not found in jse_place_institutional_order'; END IF;
+  v_fn := replace(v_fn, v_old, $new$IF v_qty IS NULL OR v_qty <= 0 OR (v_qty % v_sec.lot_size <> 0 AND NOT (v_sec.kind = 'IPO' AND jse_team_side('INSTITUTION', v_side) = 'SELL')) THEN$new$);
+  EXECUTE v_fn;
+
+  v_fn := pg_get_functiondef('public.jse_instruction_action(jsonb,jsonb)'::regprocedure);
+  v_old := $old$IF v_qty IS NULL OR v_qty <= 0 OR v_qty % s.lot_size <> 0 THEN$old$;
+  IF position(v_old IN v_fn) = 0 THEN RAISE EXCEPTION '027: expected lot check not found in jse_instruction_action'; END IF;
+  v_fn := replace(v_fn, v_old, $new$IF v_qty IS NULL OR v_qty <= 0 OR (v_qty % s.lot_size <> 0 AND NOT (s.kind = 'IPO' AND v_side = 'SELL')) THEN$new$);
+  EXECUTE v_fn;
+
+  v_fn := pg_get_functiondef('public.jse__settle(jsonb,bigint,text)'::regprocedure);
+  v_old := $old$IF o.quantity <= 0 OR o.quantity % s.lot_size <> 0 THEN$old$;
+  IF position(v_old IN v_fn) = 0 THEN RAISE EXCEPTION '027: expected lot check not found in jse__settle'; END IF;
+  v_fn := replace(v_fn, v_old, $new$IF o.quantity <= 0 OR (o.quantity % s.lot_size <> 0 AND NOT (s.kind = 'IPO' AND jse_team_side(o.account_type, o.side) = 'SELL')) THEN$new$);
+  EXECUTE v_fn;
+END
+$jse_migration$;
+`;var vr=`-- 028: Keep each company's Market News price within a permanent +/-15% band from its locked base price.
+-- Hitting the band limits price movement in that direction; it does not disable BUY/SELL orders.
+DO $jse_migration$
+DECLARE
+  v_fn text;
+  v_old text;
+  v_new text;
+BEGIN
+  v_fn := pg_get_functiondef('public.jse_market_news(jsonb,jsonb)'::regprocedure);
+
+  v_old := $old$  v_day_start := date_trunc('day', now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata';
+  SELECT previous_price INTO v_day_base
+  FROM market_news
+  WHERE security_id = s.id
+    AND created_at >= v_day_start
+    AND created_at < v_day_start + interval '1 day'
+    AND reversed_at IS NULL
+  ORDER BY created_at, id
+  LIMIT 1;
+  v_day_base := coalesce(v_day_base, s.price);$old$;
+  v_new := $new$  -- Always anchor the price band to the company's locked starting/base price, not a daily baseline.
+  v_day_base := coalesce(s.base_price, s.price);$new$;
+
+  IF position(v_old IN v_fn) > 0 THEN
+    v_fn := replace(v_fn, v_old, v_new);
+    v_fn := replace(v_fn, 'v_day_start timestamptz; v_day_base numeric;', 'v_band_base numeric;');
+    v_fn := replace(v_fn, 'v_day_base', 'v_band_base');
+  ELSIF position('v_band_base := coalesce(s.base_price, s.price);' IN v_fn) = 0 THEN
+    RAISE EXCEPTION '028: expected Market News daily-baseline logic was not found';
+  END IF;
+
+  EXECUTE v_fn;
+END
+$jse_migration$;
+
+INSERT INTO schema_migrations(version) VALUES ('028_company_base_price_band')
+ON CONFLICT (version) DO NOTHING;
+`;var Or=`-- 029: Permanently prohibit short selling. Exchange approval cannot override holdings checks.
+DO $short_sell_fix$
+DECLARE
+  v_fn text;
+  v_old text;
+  v_new text;
+BEGIN
+  v_fn := pg_get_functiondef('public.jse_exchange_decide(jsonb,jsonb)'::regprocedure);
+  v_old := $old$      IF o.quantity > v_avail.available THEN
+        IF NOT v_confirm THEN
+          RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_CONFIRM_REQUIRED', HINT = '409',
+            MESSAGE = 'SHORT SELLING: the team can sell only ' || greatest(v_avail.available, 0) || ' shares (holding ' || v_avail.holding ||
+                      '). Normal participant short selling is prohibited. Approve it explicitly only as an Exchange override \u2014 it is recorded as SHORT SELLING \u2014 EXCHANGE APPROVED and the Bank still rejects it unless the holding is sufficient at settlement.';
+        END IF;
+        UPDATE orders SET short_sell_flag = true, short_sell_approved = true WHERE id = o.id;
+        PERFORM jse_risk(o.team_id, o.id, o.security_id, 'SHORT_SELL_ATTEMPT', 'EXCHANGE', jse_team_side(o.account_type, o.side), o.quantity, v_avail.holding, NULL, NULL, NULL);
+        PERFORM jse_audit(a, 'SHORT_SELLING_APPROVED', 'order', o.order_no, o.team_id, o.id, NULL, NULL,
+          jsonb_build_object('holding', v_avail.holding, 'quantity', o.quantity, 'open_sell_other', v_avail.open_sell, 'account_type', o.account_type));
+      END IF;$old$;
+  v_new := $new$      IF o.quantity > greatest(v_avail.available, 0) THEN
+        RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELLING_NOT_ALLOWED', HINT = '409',
+          MESSAGE = 'SHORT SELLING PROHIBITED: ' || coalesce((SELECT code FROM teams WHERE id = o.team_id), 'team') || ' cannot sell more shares than it owns. Available to sell: ' ||
+                    greatest(v_avail.available, 0) || ' (holding ' || v_avail.holding || ', other open sell orders ' || v_avail.open_sell || '). Reject this order or reduce its quantity.';
+      END IF;$new$;
+  IF position(v_old IN v_fn) = 0 THEN
+    RAISE EXCEPTION '029: expected Exchange short-selling override block not found';
+  END IF;
+  v_fn := replace(v_fn, v_old, v_new);
+  v_fn := regexp_replace(v_fn, '  v_confirm boolean := [^;]*;' || chr(10), '');
+  v_fn := replace(v_fn, '    -- The Exchange may explicitly approve it (recorded as SHORT SELLING \u2014 EXCHANGE APPROVED); the Bank still' || chr(10) ||
+                  '    -- checks the holding at settlement. Institutions have no cash or holdings restriction.' || chr(10),
+                  '    -- Short selling is prohibited at every stage; institutional accounts have no independent holdings.' || chr(10));
+  IF position('SHORT SELLING \u2014 EXCHANGE APPROVED' IN v_fn) > 0 OR position('confirm_short_sell' IN v_fn) > 0 THEN
+    RAISE EXCEPTION '029: Exchange override still present after replacement';
+  END IF;
+  EXECUTE v_fn;
+END
+$short_sell_fix$;
+INSERT INTO schema_migrations(version) VALUES ('029_no_short_selling_override')
+ON CONFLICT (version) DO NOTHING;
+`;var hr=`-- 030: owner-requested market-price, negotiated pair and award-eligibility corrections.
+-- Apply through a prepared Neon migration after staging verification; do not run against live traffic.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS negotiated_trade boolean NOT NULL DEFAULT false;
+
+CREATE OR REPLACE FUNCTION jse_inst_spread_pct() RETURNS numeric LANGUAGE sql IMMUTABLE AS $$ SELECT 0.00::numeric $$;
+CREATE OR REPLACE FUNCTION jse_inst_price(p_market numeric, p_inst_side text) RETURNS numeric LANGUAGE sql IMMUTABLE AS $$ SELECT round(p_market, 2) $$;
+
+CREATE OR REPLACE FUNCTION jse_place_order(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  cfg event_config%ROWTYPE;
+  v_status text;
+  v_team teams%ROWTYPE;
+  v_sec securities%ROWTYPE;
+  v_ins instructions%ROWTYPE;
+  v_side text := upper(trim(coalesce(p->>'side', '')));
+  v_key text := nullif(trim(coalesce(p->>'idempotency_key', '')), '');
+  v_qty integer; v_expected numeric; v_rate numeric; v_price numeric; v_negotiated_price numeric;
+  v_tv numeric; v_brk numeric; v_amount numeric;
+  v_id bigint; v_no text;
+  v_existing bigint;
+  v_avail record;
+  v_free_cash numeric; v_room numeric;
+  v_short boolean := false; v_shortfall boolean := false;
+  v_warnings jsonb := '[]'::jsonb;
+BEGIN
+  IF a->>'role' = 'PARTICIPANT' THEN
+    PERFORM jse_fail('PARTICIPANT_ENTRY_DISABLED',
+      'Participant self entry is disabled. Your broker creates the order for your team.', 403);
+  END IF;
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER');
+  IF v_key IS NULL OR length(v_key) > 120 THEN
+    PERFORM jse_fail('IDEMPOTENCY_KEY_REQUIRED', 'Order submission is missing its request key. Reload the page and try again.', 400);
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('jse-order:' || v_key, 0));
+  SELECT id INTO v_existing FROM orders WHERE idempotency_key = v_key;
+  IF FOUND THEN
+    RETURN jsonb_build_object('success', true, 'replayed', true, 'order', jse_order_json(v_existing), 'warnings', '[]'::jsonb);
+  END IF;
+
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  IF v_status <> 'LIVE' THEN
+    PERFORM jse_fail('EVENT_NOT_LIVE', 'New orders are accepted only while the market is LIVE (current status: ' || replace(v_status, '_', ' ') || ').', 409);
+  END IF;
+
+  -- an instruction from the participant can be submitted as it is (same team, security, side and quantity)
+  IF nullif(p->>'instruction_id', '') IS NOT NULL OR nullif(p->>'instruction_no', '') IS NOT NULL THEN
+    SELECT * INTO v_ins FROM instructions
+    WHERE id = nullif(p->>'instruction_id', '')::bigint OR instruction_no = upper(trim(coalesce(p->>'instruction_no', '')))
+    FOR UPDATE;
+    IF NOT FOUND THEN PERFORM jse_fail('INSTRUCTION_NOT_FOUND', 'That participant instruction was not found.', 404); END IF;
+    IF v_ins.status <> 'OPEN' THEN
+      PERFORM jse_fail('INSTRUCTION_NOT_OPEN', v_ins.instruction_no || ' is ' || lower(v_ins.status) || ' and cannot be submitted again.', 409);
+    END IF;
+  END IF;
+
+  SELECT * INTO v_team FROM teams
+  WHERE (p ? 'team' AND code = upper(trim(p->>'team'))) OR (p ? 'team_id' AND id = nullif(p->>'team_id', '')::integer)
+     OR (v_ins.id IS NOT NULL AND NOT (p ? 'team') AND NOT (p ? 'team_id') AND id = v_ins.team_id);
+  IF NOT FOUND THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'Select one of your assigned teams.', 404); END IF;
+  IF NOT v_team.active THEN PERFORM jse_fail('TEAM_INACTIVE', 'Team ' || v_team.code || ' is not active.', 409); END IF;
+  IF v_team.broker_id IS NULL THEN
+    PERFORM jse_fail('NO_BROKER', v_team.code || ' has no assigned broker yet. The Event Admin must assign one before it can trade.', 409);
+  END IF;
+  IF a->>'role' = 'BROKER' AND v_team.broker_id IS DISTINCT FROM nullif(a->>'broker_id', '')::integer THEN
+    PERFORM jse_fail('NOT_YOUR_TEAM', v_team.code || ' (' || v_team.name || ') is assigned to another broker. You can submit orders only for your own teams.', 403);
+  END IF;
+
+  -- KEY SHARE: a Market News price change on this security waits for this submission (and vice versa)
+  SELECT * INTO v_sec FROM securities
+  WHERE (p ? 'security_id' AND id = nullif(p->>'security_id', '')::integer) OR (p ? 'symbol' AND symbol = upper(trim(p->>'symbol')))
+     OR (v_ins.id IS NOT NULL AND NOT (p ? 'security_id') AND NOT (p ? 'symbol') AND id = v_ins.security_id)
+  FOR KEY SHARE;
+  IF NOT FOUND OR NOT v_sec.active THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Select a valid listed stock.', 404); END IF;
+  IF v_sec.kind = 'IPO' AND v_sec.listed_at IS NULL THEN
+    PERFORM jse_fail('IPO_NOT_LISTED', v_sec.symbol || ' is still in the IPO stage. It can be traded on the market only after it lists.', 409);
+  END IF;
+
+  IF v_side = '' AND v_ins.id IS NOT NULL THEN v_side := v_ins.side; END IF;
+  IF v_side NOT IN ('BUY', 'SELL') THEN PERFORM jse_fail('INVALID_SIDE', 'Choose BUY or SELL.', 400); END IF;
+
+  BEGIN
+    v_qty := coalesce(nullif(p->>'quantity', '')::integer, v_ins.quantity);
+    v_expected := nullif(p->>'expected_price', '')::numeric;
+    v_negotiated_price := nullif(p->>'negotiated_price', '')::numeric;
+  EXCEPTION WHEN others THEN
+    PERFORM jse_fail('INVALID_NUMBER', 'Quantity must be a whole number of shares.', 400);
+  END;
+  IF v_qty IS NULL OR v_qty <= 0 THEN PERFORM jse_fail('INVALID_QUANTITY', 'Quantity must be a positive number of shares.', 400); END IF;
+  IF v_qty % 50 <> 0 THEN
+    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' normal market trading uses multiples of 50 shares (50, 100, 150 \u2026).', 400);
+  END IF;
+  IF v_ins.id IS NOT NULL AND (v_ins.team_id <> v_team.id OR v_ins.security_id <> v_sec.id OR v_ins.side <> v_side OR v_ins.quantity <> v_qty) THEN
+    PERFORM jse_fail('INSTRUCTION_MISMATCH', 'The order must match ' || v_ins.instruction_no || ' (' || v_ins.side || ' ' || v_ins.quantity ||
+      '). If the participant wants something different, decline it and ask for a new instruction.', 409);
+  END IF;
+  -- the broker's screen showed a price; if Market News moved it since, ask the broker to review (no silent re-quote)
+  IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
+    RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
+      MESSAGE = 'MARKET PRICE CHANGED: ' || v_sec.symbol || ' moved from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
+                ' (Market News). The order was not submitted \u2014 review the new value with the participant and submit again.';
+  END IF;
+
+  IF v_negotiated_price IS NOT NULL THEN
+    IF a->>'role' NOT IN ('PIT_MANAGER','ADMIN') THEN PERFORM jse_fail('NEGOTIATED_PRICE_ROLE', 'Only a Pit Manager or Admin may record a negotiated team-to-team price.', 403); END IF;
+    IF nullif(p->>'pair_ref','') IS NULL THEN PERFORM jse_fail('NEGOTIATED_PAIR_REQUIRED', 'A negotiated price must be submitted as a paired BUY/SELL trade between two different teams.', 400); END IF;
+    IF v_negotiated_price <= 0 OR v_negotiated_price <> trunc(v_negotiated_price) THEN PERFORM jse_fail('INVALID_NEGOTIATED_PRICE', 'Negotiated price must be a positive whole number of rupees.', 400); END IF;
+    v_price := v_negotiated_price;
+  ELSE
+    v_price := v_sec.price;
+  END IF;
+  v_rate := cfg.brokerage_rate;
+  v_tv := round(v_qty * v_price, 2);
+  v_brk := round(v_tv * v_rate, 2);
+  v_amount := CASE WHEN v_side = 'BUY' THEN v_tv + v_brk ELSE v_tv - v_brk END;
+  IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
+    PERFORM jse_fail('ORDER_VALUE_LIMIT', 'Order value must be between ' || jse_inr(cfg.min_order_value) || ' and ' || jse_inr(cfg.max_order_value) ||
+      ' per order (this order: ' || jse_inr(v_tv) || ').', 400);
+  END IF;
+
+  -- P0 financial safety (v3.14): one team's orders are serialised by locking the team row, so two desks cannot sell the
+  -- same shares or commit the same cash twice. Short selling and buying beyond free cash are refused here (and again at the Bank).
+  PERFORM 1 FROM teams WHERE id = v_team.id FOR UPDATE;
+  IF v_price <> trunc(v_price) THEN
+    PERFORM jse_fail('PRICE_NOT_WHOLE', v_sec.symbol || ' price must be whole rupees. Ask the Event Admin to correct the price.', 409);
+  END IF;
+  IF v_side = 'SELL' THEN
+    SELECT * INTO v_avail FROM jse_available_qty(v_team.id, v_sec.id, NULL);
+    IF v_qty > v_avail.available THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_NOT_ALLOWED', HINT = '409',
+        MESSAGE = 'Short selling is not allowed. You can sell only the shares available in your portfolio. Please reduce the quantity or check your holdings. (' ||
+                  v_team.code || ' can sell ' || greatest(v_avail.available, 0) || ' ' || v_sec.symbol || ': holding ' || v_avail.holding || ', in open sell orders ' || v_avail.open_sell || ')';
+    END IF;
+  ELSE
+    v_free_cash := jse_available_cash(v_team.id, NULL);
+    IF v_amount > v_free_cash THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSUFFICIENT_BALANCE', HINT = '409',
+        MESSAGE = 'Insufficient balance! Your available cash is ' || jse_inr(greatest(v_free_cash, 0)) || ', but this order requires ' || jse_inr(v_amount) ||
+                  ', including applicable charges. Please reduce the order quantity or obtain an approved loan before placing this order.';
+    END IF;
+    PERFORM jse_check_company_limit(v_team.id, v_sec.id, v_amount, NULL);
+  END IF;
+
+  v_id := nextval(pg_get_serial_sequence('orders', 'id'));
+  v_no := 'ORD-' || v_id::text;
+  INSERT INTO orders(id, order_no, account_type, team_id, broker_id, security_id, side, quantity, price, trade_value, brokerage, brokerage_rate,
+                     settlement_amount, reference_price, status, negotiated_trade, short_sell_flag, cash_shortfall_flag, notes, pair_ref, idempotency_key,
+                     instruction_id, created_by, created_by_name, created_role)
+  VALUES (v_id, v_no, 'TEAM', v_team.id, v_team.broker_id, v_sec.id, v_side, v_qty, v_price, v_tv, v_brk, v_rate,
+          v_amount, v_sec.price, 'EXCHANGE_PENDING', (v_negotiated_price IS NOT NULL), v_short, v_shortfall, left(p->>'notes', 300), left(p->>'pair_ref', 60), v_key,
+          v_ins.id, nullif(a->>'id', '')::integer, jse_actor_name(a), a->>'role');
+  IF v_ins.id IS NOT NULL THEN
+    UPDATE instructions SET status = 'SUBMITTED', order_id = v_id, handled_at = now(), handled_by_name = jse_actor_name(a) WHERE id = v_ins.id;
+    PERFORM jse_order_event(v_id, 'INSTRUCTION_RECEIVED', NULL, NULL, jsonb_build_object('username', v_ins.created_by_name, 'role', 'PARTICIPANT'),
+      v_ins.instruction_no || ': ' || v_ins.side || ' ' || v_ins.quantity || ' ' || v_sec.symbol, jsonb_build_object('at', v_ins.created_at));
+  END IF;
+  PERFORM jse_order_event(v_id, 'ORDER_CREATED', NULL, 'EXCHANGE_PENDING', a, 'Order created at the market price ' || jse_inr(v_sec.price),
+    jsonb_build_object('price', v_sec.price, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'instruction_no', v_ins.instruction_no));
+  PERFORM jse_audit(a, 'ORDER_CREATED', 'order', v_no, v_team.id, v_id, NULL,
+    jsonb_build_object('status', 'EXCHANGE_PENDING', 'side', v_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_sec.price),
+    jsonb_build_object('trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'settlement_amount', v_amount,
+                       'broker', (SELECT code FROM brokers WHERE id = v_team.broker_id), 'instruction_no', v_ins.instruction_no));
+
+  IF v_short THEN
+    PERFORM jse_risk(v_team.id, v_id, v_sec.id, 'SHORT_SELL_ATTEMPT', 'ORDER', v_side, v_qty, v_avail.holding, NULL, NULL,
+                     'Open sell orders: ' || v_avail.open_sell);
+    PERFORM jse_audit(a, 'SHORT_SELLING_ATTEMPT', 'order', v_no, v_team.id, v_id, NULL, NULL,
+      jsonb_build_object('quantity', v_qty, 'holding', v_avail.holding, 'open_sell', v_avail.open_sell, 'stage', 'ORDER'));
+  END IF;
+  IF v_shortfall THEN
+    PERFORM jse_risk(v_team.id, v_id, v_sec.id, 'CASH_SHORTFALL_ATTEMPT', 'ORDER', v_side, v_qty, NULL, v_amount, greatest(v_free_cash, 0) + v_room, NULL);
+    PERFORM jse_audit(a, 'CASH_SHORTFALL_ATTEMPT', 'order', v_no, v_team.id, v_id, NULL, NULL,
+      jsonb_build_object('required', v_amount, 'available', v_free_cash, 'loan_room', v_room, 'stage', 'ORDER'));
+  END IF;
+
+  RETURN jsonb_build_object('success', true, 'replayed', false, 'order', jse_order_json(v_id), 'warnings', v_warnings);
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_place_pair(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  legs jsonb := p->'legs';
+  v_key text := nullif(trim(coalesce(p->>'idempotency_key', '')), '');
+  v_pair text; r1 jsonb; r2 jsonb; v_sym1 text; v_sym2 text; v_q1 integer; v_q2 integer; v_p1 numeric; v_p2 numeric;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'BROKER', 'PIT_MANAGER');
+  IF v_key IS NULL THEN PERFORM jse_fail('IDEMPOTENCY_KEY_REQUIRED', 'Order submission is missing its request key. Reload the page and try again.', 400); END IF;
+  IF jsonb_typeof(legs) IS DISTINCT FROM 'array' OR jsonb_array_length(legs) <> 2 THEN
+    PERFORM jse_fail('INVALID_PAIR', 'A paired trade needs exactly one BUY leg and one SELL leg.', 400);
+  END IF;
+  IF upper(coalesce(legs->0->>'side', '')) = upper(coalesce(legs->1->>'side', '')) THEN
+    PERFORM jse_fail('INVALID_PAIR', 'A paired trade needs one BUY leg and one SELL leg.', 400);
+  END IF;
+  IF upper(trim(coalesce(legs->0->>'team', ''))) = upper(trim(coalesce(legs->1->>'team', ''))) THEN
+    PERFORM jse_fail('INVALID_PAIR', 'Buyer and seller must be different teams.', 400);
+  END IF;
+  v_sym1 := coalesce(upper(trim(legs->0->>'symbol')), nullif(legs->0->>'security_id',''));
+  v_sym2 := coalesce(upper(trim(legs->1->>'symbol')), nullif(legs->1->>'security_id',''));
+  v_q1 := nullif(legs->0->>'quantity','')::integer; v_q2 := nullif(legs->1->>'quantity','')::integer;
+  v_p1 := nullif(legs->0->>'negotiated_price','')::numeric; v_p2 := nullif(legs->1->>'negotiated_price','')::numeric;
+  IF v_sym1 IS DISTINCT FROM v_sym2 OR v_q1 IS NULL OR v_q1 <> v_q2 THEN
+    PERFORM jse_fail('INVALID_PAIR', 'Both sides of a negotiated trade must use the same security and share quantity.', 400);
+  END IF;
+  IF v_p1 IS DISTINCT FROM v_p2 THEN PERFORM jse_fail('INVALID_PAIR', 'Both sides must use the same agreed negotiated price.', 400); END IF;
+  IF v_p1 IS NOT NULL AND a->>'role' NOT IN ('PIT_MANAGER','ADMIN') THEN PERFORM jse_fail('NEGOTIATED_PRICE_ROLE', 'Only a Pit Manager or Admin may record a negotiated price.', 403); END IF;
+  v_pair := 'PAIR-' || upper(substr(md5(v_key), 1, 8));
+  r1 := jse_place_order(a, (legs->0) || jsonb_build_object('pair_ref', v_pair, 'idempotency_key', v_key || ':0'));
+  r2 := jse_place_order(a, (legs->1) || jsonb_build_object('pair_ref', v_pair, 'idempotency_key', v_key || ':1'));
+  RETURN jsonb_build_object('success', true, 'pair_ref', v_pair, 'legs', jsonb_build_array(r1, r2));
+END $$;
+
+CREATE OR REPLACE FUNCTION jse__settle(a jsonb, p_order_id bigint, p_source text DEFAULT 'BANK')
+RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  cfg event_config%ROWTYPE;
+  o orders%ROWTYPE;
+  s securities%ROWTYPE;
+  t teams%ROWTYPE;
+  inst institutions%ROWTYPE;
+  ln loans%ROWTYPE;
+  v_hold integer := 0; v_cost numeric := 0; v_tcost numeric := 0;
+  v_tv numeric; v_brk numeric; v_rate numeric; v_req numeric;
+  v_cash numeric; v_cash_after numeric;
+  v_draw numeric := 0; v_interest numeric := 0; v_room numeric;
+  v_cost_moved numeric := 0; v_tcost_moved numeric := 0; v_icost_moved numeric := 0;
+  v_realized numeric := 0;
+  v_inst_before numeric; v_inst_after numeric;
+  v_settle_id bigint;
+  v_bal numeric;
+  v_team_delta numeric;
+  v_hold_after integer;
+  v_pair_total integer := 0; v_pair_settled integer := 0;
+  v_note text;
+  v_team_buys boolean;
+BEGIN
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT * INTO o FROM orders WHERE id = p_order_id FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('ORDER_NOT_FOUND', 'Order not found.', 404); END IF;
+  IF o.status = 'BANK_SETTLED' OR EXISTS (SELECT 1 FROM settlements WHERE order_id = o.id AND reversed_at IS NULL) THEN
+    PERFORM jse_fail('ALREADY_SETTLED', o.order_no || ' has already been settled. Duplicate settlement blocked.', 409);
+  END IF;
+  IF o.status NOT IN ('EXCHANGE_APPROVED', 'BANK_PENDING') THEN
+    PERFORM jse_fail('NOT_AWAITING_BANK', o.order_no || ' is not waiting for the Bank (status: ' || replace(o.status, '_', ' ') || ').', 409);
+  END IF;
+  IF o.status = 'BANK_PENDING' AND o.bank_claimed_by IS NOT NULL AND o.bank_claimed_by IS DISTINCT FROM nullif(a->>'id', '')::integer
+     AND o.bank_claimed_at > now() - interval '2 minutes' AND p_source = 'BANK' THEN
+    PERFORM jse_fail('ALREADY_CLAIMED', o.order_no || ' is being verified by ' || coalesce(o.bank_claimed_name, 'another bank operator') || '.', 409);
+  END IF;
+
+  -- lock order: security -> team -> loan -> holdings -> institution
+  SELECT * INTO s FROM securities WHERE id = o.security_id FOR NO KEY UPDATE;
+  SELECT * INTO t FROM teams WHERE id = o.team_id FOR UPDATE;
+  INSERT INTO loans(team_id) VALUES (o.team_id) ON CONFLICT (team_id) DO NOTHING;
+  SELECT * INTO ln FROM loans WHERE team_id = o.team_id FOR UPDATE;
+  SELECT quantity, cost_basis, trade_cost INTO v_hold, v_cost, v_tcost FROM holdings WHERE team_id = o.team_id AND security_id = o.security_id FOR UPDATE;
+  v_hold := coalesce(v_hold, 0); v_cost := coalesce(v_cost, 0); v_tcost := coalesce(v_tcost, 0);
+  -- institutions are transaction-based counterparties: no cash or holdings restriction and no portfolio;
+  -- the institution ledger only records each settled transaction (running net settlement flow)
+  IF o.account_type = 'INSTITUTION' THEN
+    SELECT * INTO inst FROM institutions WHERE id = o.institution_id FOR UPDATE;
+  END IF;
+
+  -- independent re-validation (never trust earlier desks alone)
+  IF coalesce(o.reference_price, o.price) <> s.price AND p_source = 'BANK' THEN
+    RETURN jse__bank_reject(a, o, 'PRICE_STALE', 'MARKET PRICE CHANGED: ' || o.order_no || ' was created at the market price ' || jse_inr(coalesce(o.reference_price, o.price)) ||
+      ' but the market price is now ' || jse_inr(s.price) || '. It is not settled at an obsolete price \u2014 create a fresh order.', jsonb_build_object('market_price', s.price));
+  END IF;
+  IF NOT t.active THEN RETURN jse__bank_reject(a, o, 'TEAM_INACTIVE', 'Team ' || t.code || ' is not active.', '{}'::jsonb); END IF;
+  IF NOT s.active THEN RETURN jse__bank_reject(a, o, 'SECURITY_INACTIVE', s.symbol || ' is not tradable.', '{}'::jsonb); END IF;
+  IF o.quantity <= 0 OR o.quantity % 50 <> 0 THEN
+    RETURN jse__bank_reject(a, o, 'INVALID_LOT', 'Normal market trading requires a multiple of 50 shares.', '{}'::jsonb);
+  END IF;
+  IF o.price <= 0 THEN
+    RETURN jse__bank_reject(a, o, 'INVALID_PRICE', 'Invalid order price.', '{}'::jsonb);
+  END IF;
+  v_tv := round(o.quantity * o.price, 2);
+  IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
+    RETURN jse__bank_reject(a, o, 'ORDER_VALUE_LIMIT', 'Order value ' || jse_inr(v_tv) || ' is outside the allowed ' || jse_inr(cfg.min_order_value) || ' to ' || jse_inr(cfg.max_order_value) || '.', '{}'::jsonb);
+  END IF;
+  -- the brokerage rate is fixed on the order when it is created. The participant team
+  -- pays it on every trade, including trades with an institutional counterparty; its broker earns the commission.
+  v_rate := coalesce(o.brokerage_rate, cfg.brokerage_rate);
+  v_brk := round(v_tv * v_rate, 2);
+
+  v_cash := t.cash;
+  v_team_buys := jse_team_side(o.account_type, o.side) = 'BUY';
+
+  IF v_team_buys THEN
+    v_req := v_tv + v_brk;
+    IF o.account_type = 'TEAM' THEN
+      BEGIN
+        PERFORM jse_check_company_limit(t.id, s.id, v_req, o.id);
+      EXCEPTION WHEN SQLSTATE 'JSE01' THEN
+        RETURN jse__bank_reject(a, o, 'COMPANY_LIMIT', SQLERRM, '{}'::jsonb);
+      END;
+    END IF;
+    IF v_cash < v_req THEN
+      -- own money first: only the shortfall is borrowed, automatically, within the loan limit
+      v_room := CASE WHEN cfg.loans_enabled THEN greatest(0, cfg.loan_max_principal - ln.original_principal) ELSE 0 END;
+      v_draw := v_req - v_cash;
+      IF NOT (cfg.loans_enabled AND cfg.auto_loan_on_settlement) OR v_draw > v_room THEN
+        PERFORM jse_risk(t.id, o.id, s.id, 'INSUFFICIENT_BALANCE_REJECTION', 'BANK', 'BUY', o.quantity, v_hold, v_req, v_cash,
+                         'Loan room ' || jse_inr(v_room));
+        PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_REJECTED', 'order', o.order_no, t.id, o.id, NULL, NULL,
+          jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room, 'account_type', o.account_type));
+        RETURN jse__bank_reject(a, o, 'INSUFFICIENT_BALANCE',
+          'Insufficient balance: ' || jse_inr(v_req) || ' is needed but ' || t.code || ' has ' || jse_inr(v_cash) ||
+          CASE WHEN cfg.loans_enabled AND cfg.auto_loan_on_settlement THEN ' plus ' || jse_inr(v_room) || ' of loan room' ELSE '' END || '.',
+          jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_room', v_room));
+      END IF;
+      v_interest := round(v_draw * cfg.loan_interest_rate, 2);
+    END IF;
+  ELSE
+    IF v_hold < o.quantity THEN
+      PERFORM jse_risk(t.id, o.id, s.id, 'SHORT_SELL_ATTEMPT', 'BANK', 'SELL', o.quantity, v_hold, NULL, NULL, 'Rejected at Bank');
+      PERFORM jse_audit(a, 'SHORT_SELLING_ATTEMPT', 'order', o.order_no, t.id, o.id, NULL, NULL,
+        jsonb_build_object('quantity', o.quantity, 'holding', v_hold, 'stage', 'BANK', 'exchange_approved', coalesce(o.short_sell_approved, false),
+                           'account_type', o.account_type));
+      RETURN jse__bank_reject(a, o, 'SHORT_SELLING_NOT_ALLOWED',
+        'Short selling is not allowed: ' || t.code || ' holds ' || v_hold || ' ' || s.symbol || ' shares but the order sells ' || o.quantity || '.',
+        jsonb_build_object('holding', v_hold, 'quantity', o.quantity));
+    END IF;
+  END IF;
+
+  -- ===== all checks passed: apply =====
+  INSERT INTO settlements(order_id, account_type, team_id, institution_id, security_id, side, quantity, price, trade_value, brokerage,
+                          team_cash_delta, team_cash_before, team_cash_after, holding_before, holding_after,
+                          price_before, price_after, previous_price_before, settled_by, settled_by_name)
+  VALUES (o.id, o.account_type, t.id, o.institution_id, s.id, o.side, o.quantity, o.price, v_tv, v_brk,
+          0, v_cash, v_cash, v_hold, v_hold, s.price, s.price, s.previous_price,
+          nullif(a->>'id', '')::integer, jse_actor_name(a))
+  RETURNING id INTO v_settle_id;
+
+  v_bal := v_cash;
+  IF v_team_buys THEN
+    IF v_draw > 0 THEN
+      v_bal := v_bal + v_draw;
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'LOAN_DRAW', 0, v_draw, v_bal,
+        'Automatic loan draw for the cash shortfall on ' || o.order_no, a);
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'INTEREST_CHARGE', 0, 0, v_bal,
+        'Loan interest charged ' || jse_inr(v_interest) || ' (' || jse_rate_text(cfg.loan_interest_rate) || ' on ' || jse_inr(v_draw) || ') \u2014 added to the loan balance, no cash moved', a);
+      UPDATE loans SET original_principal = original_principal + v_draw, principal_outstanding = principal_outstanding + v_draw,
+             interest_outstanding = interest_outstanding + v_interest, interest_charged = interest_charged + v_interest,
+             draws = draws + 1, status = 'OUTSTANDING', updated_at = now()
+      WHERE team_id = t.id;
+      INSERT INTO loan_transactions(team_id, kind, amount, order_id, settlement_id, automatic, note, actor_id, actor_name)
+      VALUES (t.id, 'DRAW', v_draw, o.id, v_settle_id, true, 'Automatic draw at settlement of ' || o.order_no, nullif(a->>'id', '')::integer, jse_actor_name(a)),
+             (t.id, 'INTEREST_CHARGE', v_interest, o.id, v_settle_id, true, jse_rate_text(cfg.loan_interest_rate) || ' interest on draw', nullif(a->>'id', '')::integer, jse_actor_name(a));
+      PERFORM jse_audit(a, 'LOAN_DRAW', 'loan', t.code, t.id, o.id, NULL, NULL,
+        jsonb_build_object('amount', v_draw, 'interest', v_interest, 'automatic', true, 'order_no', o.order_no));
+      PERFORM jse_audit(a, 'INSUFFICIENT_BALANCE_SETTLED', 'order', o.order_no, t.id, o.id, NULL, NULL,
+        jsonb_build_object('required', v_req, 'cash', v_cash, 'loan_drawn', v_draw, 'interest', v_interest, 'symbol', s.symbol,
+                           'account_type', o.account_type));
+    END IF;
+    v_bal := v_bal - v_tv;
+    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' from ' || inst.code
+                   ELSE 'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) END;
+    PERFORM jse_ledger(t.id, o.id, v_settle_id, 'BUY', v_tv, 0, v_bal, v_note, a);
+    IF v_brk > 0 THEN
+      v_bal := v_bal - v_brk;
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'BROKERAGE', v_brk, 0, v_bal, 'Brokerage ' || jse_rate_text(v_rate) || ' on ' || o.order_no, a);
+    END IF;
+    INSERT INTO holdings(team_id, security_id, quantity, cost_basis, trade_cost) VALUES (t.id, s.id, o.quantity, v_tv + v_brk, v_tv)
+    ON CONFLICT (team_id, security_id) DO UPDATE SET quantity = holdings.quantity + EXCLUDED.quantity,
+      cost_basis = holdings.cost_basis + EXCLUDED.cost_basis, trade_cost = holdings.trade_cost + EXCLUDED.trade_cost, updated_at = now();
+    v_hold_after := v_hold + o.quantity;
+    v_cost_moved := v_tv + v_brk; v_tcost_moved := v_tv;
+    v_team_delta := v_draw - v_tv - v_brk;
+    IF o.account_type = 'INSTITUTION' THEN
+      v_inst_before := inst.cash; v_inst_after := inst.cash + v_tv;
+      UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
+      PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'SELL', 0, v_tv, v_inst_after,
+        'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' to ' || t.code, a);
+    END IF;
+  ELSE
+    v_cost_moved := CASE WHEN v_hold = o.quantity THEN v_cost ELSE round(v_cost * o.quantity / v_hold, 4) END;
+    v_tcost_moved := CASE WHEN v_hold = o.quantity THEN v_tcost ELSE round(v_tcost * o.quantity / v_hold, 4) END;
+    UPDATE holdings SET quantity = quantity - o.quantity, cost_basis = greatest(0, cost_basis - v_cost_moved),
+           trade_cost = greatest(0, trade_cost - v_tcost_moved), updated_at = now()
+    WHERE team_id = t.id AND security_id = s.id;
+    DELETE FROM holdings WHERE team_id = t.id AND security_id = s.id AND quantity = 0;
+    v_hold_after := v_hold - o.quantity;
+    v_bal := v_bal + v_tv;
+    v_note := CASE WHEN o.account_type = 'INSTITUTION' THEN 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' to ' || inst.code
+                   ELSE 'Sold ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) END;
+    PERFORM jse_ledger(t.id, o.id, v_settle_id, 'SELL', 0, v_tv, v_bal, v_note, a);
+    IF v_brk > 0 THEN
+      v_bal := v_bal - v_brk;
+      PERFORM jse_ledger(t.id, o.id, v_settle_id, 'BROKERAGE', v_brk, 0, v_bal, 'Brokerage ' || jse_rate_text(v_rate) || ' on ' || o.order_no, a);
+    END IF;
+    v_realized := round(v_tv - v_brk - v_cost_moved, 2);
+    v_team_delta := v_tv - v_brk;
+    IF o.account_type = 'INSTITUTION' THEN
+      v_inst_before := inst.cash; v_inst_after := inst.cash - v_tv;
+      UPDATE institutions SET cash = v_inst_after, updated_at = now() WHERE id = inst.id;
+      PERFORM jse_inst_ledger(inst.id, o.id, v_settle_id, 'BUY', v_tv, 0, v_inst_after,
+        'Bought ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ' from ' || t.code, a);
+    END IF;
+  END IF;
+
+  v_cash_after := v_bal;
+  IF v_cash_after < 0 THEN
+    RAISE EXCEPTION 'JSE invariant: negative cash for % on %', t.code, o.order_no;
+  END IF;
+  UPDATE teams SET cash = v_cash_after, realized_pnl = realized_pnl + v_realized, brokerage_paid = brokerage_paid + v_brk, updated_at = now()
+  WHERE id = t.id;
+
+  -- the team's broker earns the brokerage on every settled trade of its team (institutional counterparty trades too);
+  -- the commission register records the team's side of the trade
+  IF v_brk > 0 AND o.broker_id IS NOT NULL THEN
+    INSERT INTO broker_commissions(order_id, settlement_id, broker_id, team_id, side, trade_value, rate, amount)
+    VALUES (o.id, v_settle_id, o.broker_id, t.id, jse_team_side(o.account_type, o.side), v_tv, v_rate, v_brk);
+  END IF;
+
+  -- trade statistics only: settlement never changes the market price (Market News is the only price engine)
+  UPDATE securities SET trade_count = trade_count + 1, traded_quantity = traded_quantity + o.quantity, traded_value = traded_value + v_tv,
+         last_trade_at = now() WHERE id = s.id;
+
+  UPDATE settlements SET brokerage = v_brk, team_cash_delta = v_team_delta, team_cash_after = v_cash_after, holding_after = v_hold_after,
+         cost_moved = v_cost_moved, trade_cost_moved = v_tcost_moved, inst_cost_moved = v_icost_moved, realized_pnl = v_realized,
+         loan_drawn = v_draw, loan_interest = v_interest, institution_cash_before = v_inst_before, institution_cash_after = v_inst_after
+  WHERE id = v_settle_id;
+
+  UPDATE orders SET status = 'BANK_SETTLED',
+         bank_by = nullif(a->>'id', '')::integer, bank_by_name = jse_actor_name(a), bank_at = now(),
+         bank_claimed_by = NULL, bank_claimed_name = NULL, bank_claimed_at = NULL,
+         reject_code = NULL, reject_reason = NULL, updated_at = now()
+  WHERE id = o.id;
+
+  -- A negotiated pair updates the public market price only after BOTH matched legs settle successfully.
+  IF o.negotiated_trade AND o.pair_ref IS NOT NULL THEN
+    SELECT count(*), count(*) FILTER (WHERE status = 'BANK_SETTLED')
+      INTO v_pair_total, v_pair_settled
+      FROM orders WHERE pair_ref = o.pair_ref AND negotiated_trade AND security_id = o.security_id AND price = o.price;
+    IF v_pair_total = 2 AND v_pair_settled = 2 THEN
+      PERFORM jse__set_price(a, s.id, o.price, 'NEGOTIATED_TRADE', NULL, s.price);
+      UPDATE settlements SET price_after = o.price WHERE order_id IN (SELECT id FROM orders WHERE pair_ref = o.pair_ref AND negotiated_trade);
+      s.price := o.price;
+    END IF;
+  END IF;
+
+  PERFORM jse_order_event(o.id, 'BANK_SETTLED', o.status, 'BANK_SETTLED', a, NULL,
+    jsonb_build_object('trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'cash_before', v_cash, 'cash_after', v_cash_after,
+                       'loan_drawn', v_draw, 'loan_interest', v_interest));
+  PERFORM jse_order_event(o.id, 'HOLDINGS_UPDATED', 'BANK_SETTLED', 'BANK_SETTLED', a,
+    t.code || ' cash ' || jse_inr(v_cash) || ' \u2192 ' || jse_inr(v_cash_after) || '; ' || s.symbol || ' holding ' || v_hold || ' \u2192 ' || v_hold_after ||
+    '; market price ' || CASE WHEN o.negotiated_trade AND v_pair_total = 2 AND v_pair_settled = 2 THEN 'updated to negotiated trade price ' ELSE 'unchanged at ' END || jse_inr(s.price),
+    jsonb_build_object('holding_before', v_hold, 'holding_after', v_hold_after, 'market_price', s.price));
+  PERFORM jse_audit(a, 'BANK_SETTLED', 'order', o.order_no, t.id, o.id,
+    jsonb_build_object('status', o.status, 'cash', v_cash, 'holding', v_hold),
+    jsonb_build_object('status', 'BANK_SETTLED', 'cash', v_cash_after, 'holding', v_hold_after),
+    jsonb_build_object('account_type', o.account_type, 'side', o.side, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate,
+                       'loan_drawn', v_draw, 'interest', v_interest, 'realized_pnl', v_realized, 'market_price', s.price, 'negotiated_trade', o.negotiated_trade, 'pair_ref', o.pair_ref, 'source', p_source));
+  PERFORM jse_journal('BANK_SETTLE', v_settle_id, o.order_no || ' settled (' || o.side || ' ' || o.quantity || ' ' || s.symbol || ' @ ' || jse_inr(o.price) || ')',
+                      jsonb_build_object('order_id', o.id, 'settlement_id', v_settle_id), a);
+
+  RETURN jsonb_build_object('success', true, 'status', 'BANK_SETTLED', 'settlement_id', v_settle_id,
+    'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'cash_before', v_cash, 'cash_after', v_cash_after,
+    'loan_drawn', v_draw, 'loan_interest', v_interest, 'realized_pnl', v_realized,
+    'holding_before', v_hold, 'holding_after', v_hold_after, 'market_price', s.price, 'order', jse_order_json(o.id));
+END $$;
+
+CREATE OR REPLACE FUNCTION jse_place_institutional_order(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  cfg event_config%ROWTYPE;
+  v_status text;
+  v_inst institutions%ROWTYPE;
+  v_team teams%ROWTYPE;
+  v_sec securities%ROWTYPE;
+  v_side text := upper(trim(coalesce(p->>'side', '')));
+  v_key text := nullif(trim(coalesce(p->>'idempotency_key', '')), '');
+  v_qty integer; v_expected numeric; v_tv numeric; v_brk numeric := 0; v_rate numeric := 0;
+  v_price numeric; v_amount numeric; v_team_side text;
+  v_id bigint; v_no text; v_existing bigint;
+  v_warnings jsonb := '[]'::jsonb;
+  v_avail record; v_free_cash numeric; v_room numeric;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'INSTITUTIONAL');
+  IF v_key IS NULL OR length(v_key) > 120 THEN
+    PERFORM jse_fail('IDEMPOTENCY_KEY_REQUIRED', 'Order submission is missing its request key. Reload the page and try again.', 400);
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('jse-order:' || v_key, 0));
+  SELECT id INTO v_existing FROM orders WHERE idempotency_key = v_key;
+  IF FOUND THEN RETURN jsonb_build_object('success', true, 'replayed', true, 'order', jse_order_json(v_existing), 'warnings', '[]'::jsonb); END IF;
+
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  IF v_status <> 'LIVE' THEN
+    PERFORM jse_fail('EVENT_NOT_LIVE', 'New orders are accepted only while the market is LIVE (current status: ' || replace(v_status, '_', ' ') || ').', 409);
+  END IF;
+  SELECT * INTO v_inst FROM institutions
+  WHERE id = coalesce(CASE WHEN a->>'role' = 'ADMIN' THEN nullif(p->>'institution_id', '')::integer END,
+                      nullif(a->>'institution_id', '')::integer, (SELECT min(id) FROM institutions));
+  IF NOT FOUND THEN PERFORM jse_fail('INSTITUTION_NOT_FOUND', 'Institutional account not found.', 404); END IF;
+  SELECT * INTO v_team FROM teams WHERE code = upper(trim(coalesce(p->>'counterparty_team', p->>'team', '')));
+  IF NOT FOUND THEN PERFORM jse_fail('COUNTERPARTY_REQUIRED', 'Select the counterparty participant team.', 400); END IF;
+  IF NOT v_team.active THEN PERFORM jse_fail('TEAM_INACTIVE', 'Team ' || v_team.code || ' is not active.', 409); END IF;
+  SELECT * INTO v_sec FROM securities
+  WHERE (p ? 'security_id' AND id = nullif(p->>'security_id', '')::integer) OR (p ? 'symbol' AND symbol = upper(trim(p->>'symbol')))
+  FOR KEY SHARE;
+  IF NOT FOUND OR NOT v_sec.active THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Select a valid listed stock.', 404); END IF;
+  IF v_sec.kind = 'IPO' AND v_sec.listed_at IS NULL THEN
+    PERFORM jse_fail('IPO_NOT_LISTED', v_sec.symbol || ' is still in the IPO stage and cannot be traded yet.', 409);
+  END IF;
+  IF v_side NOT IN ('BUY', 'SELL') THEN PERFORM jse_fail('INVALID_SIDE', 'Choose BUY or SELL.', 400); END IF;
+  BEGIN
+    v_qty := (p->>'quantity')::integer; v_expected := nullif(p->>'expected_price', '')::numeric;
+  EXCEPTION WHEN others THEN PERFORM jse_fail('INVALID_NUMBER', 'Quantity must be a whole number of shares.', 400);
+  END;
+  IF v_qty IS NULL OR v_qty <= 0 OR v_qty % 50 <> 0 THEN
+    PERFORM jse_fail('INVALID_LOT', v_sec.symbol || ' normal market trading uses multiples of 50 shares.', 400);
+  END IF;
+  -- expected_price = the prevailing MARKET price the desk saw (the institutional price is derived from it)
+  IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
+    RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
+      MESSAGE = 'MARKET PRICE CHANGED: ' || v_sec.symbol || ' moved from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
+                ' (Market News). The institutional price is recalculated from the new market price \u2014 review and submit again.';
+  END IF;
+  v_team_side := jse_team_side('INSTITUTION', v_side);
+  v_price := round(v_sec.price, 2);
+  v_tv := round(v_qty * v_price, 2);
+  v_rate := cfg.brokerage_rate;
+  v_brk := round(v_tv * v_rate, 2);
+  v_amount := CASE WHEN v_team_side = 'BUY' THEN v_tv + v_brk ELSE v_tv - v_brk END;
+  IF v_tv < cfg.min_order_value OR v_tv > cfg.max_order_value THEN
+    PERFORM jse_fail('ORDER_VALUE_LIMIT', 'Order value must be between ' || jse_inr(cfg.min_order_value) || ' and ' || jse_inr(cfg.max_order_value) ||
+      ' per order (this order: ' || jse_inr(v_tv) || ').', 400);
+  END IF;
+
+  -- the participant side is checked like any participant trade (v3.14: refused, not only flagged); team row locked
+  PERFORM 1 FROM teams WHERE id = v_team.id FOR UPDATE;
+  IF v_team_side = 'SELL' THEN
+    SELECT * INTO v_avail FROM jse_available_qty(v_team.id, v_sec.id, NULL);
+    IF v_qty > v_avail.available THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'SHORT_SELL_NOT_ALLOWED', HINT = '409',
+        MESSAGE = 'Short selling is not allowed. You can sell only the shares available in your portfolio. Please reduce the quantity or check your holdings. (' ||
+                  v_team.code || ' can sell ' || greatest(v_avail.available, 0) || ' ' || v_sec.symbol || ')';
+    END IF;
+  ELSE
+    v_free_cash := jse_available_cash(v_team.id, NULL);
+    IF v_amount > v_free_cash THEN
+      RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSUFFICIENT_BALANCE', HINT = '409',
+        MESSAGE = 'Insufficient balance! Your available cash is ' || jse_inr(greatest(v_free_cash, 0)) || ', but this order requires ' || jse_inr(v_amount) ||
+                  ', including applicable charges. Please reduce the order quantity or obtain an approved loan before placing this order.';
+    END IF;
+    PERFORM jse_check_company_limit(v_team.id, v_sec.id, v_amount, NULL);
+  END IF;
+
+  v_id := nextval(pg_get_serial_sequence('orders', 'id'));
+  v_no := 'INS-' || v_id::text;
+  INSERT INTO orders(id, order_no, account_type, team_id, institution_id, broker_id, security_id, side, quantity, price, trade_value, brokerage,
+                     brokerage_rate, settlement_amount, reference_price, status, notes, idempotency_key, created_by, created_by_name, created_role)
+  VALUES (v_id, v_no, 'INSTITUTION', v_team.id, v_inst.id, v_team.broker_id, v_sec.id, v_side, v_qty, v_price, v_tv, v_brk,
+          v_rate, v_amount, v_sec.price, 'EXCHANGE_PENDING', left(p->>'notes', 300), v_key,
+          nullif(a->>'id', '')::integer, jse_actor_name(a), a->>'role');
+  PERFORM jse_order_event(v_id, 'INSTITUTION_SUBMITTED', NULL, 'EXCHANGE_PENDING', a,
+    v_team.code || ' ' || CASE WHEN v_team_side = 'BUY' THEN 'buys from ' ELSE 'sells to ' END || v_inst.code || ' at ' || jse_inr(v_price) ||
+    ' (market ' || jse_inr(v_sec.price) || CASE WHEN v_team_side = 'BUY' THEN ' + ' ELSE ' \u2212 ' END || to_char(jse_inst_spread_pct(), 'FM990.##') || '%)' ||
+    ' \xB7 brokerage ' || jse_rate_text(v_rate) || ' = ' || jse_inr(v_brk),
+    jsonb_build_object('price', v_price, 'market_price', v_sec.price, 'spread_pct', 0, 'trade_value', v_tv, 'brokerage', v_brk,
+                       'institution', v_inst.code));
+  PERFORM jse_audit(a, 'INSTITUTIONAL_ORDER_SUBMITTED', 'order', v_no, v_team.id, v_id, NULL,
+    jsonb_build_object('status', 'EXCHANGE_PENDING', 'side', v_side, 'team_side', v_team_side, 'symbol', v_sec.symbol, 'quantity', v_qty, 'price', v_price),
+    jsonb_build_object('account_type', 'INSTITUTION', 'institution', v_inst.code, 'counterparty', v_team.code, 'market_price', v_sec.price,
+                       'spread_pct', 0, 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'settlement_amount', v_amount,
+                       'broker', (SELECT code FROM brokers WHERE id = v_team.broker_id)));
+  RETURN jsonb_build_object('success', true, 'replayed', false, 'order', jse_order_json(v_id), 'warnings', v_warnings);
+END $$;
+
+CREATE OR REPLACE FUNCTION public.jse_market_news(a jsonb, p jsonb)
+RETURNS jsonb LANGUAGE plpgsql AS $function$
+DECLARE
+  cfg event_config%ROWTYPE; v_status text; s securities%ROWTYPE;
+  v_mood text := upper(replace(trim(coalesce(p->>'mood', p->>'severity', '')), ' ', '_'));
+  v_headline text := nullif(left(trim(coalesce(p->>'headline', '')), 240), '');
+  v_band numeric[]; v_pct numeric; v_new numeric; v_lo numeric; v_hi numeric;
+  v_day_start timestamptz; v_day_base numeric; v_daily_cap constant numeric := 15;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_status FROM event_control WHERE id = 1 FOR SHARE;
+  IF v_status NOT IN ('NOT_STARTED', 'LIVE', 'SETTLEMENT_ONLY') THEN
+    PERFORM jse_fail('EVENT_CLOSED', 'Market News is not allowed after the market has closed.', 409);
+  END IF;
+  v_band := jse_mood_band(v_mood);
+  IF v_band IS NULL THEN PERFORM jse_fail('INVALID_MOOD', 'Choose a news severity.', 400); END IF;
+  SELECT * INTO s FROM securities WHERE (p ? 'security_id' AND id = nullif(p->>'security_id', '')::integer) OR (p ? 'symbol' AND symbol = upper(trim(p->>'symbol')));
+  IF NOT FOUND THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Select a company.', 404); END IF;
+  IF s.kind = 'IPO' AND s.listed_at IS NULL THEN
+    PERFORM jse_fail('IPO_NOT_LISTED', s.symbol || ' is still in the IPO stage; Market News applies once it lists.', 409);
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('jse-news:' || s.id, 0));
+  SELECT * INTO s FROM securities WHERE id = s.id FOR UPDATE;
+
+  v_day_start := date_trunc('day', now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata';
+  SELECT previous_price INTO v_day_base
+  FROM market_news
+  WHERE security_id = s.id
+    AND created_at >= v_day_start
+    AND created_at < v_day_start + interval '1 day'
+    AND reversed_at IS NULL
+  ORDER BY created_at, id
+  LIMIT 1;
+  v_day_base := coalesce(v_day_base, s.price);
+
+  v_pct := round((v_band[1] + random() * (v_band[2] - v_band[1]))::numeric, 2);
+  v_new := jse_round_tick(s.price * (1 + v_pct / 100), cfg.price_tick);
+  v_lo := ceil(v_day_base * (1 - v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;
+  v_hi := floor(v_day_base * (1 + v_daily_cap / 100) / cfg.price_tick) * cfg.price_tick;
+  v_new := greatest(v_lo, least(v_hi, v_new));
+  IF v_new <= 0 THEN v_new := cfg.price_tick; END IF;
+  RETURN jse__apply_news_price(a, s, v_mood, v_pct, v_new,
+    coalesce(v_headline, initcap(replace(v_mood, '_', ' ')) || ' news on ' || s.name));
+END $function$;
+
+CREATE OR REPLACE FUNCTION jse_event_action(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_action text := upper(coalesce(p->>'action', ''));
+  cfg event_config%ROWTYPE;
+  v_cur text; v_to text; v_open integer; v_eligible integer; v_candidates integer; v_new_limit numeric; v_listed jsonb := '[]'::jsonb; v_one jsonb; r record; v_names jsonb;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  IF v_action NOT IN ('START', 'PAUSE', 'RESUME', 'CLOSE', 'REOPEN', 'FINALIZE') THEN
+    PERFORM jse_fail('INVALID_ACTION', 'Unknown event action.', 400);
+  END IF;
+  PERFORM jse_require_admin_password(a, p);
+  SELECT * INTO cfg FROM event_config WHERE id = 1;
+  SELECT status INTO v_cur FROM event_control WHERE id = 1 FOR UPDATE;
+  v_to := CASE v_action
+    WHEN 'START'    THEN CASE WHEN v_cur = 'NOT_STARTED' THEN 'LIVE' END
+    WHEN 'PAUSE'    THEN CASE WHEN v_cur = 'LIVE' THEN 'SETTLEMENT_ONLY' END
+    WHEN 'RESUME'   THEN CASE WHEN v_cur = 'SETTLEMENT_ONLY' THEN 'LIVE' END
+    WHEN 'CLOSE'    THEN CASE WHEN v_cur IN ('LIVE', 'SETTLEMENT_ONLY') THEN 'CLOSED' END
+    WHEN 'REOPEN'   THEN CASE WHEN v_cur IN ('CLOSED', 'FINALIZED') THEN 'LIVE' END   -- reopen after CLOSE or FINALIZE (results become provisional again)
+    WHEN 'FINALIZE' THEN CASE WHEN v_cur = 'CLOSED' THEN 'FINALIZED' END
+  END;
+  IF v_to IS NULL THEN
+    PERFORM jse_fail('INVALID_TRANSITION', v_action || ' is not possible while the event is ' || replace(v_cur, '_', ' ') || '.', 409);
+  END IF;
+  IF v_action = 'FINALIZE' THEN
+    SELECT count(*) INTO v_open FROM orders WHERE status IN ('PIT_PENDING', 'EXCHANGE_PENDING', 'EXCHANGE_APPROVED', 'BANK_PENDING');
+    IF v_open > 0 THEN
+      PERFORM jse_fail('OPEN_ORDERS', 'Cannot finalize while ' || v_open || ' order(s) are still waiting at the Pit, Exchange or Bank. Settle or reject them first.', 409);
+    END IF;
+
+    -- Only raise the closing-cash cap when at least two teams meet every other award criterion.
+    SELECT count(*) INTO v_candidates FROM jse_team_metrics
+      WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid);
+    SELECT count(*) INTO v_eligible FROM jse_team_metrics
+      WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid) AND cash_rule_met;
+    IF v_eligible < 2 AND v_candidates >= 2 THEN
+      SELECT max(base_cash_counted) INTO v_new_limit FROM (
+        SELECT base_cash_counted FROM jse_team_metrics
+        WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid)
+        ORDER BY base_cash_counted ASC, code ASC LIMIT 2
+      ) eligible_candidates;
+      IF v_new_limit IS NOT NULL AND v_new_limit > cfg.cash_rule_limit THEN
+        UPDATE event_config SET cash_rule_limit = v_new_limit, updated_at = now() WHERE id = 1;
+        PERFORM jse_audit(a, 'CLOSING_CASH_LIMIT_AUTO_RAISED', 'event_config', 'cash_rule_limit', NULL, NULL,
+          jsonb_build_object('previous_limit', cfg.cash_rule_limit),
+          jsonb_build_object('new_limit', v_new_limit, 'reason', 'At least two eligible awardees required'),
+          jsonb_build_object('action', 'FINALIZE'));
+        cfg.cash_rule_limit := v_new_limit;
+      END IF;
+      SELECT count(*) INTO v_eligible FROM jse_team_metrics
+        WHERE active AND assessment_met AND (NOT loan_repayment_required OR loan_repaid) AND cash_rule_met;
+    END IF;
+    IF v_eligible < 2 THEN
+      PERFORM jse_fail('NOT_ENOUGH_AWARDEES', 'Cannot finalize with fewer than two eligible teams. The closing-cash limit is raised only when cash is the sole barrier; teams must still meet settled BUY/SELL and loan rules.', 409);
+    END IF;
+  END IF;
+  IF v_action = 'START' THEN
+    -- team names: randomly assigned before LIVE, locked for the event once it begins
+    IF cfg.team_names_assigned_at IS NULL THEN
+      PERFORM jse__assign_team_names(a, coalesce(cfg.team_name_seed, 'JSE-DALAL-STREET-2026'));
+    END IF;
+    IF cfg.team_names_locked_at IS NULL THEN
+      UPDATE event_config SET team_names_locked_at = now(), team_names_locked_by = jse_actor_name(a) || ' (START EVENT)' WHERE id = 1;
+      PERFORM jse_audit(a, 'TEAM_NAMES_LOCKED', 'team_names', NULL, NULL, NULL, NULL, NULL,
+        jsonb_build_object('seed', (SELECT team_name_seed FROM event_config WHERE id = 1), 'automatic', true));
+    END IF;
+    -- IPOs list when the market starts: at the saved listing price, otherwise at the issue price
+    IF cfg.auto_list_ipos THEN
+      FOR r IN SELECT id FROM securities WHERE kind = 'IPO' AND active AND listed_at IS NULL ORDER BY display_order, id LOOP
+        v_one := jse__list_ipo(a, r.id);
+        IF v_one IS NOT NULL THEN v_listed := v_listed || jsonb_build_array(v_one); END IF;
+      END LOOP;
+    END IF;
+  END IF;
+  RETURN jse__set_status(a, v_to, true,
+    CASE v_action WHEN 'START' THEN 'EVENT_START' WHEN 'PAUSE' THEN 'EVENT_PAUSE' WHEN 'RESUME' THEN 'EVENT_RESUME'
+                  WHEN 'CLOSE' THEN 'EVENT_CLOSE' WHEN 'REOPEN' THEN 'EVENT_REOPEN' ELSE 'EVENT_FINALIZE' END)
+    || jsonb_build_object('listed', v_listed);
+END $$;
+
+INSERT INTO schema_migrations(version) VALUES ('030_negotiated_market_trades');
+`;var Lr=`-- 031: order accuracy, reconciliation and institutional inventory (21 Oct 2026).
+-- Works on the LIVE function definitions (text patches that fail loudly if the expected code is not found) and adds
+-- new objects only. Idempotent: safe to re-apply. Never changes cash, holdings, orders, settlements or ledger rows.
+
+-- ---------------------------------------------------------------------------
+-- A. Market News price band: permanent \xB115% from the company's locked base price (028 rule).
+--    030 re-created jse_market_news with the older daily-baseline logic; restore the base-price anchor.
+-- ---------------------------------------------------------------------------
+DO $a$
+DECLARE v_fn text; v_old text;
+BEGIN
+  v_fn := pg_get_functiondef('public.jse_market_news(jsonb,jsonb)'::regprocedure);
+  v_old := $old$  v_day_start := date_trunc('day', now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata';
+  SELECT previous_price INTO v_day_base
+  FROM market_news
+  WHERE security_id = s.id
+    AND created_at >= v_day_start
+    AND created_at < v_day_start + interval '1 day'
+    AND reversed_at IS NULL
+  ORDER BY created_at, id
+  LIMIT 1;
+  v_day_base := coalesce(v_day_base, s.price);$old$;
+  IF position(v_old IN v_fn) > 0 THEN
+    v_fn := replace(v_fn, v_old, $new$  -- Always anchor the price band to the company's locked starting/base price, not a daily baseline.
+  v_day_base := coalesce(s.base_price, s.price);$new$);
+    v_fn := replace(v_fn, 'v_day_start timestamptz; v_day_base numeric;', 'v_band_base numeric;');
+    v_fn := replace(v_fn, 'v_day_base', 'v_band_base');
+    EXECUTE v_fn;
+  ELSIF position('v_band_base := coalesce(s.base_price, s.price);' IN v_fn) = 0 THEN
+    RAISE EXCEPTION '031-A: Market News band logic not recognised; not changed';
+  END IF;
+END $a$;
+
+-- ---------------------------------------------------------------------------
+-- B. Negotiated team-to-team price must be within \xB115% of the current market price (order price deviation limit).
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION jse_price_deviation_pct() RETURNS numeric LANGUAGE sql IMMUTABLE AS $$ SELECT 15::numeric $$;
+
+DO $b$
+DECLARE v_fn text; v_old text := '    v_price := v_negotiated_price;';
+BEGIN
+  v_fn := pg_get_functiondef('public.jse_place_order(jsonb,jsonb)'::regprocedure);
+  IF position('NEGOTIATED_PRICE_OUT_OF_BAND' IN v_fn) > 0 THEN RETURN; END IF;
+  IF position(v_old IN v_fn) = 0 THEN RAISE EXCEPTION '031-B: negotiated price assignment not found in jse_place_order'; END IF;
+  v_fn := replace(v_fn, v_old, v_old || $new$
+    IF abs(v_negotiated_price - v_sec.price) > v_sec.price * jse_price_deviation_pct() / 100 THEN
+      PERFORM jse_fail('NEGOTIATED_PRICE_OUT_OF_BAND', 'The agreed price ' || jse_inr(v_negotiated_price) || ' is more than ' || jse_price_deviation_pct() ||
+        '% away from the current market price ' || jse_inr(v_sec.price) || ' of ' || v_sec.symbol || ' (allowed ' ||
+        jse_inr(ceil(v_sec.price * (1 - jse_price_deviation_pct() / 100))) || ' \u2013 ' || jse_inr(floor(v_sec.price * (1 + jse_price_deviation_pct() / 100))) || ').', 409);
+    END IF;$new$);
+  EXECUTE v_fn;
+END $b$;
+
+-- ---------------------------------------------------------------------------
+-- C. Institutional inventory (optional per company). No row = unlimited, as before.
+--    Institution SELL (team buys) needs inventory; institution BUY (team sells) adds to it. Updated in the same
+--    transaction as the settlement, so the trade and the inventory always succeed or fail together.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS institutional_inventory (
+  security_id   integer PRIMARY KEY REFERENCES securities(id),
+  quantity      integer NOT NULL CHECK (quantity >= 0),
+  updated_by    text,
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION jse__inst_reserved(p_sec integer, p_exclude bigint DEFAULT NULL) RETURNS integer LANGUAGE sql STABLE AS $$
+  SELECT coalesce(sum(quantity), 0)::integer FROM orders
+  WHERE account_type = 'INSTITUTION' AND side = 'SELL' AND security_id = p_sec
+    AND status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING') AND (p_exclude IS NULL OR id <> p_exclude)
+$$;
+
+CREATE OR REPLACE FUNCTION jse__inst_order_guard() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE inv integer; v_sym text;
+BEGIN
+  IF NEW.account_type <> 'INSTITUTION' OR NEW.side <> 'SELL' THEN RETURN NEW; END IF;
+  SELECT quantity INTO inv FROM institutional_inventory WHERE security_id = NEW.security_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN NEW; END IF;
+  IF NEW.quantity > inv - jse__inst_reserved(NEW.security_id, NEW.id) THEN
+    SELECT symbol INTO v_sym FROM securities WHERE id = NEW.security_id;
+    RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSTITUTION_INVENTORY', HINT = '409',
+      MESSAGE = 'The institutional investor has only ' || greatest(inv - jse__inst_reserved(NEW.security_id, NEW.id), 0) || ' ' || v_sym ||
+                ' shares available to sell (inventory ' || inv || ', in open orders ' || jse__inst_reserved(NEW.security_id, NEW.id) || ').';
+  END IF;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS jse_inst_order_guard_trg ON orders;
+CREATE TRIGGER jse_inst_order_guard_trg BEFORE INSERT ON orders FOR EACH ROW EXECUTE FUNCTION jse__inst_order_guard();
+
+CREATE OR REPLACE FUNCTION jse__inst_settlement_inventory() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE v_delta integer; v_left integer; v_sym text;
+BEGIN
+  IF NEW.account_type IS DISTINCT FROM 'INSTITUTION' THEN RETURN NEW; END IF;
+  IF TG_OP = 'INSERT' AND NEW.reversed_at IS NULL THEN
+    v_delta := CASE WHEN NEW.side = 'SELL' THEN -NEW.quantity ELSE NEW.quantity END;
+  ELSIF TG_OP = 'UPDATE' AND OLD.reversed_at IS NULL AND NEW.reversed_at IS NOT NULL THEN
+    v_delta := CASE WHEN NEW.side = 'SELL' THEN NEW.quantity ELSE -NEW.quantity END;      -- undo of a settlement
+  ELSIF TG_OP = 'UPDATE' AND OLD.reversed_at IS NOT NULL AND NEW.reversed_at IS NULL THEN
+    v_delta := CASE WHEN NEW.side = 'SELL' THEN -NEW.quantity ELSE NEW.quantity END;      -- redo
+  ELSE RETURN NEW;
+  END IF;
+  UPDATE institutional_inventory SET quantity = quantity + v_delta, updated_at = now() WHERE security_id = NEW.security_id
+  RETURNING quantity INTO v_left;
+  IF FOUND AND v_left < 0 THEN
+    SELECT symbol INTO v_sym FROM securities WHERE id = NEW.security_id;
+    RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSTITUTION_INVENTORY', HINT = '409',
+      MESSAGE = 'Settlement blocked: the institutional investor does not have enough ' || v_sym || ' shares.';
+  END IF;
+  RETURN NEW;
+EXCEPTION WHEN check_violation THEN
+  RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'INSTITUTION_INVENTORY', HINT = '409', MESSAGE = 'Settlement blocked: institutional inventory would become negative.';
+END $$;
+DROP TRIGGER IF EXISTS jse_inst_settlement_inventory_trg ON settlements;
+CREATE TRIGGER jse_inst_settlement_inventory_trg AFTER INSERT OR UPDATE OF reversed_at ON settlements FOR EACH ROW EXECUTE FUNCTION jse__inst_settlement_inventory();
+
+CREATE OR REPLACE FUNCTION jse_institution_inventory(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE v_action text := upper(coalesce(p->>'action', 'LIST')); s securities%ROWTYPE; v_qty numeric; v_old integer; v_res integer;
+BEGIN
+  IF v_action = 'LIST' THEN
+    PERFORM jse_require_role(a, 'ADMIN', 'VIEWER', 'INSTITUTIONAL');
+    RETURN jsonb_build_object('success', true, 'items', coalesce((
+      SELECT jsonb_agg(jsonb_build_object('symbol', s2.symbol, 'name', s2.name, 'kind', s2.kind, 'configured', i.security_id IS NOT NULL, 'quantity', i.quantity,
+        'reserved', jse__inst_reserved(s2.id), 'available', CASE WHEN i.security_id IS NOT NULL THEN i.quantity - jse__inst_reserved(s2.id) END,
+        'updated_by', i.updated_by, 'updated_at', i.updated_at) ORDER BY s2.kind, s2.display_order, s2.symbol)
+      FROM securities s2 LEFT JOIN institutional_inventory i ON i.security_id = s2.id WHERE s2.active), '[]'::jsonb));
+  END IF;
+  PERFORM jse_require_role(a, 'ADMIN');
+  PERFORM jse_require_admin_password(a, p);
+  SELECT * INTO s FROM securities WHERE symbol = upper(trim(coalesce(p->>'symbol', '')));
+  IF NOT FOUND THEN PERFORM jse_fail('SECURITY_NOT_FOUND', 'Choose a company.', 404); END IF;
+  IF coalesce(trim(p->>'reason'), '') = '' THEN PERFORM jse_fail('REASON_REQUIRED', 'Give a reason for the change.', 400); END IF;
+  SELECT quantity INTO v_old FROM institutional_inventory WHERE security_id = s.id FOR UPDATE;
+  v_res := jse__inst_reserved(s.id);
+  IF v_action = 'SET' THEN
+    BEGIN v_qty := (p->>'quantity')::numeric; EXCEPTION WHEN others THEN v_qty := NULL; END;
+    IF v_qty IS NULL OR v_qty < 0 OR v_qty <> trunc(v_qty) THEN PERFORM jse_fail('INVALID_QUANTITY', 'Quantity must be a whole number of shares (0 or more).', 400); END IF;
+    IF v_qty < v_res THEN PERFORM jse_fail('BELOW_RESERVED', v_res || ' ' || s.symbol || ' shares are already in open institutional sell orders; the inventory cannot be lower.', 409); END IF;
+    INSERT INTO institutional_inventory(security_id, quantity, updated_by) VALUES (s.id, v_qty, jse_actor_name(a))
+    ON CONFLICT (security_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_by = EXCLUDED.updated_by, updated_at = now();
+  ELSIF v_action = 'UNLIMITED' THEN
+    DELETE FROM institutional_inventory WHERE security_id = s.id;
+  ELSE PERFORM jse_fail('INVALID_ACTION', 'Choose SET or UNLIMITED.', 400);
+  END IF;
+  PERFORM jse_audit(a, 'INSTITUTION_INVENTORY_' || v_action, 'security', s.symbol, NULL, NULL, jsonb_build_object('quantity', v_old),
+    jsonb_build_object('quantity', CASE WHEN v_action = 'SET' THEN v_qty END), jsonb_build_object('reason', p->>'reason', 'reserved', v_res));
+  RETURN jsonb_build_object('success', true, 'symbol', s.symbol, 'quantity', CASE WHEN v_action = 'SET' THEN v_qty END,
+    'message', s.symbol || ': institutional inventory ' || CASE WHEN v_action = 'SET' THEN 'set to ' || v_qty::integer || ' shares' ELSE 'unlimited' END || '.');
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- D. Reconciliation (read-only) and a controlled correction for ledger gaps.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION jse_reconcile(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql STABLE AS $$
+DECLARE v jsonb := '[]'::jsonb; v_status text;
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN', 'VIEWER');
+  SELECT status INTO v_status FROM event_control WHERE id = 1;
+  -- orders missing references
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'MISSING_REFERENCE', 'order', o.order_no, 'team', t.code,
+      'issue', 'Order is missing its ' || concat_ws(', ', CASE WHEN o.team_id IS NULL THEN 'team' END, CASE WHEN o.security_id IS NULL THEN 'security' END,
+                                                        CASE WHEN o.account_type = 'TEAM' AND o.broker_id IS NULL THEN 'broker' END),
+      'expected', 'team, security and broker set', 'recorded', NULL, 'recommendation', 'Investigate the order; do not settle it until the reference is fixed.'))
+    FROM orders o LEFT JOIN teams t ON t.id = o.team_id WHERE o.team_id IS NULL OR o.security_id IS NULL OR (o.account_type = 'TEAM' AND o.broker_id IS NULL)), '[]'::jsonb);
+  -- order broker differs from the team's broker
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'BROKER_MISMATCH', 'order', o.order_no, 'team', t.code, 'issue', 'Order broker differs from the team''s current broker',
+      'expected', (SELECT code FROM brokers WHERE id = t.broker_id), 'recorded', (SELECT code FROM brokers WHERE id = o.broker_id),
+      'recommendation', 'Usually caused by a later broker reassignment; commissions follow the order''s broker. Confirm with the broker roster.'))
+    FROM orders o JOIN teams t ON t.id = o.team_id WHERE o.account_type = 'TEAM' AND o.broker_id IS DISTINCT FROM t.broker_id), '[]'::jsonb);
+  -- settled status vs settlement rows
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'SETTLED_WITHOUT_SETTLEMENT', 'order', o.order_no, 'team', t.code, 'issue', 'Order is BANK_SETTLED but has no active settlement',
+      'expected', '1 settlement', 'recorded', '0', 'recommendation', 'Review with the Bank; correct the status or re-settle through the Bank desk.'))
+    FROM orders o JOIN teams t ON t.id = o.team_id WHERE o.status = 'BANK_SETTLED' AND NOT EXISTS (SELECT 1 FROM settlements s WHERE s.order_id = o.id AND s.reversed_at IS NULL)), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'SETTLEMENT_STATUS', 'order', o.order_no, 'team', t.code, 'issue', 'Active settlement but order status is ' || o.status,
+      'expected', 'BANK_SETTLED', 'recorded', o.status, 'recommendation', 'Review the order event history.'))
+    FROM settlements s JOIN orders o ON o.id = s.order_id JOIN teams t ON t.id = o.team_id WHERE s.reversed_at IS NULL AND o.status <> 'BANK_SETTLED'), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'DUPLICATE_SETTLEMENT', 'order', o.order_no, 'team', t.code, 'issue', x.n || ' active settlements for one order',
+      'expected', '1', 'recorded', x.n::text, 'recommendation', 'Undo the extra settlement through Recovery \xB7 Undo with a reason.'))
+    FROM (SELECT order_id, count(*) n FROM settlements WHERE reversed_at IS NULL GROUP BY 1 HAVING count(*) > 1) x JOIN orders o ON o.id = x.order_id JOIN teams t ON t.id = o.team_id), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'SETTLEMENT_ORDER_MISMATCH', 'order', o.order_no, 'team', t.code, 'issue', 'Settlement team, security or quantity differs from the order',
+      'expected', o.team_id || '/' || o.security_id || '/' || o.quantity, 'recorded', s.team_id || '/' || s.security_id || '/' || s.quantity, 'recommendation', 'Investigate before any correction.'))
+    FROM settlements s JOIN orders o ON o.id = s.order_id JOIN teams t ON t.id = o.team_id
+    WHERE s.reversed_at IS NULL AND (s.team_id <> o.team_id OR s.security_id <> o.security_id OR s.quantity <> o.quantity)), '[]'::jsonb);
+  -- values
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'TRADE_VALUE', 'order', o.order_no, 'team', t.code, 'issue', 'Trade value \u2260 quantity \xD7 execution price',
+      'expected', round(s.quantity * s.price, 2), 'recorded', s.trade_value, 'recommendation', 'Investigate; do not edit history without a compensating correction.'))
+    FROM settlements s JOIN orders o ON o.id = s.order_id JOIN teams t ON t.id = o.team_id WHERE s.reversed_at IS NULL AND abs(s.trade_value - round(s.quantity * s.price, 2)) > 0.01), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'BROKERAGE', 'order', o.order_no, 'team', t.code, 'issue', 'Brokerage \u2260 trade value \xD7 the order''s brokerage rate',
+      'expected', round(s.trade_value * coalesce(o.brokerage_rate, 0.005), 2), 'recorded', s.brokerage, 'recommendation', 'Compensating ledger correction after review.'))
+    FROM settlements s JOIN orders o ON o.id = s.order_id JOIN teams t ON t.id = o.team_id
+    WHERE s.reversed_at IS NULL AND abs(s.brokerage - round(s.trade_value * coalesce(o.brokerage_rate, 0.005), 2)) > 0.01), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'SETTLEMENT_WITHOUT_LEDGER', 'order', o.order_no, 'team', t.code, 'issue', 'Settlement has no cash-ledger entry',
+      'expected', '\u22651 ledger row', 'recorded', '0', 'recommendation', 'Post a ledger-only correction after confirming the cash balance.'))
+    FROM settlements s JOIN orders o ON o.id = s.order_id JOIN teams t ON t.id = o.team_id
+    WHERE s.reversed_at IS NULL AND NOT EXISTS (SELECT 1 FROM cash_ledger c WHERE c.settlement_id = s.id)), '[]'::jsonb);
+  -- balances
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'CASH_VS_LEDGER', 'order', NULL, 'team', t.code, 'issue', 'Team cash \u2260 sum of its cash-ledger credits \u2212 debits',
+      'expected', x.ledger, 'recorded', t.cash, 'difference', t.cash - x.ledger,
+      'recommendation', 'If the balance itself is right (e.g. an approved special-account top-up), record the missing movement with a ledger-only correction.'))
+    FROM teams t JOIN (SELECT team_id, sum(credit) - sum(debit) ledger FROM cash_ledger GROUP BY 1) x ON x.team_id = t.id WHERE abs(t.cash - x.ledger) > 0.01), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'NEGATIVE_BALANCE', 'order', NULL, 'team', t.code, 'issue', 'Negative cash', 'expected', '\u2265 0', 'recorded', t.cash,
+      'recommendation', 'Investigate immediately.')) FROM teams t WHERE t.cash < 0), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'HOLDING_VS_TRADES', 'order', NULL, 'team', t.code, 'issue', s.symbol || ' holding \u2260 settled trades + IPO allotments',
+      'expected', z.flows, 'recorded', z.hq, 'recommendation', 'Investigate the security''s settlements for this team.'))
+    FROM (SELECT h.team_id, h.security_id, h.quantity hq,
+            coalesce((SELECT sum(CASE WHEN jse_team_side(st.account_type, st.side) = 'BUY' THEN st.quantity ELSE -st.quantity END) FROM settlements st
+                      WHERE st.team_id = h.team_id AND st.security_id = h.security_id AND st.reversed_at IS NULL), 0)
+          + coalesce((SELECT sum(quantity) FROM ipo_allotments al WHERE al.team_id = h.team_id AND al.security_id = h.security_id AND al.reversed_at IS NULL), 0) flows
+          FROM (SELECT team_id, security_id, quantity FROM holdings
+                UNION SELECT DISTINCT team_id, security_id, 0 FROM settlements WHERE reversed_at IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM holdings h2 WHERE h2.team_id = settlements.team_id AND h2.security_id = settlements.security_id)) h) z
+    JOIN teams t ON t.id = z.team_id JOIN securities s ON s.id = z.security_id WHERE z.hq <> z.flows), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'NEGATIVE_HOLDING', 'order', NULL, 'team', t.code, 'issue', s.symbol || ' holding is negative', 'expected', '\u2265 0', 'recorded', h.quantity,
+      'recommendation', 'Investigate immediately.')) FROM holdings h JOIN teams t ON t.id = h.team_id JOIN securities s ON s.id = h.security_id WHERE h.quantity < 0), '[]'::jsonb);
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'NEGATIVE_INSTITUTION_INVENTORY', 'order', NULL, 'team', NULL, 'issue', s.symbol || ' institutional inventory is negative',
+      'expected', '\u2265 0', 'recorded', i.quantity, 'recommendation', 'Set the inventory in Event Admin.')) FROM institutional_inventory i JOIN securities s ON s.id = i.security_id WHERE i.quantity < 0), '[]'::jsonb);
+  -- statuses
+  IF v_status IN ('CLOSED', 'FINALIZED') THEN
+    v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'OPEN_AFTER_CLOSE', 'order', o.order_no, 'team', t.code, 'issue', 'Order still ' || o.status || ' after the market closed',
+        'expected', 'settled or rejected', 'recorded', o.status, 'recommendation', 'Event Admin \u2192 Reject open orders (with a reason), or settle it if it was approved before the close.'))
+      FROM orders o JOIN teams t ON t.id = o.team_id WHERE o.status IN ('PIT_PENDING','EXCHANGE_PENDING','EXCHANGE_APPROVED','BANK_PENDING')), '[]'::jsonb);
+  END IF;
+  v := v || coalesce((SELECT jsonb_agg(jsonb_build_object('check', 'PARTICIPANT_ACCOUNT', 'order', NULL, 'team', u.username, 'issue', 'Participant login is not linked to a team',
+      'expected', 'team set', 'recorded', NULL, 'recommendation', 'Edit or disable the account.')) FROM app_users u WHERE u.role = 'PARTICIPANT' AND u.team_id IS NULL), '[]'::jsonb);
+  RETURN jsonb_build_object('success', true, 'checked_at', now(), 'event_status', v_status, 'issues', v,
+    'summary', jsonb_build_object('orders', (SELECT count(*) FROM orders), 'settlements', (SELECT count(*) FROM settlements WHERE reversed_at IS NULL),
+      'ledger_rows', (SELECT count(*) FROM cash_ledger), 'teams', (SELECT count(*) FROM teams), 'issues', jsonb_array_length(v)),
+    'checks', jsonb_build_array('MISSING_REFERENCE','BROKER_MISMATCH','SETTLED_WITHOUT_SETTLEMENT','SETTLEMENT_STATUS','DUPLICATE_SETTLEMENT','SETTLEMENT_ORDER_MISMATCH',
+      'TRADE_VALUE','BROKERAGE','SETTLEMENT_WITHOUT_LEDGER','CASH_VS_LEDGER','NEGATIVE_BALANCE','HOLDING_VS_TRADES','NEGATIVE_HOLDING','NEGATIVE_INSTITUTION_INVENTORY',
+      'OPEN_AFTER_CLOSE','PARTICIPANT_ACCOUNT'));
+END $$;
+
+-- Ledger-only correction: records a missing cash movement so the ledger explains the balance. Never changes cash.
+CREATE OR REPLACE FUNCTION jse_reconcile_correct(a jsonb, p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE t teams%ROWTYPE; v_ledger numeric; v_gap numeric; v_kind text := upper(coalesce(p->>'kind', ''));
+BEGIN
+  PERFORM jse_require_role(a, 'ADMIN');
+  PERFORM jse_require_admin_password(a, p);
+  IF v_kind <> 'LEDGER_GAP' THEN PERFORM jse_fail('INVALID_KIND', 'Only ledger-gap corrections are supported here; other issues need a review and the normal desk workflow.', 400); END IF;
+  IF coalesce(trim(p->>'reason'), '') = '' THEN PERFORM jse_fail('REASON_REQUIRED', 'Give the reason and the approval behind this correction.', 400); END IF;
+  SELECT * INTO t FROM teams WHERE code = upper(trim(coalesce(p->>'team', ''))) FOR UPDATE;
+  IF NOT FOUND THEN PERFORM jse_fail('TEAM_NOT_FOUND', 'Team not found.', 404); END IF;
+  SELECT coalesce(sum(credit) - sum(debit), 0) INTO v_ledger FROM cash_ledger WHERE team_id = t.id;
+  v_gap := round(t.cash - v_ledger, 2);
+  IF abs(v_gap) < 0.01 THEN PERFORM jse_fail('NOTHING_TO_CORRECT', t.code || ' cash already matches its ledger.', 409); END IF;
+  IF nullif(p->>'expected_gap', '') IS NOT NULL AND round((p->>'expected_gap')::numeric, 2) <> v_gap THEN
+    PERFORM jse_fail('GAP_CHANGED', 'The difference is now ' || jse_inr(v_gap) || '; reload and review again.', 409);
+  END IF;
+  PERFORM jse_ledger(t.id, NULL, NULL, 'ADJUSTMENT', greatest(-v_gap, 0), greatest(v_gap, 0), t.cash,
+    'Reconciliation (ledger only, cash unchanged): ' || left(trim(p->>'reason'), 240), a);
+  PERFORM jse_audit(a, 'RECONCILIATION_LEDGER_CORRECTION', 'team', t.code, t.id, NULL, jsonb_build_object('ledger_sum', v_ledger, 'cash', t.cash),
+    jsonb_build_object('ledger_sum', t.cash, 'cash', t.cash), jsonb_build_object('gap', v_gap, 'reason', p->>'reason'));
+  RETURN jsonb_build_object('success', true, 'team', t.code, 'gap', v_gap,
+    'message', t.code || ': ledger correction of ' || jse_inr(abs(v_gap)) || ' recorded (cash unchanged at ' || jse_inr(t.cash) || ').');
+END $$;
+
+INSERT INTO schema_migrations(version) VALUES ('031_order_accuracy') ON CONFLICT DO NOTHING;
+`;var Ar=[["001_schema",Vi],["001a_upgrades",Ki],["002_core",$i],["003_ops",Xi],["004_reads",Ji],["005_exports",zi],["006_seed",Qi],["007_tuning",Zi],["008_v311",er],["009_hatchable",tr],["010_safety",ar],["011_roster_ipo",sr],["012_big_bull_special_account",ir],["012_big_bull_admin",rr],["013_dalal_roster",or],["014_big_bull_news_assessment",nr],["015_broker_sugadev",_r],["016_news_single_move_cap",Er],["017_portfolio_ipo_visibility",cr],["018_broker_assignments_and_counts",lr],["019_ipo_start_market_order",dr],["020_broker_sugadev_name",ur],["021_locked_baseline_reset",Nr],["022_locked_baseline_refresh",Tr],["023_lock_baseline_ipo_allotments",mr],["024_broker_admin_page_repair",pr],["025_institutional_unlimited_order_value",Rr],["026_loan_cash_in_base_money",br],["027_ipo_flexible_sell_quantity",Ir],["028_company_base_price_band",vr],["029_no_short_selling_override",Or],["030_negotiated_market_trades",hr],["031_order_accuracy",Lr]],ZE=new Set(["001a_upgrades","002_core","003_ops","004_reads","005_exports","007_tuning","008_v311","011_roster_ipo","012_big_bull_admin","021_locked_baseline_reset","024_broker_admin_page_repair","025_institutional_unlimited_order_value","026_loan_cash_in_base_money","028_company_base_price_band","031_order_accuracy"]),O=class extends Error{constructor(a,s,i,r){super(i);this.status=a;this.code=s;this.extra=r}};function ec(){let t=process.env.DATABASE_URL||"postgres://postgres@127.0.0.1:5433/jse",e=new URL(t);process.env.DB_NAME&&(e.pathname="/"+process.env.DB_NAME);let a=e.searchParams.get("sslmode");return(a==="require"||a==="prefer"||a==="verify-ca")&&e.searchParams.set("sslmode","verify-full"),e.toString()}var Dt=null;function fr(){return Dt||(Dt=new Sr.default.Pool({connectionString:ec(),max:Number(process.env.DB_POOL_MAX||8),idleTimeoutMillis:3e4,connectionTimeoutMillis:1e4,allowExitOnIdle:!1}),Dt.on("error",t=>console.warn("[db] idle client error:",t.message))),Dt}var tc=new Set(["40001","40P01","57P01","08006","08003","08000","53300"]);async function fe(t,e=[]){let a=0;for(;;)try{return await fr().query(t,e)}catch(s){if(a++,(tc.has(s?.code)||/Connection terminated|ECONNRESET|timeout exceeded when trying to connect/i.test(String(s?.message)))&&a<3){await new Promise(r=>setTimeout(r,120*a+Math.random()*120));continue}throw s}}async function b(t,e,a,s={}){if(!/^jse_[a-z0-9_]+$/.test(t))throw new Error("bad function name");try{let i;s.noActor?i=await fe(`SELECT ${t}($1::jsonb) AS r`,[JSON.stringify(a??{})]):a===void 0?i=await fe(`SELECT ${t}() AS r`):i=await fe(`SELECT ${t}($1::jsonb, $2::jsonb) AS r`,[JSON.stringify(e??{}),JSON.stringify(a??{})]);let r=i.rows[0]?.r;if(r&&r.success===!1)throw new O(Number(r.http)||400,r.code||"REQUEST_FAILED",r.error||"Request failed",r.errors?{errors:r.errors}:void 0);return r}catch(i){throw i instanceof O?i:i?.code==="JSE01"?new O(Number(i.hint)||400,i.detail||"REQUEST_FAILED",i.message):i?.code==="23505"?new O(409,"DUPLICATE","This action was already recorded (duplicate request blocked)."):i?.code==="23514"?new O(409,"RULE_VIOLATION","The request would break a financial rule (for example negative cash or holdings) and was blocked."):i?.code==="57014"?new O(503,"TIMEOUT","The database took too long to respond. Please retry."):i}}var Ft=null;function gr(){return process.env.SKIP_MIGRATIONS==="1"?Promise.resolve():(Ft||(Ft=sc().catch(t=>{throw Ft=null,t})),Ft)}async function ac(t){let{createHash:e}=await import("node:crypto");return e("sha256").update(t).digest("hex").slice(0,16)}async function sc(){let t=await fr().connect();try{await t.query("BEGIN"),await t.query("SELECT pg_advisory_xact_lock(727272)"),await t.query("CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now(), checksum text)");let e=new Map((await t.query("SELECT version, checksum FROM schema_migrations")).rows.map(r=>[r.version,r.checksum])),a=[],s=e.has("029_no_short_selling_override")||e.has("030_negotiated_market_trades"),i=Ar.findIndex(([r])=>r==="030_negotiated_market_trades");for(let[r,[o,n]]of Ar.entries()){if(s&&r<=i)continue;let E=await ac(n),_=e.has(o);if(_&&(e.get(o)===E||!ZE.has(o)))continue;let c=_?n.replace(/INSERT INTO schema_migrations\(version\) VALUES \('[^']+'\);/g,""):n;await t.query("SAVEPOINT m");try{await t.query(c)}catch(l){throw new Error(`migration ${o} failed: ${l.message}`)}await t.query("INSERT INTO schema_migrations(version, checksum) VALUES ($1, $2) ON CONFLICT (version) DO UPDATE SET checksum = EXCLUDED.checksum, applied_at = now()",[o,E]),await t.query("RELEASE SAVEPOINT m"),a.push(`${o} ${_?"re-applied":"applied"}`)}await t.query("COMMIT"),a.length&&console.log("[db] migrations: "+a.join(", "))}catch(e){try{await t.query("ROLLBACK")}catch{}throw e}finally{t.release()}}import{createPublicKey as ic,verify as rc}from"node:crypto";var Fr="https://token.actions.githubusercontent.com",ot=null;async function Dr(t=!1){if(!t&&ot&&Date.now()-ot.at<36e5)return ot.keys;let e=await fetch(Fr+"/.well-known/jwks",{headers:{accept:"application/json"}});if(!e.ok)throw new Error("could not load GitHub signing keys ("+e.status+")");let a=await e.json();return ot={at:Date.now(),keys:a.keys||[]},ot.keys}var xa=t=>Buffer.from(t.replace(/-/g,"+").replace(/_/g,"/"),"base64");async function yr(t,e){let a=t.split(".");if(a.length!==3)throw new Error("malformed token");let s=JSON.parse(xa(a[0]).toString("utf8")),i=JSON.parse(xa(a[1]).toString("utf8"));if(s.alg!=="RS256")throw new Error("unexpected algorithm");let r=(await Dr()).find(_=>_.kid===s.kid);if(r||(r=(await Dr(!0)).find(_=>_.kid===s.kid)),!r)throw new Error("unknown signing key");if(!rc("RSA-SHA256",Buffer.from(a[0]+"."+a[1]),ic({key:r,format:"jwk"}),xa(a[2])))throw new Error("bad signature");let n=Math.floor(Date.now()/1e3);if(i.iss!==Fr)throw new Error("wrong issuer");if(!(Array.isArray(i.aud)?i.aud:[i.aud]).includes(e.audience))throw new Error("wrong audience");if(typeof i.exp!="number"||i.exp<n-30)throw new Error("token expired");if(typeof i.nbf=="number"&&i.nbf>n+60)throw new Error("token not valid yet");if(i.repository!==e.repository)throw new Error("wrong repository");if(e.refs&&e.refs.length&&!e.refs.includes(i.ref))throw new Error("branch not allowed");return i}import{createRequire as oc}from"module";var nc=oc("/"),_c;try{_c=nc("worker_threads").Worker}catch{}var P=Uint8Array,ce=Uint16Array,Qa=Int32Array,yt=new P([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),Ct=new P([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),Va=new P([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]),kr=function(t,e){for(var a=new ce(31),s=0;s<31;++s)a[s]=e+=1<<t[s-1];for(var i=new Qa(a[30]),s=1;s<30;++s)for(var r=a[s];r<a[s+1];++r)i[r]=r-a[s]<<5|s;return{b:a,r:i}},Mr=kr(yt,2),wr=Mr.b,Ka=Mr.r;wr[28]=258,Ka[258]=28;var Wr=kr(Ct,0),Ec=Wr.b,Cr=Wr.r,$a=new ce(32768);for(h=0;h<32768;++h)he=(h&43690)>>1|(h&21845)<<1,he=(he&52428)>>2|(he&13107)<<2,he=(he&61680)>>4|(he&3855)<<4,$a[h]=((he&65280)>>8|(he&255)<<8)>>1;var he,h,Re=function(t,e,a){for(var s=t.length,i=0,r=new ce(e);i<s;++i)t[i]&&++r[t[i]-1];var o=new ce(e);for(i=1;i<e;++i)o[i]=o[i-1]+r[i-1]<<1;var n;if(a){n=new ce(1<<e);var E=15-e;for(i=0;i<s;++i)if(t[i])for(var _=i<<4|t[i],c=e-t[i],l=o[t[i]-1]++<<c,d=l|(1<<c)-1;l<=d;++l)n[$a[l]>>E]=_}else for(n=new ce(s),i=0;i<s;++i)t[i]&&(n[i]=$a[o[t[i]-1]++]>>15-t[i]);return n},ge=new P(288);for(h=0;h<144;++h)ge[h]=8;var h;for(h=144;h<256;++h)ge[h]=9;var h;for(h=256;h<280;++h)ge[h]=7;var h;for(h=280;h<288;++h)ge[h]=8;var h,Et=new P(32);for(h=0;h<32;++h)Et[h]=5;var h,cc=Re(ge,9,0),lc=Re(ge,9,1),dc=Re(Et,5,0),uc=Re(Et,5,1),Ba=function(t){for(var e=t[0],a=1;a<t.length;++a)t[a]>e&&(e=t[a]);return e},Ne=function(t,e,a){var s=e/8|0;return(t[s]|t[s+1]<<8)>>(e&7)&a},Ga=function(t,e){var a=e/8|0;return(t[a]|t[a+1]<<8|t[a+2]<<16)>>(e&7)},Za=function(t){return(t+7)/8|0},ct=function(t,e,a){return(e==null||e<0)&&(e=0),(a==null||a>t.length)&&(a=t.length),new P(t.subarray(e,a))};var Nc=["unexpected EOF","invalid block type","invalid length/literal","invalid distance","stream finished","no stream handler",,"no callback","invalid UTF-8 data","extra field too long","date not in range 1980-2099","filename too long","stream finishing","invalid zip data"],te=function(t,e,a){var s=new Error(e||Nc[t]);if(s.code=t,Error.captureStackTrace&&Error.captureStackTrace(s,te),!a)throw s;return s},Tc=function(t,e,a,s){var i=t.length,r=s?s.length:0;if(!i||e.f&&!e.l)return a||new P(0);var o=!a,n=o||e.i!=2,E=e.i;o&&(a=new P(i*3));var _=function(Ke){var $e=a.length;if(Ke>$e){var Ue=new P(Math.max($e*2,Ke));Ue.set(a),a=Ue}},c=e.f||0,l=e.p||0,d=e.b||0,u=e.l,I=e.d,v=e.m,D=e.n,H=i*8;do{if(!u){c=Ne(t,l,1);var B=Ne(t,l+1,3);if(l+=3,B)if(B==1)u=lc,I=uc,v=9,D=5;else if(B==2){var x=Ne(t,l,31)+257,A=Ne(t,l+10,15)+4,p=x+Ne(t,l+5,31)+1;l+=14;for(var m=new P(p),K=new P(19),G=0;G<A;++G)K[Va[G]]=Ne(t,l+G*3,7);l+=A*3;for(var Q=Ba(K),Se=(1<<Q)-1,oe=Re(K,Q,1),G=0;G<p;){var ae=oe[Ne(t,l,Se)];l+=ae&15;var y=ae>>4;if(y<16)m[G++]=y;else{var $=0,M=0;for(y==16?(M=3+Ne(t,l,3),l+=2,$=m[G-1]):y==17?(M=3+Ne(t,l,7),l+=3):y==18&&(M=11+Ne(t,l,127),l+=7);M--;)m[G++]=$}}var se=m.subarray(0,x),X=m.subarray(x);v=Ba(se),D=Ba(X),u=Re(se,v,1),I=Re(X,D,1)}else te(1);else{var y=Za(l)+4,C=t[y-4]|t[y-3]<<8,k=y+C;if(k>i){E&&te(0);break}n&&_(d+C),a.set(t.subarray(y,k),d),e.b=d+=C,e.p=l=k*8,e.f=c;continue}if(l>H){E&&te(0);break}}n&&_(d+131072);for(var Ve=(1<<v)-1,le=(1<<D)-1,ve=l;;ve=l){var $=u[Ga(t,l)&Ve],ne=$>>4;if(l+=$&15,l>H){E&&te(0);break}if($||te(2),ne<256)a[d++]=ne;else if(ne==256){ve=l,u=null;break}else{var _e=ne-254;if(ne>264){var G=ne-257,w=yt[G];_e=Ne(t,l,(1<<w)-1)+wr[G],l+=w}var me=I[Ga(t,l)&le],Ce=me>>4;me||te(3),l+=me&15;var X=Ec[Ce];if(Ce>3){var w=Ct[Ce];X+=Ga(t,l)&(1<<w)-1,l+=w}if(l>H){E&&te(0);break}n&&_(d+131072);var je=d+_e;if(d<X){var Nt=r-X,Tt=Math.min(X,je);for(Nt+d<0&&te(3);d<Tt;++d)a[d]=s[Nt+d]}for(;d<je;++d)a[d]=a[d-X]}}e.l=u,e.p=ve,e.b=d,e.f=c,u&&(c=1,e.m=v,e.d=I,e.n=D)}while(!c);return d!=a.length&&o?ct(a,0,d):a.subarray(0,d)},Le=function(t,e,a){a<<=e&7;var s=e/8|0;t[s]|=a,t[s+1]|=a>>8},nt=function(t,e,a){a<<=e&7;var s=e/8|0;t[s]|=a,t[s+1]|=a>>8,t[s+2]|=a>>16},qa=function(t,e){for(var a=[],s=0;s<t.length;++s)t[s]&&a.push({s,f:t[s]});var i=a.length,r=a.slice();if(!i)return{t:Br,l:0};if(i==1){var o=new P(a[0].s+1);return o[a[0].s]=1,{t:o,l:1}}a.sort(function(k,x){return k.f-x.f}),a.push({s:-1,f:25001});var n=a[0],E=a[1],_=0,c=1,l=2;for(a[0]={s:-1,f:n.f+E.f,l:n,r:E};c!=i-1;)n=a[a[_].f<a[l].f?_++:l++],E=a[_!=c&&a[_].f<a[l].f?_++:l++],a[c++]={s:-1,f:n.f+E.f,l:n,r:E};for(var d=r[0].s,s=1;s<i;++s)r[s].s>d&&(d=r[s].s);var u=new ce(d+1),I=Xa(a[c-1],u,0);if(I>e){var s=0,v=0,D=I-e,H=1<<D;for(r.sort(function(x,A){return u[A.s]-u[x.s]||x.f-A.f});s<i;++s){var B=r[s].s;if(u[B]>e)v+=H-(1<<I-u[B]),u[B]=e;else break}for(v>>=D;v>0;){var y=r[s].s;u[y]<e?v-=1<<e-u[y]++-1:++s}for(;s>=0&&v;--s){var C=r[s].s;u[C]==e&&(--u[C],++v)}I=e}return{t:new P(u),l:I}},Xa=function(t,e,a){return t.s==-1?Math.max(Xa(t.l,e,a+1),Xa(t.r,e,a+1)):e[t.s]=a},jr=function(t){for(var e=t.length;e&&!t[--e];);for(var a=new ce(++e),s=0,i=t[0],r=1,o=function(E){a[s++]=E},n=1;n<=e;++n)if(t[n]==i&&n!=e)++r;else{if(!i&&r>2){for(;r>138;r-=138)o(32754);r>2&&(o(r>10?r-11<<5|28690:r-3<<5|12305),r=0)}else if(r>3){for(o(i),--r;r>6;r-=6)o(8304);r>2&&(o(r-3<<5|8208),r=0)}for(;r--;)o(i);r=1,i=t[n]}return{c:a.subarray(0,s),n:e}},_t=function(t,e){for(var a=0,s=0;s<e.length;++s)a+=t[s]*e[s];return a},xr=function(t,e,a){var s=a.length,i=Za(e+2);t[i]=s&255,t[i+1]=s>>8,t[i+2]=t[i]^255,t[i+3]=t[i+1]^255;for(var r=0;r<s;++r)t[i+r+4]=a[r];return(i+4+s)*8},Ur=function(t,e,a,s,i,r,o,n,E,_,c){Le(e,c++,a),++i[256];for(var l=qa(i,15),d=l.t,u=l.l,I=qa(r,15),v=I.t,D=I.l,H=jr(d),B=H.c,y=H.n,C=jr(v),k=C.c,x=C.n,A=new ce(19),p=0;p<B.length;++p)++A[B[p]&31];for(var p=0;p<k.length;++p)++A[k[p]&31];for(var m=qa(A,7),K=m.t,G=m.l,Q=19;Q>4&&!K[Va[Q-1]];--Q);var Se=_+5<<3,oe=_t(i,ge)+_t(r,Et)+o,ae=_t(i,d)+_t(r,v)+o+14+3*Q+_t(A,K)+2*A[16]+3*A[17]+7*A[18];if(E>=0&&Se<=oe&&Se<=ae)return xr(e,c,t.subarray(E,E+_));var $,M,se,X;if(Le(e,c,1+(ae<oe)),c+=2,ae<oe){$=Re(d,u,0),M=d,se=Re(v,D,0),X=v;var Ve=Re(K,G,0);Le(e,c,y-257),Le(e,c+5,x-1),Le(e,c+10,Q-4),c+=14;for(var p=0;p<Q;++p)Le(e,c+3*p,K[Va[p]]);c+=3*Q;for(var le=[B,k],ve=0;ve<2;++ve)for(var ne=le[ve],p=0;p<ne.length;++p){var _e=ne[p]&31;Le(e,c,Ve[_e]),c+=K[_e],_e>15&&(Le(e,c,ne[p]>>5&127),c+=ne[p]>>12)}}else $=cc,M=ge,se=dc,X=Et;for(var p=0;p<n;++p){var w=s[p];if(w>255){var _e=w>>18&31;nt(e,c,$[_e+257]),c+=M[_e+257],_e>7&&(Le(e,c,w>>23&31),c+=yt[_e]);var me=w&31;nt(e,c,se[me]),c+=X[me],me>3&&(nt(e,c,w>>5&8191),c+=Ct[me])}else nt(e,c,$[w]),c+=M[w]}return nt(e,c,$[256]),c+M[256]},mc=new Qa([65540,131080,131088,131104,262176,1048704,1048832,2114560,2117632]),Br=new P(0),pc=function(t,e,a,s,i,r){var o=r.z||t.length,n=new P(s+o+5*(1+Math.ceil(o/7e3))+i),E=n.subarray(s,n.length-i),_=r.l,c=(r.r||0)&7;if(e){c&&(E[0]=r.r>>3);for(var l=mc[e-1],d=l>>13,u=l&8191,I=(1<<a)-1,v=r.p||new ce(32768),D=r.h||new ce(I+1),H=Math.ceil(a/3),B=2*H,y=function(Ht){return(t[Ht]^t[Ht+1]<<H^t[Ht+2]<<B)&I},C=new Qa(25e3),k=new ce(288),x=new ce(32),A=0,p=0,m=r.i||0,K=0,G=r.w||0,Q=0;m+2<o;++m){var Se=y(m),oe=m&32767,ae=D[Se];if(v[oe]=ae,D[Se]=oe,G<=m){var $=o-m;if((A>7e3||K>24576)&&($>423||!_)){c=Ur(t,E,0,C,k,x,p,K,Q,m-Q,c),K=A=p=0,Q=m;for(var M=0;M<286;++M)k[M]=0;for(var M=0;M<30;++M)x[M]=0}var se=2,X=0,Ve=u,le=oe-ae&32767;if($>2&&Se==y(m-le))for(var ve=Math.min(d,$)-1,ne=Math.min(32767,m),_e=Math.min(258,$);le<=ne&&--Ve&&oe!=ae;){if(t[m+se]==t[m+se-le]){for(var w=0;w<_e&&t[m+w]==t[m+w-le];++w);if(w>se){if(se=w,X=le,w>ve)break;for(var me=Math.min(le,w-2),Ce=0,M=0;M<me;++M){var je=m-le+M&32767,Nt=v[je],Tt=je-Nt&32767;Tt>Ce&&(Ce=Tt,ae=je)}}}oe=ae,ae=v[oe],le+=oe-ae&32767}if(X){C[K++]=268435456|Ka[se]<<18|Cr[X];var Ke=Ka[se]&31,$e=Cr[X]&31;p+=yt[Ke]+Ct[$e],++k[257+Ke],++x[$e],G=m+se,++A}else C[K++]=t[m],++k[t[m]]}}for(m=Math.max(m,G);m<o;++m)C[K++]=t[m],++k[t[m]];c=Ur(t,E,_,C,k,x,p,K,Q,m-Q,c),_||(r.r=c&7|E[c/8|0]<<3,c-=7,r.h=D,r.p=v,r.i=m,r.w=G)}else{for(var m=r.w||0;m<o+_;m+=65535){var Ue=m+65535;Ue>=o&&(E[c/8|0]=_,Ue=o),c=xr(E,c+1,t.subarray(m,Ue))}r.i=o}return ct(n,0,s+Za(c)+i)},Rc=function(){for(var t=new Int32Array(256),e=0;e<256;++e){for(var a=e,s=9;--s;)a=(a&1&&-306674912)^a>>>1;t[e]=a}return t}(),bc=function(){var t=-1;return{p:function(e){for(var a=t,s=0;s<e.length;++s)a=Rc[a&255^e[s]]^a>>>8;t=a},d:function(){return~t}}};var Ic=function(t,e,a,s,i){if(!i&&(i={l:1},e.dictionary)){var r=e.dictionary.subarray(-32768),o=new P(r.length+t.length);o.set(r),o.set(t,r.length),t=o,i.w=r.length}return pc(t,e.level==null?6:e.level,e.mem==null?i.l?Math.ceil(Math.max(8,Math.min(13,Math.log(t.length)))*1.5):20:12+e.mem,a,s,i)},Gr=function(t,e){var a={};for(var s in t)a[s]=t[s];for(var s in e)a[s]=e[s];return a};var pe=function(t,e){return t[e]|t[e+1]<<8},Te=function(t,e){return(t[e]|t[e+1]<<8|t[e+2]<<16|t[e+3]<<24)>>>0},Ya=function(t,e){return Te(t,e)+Te(t,e+4)*4294967296},J=function(t,e,a){for(;a;++e)t[e]=a,a>>>=8};function vc(t,e){return Ic(t,e||{},0,0)}function Oc(t,e){return Tc(t,{i:2},e&&e.out,e&&e.dictionary)}var qr=function(t,e,a,s){for(var i in t){var r=t[i],o=e+i,n=s;Array.isArray(r)&&(n=Gr(s,r[1]),r=r[0]),r instanceof P?a[o]=[r,n]:(a[o+="/"]=[new P(0),n],qr(r,o,a,s))}},Pr=typeof TextEncoder<"u"&&new TextEncoder,Ja=typeof TextDecoder<"u"&&new TextDecoder,hc=0;try{Ja.decode(Br,{stream:!0}),hc=1}catch{}var Lc=function(t){for(var e="",a=0;;){var s=t[a++],i=(s>127)+(s>223)+(s>239);if(a+i>t.length)return{s:e,r:ct(t,a-1)};i?i==3?(s=((s&15)<<18|(t[a++]&63)<<12|(t[a++]&63)<<6|t[a++]&63)-65536,e+=String.fromCharCode(55296|s>>10,56320|s&1023)):i&1?e+=String.fromCharCode((s&31)<<6|t[a++]&63):e+=String.fromCharCode((s&15)<<12|(t[a++]&63)<<6|t[a++]&63):e+=String.fromCharCode(s)}};function be(t,e){if(e){for(var a=new P(t.length),s=0;s<t.length;++s)a[s]=t.charCodeAt(s);return a}if(Pr)return Pr.encode(t);for(var i=t.length,r=new P(t.length+(t.length>>1)),o=0,n=function(c){r[o++]=c},s=0;s<i;++s){if(o+5>r.length){var E=new P(o+8+(i-s<<1));E.set(r),r=E}var _=t.charCodeAt(s);_<128||e?n(_):_<2048?(n(192|_>>6),n(128|_&63)):_>55295&&_<57344?(_=65536+(_&1047552)|t.charCodeAt(++s)&1023,n(240|_>>18),n(128|_>>12&63),n(128|_>>6&63),n(128|_&63)):(n(224|_>>12),n(128|_>>6&63),n(128|_&63))}return ct(r,0,o)}function es(t,e){if(e){for(var a="",s=0;s<t.length;s+=16384)a+=String.fromCharCode.apply(null,t.subarray(s,s+16384));return a}else{if(Ja)return Ja.decode(t);var i=Lc(t),r=i.s,a=i.r;return a.length&&te(8),r}}var Ac=function(t,e){return e+30+pe(t,e+26)+pe(t,e+28)},Sc=function(t,e,a){var s=pe(t,e+28),i=es(t.subarray(e+46,e+46+s),!(pe(t,e+8)&2048)),r=e+46+s,o=Te(t,e+20),n=a&&o==4294967295?fc(t,r):[o,Te(t,e+24),Te(t,e+42)],E=n[0],_=n[1],c=n[2];return[pe(t,e+10),E,_,i,r+pe(t,e+30)+pe(t,e+32),c]},fc=function(t,e){for(;pe(t,e)!=1;e+=4+pe(t,e+2));return[Ya(t,e+12),Ya(t,e+4),Ya(t,e+20)]},za=function(t){var e=0;if(t)for(var a in t){var s=t[a].length;s>65535&&te(9),e+=s+4}return e},Hr=function(t,e,a,s,i,r,o,n){var E=s.length,_=a.extra,c=n&&n.length,l=za(_);J(t,e,o!=null?33639248:67324752),e+=4,o!=null&&(t[e++]=20,t[e++]=a.os),t[e]=20,e+=2,t[e++]=a.flag<<1|(r<0&&8),t[e++]=i&&8,t[e++]=a.compression&255,t[e++]=a.compression>>8;var d=new Date(a.mtime==null?Date.now():a.mtime),u=d.getFullYear()-1980;if((u<0||u>119)&&te(10),J(t,e,u<<25|d.getMonth()+1<<21|d.getDate()<<16|d.getHours()<<11|d.getMinutes()<<5|d.getSeconds()>>1),e+=4,r!=-1&&(J(t,e,a.crc),J(t,e+4,r<0?-r-2:r),J(t,e+8,a.size)),J(t,e+12,E),J(t,e+14,l),e+=16,o!=null&&(J(t,e,c),J(t,e+6,a.attrs),J(t,e+10,o),e+=14),t.set(s,e),e+=E,l)for(var I in _){var v=_[I],D=v.length;J(t,e,+I),J(t,e+2,D),t.set(v,e+4),e+=4+D}return c&&(t.set(n,e),e+=c),e},gc=function(t,e,a,s,i){J(t,e,101010256),J(t,e+8,a),J(t,e+10,a),J(t,e+12,s),J(t,e+16,i)};function Yr(t,e){e||(e={});var a={},s=[];qr(t,"",a,e);var i=0,r=0;for(var o in a){var n=a[o],E=n[0],_=n[1],c=_.level==0?0:8,l=be(o),d=l.length,u=_.comment,I=u&&be(u),v=I&&I.length,D=za(_.extra);d>65535&&te(11);var H=c?vc(E,_):E,B=H.length,y=bc();y.p(E),s.push(Gr(_,{size:E.length,crc:y.d(),c:H,f:l,m:I,u:d!=o.length||I&&u.length!=v,o:i,compression:c})),i+=30+d+D+B,r+=76+2*(d+D)+(v||0)+B}for(var C=new P(r+22),k=i,x=r-i,A=0;A<s.length;++A){var l=s[A];Hr(C,l.o,l,l.f,l.u,l.c.length);var p=30+l.f.length+za(l.extra);C.set(l.c,l.o+p),Hr(C,i,l,l.f,l.u,l.c.length,l.o,l.m),i+=16+p+(l.m?l.m.length:0)}return gc(C,i,s.length,x,k),C}function Vr(t,e){for(var a={},s=t.length-22;Te(t,s)!=101010256;--s)(!s||t.length-s>65558)&&te(13);var i=pe(t,s+8);if(!i)return{};var r=Te(t,s+16),o=r==4294967295||i==65535;if(o){var n=Te(t,s-12);o=Te(t,n)==101075792,o&&(i=Te(t,n+32),r=Te(t,n+48))}for(var E=e&&e.filter,_=0;_<i;++_){var c=Sc(t,r,o),l=c[0],d=c[1],u=c[2],I=c[3],v=c[4],D=c[5],H=Ac(t,D);r=v,(!E||E({name:I,size:d,originalSize:u,compression:l}))&&(l?l==8?a[I]=Oc(t.subarray(H,H+d),{out:new P(u)}):te(14,"unknown compression type "+l):a[I]=ct(t,H,H+d))}return a}var as=t=>t.replace(/[&<>"]/g,e=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[e]).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g,"");function ts(t){let e="";for(t++;t>0;t=Math.floor((t-1)/26))e=String.fromCharCode(65+(t-1)%26)+e;return e}var Xr=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;function Jr(t){let e=new Date(t);return isNaN(e.getTime())?t:new Date(e.getTime()+5.5*3600*1e3).toISOString().replace("T"," ").slice(0,19)}function Kr(t,e,a){if(e==null||e==="")return"";if(typeof e=="boolean")return`<c r="${t}" t="b"${a?' s="1"':""}><v>${e?1:0}</v></c>`;if(typeof e=="number"&&isFinite(e)){let i=a?1:Number.isInteger(e)?3:2;return`<c r="${t}" s="${i}"><v>${e}</v></c>`}let s=typeof e=="string"?e:JSON.stringify(e);return!a&&Xr.test(s)&&(s=Jr(s)),s.length>32e3&&(s=s.slice(0,32e3)+"\u2026"),`<c r="${t}" t="inlineStr"${a?' s="1"':""}><is><t xml:space="preserve">${as(s)}</t></is></c>`}function Dc(t){let e=t.columns.map(o=>Math.min(60,Math.max(10,o.length+2)));for(let o of t.rows.slice(0,200))o.forEach((n,E)=>{let _=n==null?0:String(n).length;E<e.length&&(e[E]=Math.min(60,Math.max(e[E],_+2)))});let a=e.map((o,n)=>`<col min="${n+1}" max="${n+1}" width="${o}" customWidth="1"/>`).join(""),s=[];s.push(`<row r="1">${t.columns.map((o,n)=>Kr(ts(n)+"1",o,!0)).join("")}</row>`),t.rows.forEach((o,n)=>{let E=n+2;s.push(`<row r="${E}">${o.map((_,c)=>Kr(ts(c)+E,_,!1)).join("")}</row>`)});let i=ts(Math.max(0,t.columns.length-1)),r=Math.max(1,t.rows.length+1);return`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
-<sheetFormatPr defaultRowHeight="15"/><cols>${s}</cols><sheetData>${a.join("")}</sheetData>
-${t.rows.length?`<autoFilter ref="A1:${r}${i}"/>`:""}
-</worksheet>`}function xE(t,e){let s=t.replace(/[\[\]:*?\/\\]/g," ").slice(0,31).trim()||"Sheet",a=2;for(;e.has(s.toLowerCase());)s=s.slice(0,28)+" "+a++;return e.add(s.toLowerCase()),s}function gi(t,e="JSE Report"){let s=new Set,a=t.map(i=>xE(i.name,s)),r={};return r["[Content_Types].xml"]=he(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sheetFormatPr defaultRowHeight="15"/><cols>${a}</cols><sheetData>${s.join("")}</sheetData>
+${t.rows.length?`<autoFilter ref="A1:${i}${r}"/>`:""}
+</worksheet>`}function Fc(t,e){let a=t.replace(/[\[\]:*?\/\\]/g," ").slice(0,31).trim()||"Sheet",s=2;for(;e.has(a.toLowerCase());)a=a.slice(0,28)+" "+s++;return e.add(a.toLowerCase()),a}function zr(t,e="JSE Report"){let a=new Set,s=t.map(r=>Fc(r.name,a)),i={};return i["[Content_Types].xml"]=be(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
 <Default Extension="xml" ContentType="application/xml"/>
 <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
 <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
 <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-${t.map((i,n)=>`<Override PartName="/xl/worksheets/sheet${n+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join(`
+${t.map((r,o)=>`<Override PartName="/xl/worksheets/sheet${o+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join(`
 `)}
-</Types>`),r["_rels/.rels"]=he(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+</Types>`),i["_rels/.rels"]=be(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
-</Relationships>`),r["docProps/core.xml"]=he(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+</Relationships>`),i["docProps/core.xml"]=be(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-<dc:title>${sa(e)}</dc:title><dc:creator>JAIN STOCK EXCHANGE</dc:creator>
+<dc:title>${as(e)}</dc:title><dc:creator>JAIN STOCK EXCHANGE</dc:creator>
 <dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString().slice(0,19)}Z</dcterms:created>
-</cp:coreProperties>`),r["xl/workbook.xml"]=he(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+</cp:coreProperties>`),i["xl/workbook.xml"]=be(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-<sheets>${a.map((i,n)=>`<sheet name="${sa(i)}" sheetId="${n+1}" r:id="rId${n+1}"/>`).join("")}</sheets>
-</workbook>`),r["xl/_rels/workbook.xml.rels"]=he(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sheets>${s.map((r,o)=>`<sheet name="${as(r)}" sheetId="${o+1}" r:id="rId${o+1}"/>`).join("")}</sheets>
+</workbook>`),i["xl/_rels/workbook.xml.rels"]=be(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-${t.map((i,n)=>`<Relationship Id="rId${n+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${n+1}.xml"/>`).join(`
+${t.map((r,o)=>`<Relationship Id="rId${o+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${o+1}.xml"/>`).join(`
 `)}
 <Relationship Id="rId${t.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-</Relationships>`),r["xl/styles.xml"]=he(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+</Relationships>`),i["xl/styles.xml"]=be(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
 <numFmts count="2"><numFmt numFmtId="164" formatCode="#,##,##0.00"/><numFmt numFmtId="165" formatCode="#,##,##0"/></numFmts>
 <fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>
@@ -5198,9 +8970,9 @@ ${t.map((i,n)=>`<Relationship Id="rId${n+1}" Type="http://schemas.openxmlformats
 <xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
-</styleSheet>`),t.forEach((i,n)=>{r[`xl/worksheets/sheet${n+1}.xml`]=he(kE(i))}),bi(r,{level:6})}function lt(t,e){let s=a=>{if(a==null)return"";let r=typeof a=="string"?a:typeof a=="object"?JSON.stringify(a):String(a);return typeof a=="string"&&fi.test(r)&&(r=Si(r)),/^[=+\-@]/.test(r)&&typeof a=="string"&&(r="'"+r),/[",\n\r]/.test(r)?'"'+r.replace(/"/g,'""')+'"':r};return"\uFEFF"+[t.map(s).join(","),...e.map(a=>a.map(s).join(","))].join(`\r
+</styleSheet>`),t.forEach((r,o)=>{i[`xl/worksheets/sheet${o+1}.xml`]=be(Dc(r))}),Yr(i,{level:6})}function lt(t,e){let a=s=>{if(s==null)return"";let i=typeof s=="string"?s:typeof s=="object"?JSON.stringify(s):String(s);return typeof s=="string"&&Xr.test(i)&&(i=Jr(i)),/^[=+\-@]/.test(i)&&typeof s=="string"&&(i="'"+i),/[",\n\r]/.test(i)?'"'+i.replace(/"/g,'""')+'"':i};return"\uFEFF"+[t.map(a).join(","),...e.map(s=>s.map(a).join(","))].join(`\r
 `)+`\r
-`}var Di=t=>t.replace(/&(lt|gt|amp|quot|apos|#\d+|#x[0-9a-fA-F]+);/g,(e,s)=>s==="lt"?"<":s==="gt"?">":s==="amp"?"&":s==="quot"?'"':s==="apos"?"'":s[1]==="x"?String.fromCodePoint(parseInt(s.slice(2),16)):String.fromCodePoint(parseInt(s.slice(1),10)));function Ai(t){let e="",s=/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>|<t(?:\s[^>]*)?\/>/g,a;for(;a=s.exec(t);)e+=a[1]?Di(a[1]):"";return e}function WE(t){let e=(/^[A-Z]+/.exec(t)||["A"])[0],s=0;for(let a of e)s=s*26+(a.charCodeAt(0)-64);return s-1}function yi(t){let e;try{e=Li(t)}catch{throw new Error("The file is not a valid .xlsx workbook.")}let s=u=>e[u]?ea(e[u]):"",a="xl/worksheets/sheet1.xml",r=s("xl/workbook.xml"),i=s("xl/_rels/workbook.xml.rels"),n=/<sheet\b[^>]*\br:id="([^"]+)"/.exec(r);if(n&&i){let u=new RegExp('<Relationship\\b[^>]*Id="'+n[1]+'"[^>]*Target="([^"]+)"').exec(i)||new RegExp('<Relationship\\b[^>]*Target="([^"]+)"[^>]*Id="'+n[1]+'"').exec(i);u&&(a=u[1].startsWith("/")?u[1].slice(1):"xl/"+u[1].replace(/^\.\//,""))}let o=s(a);if(!o)throw new Error("The workbook has no readable worksheet.");let E=[],_=s("xl/sharedStrings.xml");if(_){let u=/<si>([\s\S]*?)<\/si>/g,h;for(;h=u.exec(_);)E.push(Ai(h[1]))}let c=[],l=/<row\b[^>]*\/>|<row\b[^>]*>([\s\S]*?)<\/row>/g,d;for(;d=l.exec(o);){let u=[],h=d[1]||"",I=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,S,P=0;for(;S=I.exec(h);){let B=S[1]||"",D=S[2]||"",y=/\br="([A-Z]+)\d+"/.exec(B),H=y?WE(y[1]):P;P=H+1;let W=(/\bt="([^"]+)"/.exec(B)||[])[1]||"n",A=/<v>([\s\S]*?)<\/v>/.exec(D),m="";for(W==="s"?m=A?E[Number(A[1])]??"":"":W==="inlineStr"?m=Ai(D):W==="b"?m=A&&A[1]==="1"?"TRUE":"FALSE":m=A?Di(A[1]):"";u.length<H;)u.push("");u[H]=m.trim()}c.push(u)}return c}function aa(t){let e=[],s=[],a="",r=!1,i=t.replace(/^\uFEFF/,"");for(let n=0;n<i.length;n++){let o=i[n];r?o==='"'&&i[n+1]==='"'?(a+='"',n++):o==='"'?r=!1:a+=o:o==='"'?r=!0:o===","?(s.push(a.trim()),a=""):o===`
-`||o==="\r"?(o==="\r"&&i[n+1]===`
-`&&n++,s.push(a.trim()),e.push(s),s=[],a=""):a+=o}return(a.length||s.length)&&(s.push(a.trim()),e.push(s)),e.filter(n=>n.some(o=>o!==""))}var na="3.14.0",YE=Date.now(),oa=["ADMIN","EXCHANGE","BANK","BROKER","PIT_MANAGER","INSTITUTIONAL","PARTICIPANT","VIEWER"];function _a(t){return BE("sha256").update(t).digest("hex")}function $E(t){if(!t)return null;if((process.env.CORS_ORIGINS||"").split(",").map(s=>s.trim()).filter(Boolean).includes(t))return t;try{let s=new URL(t),a=s.hostname;if(a==="localhost"||a==="127.0.0.1"||s.protocol==="https:"&&(a==="jain-stock-exchange.pages.dev"||a.endsWith(".jain-stock-exchange.pages.dev")||a==="jse-live.pages.dev"||a.endsWith(".jse-live.pages.dev")))return t}catch{}return null}function Ye(t){let e=$E(t.origin),s={vary:"Origin, Accept-Encoding"};return e&&(s["access-control-allow-origin"]=e,s["access-control-allow-methods"]="GET, POST, OPTIONS",s["access-control-allow-headers"]="Authorization, Content-Type, X-Request-Id",s["access-control-expose-headers"]="ETag, X-JSE-Version, X-Request-Id, Content-Disposition, Date",s["access-control-max-age"]="7200"),s}function KE(t){return/\bgzip\b/.test(t.headers.get("accept-encoding")||"")}function Fi(t){let e=JSON.stringify(t);return{body:e,etag:'W/"'+_a(e).slice(0,24)+'"'}}function q(t,e,s,a={},r=0){let i={"content-type":"application/json; charset=utf-8","x-jse-version":na,"x-request-id":t.reqId,"cache-control":r>0?`public, max-age=${r}, must-revalidate`:e===200&&t.method==="GET"?"private, no-cache":"no-store",etag:s.etag,...Ye(t),...a};return r===0&&(i.vary=(i.vary?i.vary+", ":"")+"Authorization"),e===200&&t.method==="GET"&&t.req.headers.get("if-none-match")===s.etag?(delete i["content-type"],new Response(null,{status:304,headers:i})):s.body.length>1024&&KE(t.req)?(s.gz||(s.gz=qE(s.body,{level:5})),i["content-encoding"]="gzip",new Response(s.gz,{status:e,headers:i})):new Response(s.body,{status:e,headers:i})}var te=(t,e,s=200,a=0)=>q(t,s,Fi(e),{},a);function VE(t,e){if(e instanceof b)return te(t,{success:!1,error:e.message,code:e.code,...e.extra||{}},e.status);let s=e;console.error(`[api] ${t.reqId} ${t.method} ${t.url.pathname} failed:`,s?.code||"",s?.message||s);let a=/ECONNREFUSED|ENOTFOUND|Connection terminated|timeout|too many|remaining connection/i.test(String(s?.message));return te(t,{success:!1,code:a?"SERVICE_UNAVAILABLE":"SERVER_ERROR",ref:t.reqId,error:a?"The trading service is busy or reconnecting. Please retry in a moment.":"Something went wrong while processing this request. Please retry; if it keeps failing, tell the event desk (ref "+t.reqId+")."},a?503:500)}var De=new Map;async function Y(t,e,s){let a=Date.now(),r=De.get(t);if(r?.value&&a-r.at<r.ttl)return r.value;if(r?.pending)return r.pending;let i=r||{at:0,ttl:e};if(i.ttl=e,i.pending=s().then(n=>(i.value=Fi(n),i.at=Date.now(),i.pending=void 0,i.value)).catch(n=>{if(i.pending=void 0,!(n instanceof b)&&i.value&&Date.now()-i.at<3e4)return i.value;throw n}),De.set(t,i),De.size>2e3)for(let[n,o]of De)!o.pending&&a-o.at>6e4&&De.delete(n);return i.pending}function Ci(t){if(!t){De.clear();return}for(let e of[...De.keys()])t.some(s=>e.startsWith(s))&&De.delete(e)}var Ae=new Map;async function XE(t){if(!t||t.length<32||t.length>128)return null;let e=_a(t),s=Ae.get(e);if(s&&Date.now()-s.at<3e4)return s.user;let r=(await Se("SELECT jse_session($1) AS u",[e])).rows[0]?.u||null;if(Ae.set(e,{user:r,at:Date.now()}),Ae.size>5e3)for(let[i,n]of Ae)Date.now()-n.at>12e4&&Ae.delete(i);return r}function g(t){let e=t.user;return{id:e?.id??null,username:e?.username??"anonymous",name:e?.name??null,email:e?.email??null,role:e?.role??null,team_id:e?.team_id??null,broker_id:e?.broker_id??null,institution_id:e?.institution_id??null,session:e?.session??null,session_kind:e?.session_kind??null,ip:t.ip,ua:t.ua}}function p(t,...e){if(!t.user)throw new b(401,"UNAUTHENTICATED","Please sign in to continue.");if(e.length&&!e.includes(t.user.role))throw new b(403,"FORBIDDEN",`Your role (${t.user.role.replace(/_/g," ")}) cannot do this.`);return t.user}var Ge=new Map;function qe(t,e,s){let a=Date.now(),r=Ge.get(t)||{tokens:s,at:a};return r.tokens=Math.min(s,r.tokens+(a-r.at)/1e3*e),r.at=a,r.tokens<1?(Ge.set(t,r),!1):(r.tokens-=1,Ge.set(t,r),Ge.size>2e4&&Ge.clear(),!0)}var Ut=new Map,v=(t,e)=>Ut.set("GET "+t,{h:e}),C=(t,e,s)=>Ut.set("POST "+t,{h:e,maxBody:s}),Ie=(t,e)=>(t.url.searchParams.get(e)||"").trim();function Pt(t,e){let s={};for(let a of e){let r=Ie(t,a);r&&(s[a]=r)}return s}function JE(t,e,s){let a=Ge.get(t);return a?Math.min(s,a.tokens+(Date.now()-a.at)/1e3*e)>=1:!0}var jt={perSecond:.05,burst:8};async function x(t,e,s,a){if(!qe("w:"+(t.user?.id??t.ip),15,40))throw new b(429,"TOO_MANY_REQUESTS","Too many actions in a short time. Please wait a moment.");let r=t.user?"adminpw-fail:"+t.user.id:"";if(r&&s&&typeof s=="object"&&"admin_password"in s&&!JE(r,jt.perSecond,jt.burst))throw new b(429,"TOO_MANY_ATTEMPTS","Too many incorrect administrator passwords. Wait a minute and try again.");try{let i=await O(e,g(t),s);return Ci(a),te(t,i)}catch(i){throw i instanceof b&&i.code==="PRICE_STALE"&&Ci(a),r&&i instanceof b&&i.code==="ADMIN_PASSWORD_INVALID"&&qe(r,jt.perSecond,jt.burst),i}}var dt=["trk:","staff:","pd:","q:","bd:","ins:","slips:","pub:status","admin:","audit:","inst:"];v("/api/health",async t=>{let e=Date.now(),s="ok";try{await Se("SELECT 1")}catch(a){s="error: "+String(a?.message).slice(0,120)}return te(t,{success:s==="ok",service:"JAIN STOCK EXCHANGE API",version:na,db:s,db_ms:Date.now()-e,uptime_s:Math.round((Date.now()-YE)/1e3),node:process.version,time:new Date().toISOString()},s==="ok"?200:503)});v("/api/market",async t=>q(t,200,await Y("pub:market",900,()=>O("jse_market",null)),{},1));v("/api/event-status",async t=>q(t,200,await Y("pub:status",900,()=>O("jse_event_status",null)),{},1));v("/api/market-news",async t=>{let e=Math.min(200,Math.max(1,Number(Ie(t,"limit"))||30));return q(t,200,await Y("pub:news:"+e,1500,()=>O("jse_news_list",null,{limit:e},{noActor:!0})),{},1)});v("/api/cms50",async t=>{let e=JSON.parse((await Y("pub:market",900,()=>O("jse_market",null))).body);return te(t,{success:!0,status:e.status,...e.index,market_stock_count:e.stocks.length,ipo_count:e.ipos.length})});C("/api/login",async t=>{let e=String(t.body?.username||"").trim(),s=String(t.body?.password||"");if(!qe("login-ip:"+t.ip,5,150)||!qe("login-user:"+e.toLowerCase(),.2,12))throw new b(429,"TOO_MANY_ATTEMPTS","Too many sign-in attempts. Wait a minute and try again.");if(!e||!s)throw new b(400,"MISSING_CREDENTIALS","Enter your username and password.");let a=await O("jse_login",null,{username:e,password:s,ip:t.ip,ua:t.ua},{noActor:!0});return te(t,a)});C("/api/logout",async t=>{if(t.token){let e=_a(t.token);await Se("SELECT jse_logout($1)",[e]),Ae.delete(e)}return te(t,{success:!0})});v("/api/me",async t=>t.user?te(t,{success:!0,authenticated:!0,user:t.user}):te(t,{success:!0,authenticated:!1,user:null}));C("/api/change-password",async t=>{if(p(t),!qe("pw:"+t.user.id,.2,6))throw new b(429,"TOO_MANY_ATTEMPTS","Too many attempts. Wait a minute and try again.");let e=await O("jse_change_password",g(t),t.body||{});return Ae.clear(),te(t,e)});C("/api/ci-login",async t=>{let e=process.env.CI_OIDC_REPOSITORY;if(!e)throw new b(404,"NOT_FOUND","Unknown API endpoint: /api/ci-login");if(!qe("ci-login:"+t.ip,10,300))throw new b(429,"TOO_MANY_ATTEMPTS","Too many sign-in attempts.");let s;try{s=await _i(String(t.body?.token||""),{repository:e,audience:process.env.CI_OIDC_AUDIENCE||"jse-staging",refs:(process.env.CI_OIDC_REFS||"").split(",").map(r=>r.trim()).filter(Boolean)})}catch(r){throw new b(401,"INVALID_CI_TOKEN","CI token rejected: "+r.message)}let a=await O("jse_ci_session",null,{username:String(t.body?.username||""),ip:t.ip,ua:t.ua,subject:s.sub,run_id:s.run_id,workflow:s.workflow},{noActor:!0});return te(t,a)});v("/api/portfolios",async t=>(p(t,"ADMIN","VIEWER"),q(t,200,await Y("staff:portfolios",1800,()=>O("jse_portfolios",g(t),{})))));v("/api/portfolio-details",async t=>{let e=p(t,"ADMIN","VIEWER","BROKER","PARTICIPANT"),s=(e.role==="PARTICIPANT"?e.team:Ie(t,"team"))||"";if(!s)throw new b(400,"TEAM_REQUIRED","Choose a team.");let a=e.role==="PARTICIPANT"?"p"+e.id:e.role==="BROKER"?"b"+e.broker_id:"staff";return q(t,200,await Y("pd:"+s.toUpperCase()+":"+a,1500,()=>O("jse_portfolio_detail",g(t),{team:s})))});function zE(t){return t.role==="PARTICIPANT"?"p"+t.team_id:t.role==="BROKER"?"b"+t.broker_id:t.role==="INSTITUTIONAL"?"i"+t.institution_id:"s"}var ji=async t=>{let e=p(t,...oa),s=Pt(t,["team","status","side","kind","account","q","page","page_size"]);return q(t,200,await Y("trk:"+zE(e)+":"+JSON.stringify(s),1200,()=>O("jse_tracking",g(t),s)))};v("/api/tracking",ji);v("/api/orders",ji);v("/api/order",async t=>(p(t,...oa),te(t,await O("jse_order_detail",g(t),{order_id:Ie(t,"id")||void 0,order_no:Ie(t,"order_no")||void 0,slip_no:Ie(t,"slip_no")||void 0}))));C("/api/orders",async t=>{p(t,...oa);let e=t.body||{};return Array.isArray(e.legs)?x(t,"jse_place_pair",e,dt):x(t,"jse_place_order",e,dt)});v("/api/broker-desk",async t=>{let e=p(t,"BROKER","PIT_MANAGER","ADMIN","VIEWER"),s=e.role==="BROKER"?String(e.broker||""):e.role==="PIT_MANAGER"?"ALL":Ie(t,"broker");return q(t,200,await Y("bd:"+(e.role==="BROKER"?"own"+e.broker_id:s||"first"),1200,()=>O("jse_broker_desk",g(t),s?{broker:s}:{})))});v("/api/exchange",async t=>(p(t,"ADMIN","EXCHANGE","VIEWER"),q(t,200,await Y("q:exchange",900,()=>O("jse_exchange_queue",g(t),{})))));C("/api/exchange",async t=>(p(t,"ADMIN","EXCHANGE"),x(t,"jse_exchange_decide",t.body||{},dt)));v("/api/bank",async t=>(p(t,"ADMIN","BANK","VIEWER"),q(t,200,await Y("q:bank",900,()=>O("jse_bank_queue",g(t),{})))));C("/api/bank",async t=>{p(t,"ADMIN","BANK");let e=t.body||{},s=String(e.action||"SETTLE").toUpperCase(),a=s==="SETTLE"||s==="APPROVE"?"jse_bank_settle":s==="REJECT"?"jse_bank_reject":s==="CLAIM"||s==="RELEASE"?"jse_bank_claim":"";if(!a)throw new b(400,"INVALID_ACTION","Use SETTLE, REJECT, CLAIM or RELEASE.");return x(t,a,{...e,release:s==="RELEASE"},s==="CLAIM"||s==="RELEASE"?["q:bank"]:dt.concat(["cash:","q:loans"]))});v("/api/loan",async t=>(p(t,"ADMIN","BANK","VIEWER"),q(t,200,await Y("q:loans",1500,()=>O("jse_loans",g(t),{})))));C("/api/loan",async t=>(p(t,"ADMIN","BANK"),x(t,"jse_loan_action",t.body||{},["q:","staff:","pd:","cash:","bd:"])));v("/api/loan-requests",async t=>(p(t,"ADMIN","BANK","VIEWER","BROKER","PIT_MANAGER","PARTICIPANT"),te(t,await O("jse_loan_requests",g(t),{}))));C("/api/loan-requests",async t=>{let e=t.body||{};return String(e.action||"").toUpperCase()==="REQUEST"?(p(t,"ADMIN","BANK","BROKER","PIT_MANAGER","PARTICIPANT"),x(t,"jse_loan_request",e,["q:","bd:"])):(p(t,"ADMIN","BANK"),x(t,"jse_loan_decide",e,["q:","staff:","pd:","cash:","bd:"]))});C("/api/rename",async t=>(p(t,"ADMIN"),x(t,"jse_rename_entity",t.body||{},["q:","staff:","inst:","admin:","pub:"])));v("/api/cash",async t=>{let e=p(t,"ADMIN","BANK","VIEWER","PARTICIPANT"),s=Pt(t,["team","type","q","page","page_size"]);return q(t,200,await Y("cash:"+(e.role==="PARTICIPANT"?e.team_id:"s")+":"+JSON.stringify(s),1500,()=>O("jse_cash",g(t),s)))});v("/api/audit",async t=>{p(t,"ADMIN","VIEWER");let e=Pt(t,["action","team","role","risk","group","q","page","page_size"]);return q(t,200,await Y("audit:"+JSON.stringify(e),1500,()=>O("jse_audit_log",g(t),e)))});v("/api/commissions",async t=>{let e=p(t,"ADMIN","BROKER","VIEWER"),s=Pt(t,["broker","page","page_size"]);return q(t,200,await Y("staff:commissions:"+(e.role==="BROKER"?"b"+e.broker_id:"s")+":"+JSON.stringify(s),2e3,()=>O("jse_commissions",g(t),s)))});v("/api/institutional-portfolio",async t=>{let e=p(t,"ADMIN","INSTITUTIONAL","VIEWER"),s=e.role==="INSTITUTIONAL"?"":Ie(t,"institution_id");return q(t,200,await Y("inst:"+(s||e.institution_id||"default"),1500,()=>O("jse_institutional",g(t),s?{institution_id:s}:{})))});C("/api/institutional-order",async t=>(p(t,"ADMIN","INSTITUTIONAL"),x(t,"jse_place_institutional_order",t.body||{},dt.concat(["inst:"]))));C("/api/market-news",async t=>(p(t,"ADMIN","INSTITUTIONAL"),x(t,"jse_market_news",t.body||{})));v("/api/admin-state",async t=>{let e=p(t,"ADMIN","VIEWER");return q(t,200,await Y("admin:state:"+e.role,1500,()=>O("jse_admin_state",g(t),{})))});v("/api/insights",async t=>(p(t,"ADMIN","VIEWER"),q(t,200,await Y("staff:insights",2500,()=>O("jse_insights",null)))));C("/api/ipo-listing",async t=>(p(t,"ADMIN"),x(t,"jse_ipo_listing",t.body||{})));C("/api/event",async t=>(p(t,"ADMIN"),x(t,"jse_event_action",t.body||{})));C("/api/reset-event",async t=>(p(t,"ADMIN"),x(t,"jse_reset_event",t.body||{})));C("/api/undo-redo",async t=>(p(t,"ADMIN"),x(t,"jse_undo_redo",t.body||{})));C("/api/reject-open-orders",async t=>(p(t,"ADMIN"),x(t,"jse_reject_open_orders",t.body||{})));C("/api/ipo-allotments",async t=>{p(t,"ADMIN");let e=t.body||{};return x(t,e.clear?"jse_ipo_allot_clear":"jse_ipo_allot",e)});C("/api/ipo-admin",async t=>(p(t,"ADMIN"),x(t,"jse_ipo_admin_tool",t.body||{},["admin:","staff:","pub:"])));C("/api/big-bull",async t=>(p(t,"ADMIN"),x(t,"jse_big_bull_admin",t.body||{},["admin:","staff:","pub:"])));C("/api/teams",async t=>(p(t,"ADMIN"),x(t,"jse_update_teams",t.body||{})));C("/api/brokers",async t=>(p(t,"ADMIN"),x(t,"jse_update_brokers",t.body||{})));C("/api/config",async t=>(p(t,"ADMIN"),x(t,"jse_update_config",t.body||{})));v("/api/team-names",async t=>(p(t,"ADMIN","VIEWER"),q(t,200,await Y("admin:team-names",2e3,()=>O("jse_team_names",g(t),{action:"STATE"})))));C("/api/team-names",async t=>{p(t,"ADMIN");let e=await x(t,"jse_team_names",t.body||{});return Ae.clear(),e});v("/api/users",async t=>(p(t,"ADMIN"),te(t,await O("jse_admin_users",g(t),{action:"LIST"}))));C("/api/users",async t=>{p(t,"ADMIN");let e=await x(t,"jse_admin_users",t.body||{},[]);return Ae.clear(),e});var QE={roster_assignments:{fn:"jse_import_roster_assignments",required:["team_number","team_code","broker_number","broker_code","broker_name"],map:{"team number":"team_number","team no":"team_number","team code":"team_code","broker number":"broker_number","broker no":"broker_number","broker code":"broker_code","broker name":"broker_name"}},companies:{fn:"jse_import_companies",required:["name","ticker","base_price"],map:{"company name":"name",name:"name",company:"name",ticker:"ticker",symbol:"ticker","base price":"base_price",base_price:"base_price",price:"base_price"}},teams:{fn:"jse_update_teams",required:["team"],map:{team:"team","team code":"team","team name":"name",name:"name",section:"section",broker:"broker","broker code":"broker",members:"members","participant members":"members"}},brokers:{fn:"jse_update_brokers",required:["broker"],map:{"broker code":"broker",broker:"broker",code:"broker","broker name":"name",name:"name",contact:"contact","broker contact":"contact",desk:"desk","broker desk":"desk"}},allotments:{fn:"jse_ipo_allot",required:["team","ipo","lots"],map:{team:"team","team code":"team",ipo:"ipo","ipo code":"ipo",symbol:"ipo",lots:"lots",shares:"shares",quantity:"shares",amount:"amount"}}};C("/api/import",async t=>{p(t,"ADMIN");let e=t.body||{},s=QE[String(e.kind||"")];if(!s)throw new b(400,"INVALID_IMPORT","Choose what to import: roster assignments, companies, teams, brokers or allotments.");let a;try{if(typeof e.csv_text=="string")a=aa(e.csv_text);else{let E=Buffer.from(String(e.data_base64||""),"base64");if(!E.length)throw new Error("The file is empty.");a=/\.csv$/i.test(String(e.filename||""))?aa(E.toString("utf8")):yi(new Uint8Array(E))}}catch(E){throw new b(400,"UNREADABLE_FILE",E.message||"The file could not be read.")}let r=a.findIndex(E=>E.some(_=>s.map[_.trim().toLowerCase()]));if(r<0)throw new b(400,"MISSING_HEADERS","The first row must contain the column names ("+Object.keys(s.map).slice(0,5).join(", ")+").");let i=a[r].map(E=>s.map[E.trim().toLowerCase()]||""),n=s.required.filter(E=>!i.includes(E));if(n.length)throw new b(400,"MISSING_HEADERS","Missing column(s): "+n.join(", ")+".");let o=a.slice(r+1).filter(E=>E.some(_=>_!=="")).map(E=>{let _={};return i.forEach((c,l)=>{c&&E[l]!==void 0&&E[l]!==""&&(_[c]=E[l])}),_});if(!o.length)throw new b(400,"NO_ROWS","The file has no data rows.");if(o.length>(String(e.kind)==="roster_assignments"?1e4:2e3))throw new b(400,"TOO_MANY_ROWS",String(e.kind)==="roster_assignments"?"At most 10,000 roster rows per upload; split a larger file into validated batches.":"At most 2,000 rows per import.");return x(t,s.fn,{rows:o,admin_password:e.admin_password,dry_run:!!e.dry_run,replace:!!e.replace,batch_id:e.filename?String(e.filename).slice(0,60):void 0})},3e6);v("/api/reports",async t=>(p(t,"ADMIN","VIEWER"),q(t,200,await Y("staff:reports",3e3,()=>O("jse_reports",g(t),{})))));var ra=null;async function Ui(){return ra||(ra=(await Se("SELECT jse_export_sheets() AS s")).rows[0].s),ra}function ut(){let t=new Date(Date.now()+198e5).toISOString();return t.slice(0,10)+"_"+t.slice(11,16).replace(":","")}v("/api/export",async t=>{p(t,"ADMIN","VIEWER");let e=Ie(t,"sheet")||"networth",s=(Ie(t,"format")||"csv").toLowerCase(),a=await O("jse_export",g(t),{sheet:e});if(s==="json")return te(t,a);let r=lt(a.columns,a.rows);return new Response(r,{status:200,headers:{"content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename="JSE_${e}_${ut()}.csv"`,"cache-control":"no-store",...Ye(t)}})});v("/api/export-event-excel",async t=>{p(t,"ADMIN","VIEWER");let e=[];for(let[a,r]of await Ui()){let i=await O("jse_export",g(t),{sheet:a});e.push({name:r,columns:i.columns,rows:i.rows})}let s=gi(e,"JAIN STOCK EXCHANGE \u2014 Final Event Report");return await O("jse_audit_note",g(t),{action:"EXPORT_EVENT_EXCEL",sheets:e.length}).catch(()=>null),new Response(s,{status:200,headers:{"content-type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","content-disposition":`attachment; filename="JSE_Final_Event_Report_${ut()}.xlsx"`,"cache-control":"no-store",...Ye(t)}})});var ia=[["winner","WINNER & RUNNER-UP"],["networth","NET WORTH & P/L"],["trades","ALL TRANSACTIONS (SETTLED TRADES)"],["orders","ALL ORDERS (INCLUDING REJECTED)"],["ledger","CASH LEDGER"],["prices","PRICE CHANGES"],["news","MARKET NEWS"],["audit","AUDIT LOG"]];v("/api/export-event-csv",async t=>{p(t,"ADMIN","VIEWER");let e=await O("jse_event_status",null).catch(()=>null),s=[lt(["JAIN STOCK EXCHANGE \u2014 FINAL EVENT CSV"],[["Event: "+(e?.event_name||"DALAL STREET 2026")],["Status: "+String(e?.status||"").replace(/_/g," ")],["Generated (IST): "+ut().replace("_"," ").replace(/(\d\d)(\d\d)$/,"$1:$2")],["Sections: "+ia.map(([,r])=>r).join(" | ")]])];for(let[r,i]of ia){let n=await O("jse_export",g(t),{sheet:r});s.push(lt([i+" ("+n.rows.length+" rows)"],[])+lt(n.columns,n.rows))}let a="\uFEFF"+s.map(r=>r.replace(/\ufeff/g,"")).join(`\r
-`);return await O("jse_audit_note",g(t),{action:"EXPORT_EVENT_CSV",sheets:ia.length}).catch(()=>null),new Response(a,{status:200,headers:{"content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename="JSE_Final_Event_${ut()}.csv"`,"cache-control":"no-store",...Ye(t)}})});v("/api/export-event-json",async t=>{p(t,"ADMIN","VIEWER");let e={};for(let[r,i]of await Ui()){let n=await O("jse_export",g(t),{sheet:r});e[r]={title:i,columns:n.columns,rows:n.rows}}let s=await O("jse_event_status",null),a=JSON.stringify({success:!0,service:"JAIN STOCK EXCHANGE",version:na,generated_at:new Date().toISOString(),event:s,sheets:e});return await O("jse_audit_note",g(t),{action:"EXPORT_EVENT_JSON",sheets:Object.keys(e).length}).catch(()=>null),new Response(a,{status:200,headers:{"content-type":"application/json; charset=utf-8","content-disposition":`attachment; filename="JSE_Final_Event_${ut()}.json"`,"cache-control":"no-store",...Ye(t)}})});async function ZE(t,e=2e6){if(Number(t.headers.get("content-length")||0)>e)throw new b(413,"TOO_LARGE","The request is too large.");let a=await t.text();if(a.length>e)throw new b(413,"TOO_LARGE","The request is too large.");if(!a.trim())return{};try{return JSON.parse(a)}catch{throw new b(400,"INVALID_JSON","The request body is not valid JSON.")}}function ec(t){let e=t.headers.get("x-forwarded-for");return(t.headers.get("cf-connecting-ip")||(e?e.split(",")[0].trim():"")||t.headers.get("x-real-ip")||"").slice(0,64)}async function tc(t){let e=new URL(t.url),s={req:t,url:e,method:t.method.toUpperCase(),ip:ec(t),ua:(t.headers.get("user-agent")||"").slice(0,300),origin:t.headers.get("origin"),token:null,user:null,body:null,started:Date.now(),reqId:(t.headers.get("x-request-id")||GE()).slice(0,36)};if(s.method==="OPTIONS")return new Response(null,{status:204,headers:Ye(s)});let a=e.pathname.replace(/\/+$/,"")||"/";a.startsWith("/api")||(a="/api"+(a==="/"?"/health":a));try{let r=Ut.get(s.method+" "+a);if(!r){let n=Ut.has((s.method==="GET"?"POST ":"GET ")+a);throw new b(n?405:404,n?"METHOD_NOT_ALLOWED":"NOT_FOUND",n?"Method not allowed.":"Unknown API endpoint: "+a)}await ii();let i=t.headers.get("authorization")||"";return s.token=i.toLowerCase().startsWith("bearer ")?i.slice(7).trim():null,s.user=await XE(s.token),s.method==="POST"&&(s.body=await ZE(t,r.maxBody)),await r.h(s)}catch(r){return VE(s,r)}}var vl={fetch:tc};export{na as VERSION,vl as default,tc as handle};
+`}var Qr=t=>t.replace(/&(lt|gt|amp|quot|apos|#\d+|#x[0-9a-fA-F]+);/g,(e,a)=>a==="lt"?"<":a==="gt"?">":a==="amp"?"&":a==="quot"?'"':a==="apos"?"'":a[1]==="x"?String.fromCodePoint(parseInt(a.slice(2),16)):String.fromCodePoint(parseInt(a.slice(1),10)));function $r(t){let e="",a=/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>|<t(?:\s[^>]*)?\/>/g,s;for(;s=a.exec(t);)e+=s[1]?Qr(s[1]):"";return e}function yc(t){let e=(/^[A-Z]+/.exec(t)||["A"])[0],a=0;for(let s of e)a=a*26+(s.charCodeAt(0)-64);return a-1}function Zr(t){let e;try{e=Vr(t)}catch{throw new Error("The file is not a valid .xlsx workbook.")}let a=u=>e[u]?es(e[u]):"",s="xl/worksheets/sheet1.xml",i=a("xl/workbook.xml"),r=a("xl/_rels/workbook.xml.rels"),o=/<sheet\b[^>]*\br:id="([^"]+)"/.exec(i);if(o&&r){let u=new RegExp('<Relationship\\b[^>]*Id="'+o[1]+'"[^>]*Target="([^"]+)"').exec(r)||new RegExp('<Relationship\\b[^>]*Target="([^"]+)"[^>]*Id="'+o[1]+'"').exec(r);u&&(s=u[1].startsWith("/")?u[1].slice(1):"xl/"+u[1].replace(/^\.\//,""))}let n=a(s);if(!n)throw new Error("The workbook has no readable worksheet.");let E=[],_=a("xl/sharedStrings.xml");if(_){let u=/<si>([\s\S]*?)<\/si>/g,I;for(;I=u.exec(_);)E.push($r(I[1]))}let c=[],l=/<row\b[^>]*\/>|<row\b[^>]*>([\s\S]*?)<\/row>/g,d;for(;d=l.exec(n);){let u=[],I=d[1]||"",v=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,D,H=0;for(;D=v.exec(I);){let B=D[1]||"",y=D[2]||"",C=/\br="([A-Z]+)\d+"/.exec(B),k=C?yc(C[1]):H;H=k+1;let x=(/\bt="([^"]+)"/.exec(B)||[])[1]||"n",A=/<v>([\s\S]*?)<\/v>/.exec(y),p="";for(x==="s"?p=A?E[Number(A[1])]??"":"":x==="inlineStr"?p=$r(y):x==="b"?p=A&&A[1]==="1"?"TRUE":"FALSE":p=A?Qr(A[1]):"";u.length<k;)u.push("");u[k]=p.trim()}c.push(u)}return c}function ss(t){let e=[],a=[],s="",i=!1,r=t.replace(/^\uFEFF/,"");for(let o=0;o<r.length;o++){let n=r[o];i?n==='"'&&r[o+1]==='"'?(s+='"',o++):n==='"'?i=!1:s+=n:n==='"'?i=!0:n===","?(a.push(s.trim()),s=""):n===`
+`||n==="\r"?(n==="\r"&&r[o+1]===`
+`&&o++,a.push(s.trim()),e.push(a),a=[],s=""):s+=n}return(s.length||a.length)&&(a.push(s.trim()),e.push(a)),e.filter(o=>o.some(n=>n!==""))}var os="3.14.0",Pc=Date.now(),ns=["ADMIN","EXCHANGE","BANK","BROKER","PIT_MANAGER","INSTITUTIONAL","PARTICIPANT","VIEWER"];function _s(t){return Cc("sha256").update(t).digest("hex")}function Hc(t){if(!t)return null;if((process.env.CORS_ORIGINS||"").split(",").map(a=>a.trim()).filter(Boolean).includes(t))return t;try{let a=new URL(t),s=a.hostname;if(s==="localhost"||s==="127.0.0.1"||a.protocol==="https:"&&(s==="jain-stock-exchange.pages.dev"||s.endsWith(".jain-stock-exchange.pages.dev")||s==="jse-live.pages.dev"||s.endsWith(".jse-live.pages.dev")))return t}catch{}return null}function Ye(t){let e=Hc(t.origin),a={vary:"Origin, Accept-Encoding"};return e&&(a["access-control-allow-origin"]=e,a["access-control-allow-methods"]="GET, POST, OPTIONS",a["access-control-allow-headers"]="Authorization, Content-Type, X-Request-Id",a["access-control-expose-headers"]="ETag, X-JSE-Version, X-Request-Id, Content-Disposition, Date",a["access-control-max-age"]="7200"),a}function kc(t){return/\bgzip\b/.test(t.headers.get("accept-encoding")||"")}function to(t){let e=JSON.stringify(t);return{body:e,etag:'W/"'+_s(e).slice(0,24)+'"'}}function q(t,e,a,s={},i=0){let r={"content-type":"application/json; charset=utf-8","x-jse-version":os,"x-request-id":t.reqId,"cache-control":i>0?`public, max-age=${i}, must-revalidate`:e===200&&t.method==="GET"?"private, no-cache":"no-store",etag:a.etag,...Ye(t),...s};return i===0&&(r.vary=(r.vary?r.vary+", ":"")+"Authorization"),e===200&&t.method==="GET"&&t.req.headers.get("if-none-match")===a.etag?(delete r["content-type"],new Response(null,{status:304,headers:r})):a.body.length>1024&&kc(t.req)?(a.gz||(a.gz=Uc(a.body,{level:5})),r["content-encoding"]="gzip",new Response(a.gz,{status:e,headers:r})):new Response(a.body,{status:e,headers:r})}var z=(t,e,a=200,s=0)=>q(t,a,to(e),{},s);function Mc(t,e){if(e instanceof O)return z(t,{success:!1,error:e.message,code:e.code,...e.extra||{}},e.status);let a=e;console.error(`[api] ${t.reqId} ${t.method} ${t.url.pathname} failed:`,a?.code||"",a?.message||a);let s=/ECONNREFUSED|ENOTFOUND|Connection terminated|timeout|too many|remaining connection/i.test(String(a?.message));return z(t,{success:!1,code:s?"SERVICE_UNAVAILABLE":"SERVER_ERROR",ref:t.reqId,error:s?"The trading service is busy or reconnecting. Please retry in a moment.":"Something went wrong while processing this request. Please retry; if it keeps failing, tell the event desk (ref "+t.reqId+")."},s?503:500)}var De=new Map;async function Y(t,e,a){let s=Date.now(),i=De.get(t);if(i?.value&&s-i.at<i.ttl)return i.value;if(i?.pending)return i.pending;let r=i||{at:0,ttl:e};if(r.ttl=e,r.pending=a().then(o=>(r.value=to(o),r.at=Date.now(),r.pending=void 0,r.value)).catch(o=>{if(r.pending=void 0,!(o instanceof O)&&r.value&&Date.now()-r.at<3e4)return r.value;throw o}),De.set(t,r),De.size>2e3)for(let[o,n]of De)!n.pending&&s-n.at>6e4&&De.delete(o);return r.pending}function eo(t){if(!t){De.clear();return}for(let e of[...De.keys()])t.some(a=>e.startsWith(a))&&De.delete(e)}var Ae=new Map;async function wc(t){if(!t||t.length<32||t.length>128)return null;let e=_s(t),a=Ae.get(e);if(a&&Date.now()-a.at<3e4)return a.user;let i=(await fe("SELECT jse_session($1) AS u",[e])).rows[0]?.u||null;if(Ae.set(e,{user:i,at:Date.now()}),Ae.size>5e3)for(let[r,o]of Ae)Date.now()-o.at>12e4&&Ae.delete(r);return i}function S(t){let e=t.user;return{id:e?.id??null,username:e?.username??"anonymous",name:e?.name??null,email:e?.email??null,role:e?.role??null,team_id:e?.team_id??null,broker_id:e?.broker_id??null,institution_id:e?.institution_id??null,session:e?.session??null,session_kind:e?.session_kind??null,ip:t.ip,ua:t.ua}}function N(t,...e){if(!t.user)throw new O(401,"UNAUTHENTICATED","Please sign in to continue.");if(e.length&&!e.includes(t.user.role))throw new O(403,"FORBIDDEN",`Your role (${t.user.role.replace(/_/g," ")}) cannot do this.`);return t.user}var Ge=new Map;function qe(t,e,a){let s=Date.now(),i=Ge.get(t)||{tokens:a,at:s};return i.tokens=Math.min(a,i.tokens+(s-i.at)/1e3*e),i.at=s,i.tokens<1?(Ge.set(t,i),!1):(i.tokens-=1,Ge.set(t,i),Ge.size>2e4&&Ge.clear(),!0)}var Ut=new Map,L=(t,e)=>Ut.set("GET "+t,{h:e}),f=(t,e,a)=>Ut.set("POST "+t,{h:e,maxBody:a}),Ie=(t,e)=>(t.url.searchParams.get(e)||"").trim();function Pt(t,e){let a={};for(let s of e){let i=Ie(t,s);i&&(a[s]=i)}return a}function Wc(t,e,a){let s=Ge.get(t);return s?Math.min(a,s.tokens+(Date.now()-s.at)/1e3*e)>=1:!0}var jt={perSecond:.05,burst:8};async function F(t,e,a,s){if(!qe("w:"+(t.user?.id??t.ip),15,40))throw new O(429,"TOO_MANY_REQUESTS","Too many actions in a short time. Please wait a moment.");let i=t.user?"adminpw-fail:"+t.user.id:"";if(i&&a&&typeof a=="object"&&"admin_password"in a&&!Wc(i,jt.perSecond,jt.burst))throw new O(429,"TOO_MANY_ATTEMPTS","Too many incorrect administrator passwords. Wait a minute and try again.");try{let r=await b(e,S(t),a);return eo(s),z(t,r)}catch(r){throw r instanceof O&&r.code==="PRICE_STALE"&&eo(s),i&&r instanceof O&&r.code==="ADMIN_PASSWORD_INVALID"&&qe(i,jt.perSecond,jt.burst),r}}var dt=["trk:","staff:","pd:","q:","bd:","ins:","slips:","pub:status","admin:","audit:","inst:"];L("/api/health",async t=>{let e=Date.now(),a="ok";try{await fe("SELECT 1")}catch(s){a="error: "+String(s?.message).slice(0,120)}return z(t,{success:a==="ok",service:"JAIN STOCK EXCHANGE API",version:os,db:a,db_ms:Date.now()-e,uptime_s:Math.round((Date.now()-Pc)/1e3),node:process.version,time:new Date().toISOString()},a==="ok"?200:503)});L("/api/market",async t=>q(t,200,await Y("pub:market",900,()=>b("jse_market",null)),{},1));L("/api/event-status",async t=>q(t,200,await Y("pub:status",900,()=>b("jse_event_status",null)),{},1));L("/api/market-news",async t=>{let e=Math.min(200,Math.max(1,Number(Ie(t,"limit"))||30));return q(t,200,await Y("pub:news:"+e,1500,()=>b("jse_news_list",null,{limit:e},{noActor:!0})),{},1)});L("/api/cms50",async t=>{let e=JSON.parse((await Y("pub:market",900,()=>b("jse_market",null))).body);return z(t,{success:!0,status:e.status,...e.index,market_stock_count:e.stocks.length,ipo_count:e.ipos.length})});f("/api/login",async t=>{let e=String(t.body?.username||"").trim(),a=String(t.body?.password||"");if(!qe("login-ip:"+t.ip,5,150)||!qe("login-user:"+e.toLowerCase(),.2,12))throw new O(429,"TOO_MANY_ATTEMPTS","Too many sign-in attempts. Wait a minute and try again.");if(!e||!a)throw new O(400,"MISSING_CREDENTIALS","Enter your username and password.");let s=await b("jse_login",null,{username:e,password:a,ip:t.ip,ua:t.ua},{noActor:!0});return z(t,s)});f("/api/logout",async t=>{if(t.token){let e=_s(t.token);await fe("SELECT jse_logout($1)",[e]),Ae.delete(e)}return z(t,{success:!0})});L("/api/me",async t=>t.user?z(t,{success:!0,authenticated:!0,user:t.user}):z(t,{success:!0,authenticated:!1,user:null}));f("/api/change-password",async t=>{if(N(t),!qe("pw:"+t.user.id,.2,6))throw new O(429,"TOO_MANY_ATTEMPTS","Too many attempts. Wait a minute and try again.");let e=await b("jse_change_password",S(t),t.body||{});return Ae.clear(),z(t,e)});f("/api/ci-login",async t=>{let e=process.env.CI_OIDC_REPOSITORY;if(!e)throw new O(404,"NOT_FOUND","Unknown API endpoint: /api/ci-login");if(!qe("ci-login:"+t.ip,10,300))throw new O(429,"TOO_MANY_ATTEMPTS","Too many sign-in attempts.");let a;try{a=await yr(String(t.body?.token||""),{repository:e,audience:process.env.CI_OIDC_AUDIENCE||"jse-staging",refs:(process.env.CI_OIDC_REFS||"").split(",").map(i=>i.trim()).filter(Boolean)})}catch(i){throw new O(401,"INVALID_CI_TOKEN","CI token rejected: "+i.message)}let s=await b("jse_ci_session",null,{username:String(t.body?.username||""),ip:t.ip,ua:t.ua,subject:a.sub,run_id:a.run_id,workflow:a.workflow},{noActor:!0});return z(t,s)});L("/api/portfolios",async t=>(N(t,"ADMIN","VIEWER"),q(t,200,await Y("staff:portfolios",1800,()=>b("jse_portfolios",S(t),{})))));L("/api/portfolio-details",async t=>{let e=N(t,"ADMIN","VIEWER","BROKER","PARTICIPANT"),a=(e.role==="PARTICIPANT"?e.team:Ie(t,"team"))||"";if(!a)throw new O(400,"TEAM_REQUIRED","Choose a team.");let s=e.role==="PARTICIPANT"?"p"+e.id:e.role==="BROKER"?"b"+e.broker_id:"staff";return q(t,200,await Y("pd:"+a.toUpperCase()+":"+s,1500,()=>b("jse_portfolio_detail",S(t),{team:a})))});function xc(t){return t.role==="PARTICIPANT"?"p"+t.team_id:t.role==="BROKER"?"b"+t.broker_id:t.role==="INSTITUTIONAL"?"i"+t.institution_id:"s"}var ao=async t=>{let e=N(t,...ns),a=Pt(t,["team","status","side","kind","account","q","page","page_size"]);return q(t,200,await Y("trk:"+xc(e)+":"+JSON.stringify(a),1200,()=>b("jse_tracking",S(t),a)))};L("/api/tracking",ao);L("/api/orders",ao);L("/api/order",async t=>(N(t,...ns),z(t,await b("jse_order_detail",S(t),{order_id:Ie(t,"id")||void 0,order_no:Ie(t,"order_no")||void 0,slip_no:Ie(t,"slip_no")||void 0}))));f("/api/orders",async t=>{N(t,...ns);let e=t.body||{};return Array.isArray(e.legs)?F(t,"jse_place_pair",e,dt):F(t,"jse_place_order",e,dt)});L("/api/broker-desk",async t=>{let e=N(t,"BROKER","PIT_MANAGER","ADMIN","VIEWER"),a=e.role==="BROKER"?String(e.broker||""):e.role==="PIT_MANAGER"?"ALL":Ie(t,"broker");return q(t,200,await Y("bd:"+(e.role==="BROKER"?"own"+e.broker_id:a||"first"),1200,()=>b("jse_broker_desk",S(t),a?{broker:a}:{})))});L("/api/exchange",async t=>(N(t,"ADMIN","EXCHANGE","VIEWER"),q(t,200,await Y("q:exchange",900,()=>b("jse_exchange_queue",S(t),{})))));f("/api/exchange",async t=>(N(t,"ADMIN","EXCHANGE"),F(t,"jse_exchange_decide",t.body||{},dt)));L("/api/bank",async t=>(N(t,"ADMIN","BANK","VIEWER"),q(t,200,await Y("q:bank",900,()=>b("jse_bank_queue",S(t),{})))));f("/api/bank",async t=>{N(t,"ADMIN","BANK");let e=t.body||{},a=String(e.action||"SETTLE").toUpperCase(),s=a==="SETTLE"||a==="APPROVE"?"jse_bank_settle":a==="REJECT"?"jse_bank_reject":a==="CLAIM"||a==="RELEASE"?"jse_bank_claim":"";if(!s)throw new O(400,"INVALID_ACTION","Use SETTLE, REJECT, CLAIM or RELEASE.");return F(t,s,{...e,release:a==="RELEASE"},a==="CLAIM"||a==="RELEASE"?["q:bank"]:dt.concat(["cash:","q:loans"]))});L("/api/loan",async t=>(N(t,"ADMIN","BANK","VIEWER"),q(t,200,await Y("q:loans",1500,()=>b("jse_loans",S(t),{})))));f("/api/loan",async t=>(N(t,"ADMIN","BANK"),F(t,"jse_loan_action",t.body||{},["q:","staff:","pd:","cash:","bd:"])));L("/api/loan-requests",async t=>(N(t,"ADMIN","BANK","VIEWER","BROKER","PIT_MANAGER","PARTICIPANT"),z(t,await b("jse_loan_requests",S(t),{}))));f("/api/loan-requests",async t=>{let e=t.body||{};return String(e.action||"").toUpperCase()==="REQUEST"?(N(t,"ADMIN","BANK","BROKER","PIT_MANAGER","PARTICIPANT"),F(t,"jse_loan_request",e,["q:","bd:"])):(N(t,"ADMIN","BANK"),F(t,"jse_loan_decide",e,["q:","staff:","pd:","cash:","bd:"]))});f("/api/rename",async t=>(N(t,"ADMIN"),F(t,"jse_rename_entity",t.body||{},["q:","staff:","inst:","admin:","pub:"])));L("/api/reconcile",async t=>(N(t,"ADMIN","VIEWER"),z(t,await b("jse_reconcile",S(t),{}))));f("/api/reconcile",async t=>(N(t,"ADMIN"),F(t,"jse_reconcile_correct",t.body||{},["cash:","pd:","staff:","admin:"])));L("/api/institution-inventory",async t=>(N(t,"ADMIN","VIEWER","INSTITUTIONAL"),z(t,await b("jse_institution_inventory",S(t),{action:"LIST"}))));f("/api/institution-inventory",async t=>(N(t,"ADMIN"),F(t,"jse_institution_inventory",t.body||{},["inst:","admin:"])));L("/api/cash",async t=>{let e=N(t,"ADMIN","BANK","VIEWER","PARTICIPANT"),a=Pt(t,["team","type","q","page","page_size"]);return q(t,200,await Y("cash:"+(e.role==="PARTICIPANT"?e.team_id:"s")+":"+JSON.stringify(a),1500,()=>b("jse_cash",S(t),a)))});L("/api/audit",async t=>{N(t,"ADMIN","VIEWER");let e=Pt(t,["action","team","role","risk","group","q","page","page_size"]);return q(t,200,await Y("audit:"+JSON.stringify(e),1500,()=>b("jse_audit_log",S(t),e)))});L("/api/commissions",async t=>{let e=N(t,"ADMIN","BROKER","VIEWER"),a=Pt(t,["broker","page","page_size"]);return q(t,200,await Y("staff:commissions:"+(e.role==="BROKER"?"b"+e.broker_id:"s")+":"+JSON.stringify(a),2e3,()=>b("jse_commissions",S(t),a)))});L("/api/institutional-portfolio",async t=>{let e=N(t,"ADMIN","INSTITUTIONAL","VIEWER"),a=e.role==="INSTITUTIONAL"?"":Ie(t,"institution_id");return q(t,200,await Y("inst:"+(a||e.institution_id||"default"),1500,()=>b("jse_institutional",S(t),a?{institution_id:a}:{})))});f("/api/institutional-order",async t=>(N(t,"ADMIN","INSTITUTIONAL"),F(t,"jse_place_institutional_order",t.body||{},dt.concat(["inst:"]))));f("/api/market-news",async t=>(N(t,"ADMIN"),F(t,"jse_market_news",t.body||{})));L("/api/admin-state",async t=>{let e=N(t,"ADMIN","VIEWER");return q(t,200,await Y("admin:state:"+e.role,1500,()=>b("jse_admin_state",S(t),{})))});L("/api/insights",async t=>(N(t,"ADMIN","VIEWER"),q(t,200,await Y("staff:insights",2500,()=>b("jse_insights",null)))));f("/api/ipo-listing",async t=>(N(t,"ADMIN"),F(t,"jse_ipo_listing",t.body||{})));f("/api/event",async t=>(N(t,"ADMIN"),F(t,"jse_event_action",t.body||{})));f("/api/reset-event",async t=>(N(t,"ADMIN"),F(t,"jse_reset_event",t.body||{})));f("/api/undo-redo",async t=>(N(t,"ADMIN"),F(t,"jse_undo_redo",t.body||{})));f("/api/reject-open-orders",async t=>(N(t,"ADMIN"),F(t,"jse_reject_open_orders",t.body||{})));f("/api/ipo-allotments",async t=>{N(t,"ADMIN");let e=t.body||{};return F(t,e.clear?"jse_ipo_allot_clear":"jse_ipo_allot",e)});f("/api/ipo-admin",async t=>(N(t,"ADMIN"),F(t,"jse_ipo_admin_tool",t.body||{},["admin:","staff:","pub:"])));f("/api/big-bull",async t=>(N(t,"ADMIN"),F(t,"jse_big_bull_admin",t.body||{},["admin:","staff:","pub:"])));f("/api/teams",async t=>(N(t,"ADMIN"),F(t,"jse_update_teams",t.body||{})));f("/api/brokers",async t=>(N(t,"ADMIN"),F(t,"jse_update_brokers",t.body||{})));f("/api/config",async t=>(N(t,"ADMIN"),F(t,"jse_update_config",t.body||{})));L("/api/team-names",async t=>(N(t,"ADMIN","VIEWER"),q(t,200,await Y("admin:team-names",2e3,()=>b("jse_team_names",S(t),{action:"STATE"})))));f("/api/team-names",async t=>{N(t,"ADMIN");let e=await F(t,"jse_team_names",t.body||{});return Ae.clear(),e});L("/api/users",async t=>(N(t,"ADMIN"),z(t,await b("jse_admin_users",S(t),{action:"LIST"}))));f("/api/users",async t=>{N(t,"ADMIN");let e=await F(t,"jse_admin_users",t.body||{},[]);return Ae.clear(),e});var Bc={roster_assignments:{fn:"jse_import_roster_assignments",required:["team_number","team_code","broker_number","broker_code","broker_name"],map:{"team number":"team_number","team no":"team_number","team code":"team_code","broker number":"broker_number","broker no":"broker_number","broker code":"broker_code","broker name":"broker_name"}},dalal_roster:{fn:"jse_import_dalal_roster",required:["team","broker_code"],map:{"team name":"team","team code":"team","broker code":"broker_code","section combination":"section_combination","section 1":"section1","section 2":"section2","participant 1":"participant1","contact number 1":"phone1","usn 1":"usn1","email 1":"email1","participant 2":"participant2","contact number 2":"phone2","usn 2":"usn2","email 2":"email2"}},companies:{fn:"jse_import_companies",required:["name","ticker","base_price"],map:{"company name":"name",name:"name",company:"name",ticker:"ticker",symbol:"ticker","base price":"base_price",base_price:"base_price",price:"base_price"}},teams:{fn:"jse_update_teams",required:["team"],map:{team:"team","team code":"team","team name":"name",name:"name",section:"section",broker:"broker","broker code":"broker",members:"members","participant members":"members"}},brokers:{fn:"jse_update_brokers",required:["broker"],map:{"broker code":"broker",broker:"broker",code:"broker","broker name":"name",name:"name",contact:"contact","broker contact":"contact",desk:"desk","broker desk":"desk"}},allotments:{fn:"jse_ipo_allot",required:["team","ipo","lots"],map:{team:"team","team code":"team",ipo:"ipo","ipo code":"ipo",symbol:"ipo",lots:"lots",shares:"shares",quantity:"shares",amount:"amount"}}};f("/api/import",async t=>{N(t,"ADMIN");let e=t.body||{},a=Bc[String(e.kind||"")];if(!a)throw new O(400,"INVALID_IMPORT","Choose what to import: roster assignments, companies, teams, brokers or allotments.");let s;try{if(typeof e.csv_text=="string")s=ss(e.csv_text);else{let E=Buffer.from(String(e.data_base64||""),"base64");if(!E.length)throw new Error("The file is empty.");s=/\.csv$/i.test(String(e.filename||""))?ss(E.toString("utf8")):Zr(new Uint8Array(E))}}catch(E){throw new O(400,"UNREADABLE_FILE",E.message||"The file could not be read.")}let i=s.findIndex(E=>E.some(_=>a.map[_.trim().toLowerCase()]));if(i<0)throw new O(400,"MISSING_HEADERS","The first row must contain the column names ("+Object.keys(a.map).slice(0,5).join(", ")+").");let r=s[i].map(E=>a.map[E.trim().toLowerCase()]||""),o=a.required.filter(E=>!r.includes(E));if(o.length)throw new O(400,"MISSING_HEADERS","Missing column(s): "+o.join(", ")+".");let n=s.slice(i+1).filter(E=>E.some(_=>_!=="")).map(E=>{let _={};return r.forEach((c,l)=>{c&&E[l]!==void 0&&E[l]!==""&&(_[c]=E[l])}),_});if(!n.length)throw new O(400,"NO_ROWS","The file has no data rows.");if(String(e.kind)==="dalal_roster"){let E=_=>String(_??"").trim();n=n.map(_=>{let c=E(_.section_combination)||[E(_.section1),E(_.section2)].filter(Boolean).join(" + "),l=d=>[E(_["participant"+d]),E(_["usn"+d])?"USN: "+E(_["usn"+d]):"",E(_["phone"+d])?"Mobile: "+E(_["phone"+d]):"",E(_["email"+d])?"Email: "+E(_["email"+d]):""].filter(Boolean).join(" | ");return{team:E(_.team),broker_code:E(_.broker_code),section:c,members:[l("1"),l("2")].filter(Boolean).join(" ; ")}})}if(n.length>(String(e.kind)==="roster_assignments"?1e4:2e3))throw new O(400,"TOO_MANY_ROWS",String(e.kind)==="roster_assignments"?"At most 10,000 roster rows per upload; split a larger file into validated batches.":"At most 2,000 rows per import.");return F(t,a.fn,{rows:n,admin_password:e.admin_password,dry_run:!!e.dry_run,replace:!!e.replace,batch_id:e.filename?String(e.filename).slice(0,60):void 0})},3e6);L("/api/reports",async t=>(N(t,"ADMIN","VIEWER"),q(t,200,await Y("staff:reports",3e3,()=>b("jse_reports",S(t),{})))));var is=null;async function so(){return is||(is=(await fe("SELECT jse_export_sheets() AS s")).rows[0].s),is}function ut(){let t=new Date(Date.now()+198e5).toISOString();return t.slice(0,10)+"_"+t.slice(11,16).replace(":","")}L("/api/export",async t=>{N(t,"ADMIN","VIEWER");let e=Ie(t,"sheet")||"networth",a=(Ie(t,"format")||"csv").toLowerCase(),s=await b("jse_export",S(t),{sheet:e});if(a==="json")return z(t,s);let i=lt(s.columns,s.rows);return new Response(i,{status:200,headers:{"content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename="JSE_${e}_${ut()}.csv"`,"cache-control":"no-store",...Ye(t)}})});L("/api/export-event-excel",async t=>{N(t,"ADMIN","VIEWER");let e=[];for(let[s,i]of await so()){let r=await b("jse_export",S(t),{sheet:s});e.push({name:i,columns:r.columns,rows:r.rows})}let a=zr(e,"JAIN STOCK EXCHANGE \u2014 Final Event Report");return await b("jse_audit_note",S(t),{action:"EXPORT_EVENT_EXCEL",sheets:e.length}).catch(()=>null),new Response(a,{status:200,headers:{"content-type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","content-disposition":`attachment; filename="JSE_Final_Event_Report_${ut()}.xlsx"`,"cache-control":"no-store",...Ye(t)}})});var rs=[["winner","WINNER & RUNNER-UP"],["networth","NET WORTH & P/L"],["trades","ALL TRANSACTIONS (SETTLED TRADES)"],["orders","ALL ORDERS (INCLUDING REJECTED)"],["ledger","CASH LEDGER"],["prices","PRICE CHANGES"],["news","MARKET NEWS"],["audit","AUDIT LOG"]];L("/api/export-event-csv",async t=>{N(t,"ADMIN","VIEWER");let e=await b("jse_event_status",null).catch(()=>null),a=[lt(["JAIN STOCK EXCHANGE \u2014 FINAL EVENT CSV"],[["Event: "+(e?.event_name||"DALAL STREET 2026")],["Status: "+String(e?.status||"").replace(/_/g," ")],["Generated (IST): "+ut().replace("_"," ").replace(/(\d\d)(\d\d)$/,"$1:$2")],["Sections: "+rs.map(([,i])=>i).join(" | ")]])];for(let[i,r]of rs){let o=await b("jse_export",S(t),{sheet:i});a.push(lt([r+" ("+o.rows.length+" rows)"],[])+lt(o.columns,o.rows))}let s="\uFEFF"+a.map(i=>i.replace(/\ufeff/g,"")).join(`\r
+`);return await b("jse_audit_note",S(t),{action:"EXPORT_EVENT_CSV",sheets:rs.length}).catch(()=>null),new Response(s,{status:200,headers:{"content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename="JSE_Final_Event_${ut()}.csv"`,"cache-control":"no-store",...Ye(t)}})});L("/api/export-event-json",async t=>{N(t,"ADMIN","VIEWER");let e={};for(let[i,r]of await so()){let o=await b("jse_export",S(t),{sheet:i});e[i]={title:r,columns:o.columns,rows:o.rows}}let a=await b("jse_event_status",null),s=JSON.stringify({success:!0,service:"JAIN STOCK EXCHANGE",version:os,generated_at:new Date().toISOString(),event:a,sheets:e});return await b("jse_audit_note",S(t),{action:"EXPORT_EVENT_JSON",sheets:Object.keys(e).length}).catch(()=>null),new Response(s,{status:200,headers:{"content-type":"application/json; charset=utf-8","content-disposition":`attachment; filename="JSE_Final_Event_${ut()}.json"`,"cache-control":"no-store",...Ye(t)}})});async function Gc(t,e=2e6){if(Number(t.headers.get("content-length")||0)>e)throw new O(413,"TOO_LARGE","The request is too large.");let s=await t.text();if(s.length>e)throw new O(413,"TOO_LARGE","The request is too large.");if(!s.trim())return{};try{return JSON.parse(s)}catch{throw new O(400,"INVALID_JSON","The request body is not valid JSON.")}}function qc(t){let e=t.headers.get("x-forwarded-for");return(t.headers.get("cf-connecting-ip")||(e?e.split(",")[0].trim():"")||t.headers.get("x-real-ip")||"").slice(0,64)}async function Yc(t){let e=new URL(t.url),a={req:t,url:e,method:t.method.toUpperCase(),ip:qc(t),ua:(t.headers.get("user-agent")||"").slice(0,300),origin:t.headers.get("origin"),token:null,user:null,body:null,started:Date.now(),reqId:(t.headers.get("x-request-id")||jc()).slice(0,36)};if(a.method==="OPTIONS")return new Response(null,{status:204,headers:Ye(a)});let s=e.pathname.replace(/\/+$/,"")||"/";s.startsWith("/api")||(s="/api"+(s==="/"?"/health":s));try{let i=Ut.get(a.method+" "+s);if(!i){let o=Ut.has((a.method==="GET"?"POST ":"GET ")+s);throw new O(o?405:404,o?"METHOD_NOT_ALLOWED":"NOT_FOUND",o?"Method not allowed.":"Unknown API endpoint: "+s)}await gr();let r=t.headers.get("authorization")||"";return a.token=r.toLowerCase().startsWith("bearer ")?r.slice(7).trim():null,a.user=await wc(a.token),a.method==="POST"&&(a.body=await Gc(t,i.maxBody)),await i.h(a)}catch(i){return Mc(a,i)}}var iu={fetch:Yc};export{os as VERSION,iu as default,Yc as handle};

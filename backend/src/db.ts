@@ -32,13 +32,15 @@ import m026 from "../../db/migrations/026_loan_cash_in_base_money.sql";
 import m027 from "../../db/migrations/027_ipo_flexible_sell_quantity.sql";
 import m028 from "../../db/migrations/028_company_base_price_band.sql";
 import m029 from "../../db/migrations/029_no_short_selling_override.sql";
+import m030 from "../../db/migrations/030_negotiated_market_trades.sql";
+import m031 from "../../db/migrations/031_order_accuracy.sql";
 
 export const MIGRATIONS: Array<[string, string]> = [
   ["001_schema", m001], ["001a_upgrades", m001a], ["002_core", m002], ["003_ops", m003], ["004_reads", m004],
-  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013], ["014_big_bull_news_assessment", m014], ["015_broker_sugadev", m015], ["016_news_single_move_cap", m016], ["017_portfolio_ipo_visibility", m017], ["018_broker_assignments_and_counts", m018], ["019_ipo_start_market_order", m019], ["020_broker_sugadev_name", m020], ["021_locked_baseline_reset", m021], ["022_locked_baseline_refresh", m022], ["023_lock_baseline_ipo_allotments", m023], ["024_broker_admin_page_repair", m024], ["025_institutional_unlimited_order_value", m025], ["026_loan_cash_in_base_money", m026], ["027_ipo_flexible_sell_quantity", m027], ["028_company_base_price_band", m028], ["029_no_short_selling_override", m029],
+  ["005_exports", m005], ["006_seed", m006], ["007_tuning", m007], ["008_v311", m008], ["009_hatchable", m009], ["010_safety", m010], ["011_roster_ipo", m011], ["012_big_bull_special_account", m012special], ["012_big_bull_admin", m012admin], ["013_dalal_roster", m013], ["014_big_bull_news_assessment", m014], ["015_broker_sugadev", m015], ["016_news_single_move_cap", m016], ["017_portfolio_ipo_visibility", m017], ["018_broker_assignments_and_counts", m018], ["019_ipo_start_market_order", m019], ["020_broker_sugadev_name", m020], ["021_locked_baseline_reset", m021], ["022_locked_baseline_refresh", m022], ["023_lock_baseline_ipo_allotments", m023], ["024_broker_admin_page_repair", m024], ["025_institutional_unlimited_order_value", m025], ["026_loan_cash_in_base_money", m026], ["027_ipo_flexible_sell_quantity", m027], ["028_company_base_price_band", m028], ["029_no_short_selling_override", m029], ["030_negotiated_market_trades", m030], ["031_order_accuracy", m031],
 ];
 // Files whose content may be re-applied safely (idempotent / CREATE OR REPLACE only) when their text changes.
-const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning", "008_v311", "011_roster_ipo", "012_big_bull_admin", "021_locked_baseline_reset", "024_broker_admin_page_repair", "025_institutional_unlimited_order_value", "026_loan_cash_in_base_money", "028_company_base_price_band"]);
+const REPLAYABLE = new Set(["001a_upgrades", "002_core", "003_ops", "004_reads", "005_exports", "007_tuning", "008_v311", "011_roster_ipo", "012_big_bull_admin", "021_locked_baseline_reset", "024_broker_admin_page_repair", "025_institutional_unlimited_order_value", "026_loan_cash_in_base_money", "028_company_base_price_band", "031_order_accuracy"]);
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string, public extra?: Record<string, unknown>) {
@@ -145,7 +147,13 @@ async function runMigrations(): Promise<void> {
       (await client.query("SELECT version, checksum FROM schema_migrations")).rows.map((r: any) => [r.version, r.checksum]),
     );
     const log: string[] = [];
-    for (const [version, sql] of MIGRATIONS) {
+    // Live baseline (21 Oct 2026): the event database received 022–030 partly as direct SQL during the event, so the
+    // files up to 030 no longer describe it exactly. On a database that already has 029/030, never apply or replay
+    // anything up to 030 — that could revert event-day rules. Only later migrations (031+) run there.
+    const baseline = done.has("029_no_short_selling_override") || done.has("030_negotiated_market_trades");
+    const baselineEnd = MIGRATIONS.findIndex(([v]) => v === "030_negotiated_market_trades");
+    for (const [i, [version, sql]] of MIGRATIONS.entries()) {
+      if (baseline && i <= baselineEnd) continue;
       const sum = await sha(sql);
       const applied = done.has(version);
       if (applied && (done.get(version) === sum || !REPLAYABLE.has(version))) continue;

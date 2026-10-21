@@ -768,4 +768,4 @@ BEGIN
   PERFORM jse_audit(a,'DALAL_ROSTER_UPLOAD','team',NULL,NULL,NULL,NULL,NULL,jsonb_build_object('matched',jsonb_array_length(v_plan),'changed',v_changed,'skipped',jsonb_array_length(v_skipped),'cash_or_history_changed',false));
   RETURN jsonb_build_object('success',true,'matched',jsonb_array_length(v_plan),'updated',v_changed,'skipped_count',jsonb_array_length(v_skipped),'skipped',v_skipped,'cash_or_history_changed',false);
 END $$;
-\nINSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');
+INSERT INTO schema_migrations(version) VALUES ('011_roster_ipo');

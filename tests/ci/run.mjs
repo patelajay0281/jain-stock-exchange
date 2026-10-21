@@ -95,6 +95,7 @@ for (const s of cfg.suites) {
       await run("ui", "python3", ["tests/ui_staging.py"], { SITE: cfg.site, API: BASE, UI_TOKENS: JSON.stringify(tokens) }, 20);
     }
     else if (s === "api") await run("api", "node", ["--test", "--test-concurrency=1", "tests/api.test.mjs"]);
+    else if (s === "order_accuracy") await run("order_accuracy", "node", ["--test", "--test-concurrency=1", "tests/order_accuracy.test.mjs"], { ALLOW_MUTATION: "1" });
     else if (s === "listing") await run("listing", "node", ["--test", "--test-concurrency=1", "tests/listing.test.mjs"]);
     else if (s === "stress") {
       const out = join(tmpdir(), "jse-stress.json");

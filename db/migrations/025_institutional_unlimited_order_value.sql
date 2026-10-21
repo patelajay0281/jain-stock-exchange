@@ -108,7 +108,7 @@ BEGIN
                        'spread_pct', jse_inst_spread_pct(), 'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'settlement_amount', v_amount,
                        'broker', (SELECT code FROM brokers WHERE id = v_team.broker_id)));
   RETURN jsonb_build_object('success', true, 'replayed', false, 'order', jse_order_json(v_id), 'warnings', v_warnings);
-END $function$
+END $function$;
 ;
  
 CREATE OR REPLACE FUNCTION public.jse__settle(a jsonb, p_order_id bigint, p_source text DEFAULT 'BANK'::text)
@@ -349,5 +349,5 @@ BEGIN
     'trade_value', v_tv, 'brokerage', v_brk, 'brokerage_rate', v_rate, 'cash_before', v_cash, 'cash_after', v_cash_after,
     'loan_drawn', v_draw, 'loan_interest', v_interest, 'realized_pnl', v_realized,
     'holding_before', v_hold, 'holding_after', v_hold_after, 'market_price', s.price, 'order', jse_order_json(o.id));
-END $function$
+END $function$;
 ;

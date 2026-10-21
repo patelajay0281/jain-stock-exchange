@@ -259,6 +259,23 @@
       <div class="row" style="margin-top:12px;gap:8px"><button class="btn primary" id="rnSave" type="button">Save changes</button><button class="btn" id="rnCancel" type="button">Cancel</button><span class="small muted" id="rnNow"></span></div></div>
     </section>
 
+    <section class="card" id="reconCard">
+      <div class="card-h bar navy"><h2>Reconciliation</h2><span class="meta" id="reconMeta">Orders · settlements · cash ledger · holdings · brokerage</span></div>
+      <div class="card-b"><div class="row" style="gap:8px"><button class="btn primary sm" id="reconRun" type="button">Run checks</button><span class="small muted">Read-only. Nothing is changed unless you choose a correction, give a reason and confirm with the admin password.</span></div></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:380px"><table class="t"><thead><tr><th>Check</th><th>Order</th><th>Team</th><th>Issue</th><th class="num">Expected</th><th class="num">Recorded</th><th>Recommended correction</th><th class="actions"></th></tr></thead>
+        <tbody id="reconRows"><tr><td colspan="8" class="empty">Press “Run checks”.</td></tr></tbody></table></div></div>
+    </section>
+
+    <section class="card admin-only">
+      <div class="card-h bar navy"><h2>Institutional inventory</h2><span class="meta">Blank = unlimited (as before). Shares the institution can sell; updated with every institutional settlement.</span></div>
+      <div class="card-b"><div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div class="field"><label for="ivSym">Company</label><select class="input" id="ivSym" style="min-width:200px"></select></div>
+        <div class="field"><label for="ivQty">Shares available</label><input class="input" id="ivQty" type="number" min="0" step="1" style="max-width:150px"></div>
+        <div class="field" style="min-width:240px"><label for="ivWhy">Reason</label><input class="input" id="ivWhy" maxlength="300"></div>
+        <button class="btn primary sm" id="ivSet" type="button">Set inventory…</button><button class="btn sm" id="ivUnl" type="button">Make unlimited…</button></div></div>
+      <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Company</th><th class="num">Inventory</th><th class="num">In open orders</th><th class="num">Available</th><th>Updated</th></tr></thead><tbody id="ivRows"></tbody></table></div></div>
+    </section>
+
     <section class="card">
       <div class="card-h bar navy"><h2>Reports &amp; exports</h2></div>
       <div class="card-b stack">
@@ -635,6 +652,51 @@
     try { var r = await confirmed({ title: "Update " + un, text: name + (email ? " · " + email : ""), confirmText: "Save" }, "/api/users", { action: "UPDATE_USER", username: un, display_name: name, email: email });
       if (r) { JSE.toast(r.message, "good"); loadUsers(); } } catch (ex) { JSE.toast(ex.message, "bad", 8000); }
   });
+
+  // ---- reconciliation (031) ----
+  async function runRecon() {
+    $("reconRun").disabled = true;
+    try {
+      var d = await JSE.api.get("/api/reconcile"), rows = d.issues || [];
+      $("reconMeta").textContent = rows.length + " issue(s) · " + d.summary.orders + " orders · " + d.summary.settlements + " settlements · " + d.summary.ledger_rows + " ledger rows · checked " + F.datetime(d.checked_at);
+      $("reconRows").innerHTML = rows.length ? rows.map(function (x) {
+        var fix = x.check === "CASH_VS_LEDGER" && S.admin ? '<button class="btn sm" data-fix="' + esc(x.team) + '" data-gap="' + esc(x.difference) + '">Record ledger correction…</button>' : "";
+        var fmt = function (v) { return v === null || v === undefined ? "—" : (typeof v === "number" ? F.money(v) : esc(String(v))); };
+        return "<tr><td><b>" + esc(x.check) + "</b></td><td>" + esc(x.order || "—") + "</td><td>" + esc(x.team || "—") + "</td><td>" + esc(x.issue) + '</td><td class="num">' + fmt(x.expected) +
+          '</td><td class="num">' + fmt(x.recorded) + '</td><td class="small">' + esc(x.recommendation || "") + '</td><td class="actions">' + fix + "</td></tr>";
+      }).join("") : '<tr><td colspan="8" class="empty">No issues found — every check passed.</td></tr>';
+    } catch (ex) { JSE.toast(ex.message, "bad", 8000); }
+    finally { $("reconRun").disabled = false; }
+  }
+  $("reconRun").onclick = runRecon;
+  $("reconRows").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-fix]"); if (!b) return;
+    var team = b.getAttribute("data-fix"), gap = b.getAttribute("data-gap");
+    var why = prompt("Reason and approval for recording " + team + "'s missing ledger movement of " + F.money(Math.abs(N(gap))) + " (cash is NOT changed):"); if (!why) return;
+    try { var r = await confirmed({ title: "Ledger correction for " + team, text: "Records " + F.money(Math.abs(N(gap))) + " in the cash ledger only. Cash stays the same.", confirmText: "Record correction" },
+        "/api/reconcile", { kind: "LEDGER_GAP", team: team, expected_gap: gap, reason: why });
+      if (r) { JSE.toast(r.message, "good", 8000); runRecon(); } } catch (ex) { JSE.toast(ex.message, "bad", 8000); }
+  });
+  // ---- institutional inventory (031) ----
+  async function loadInv() {
+    try {
+      var d = await JSE.api.get("/api/institution-inventory"), items = d.items || [];
+      if (!$("ivSym").options.length) $("ivSym").innerHTML = items.map(function (x) { return '<option value="' + esc(x.symbol) + '">' + esc(x.symbol) + " · " + esc(x.name) + "</option>"; }).join("");
+      var cfgd = items.filter(function (x) { return x.configured; });
+      $("ivRows").innerHTML = cfgd.length ? cfgd.map(function (x) { return "<tr><td><b>" + esc(x.symbol) + '</b></td><td class="num">' + F.num(x.quantity) + '</td><td class="num">' + F.num(x.reserved) +
+        '</td><td class="num"><b>' + F.num(x.available) + "</b></td><td class=\"small\">" + esc(x.updated_by || "") + " " + (x.updated_at ? F.datetime(x.updated_at) : "") + "</td></tr>"; }).join("")
+        : '<tr><td colspan="5" class="empty">All companies unlimited.</td></tr>';
+    } catch (ex) {}
+  }
+  async function invAct(action) {
+    var body = { action: action, symbol: $("ivSym").value, quantity: $("ivQty").value, reason: $("ivWhy").value.trim() };
+    if (!body.reason) return JSE.toast("Give a reason.", "warn");
+    try { var r = await confirmed({ title: (action === "SET" ? "Set" : "Remove") + " institutional inventory · " + body.symbol, text: action === "SET" ? body.quantity + " shares" : "Unlimited", confirmText: "Save" }, "/api/institution-inventory", body);
+      if (r) { JSE.toast(r.message, "good"); loadInv(); } } catch (ex) { JSE.toast(ex.message, "bad", 8000); }
+  }
+  $("ivSet").onclick = function () { invAct("SET"); };
+  $("ivUnl").onclick = function () { invAct("UNLIMITED"); };
+  loadInv();
   // ---- lifecycle wiring ----
   document.querySelectorAll("[data-ev]").forEach(function (b) { b.addEventListener("click", function () { eventAction(b.getAttribute("data-ev")); }); });
   $("undoLast").onclick = function () { undoRedo("UNDO"); };

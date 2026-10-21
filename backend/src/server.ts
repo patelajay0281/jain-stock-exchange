@@ -392,6 +392,11 @@ post("/api/loan-requests", async (ctx) => {
   return mutate(ctx, "jse_loan_decide", b, ["q:", "staff:", "pd:", "cash:", "bd:"]);
 });
 post("/api/rename", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_rename_entity", ctx.body || {}, ["q:", "staff:", "inst:", "admin:", "pub:"]); });
+// 031: reconciliation (read-only) and ledger-only corrections; institutional inventory
+get("/api/reconcile", async (ctx) => { need(ctx, "ADMIN", "VIEWER"); return json(ctx, await call("jse_reconcile", actor(ctx), {})); });
+post("/api/reconcile", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_reconcile_correct", ctx.body || {}, ["cash:", "pd:", "staff:", "admin:"]); });
+get("/api/institution-inventory", async (ctx) => { need(ctx, "ADMIN", "VIEWER", "INSTITUTIONAL"); return json(ctx, await call("jse_institution_inventory", actor(ctx), { action: "LIST" })); });
+post("/api/institution-inventory", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_institution_inventory", ctx.body || {}, ["inst:", "admin:"]); });
 
 // ---- ledgers, audit, commissions ----
 get("/api/cash", async (ctx) => {

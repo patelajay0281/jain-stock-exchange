@@ -155,7 +155,7 @@
     }).join("");
     if (symbol && secs.some(function (s) { return s.symbol === symbol && s.tradable; })) $("negSec").value = symbol;
     var chosen = secs.filter(function (s) { return s.symbol === $("negSec").value; })[0];
-    $("negMarketRef").textContent = "Current market reference: " + (chosen ? F.price(chosen.price) : "—");
+    $("negMarketRef").textContent = "Current market reference: " + (chosen ? F.price(chosen.price) + " · allowed agreed price " + F.price(Math.ceil(N(chosen.price) * 0.85)) + " – " + F.price(Math.floor(N(chosen.price) * 1.15)) + " (±15%)" : "—");
     if (chosen && !$("negPrice").dataset.edited) $("negPrice").value = String(Math.round(N(chosen.price)));
     if (chosen) { $("negQty").step = String(chosen.lot_size || 50); $("negQty").min = String(chosen.lot_size || 50); }
   }
@@ -170,6 +170,8 @@
     if (!secObj) return JSE.toast("Select a listed security.", "warn");
     if (!Number.isInteger(qty) || qty <= 0 || qty % (Number(secObj.lot_size) || 50) !== 0) return JSE.toast("Quantity must be a multiple of " + (secObj.lot_size || 50) + ".", "warn");
     if (!Number.isInteger(price) || price <= 0) return JSE.toast("Agreed price must be a positive whole number of rupees.", "warn");
+    var mp = N(secObj.price), lo = Math.ceil(mp * 0.85), hi = Math.floor(mp * 1.15);
+    if (Math.abs(price - mp) > mp * 0.15) return JSE.toast("Agreed price must be within ±15% of the market price " + F.price(mp) + " (allowed " + F.price(lo) + " – " + F.price(hi) + ").", "warn");
     var btn = $("negSubmit"); btn.disabled = true; $("negResult").innerHTML = "";
     try {
       var result = await JSE.api.post("/api/orders", { idempotency_key: negotiatedKey, legs: [

@@ -110,7 +110,7 @@ BEGIN
   RETURN jsonb_build_object('success',true,'cash',t.cash,'account',jsonb_build_object(
     'team_number',t.seq,'team_code',t.code,'display_name',t.name,'broker_number',b.id,'broker_code',b.code,
     'broker_name',b.name,'cash',t.cash,'cash_limit',100000000,'active',t.active,'section',t.section,'members',t.members));
-END $function$
+END $function$;
 
 
 CREATE OR REPLACE FUNCTION public.jse_broker_desk(a jsonb, p jsonb)
@@ -163,7 +163,7 @@ BEGIN
         'awaiting_bank', count(*) FILTER (WHERE status IN ('EXCHANGE_APPROVED', 'BANK_PENDING')),
         'settled', count(*) FILTER (WHERE status = 'BANK_SETTLED'),
         'rejected', count(*) FILTER (WHERE status IN ('PIT_REJECTED', 'EXCHANGE_REJECTED', 'BANK_REJECTED'))) FROM orders WHERE broker_id = b.id));
-END $function$
+END $function$;
 
 
 CREATE OR REPLACE FUNCTION public.jse_institutional(a jsonb, p jsonb)
@@ -202,7 +202,7 @@ BEGIN
        'participants_bought_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'SELL'), 0),
        'participants_sold_value', coalesce(sum(trade_value) FILTER (WHERE status = 'BANK_SETTLED' AND side = 'BUY'), 0),
        'brokerage', coalesce(sum(brokerage) FILTER (WHERE status = 'BANK_SETTLED'), 0)) FROM orders WHERE institution_id = i.id));
-END $function$
+END $function$;
 
 
 INSERT INTO schema_migrations(version) VALUES ('012_big_bull_special_account');
