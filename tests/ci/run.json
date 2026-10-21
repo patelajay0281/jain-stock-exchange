@@ -1,10 +1,11 @@
 {
-  "base": "https://br-lingering-sun-azzfzwj1-jsestage.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "base": "https://br-old-grass-azvo6hbo-jsetest.compute.c-3.ap-southeast-1.aws.neon.tech",
   "site": "https://v272.jse-live.pages.dev",
   "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
   "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
   "suites": [
-    "health"
+    "health",
+    "order_accuracy"
   ],
   "probes": [
     {
@@ -25,7 +26,7 @@
       "viewers": 800
     }
   ],
-  "note": "Edit this file on the v272 branch to start a staging run. Run 15: health only (event data untouched) \u2014 account controls.",
+  "note": "Order-accuracy run against the Neon TEST branch recon-test-2026-10-21 (copy of the event data). Never the live event API.",
   "stress": {
     "orders": 1500,
     "workers": 16
