@@ -27,7 +27,8 @@ function run(name, cmd, args, env = {}, timeoutMin = 30) {
       const failures = [...out.matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1]);
       results.suites[name] = { exit_code: code, duration_s: Math.round((Date.now() - t0) / 1000),
         pass: passM ? Number(passM[1]) : undefined, fail: failM ? Number(failM[1]) : undefined, failures: failures.length ? failures : undefined,
-        tail: out.split("\n").slice(-40).join("\n") };
+        tail: out.split("\n").slice(-40).join("\n"),
+        failure_details: [...out.matchAll(/^not ok \d+ - [^\n]*\n[\s\S]{0,1800}/gm)].map((m) => m[0]) };
       resolve(code);
     });
   });
