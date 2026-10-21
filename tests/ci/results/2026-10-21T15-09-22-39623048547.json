@@ -1,0 +1,66 @@
+{
+  "base": "https://br-old-grass-azvo6hbo-jsetest.compute.c-3.ap-southeast-1.aws.neon.tech",
+  "started_at": "2026-10-21T15:09:22.622Z",
+  "run_id": "39623048547",
+  "commit": "e8b5c55c9ac25db56277af586c28915b42f43535",
+  "config": {
+    "base": "https://br-old-grass-azvo6hbo-jsetest.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "site": "https://v272.jse-live.pages.dev",
+    "prod_base": "https://br-lingering-sun-azzfzwj1-jse.compute.c-3.ap-southeast-1.aws.neon.tech",
+    "probe_url": "https://br-lingering-sun-azzfzwj1-jseprobe.compute.c-3.ap-southeast-1.aws.neon.tech/",
+    "suites": [
+      "health",
+      "order_accuracy"
+    ],
+    "probes": [
+      {
+        "rps": 200,
+        "seconds": 15,
+        "viewers": 300,
+        "pause_s": 5
+      },
+      {
+        "rps": 850,
+        "seconds": 60,
+        "viewers": 600,
+        "pause_s": 10
+      },
+      {
+        "rps": 1200,
+        "seconds": 30,
+        "viewers": 800
+      }
+    ],
+    "note": "Order-accuracy run against the Neon TEST branch copy. Never the live event API.",
+    "stress": {
+      "orders": 1500,
+      "workers": 16
+    }
+  },
+  "suites": {
+    "health": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "service": "JAIN STOCK EXCHANGE API",
+        "version": "3.14.0",
+        "db": "ok",
+        "db_ms": 2,
+        "uptime_s": 1,
+        "node": "v24.16.0",
+        "time": "2026-10-21T15:09:25.281Z"
+      },
+      "ms": 3463,
+      "event_csv_route": 401
+    },
+    "order_accuracy": {
+      "exit_code": 0,
+      "duration_s": 26,
+      "pass": 10,
+      "fail": 0,
+      "tail": "# Subtest: 6 a price change while an order is pending: valid within ±15%, closed beyond it; executes at its own price\nok 6 - 6 a price change while an order is pending: valid within ±15%, closed beyond it; executes at its own price\n  ---\n  duration_ms: 1387.57277\n  type: 'test'\n  ...\n# Subtest: Market News stays inside the permanent ±15% band from the base price\nok 7 - Market News stays inside the permanent ±15% band from the base price\n  ---\n  duration_ms: 4037.799231\n  type: 'test'\n  ...\n# Subtest: negotiated pair price must be within ±15% of the market price\nok 8 - negotiated pair price must be within ±15% of the market price\n  ---\n  duration_ms: 1665.890053\n  type: 'test'\n  ...\n# Subtest: 9 institutional inventory and team holdings move together\nok 9 - 9 institutional inventory and team holdings move together\n  ---\n  duration_ms: 3600.904269\n  type: 'test'\n  ...\n# Subtest: 11/12 reconciliation: no new issues from any of these trades; records intact\nok 10 - 11/12 reconciliation: no new issues from any of these trades; records intact\n  ---\n  duration_ms: 399.237581\n  type: 'test'\n  ...\n1..10\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 26397.504805\n",
+      "failure_details": []
+    }
+  },
+  "finished_at": "2026-10-21T15:09:52.515Z"
+}
