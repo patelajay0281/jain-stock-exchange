@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Participant Portfolios · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/jse.css?v=324">
+<link rel="stylesheet" href="/assets/jse.css?v=325">
 <style>
   .controls { display: grid; grid-template-columns: 260px minmax(0, 1fr) 260px auto; gap: 12px; align-items: end; }
   @media (max-width: 1000px) { .controls { grid-template-columns: 1fr 1fr; } }
@@ -58,9 +58,32 @@
   </section>
 
   <section id="detail" class="hidden" style="margin-top:18px" aria-live="polite"></section>
+
+  <section id="commission" class="hidden" aria-label="Broker Commission">
+  <div class="page-head" style="margin-top:28px;border-top:2px solid var(--line);padding-top:22px">
+    <div><h2 id="bc_h1" style="font-size:24px;margin:0">Broker Commission</h2>
+      <p id="bc_lead">Monitor broker earnings generated from settled market transactions.</p></div>
+    <div class="tools"><span class="pill blue" id="bc_rateTag">Commission rate —</span><span class="conn" id="bc_conn"><span class="dot"></span><span id="bc_connText">Loading…</span></span>
+      <button class="btn primary caps" type="button" id="bc_csvTop">↓ Download commission CSV</button>
+      <button class="btn caps" type="button" id="bc_importSnapshotBtn">Import commission snapshot</button><input id="bc_importSnapshotFile" type="file" accept=".csv,text/csv" hidden></div>
+  </div>
+  <div id="bc_recon" style="margin-bottom:16px"></div>
+  <div class="kpis k5" id="bc_kpis"></div>
+  <section class="card" style="margin-bottom:18px"><div class="card-h bar"><h2 id="bc_rankH">Broker commission summary</h2><span class="meta">Settled transactions only</span></div>
+    <div class="card-b flush"><div class="table-wrap"><table class="t">
+    <thead><tr><th class="num">Rank</th><th>Broker</th><th class="num">Assigned Teams</th><th class="num">Settled trades</th><th class="num">Buy value</th><th class="num">Sell value</th><th class="num">Total trade value</th><th class="num">Commission earned</th><th style="width:16%">Share</th><th class="num">In workflow</th></tr></thead>
+    <tbody id="bc_rank"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div></div></section>
+  <section class="card"><div class="card-h bar navy"><h2>Commission transaction ledger</h2>
+      <div class="toolbar"><label class="sr-only" for="fBroker">Broker</label><select class="input sm hidden" id="bc_fBroker"></select>
+        <button class="btn sm hidden" type="button" id="bc_csv">Download CSV</button></div></div>
+    <div class="card-b flush"><div class="table-wrap"><table class="t">
+    <thead><tr><th>Time</th><th>Broker</th><th>Team</th><th>Transaction</th><th>Stock / IPO</th><th>Side</th><th class="num">Qty @ Price</th><th class="num">Trade value</th><th class="num">Commission rate</th><th class="num">Commission amount</th><th>Status</th></tr></thead>
+    <tbody id="bc_rows"><tr><td colspan="11" class="empty">Loading…</td></tr></tbody></table></div>
+    <div class="pager" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--line-3)"><span class="small muted" id="bc_info"></span><div class="row"><button class="btn sm" id="bc_prev" type="button">← Newer</button><button class="btn sm" id="bc_next" type="button">Older →</button></div></div></div></section>
+  </section>
 </main>
-<script src="/assets/config.js?v=324"></script>
-<script src="/assets/jse.js?v=324"></script>
+<script src="/assets/config.js?v=325"></script>
+<script src="/assets/jse.js?v=325"></script>
 <script>
 (function () {
   "use strict";
@@ -229,7 +252,7 @@
     render(); }); });
   $("exportBtn").onclick = function () { JSE.download("/api/export?sheet=networth", "JSE_networth.csv").catch(function (e) { JSE.toast(e.message, "bad"); }); };
 
-  JSE.page({ id: "portfolios" }).then(function (user) {
+  (window.__jsePage = JSE.page({ id: "portfolios" })).then(function (user) {
     if (!user) return;
     S.user = user;
     JSE.api.get("/api/event-status").then(function (st) { renderRules(st.config); }).catch(function () { renderRules(); });
@@ -245,6 +268,128 @@
     var t = new URLSearchParams(location.search).get("team"); if (t) S.team = t.toUpperCase();
     window.__pfPoll = JSE.poll(loadList, 15000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
     JSE.poll(loadDetail, 15000);
+  });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var F = JSE.fmt, esc = JSE.esc, N = JSE.toNum, $ = function (id) { return document.getElementById(id); };
+  var S = { page: 1, size: 100, broker: "", user: null, brokersLoaded: false };
+  function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
+
+  async function load() {
+    var d = await JSE.api.get("/api/commissions", { broker: S.broker, page: S.page, page_size: S.size });
+    var own = S.user.role === "BROKER", rateTxt = JSE.rate(d.rate);
+    $("bc_rateTag").textContent = "Commission rate " + rateTxt;
+    var rc = d.reconciliation || {};
+    $("bc_recon").innerHTML = rc.ok ? '<div class="alert good"><b>Reconciled.</b> Commission total ' + F.money(rc.commission_total, { dp: 2 }) + " equals the brokerage on settled transactions" + (own || S.broker ? " for this broker." : ".") + "</div>"
+      : '<div class="alert bad"><b>Mismatch:</b> commission total ' + F.money(rc.commission_total, { dp: 2 }) + " vs settled brokerage " + F.money(rc.settled_brokerage_total, { dp: 2 }) + ". Contact the administrator.</div>";
+    var brokers = d.brokers || [], top = brokers[0], max = Math.max(1, brokers.reduce(function (m, b) { return Math.max(m, N(b.brokerage_earned)); }, 0));
+    var ins = d.institutional || { orders: 0, brokerage: 0 };
+    var selectedBroker = brokers.filter(function (b) { return b.broker === S.broker; })[0];
+    var brokerTitle = selectedBroker ? (selectedBroker.display_code || selectedBroker.broker) : S.broker;
+    if (own) {
+      var me = brokers[0] || {};
+      $("bc_kpis").innerHTML = kpi("Your rank", me.rank ? "#" + me.rank : "—", "among all brokers") + kpi("Assigned teams", F.num(me.teams || 0), "") +
+        kpi("Settled trades", F.num(d.totals.orders), (me.buy_orders || 0) + " buy · " + (me.sell_orders || 0) + " sell") + kpi("Institutional brokerage", F.money(ins.brokerage, { dp: 2 }), F.num(ins.orders) + " institutional trade(s)") +
+        kpi("Commission earned", F.money(d.totals.brokerage, { dp: 2 }), "at " + rateTxt, "good");
+    } else {
+      $("bc_kpis").innerHTML = kpi("Settled transactions", F.num(d.totals.orders), S.broker ? "broker " + esc(brokerTitle) : brokers.length + " brokers") +
+        kpi("Trade value", F.money(d.totals.trade_value), "settled") + kpi("Commission", F.money(d.totals.brokerage, { dp: 2 }), "at " + rateTxt, "good") +
+        kpi("Institutional brokerage", F.money(ins.brokerage, { dp: 2 }), F.num(ins.orders) + " institutional counterparty trade(s)") +
+        kpi("Top broker", top && N(top.brokerage_earned) ? esc(top.display_code || top.broker) : "—", top && N(top.brokerage_earned) ? F.money(top.brokerage_earned, { dp: 2 }) : "no commission yet");
+    }
+    $("bc_rank").innerHTML = brokers.length ? brokers.map(function (b) {
+      var officialBroker = b.display_code || b.broker || "";
+      return '<tr><td class="num"><b>' + b.rank + "</b></td><td><b>" + esc(officialBroker) + '</b><span class="sub">' + esc(b.name || "") + '</span></td><td class="num">' + F.num(N(b.teams)) +
+        '</td><td class="num">' + F.num(b.orders) + '<span class="sub">' + b.buy_orders + " buy · " + b.sell_orders + ' sell</span></td><td class="num">' + F.money(b.buy_volume) + '<span class="sub">' + F.num(b.buy_quantity) + ' shares</span></td>' +
+        '<td class="num">' + F.money(b.sell_volume) + '<span class="sub">' + F.num(b.sell_quantity) + ' shares</span></td><td class="num">' + F.money(b.total_trade_value) + '</td><td class="num"><b>' + F.money(b.brokerage_earned, { dp: 2 }) +
+        '</b></td><td><div class="meter"><i style="width:' + (N(b.brokerage_earned) / max * 100).toFixed(1) + '%"></i></div></td><td class="num">' + b.pending_orders + "</td></tr>";
+    }).join("") : '<tr><td colspan="10" class="empty">No brokers.</td></tr>';
+    if (!own && !S.brokersLoaded && brokers.length) {
+      var list = brokers.slice().sort(function (a, b) { return N(a.broker_number) - N(b.broker_number) || ((a.display_code || a.broker) < (b.display_code || b.broker) ? -1 : 1); });
+      $("bc_fBroker").innerHTML = '<option value="">All brokers</option>' + list.map(function (b) { return '<option value="' + esc(b.broker) + '">' + esc((b.display_code || b.broker || "") + " · " + (b.name || "")) + "</option>"; }).join("");
+      $("bc_fBroker").value = S.broker; S.brokersLoaded = true;
+    }
+    var tx = d.transactions || [];
+    $("bc_rows").innerHTML = tx.length ? tx.map(function (t) {
+      var brokerMeta = brokers.filter(function (b) { return b.broker === t.broker; })[0];
+      var brokerLabel = brokerMeta ? (brokerMeta.display_code || brokerMeta.broker) : (t.broker_display_code || t.broker);
+      var brokerSub = brokerMeta ? brokerMeta.name : (t.broker_name || "");
+      return '<tr><td class="nowrap">' + F.datetime(t.created_at) + "</td><td><b>" + esc(brokerLabel) + "</b>" + (brokerSub ? '<span class="sub">' + esc(brokerSub) + "</span>" : "") +
+        "</td><td><b>" + esc(t.team) + '</b><span class="sub">' + esc(t.team_name || "") + "</span></td>" +
+        '<td><a class="mono" href="/orders.html?order=' + encodeURIComponent(t.order_no) + '">' + esc(t.order_no) + "</a>" + (t.account_type === "INSTITUTION" ? ' <span class="tag navy">Institutional</span>' : "") + "</td>" +
+        "<td><b>" + esc(t.security || t.symbol) + '</b><span class="sub">' + esc(t.symbol) + "</span></td><td>" + JSE.badge.side(t.side) + '</td><td class="num">' + F.num(t.quantity) + " @ " + F.price(t.price) +
+        '</td><td class="num">' + F.money(t.trade_value, { dp: 2 }) + '</td><td class="num">' + JSE.rate(t.rate) + '</td><td class="num"><b>' + F.money(t.amount, { dp: 2 }) + "</b></td><td>" +
+        (t.status === "SETTLED" ? '<span class="badge ok">Settled</span>' : '<span class="badge no" title="Reversed by undo">Reversed</span>' + (t.reversed_at ? '<span class="sub">' + F.datetime(t.reversed_at) + "</span>" : "")) + "</td></tr>";
+    }).join("") : '<tr><td colspan="11" class="empty"><b>No commission yet.</b>Commission is recorded when the Bank settles a trade.</td></tr>';
+    var total = N(d.transactions_total), from = (S.page - 1) * S.size + 1, to = from + tx.length - 1;
+    $("bc_info").textContent = tx.length ? from + "–" + to + " of " + F.num(total) + " record(s) (reversed records stay listed for the audit trail)" : "";
+    $("bc_prev").disabled = S.page <= 1; $("bc_next").disabled = to >= total;
+    $("bc_conn").className = "conn"; $("bc_connText").textContent = "Live · " + F.time(new Date()) + " IST";
+  }
+
+
+  // Historical CSV import is deliberately kept separate from live API totals.
+  function parseCSV(text) {
+    var rows=[], row=[], cell="", quoted=false;
+    for (var i=0;i<text.length;i++) {
+      var ch=text[i];
+      if (quoted) { if (ch === '"' && text[i+1] === '"') { cell+='"'; i++; } else if (ch === '"') quoted=false; else cell+=ch; }
+      else if (ch === '"' && cell === "") quoted=true;
+      else if (ch === ",") { row.push(cell); cell=""; }
+      else if (ch === "\n") { row.push(cell.replace(/\r$/, "")); if (row.some(function(v){return v!=="";})) rows.push(row); row=[]; cell=""; }
+      else cell+=ch;
+    }
+    if (cell!=="" || row.length) { row.push(cell.replace(/\r$/, "")); if (row.some(function(v){return v!=="";})) rows.push(row); }
+    if (!rows.length) return [];
+    var headers=rows.shift();
+    return rows.map(function(r){var o={}; headers.forEach(function(h,i){o[h.trim()]=(r[i]||"").trim();}); return o;});
+  }
+  function snapshotCell(v) { return esc(v == null ? "" : String(v)); }
+  function showSnapshot(file) {
+    var reader=new FileReader();
+    reader.onload=function(){
+      var rows=parseCSV(String(reader.result||""));
+      if (!rows.length) { JSE.toast("The selected CSV has no transaction rows.","bad"); return; }
+      var get=function(r,k){return r[k]||"";};
+      var total=rows.reduce(function(a,r){return a+(Number(get(r,"Commission"))||0);},0);
+      var trade=rows.reduce(function(a,r){return a+(Number(get(r,"Trade value"))||0);},0);
+      $("bc_conn").className="conn"; $("bc_connText").textContent="Imported snapshot · "+rows.length+" records";
+      $("bc_rateTag").textContent="CSV snapshot · historical";
+      $("bc_recon").innerHTML='<div class="alert good"><b>Historical CSV snapshot.</b> '+rows.length+' rows loaded from '+snapshotCell(file.name)+'. These figures are separate from live API totals.</div>';
+      $("bc_kpis").innerHTML=kpi("Imported transactions",F.num(rows.length),"CSV snapshot")+kpi("Trade value",F.money(trade,{dp:2}),"CSV snapshot")+kpi("Brokerage total",F.money(total,{dp:2}),"CSV snapshot","good")+kpi("Broker count",F.num(new Set(rows.map(function(r){return get(r,"Broker");})).size),"CSV snapshot")+kpi("Data source","CSV","Not live");
+      $("bc_rank").innerHTML='<tr><td colspan="10" class="empty">Historical snapshot loaded below. Live broker ranking is unchanged.</td></tr>';
+      $("bc_rows").innerHTML=rows.slice().reverse().map(function(r){
+        return '<tr><td class="nowrap">'+snapshotCell(get(r,"Date/time"))+'</td><td><b>'+snapshotCell(get(r,"Broker"))+'</b><span class="sub">'+snapshotCell(get(r,"Broker name"))+'</span></td><td><b>'+snapshotCell(get(r,"Team"))+'</b><span class="sub">'+snapshotCell(get(r,"Team name"))+'</span></td><td><span class="mono">'+snapshotCell(get(r,"Order"))+'</span><span class="sub">'+snapshotCell(get(r,"Counterparty"))+'</span></td><td><b>'+snapshotCell(get(r,"Security"))+'</b></td><td>'+snapshotCell(get(r,"Side"))+'</td><td class="num">'+snapshotCell(get(r,"Quantity"))+' @ '+snapshotCell(get(r,"Price"))+'</td><td class="num">'+F.money(get(r,"Trade value"),{dp:2})+'</td><td class="num">'+snapshotCell(get(r,"Brokerage rate"))+'</td><td class="num"><b>'+F.money(get(r,"Commission"),{dp:2})+'</b></td><td>'+snapshotCell(get(r,"Status"))+'</td></tr>';
+      }).join("");
+      $("bc_info").textContent="Showing "+rows.length+" imported historical records. Live totals are not modified.";
+      $("bc_prev").disabled=true; $("bc_next").disabled=true;
+    };
+    reader.onerror=function(){JSE.toast("Could not read the selected CSV.","bad");};
+    reader.readAsText(file);
+  }
+
+  var poller;
+  window.__jsePage.then(function (u) {
+    if (!u || ["ADMIN", "VIEWER", "BROKER"].indexOf(u.role) < 0) return;
+    $("commission").classList.remove("hidden");
+    if (location.hash === "#commission") setTimeout(function () { $("commission").scrollIntoView(); }, 300);
+    S.user = u;
+    $("bc_importSnapshotBtn").addEventListener("click", function(){ $("bc_importSnapshotFile").click(); });
+    $("bc_importSnapshotFile").addEventListener("change", function(e){ if(e.target.files && e.target.files[0]) showSnapshot(e.target.files[0]); });
+    if (u.role === "BROKER") {
+      $("bc_rankH").textContent = "Broker commission summary · " + (u.broker || "your desk"); $("bc_csvTop").classList.add("hidden");
+    } else {
+      $("bc_fBroker").classList.remove("hidden"); $("bc_csv").classList.remove("hidden");
+      $("bc_fBroker").addEventListener("change", function () { S.broker = $("bc_fBroker").value; S.page = 1; poller.now(); });
+      $("bc_csvTop").addEventListener("click", function () { $("bc_csv").click(); });
+      $("bc_csv").addEventListener("click", function () { JSE.download("/api/export?sheet=commission", "JSE_commission.csv").catch(function (e) { JSE.toast(e.message, "bad"); }); });
+    }
+    $("bc_prev").onclick = function () { if (S.page > 1) { S.page--; poller.now(); } };
+    $("bc_next").onclick = function () { S.page++; poller.now(); };
+    poller = JSE.poll(load, 15000, { onError: function (e) { var msg = (e && e.message) ? e.message : "Unknown API error"; $("bc_conn").className = "conn down"; $("bc_connText").textContent = "Load failed"; $("bc_rateTag").textContent = "Commission rate unavailable"; $("bc_rank").innerHTML = '<tr><td colspan="10" class="empty"><b>Could not load commission data.</b><br>' + esc(msg) + '<br><button class="btn sm" type="button" id="retryCommission">Retry</button></td></tr>'; $("bc_rows").innerHTML = '<tr><td colspan="11" class="empty"><b>Could not load transaction ledger.</b><br>' + esc(msg) + '</td></tr>'; var retry = $("retryCommission"); if (retry) retry.onclick = function () { poller.now(); }; } });
   });
 })();
 </script>
