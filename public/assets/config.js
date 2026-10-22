@@ -11,7 +11,8 @@
     pick = sessionStorage.getItem("jse_api");
   } catch (e) {}
   var api;
-  if (host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host)) api = STAGE;
+  // Both public sites use the event API/database (jse_stage) where the Dalal Street 2026 event and all fixes live.
+  if (host === "jse-live.pages.dev" || /\.jse-live\.pages\.dev$/.test(host) || host === "jain-stock-exchange.pages.dev" || /\.jain-stock-exchange\.pages\.dev$/.test(host)) api = STAGE;
   else if (pick === "stage") api = STAGE;
   else if (pick === "prod") api = PROD;
   else if (pick === "local") api = "";
