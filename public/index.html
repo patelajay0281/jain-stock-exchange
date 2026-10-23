@@ -184,5 +184,26 @@
   });
 })();
 </script>
+<script>
+(function () {
+  function removeBrokerCommissionOption() {
+    document.querySelectorAll("select").forEach(function (select) {
+      Array.prototype.slice.call(select.options).forEach(function (option) {
+        if ((option.textContent || "").trim().toLowerCase() === "broker commission" ||
+            /commission/i.test(option.value || "")) {
+          option.remove();
+        }
+      });
+      if (select.selectedIndex < 0 && select.options.length) select.selectedIndex = 0;
+    });
+    document.querySelectorAll("a").forEach(function (link) {
+      if ((link.textContent || "").trim().toLowerCase() === "broker commission" ||
+          /commission/i.test(link.getAttribute("href") || "")) link.remove();
+    });
+  }
+  removeBrokerCommissionOption();
+  new MutationObserver(removeBrokerCommissionOption).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
 </body>
 </html>
