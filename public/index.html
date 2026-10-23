@@ -80,7 +80,7 @@
   <p class="sr-only" id="disc"></p>
 </main>
 <script src="/assets/config.js?v=325"></script>
-<script src="/assets/jse.js?v=326"></script>
+<script src="/assets/jse.js?v=327"></script>
 <script>
 (function () {
   "use strict";
@@ -150,7 +150,7 @@
     var nav = document.querySelector(".nav");
     var navIn = nav && nav.querySelector(".nav-in");
     if (!navIn || document.getElementById("marketNavSelect")) return;
-    var links = Array.prototype.slice.call(navIn.querySelectorAll("a"));
+    var links = Array.prototype.slice.call(navIn.querySelectorAll("a")).filter(function (link) { return link.textContent.trim() !== "Broker Commission" && !/commission/i.test(link.getAttribute("href") || ""); });
     if (!links.length) return;
     var wrap = document.createElement("div");
     wrap.className = "market-nav-wrap";
