@@ -1,7 +1,7 @@
-/commissions.html /portfolios.html#commission 301
-/commissions /portfolios.html#commission 301
-/broker-commission.html /portfolios.html#commission 301
-/broker-commission /portfolios.html#commission 301
+/commissions.html /portfolios.html 301
+/commissions /portfolios.html 301
+/broker-commission.html /portfolios.html 301
+/broker-commission /portfolios.html 301
 # Old page addresses from earlier versions of the site
 /admin-live-v10.html /admin.html 301
 /admin-live-v10 /admin.html 301
@@ -55,14 +55,14 @@
 /cash-live-v4 /cash.html 301
 /certificates-v2.html /portfolios.html 301
 /certificates-v2 /portfolios.html 301
-/commissions-live-v2.html /portfolios.html#commission 301
-/commissions-live-v2 /portfolios.html#commission 301
-/commissions-live-v3.html /portfolios.html#commission 301
-/commissions-live-v3 /portfolios.html#commission 301
-/commissions-live-v4.html /portfolios.html#commission 301
-/commissions-live-v4 /portfolios.html#commission 301
-/commissions-live-v5.html /portfolios.html#commission 301
-/commissions-live-v5 /portfolios.html#commission 301
+/commissions-live-v2.html /portfolios.html 301
+/commissions-live-v2 /portfolios.html 301
+/commissions-live-v3.html /portfolios.html 301
+/commissions-live-v3 /portfolios.html 301
+/commissions-live-v4.html /portfolios.html 301
+/commissions-live-v4 /portfolios.html 301
+/commissions-live-v5.html /portfolios.html 301
+/commissions-live-v5 /portfolios.html 301
 /exchange-live-v2.html /exchange.html 301
 /exchange-live-v2 /exchange.html 301
 /exchange-live-v3.html /exchange.html 301
