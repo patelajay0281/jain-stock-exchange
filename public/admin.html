@@ -173,6 +173,50 @@ body.admin-command-page [data-scroll]{scroll-margin-top:24px}
 @media(max-width:760px){body.admin-command-page .cmd-hero{grid-template-columns:minmax(0,1fr);padding:22px 18px 0}body.admin-command-page .cmd-orbit{position:absolute;right:-26px;top:12px;width:100px;height:100px;opacity:.22}body.admin-command-page .cmd-core{width:65px;height:65px}body.admin-command-page .cmd-core span{font-size:14px}body.admin-command-page .cmd-hero-footer{margin:0 -18px;padding:12px 18px;gap:8px 16px}body.admin-command-page .cmd-nav .cmd-refresh{margin-left:0}body.admin-command-page .cmd-meta-item{width:calc(50% - 12px)}body.admin-command-page .cmd-guard-grid{grid-template-columns:minmax(0,1fr)}body.admin-command-page .cmd-mover-row{grid-template-columns:65px minmax(0,1fr) 58px;gap:8px}body.admin-command-page .cmd-person{grid-template-columns:90px minmax(0,1fr) 67px;gap:7px}}
 </style>
 
+<style>
+/* Bright operations theme — pearl white surfaces, blue ink, teal/violet accents. */
+body.admin-command-page{--cmd-bg:#f1f6fb;--cmd-card:#fff;--cmd-line:#d8e4ee;--cmd-text:#183650;--cmd-muted:#687f94;--cmd-cyan:#087f8c;--cmd-lime:#17866b;--cmd-violet:#6c63b5;background:radial-gradient(ellipse at 8% -5%,rgba(61,135,205,.12),transparent 35%),radial-gradient(ellipse at 100% 0%,rgba(25,159,133,.09),transparent 30%),linear-gradient(180deg,#f7faff 0,#eff4f9 100%);color:#183650;font-family:"Inter","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body.admin-command-page::before{opacity:.12;background-image:linear-gradient(rgba(88,124,157,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(88,124,157,.10) 1px,transparent 1px);background-size:32px 32px}
+body.admin-command-page .hd,body.admin-command-page .nav,body.admin-command-page .cmd-nav{background:rgba(255,255,255,.94);border-color:#d8e4ee}
+body.admin-command-page .wordmark,body.admin-command-page .page-head h1,body.admin-command-page .card-h h2,body.admin-command-page .card-h h3{color:#173c5b}
+body.admin-command-page .env-pill{background:#e0f5f0;color:#087566;border-color:#afded3}
+body.admin-command-page .tb-btn,body.admin-command-page .nav a,body.admin-command-page .btn{background:#fff;color:#365670;border-color:#d4e1eb;box-shadow:0 2px 6px rgba(23,48,76,.035)}
+body.admin-command-page .tb-btn:hover,body.admin-command-page .nav a:hover,body.admin-command-page .btn:hover{background:#eef7fb;color:#124663;border-color:#89c5cc}
+body.admin-command-page .tb-btn.dark,body.admin-command-page .btn.primary,body.admin-command-page .cmd-nav .cmd-refresh,body.admin-command-page .nav a[aria-current=page]{background:linear-gradient(115deg,#0b748b,#159982);color:#fff;border-color:#0b748b;box-shadow:0 4px 13px rgba(10,122,139,.12)}
+body.admin-command-page .page-head{border-bottom-color:#d8e4ee}body.admin-command-page .page-head p,body.admin-command-page .meta,body.admin-command-page .small.muted,body.admin-command-page .muted{color:#687f94}
+body.admin-command-page .conn{color:#3d657b;background:#fff;border-color:#d0dfe9}body.admin-command-page .conn .dot{background:#169c81;box-shadow:0 0 8px rgba(22,156,129,.25)}
+body.admin-command-page .kpi,body.admin-command-page .card{color:#183650;background:linear-gradient(145deg,#fff,#f8fbfd);border-color:#d7e2ed;box-shadow:0 7px 23px rgba(23,48,76,.05)}
+body.admin-command-page .kpi .k,body.admin-command-page .kpi .s{color:#72879b}body.admin-command-page .kpi .v{color:#173f5e;font-weight:900}
+body.admin-command-page .kpi.good .v{color:#13815f}body.admin-command-page .kpi.bad .v{color:#c64053}body.admin-command-page .kpi.warn .v{color:#a96815}body.admin-command-page .kpi.info .v{color:#087f8c}body.admin-command-page .kpi.accent .v{color:#6557a7}
+body.admin-command-page .card-h{background:linear-gradient(100deg,#f0f6fb,#f9fbfd);border-bottom-color:#dce6ef}body.admin-command-page .card-h.bar h2:before,body.admin-command-page .card-h.bar h3:before{background:#0f8c96}
+body.admin-command-page .input,body.admin-command-page select.input,body.admin-command-page textarea.input,body.admin-command-page .modal .input{color:#193b59;background:#fff;border-color:#cbdbe8;box-shadow:inset 0 1px 2px rgba(23,48,76,.035)}
+body.admin-command-page .input:focus{border-color:#12949c;box-shadow:0 0 0 3px rgba(18,148,156,.12)}body.admin-command-page .input::placeholder{color:#8ca0b4}body.admin-command-page .field label,body.admin-command-page .label{color:#526c85;font-weight:750}
+body.admin-command-page .pill{background:#eef4f8;color:#4a6178;border-color:#d1dee9}body.admin-command-page .pill.live{color:#12694f;background:#e5f8ef;border-color:#b7e5cf}body.admin-command-page .pill.closed,body.admin-command-page .pill.finalized{color:#b3374b;background:#fff0f1;border-color:#f1c5cb}body.admin-command-page .pill.paused,body.admin-command-page .pill.settlement{color:#9a6312;background:#fff6e6;border-color:#f0d9a7}
+body.admin-command-page .tag,body.admin-command-page .meta-row,body.admin-command-page .pager{color:#496d89;background:#f0f6fa;border-color:#d6e2ec}body.admin-command-page .tag.red,body.admin-command-page .badge.no,body.admin-command-page .alert.bad{color:#ad3549;background:#fff0f2;border-color:#efc7cd}body.admin-command-page .tag.clear,body.admin-command-page .badge.ok,body.admin-command-page .alert.good{color:#147253;background:#e7f7ee;border-color:#bee6d0}body.admin-command-page .alert.warn{color:#94601a;background:#fff6e6;border-color:#efd9aa}
+body.admin-command-page .rule.key,body.admin-command-page .rules,body.admin-command-page .alert{color:#34536d;background:#f4f8fb;border-color:#d7e3ed}body.admin-command-page .alert.info{color:#106c7e;background:#eaf7fb;border-color:#bddfe9}
+body.admin-command-page table.t th{color:#4f6c86;background:#f0f6fa;border-bottom-color:#d8e3ec}body.admin-command-page table.t td{color:#31516d;border-bottom-color:#e7eef4}body.admin-command-page table.t tbody tr:hover td{background:#f4f9fc}body.admin-command-page table.t td b{color:#173c5b}body.admin-command-page .table-wrap{border-color:#d6e1eb}
+body.admin-command-page .modal-back{background:rgba(25,49,72,.42)}body.admin-command-page .modal{color:#193d5b;background:#fff;border-color:#cddde8;box-shadow:0 24px 70px rgba(30,60,85,.20)}body.admin-command-page .modal-h{color:#183c5a;background:#f1f7fb;border-color:#d2e1eb}body.admin-command-page .modal-b{color:#3f5d77}
+body.admin-command-page .moods button{color:#31536e;background:#fff;border-color:#d0dee8}body.admin-command-page .moods button.neg{color:#b53d50;border-color:#e7c5cb}body.admin-command-page .moods button.pos{color:#147b5b;border-color:#bde3d0}body.admin-command-page .moods button[aria-pressed=true]{background:linear-gradient(120deg,#0e7890,#19a287);color:#fff;border-color:#0e7890}body.admin-command-page .moods button[aria-pressed=true] small{color:#dff7f3}
+body.admin-command-page .cfg-grid .check{padding:10px 12px;background:#f5f9fc;border:1px solid #d7e3ed;border-radius:10px}body.admin-command-page input[type=checkbox]{accent-color:#0c8d93}body.admin-command-page .mi .box{background:#f6f9fc;border-color:#d6e3ed}body.admin-command-page .mi .box h4{color:#6a8298}body.admin-command-page .mi .box .v{color:#173a59}
+body.admin-command-page .danger{background:#fff2ed;border-color:#e4b8aa}body.admin-command-page .j-undone td{color:#9aaabe}
+body.admin-command-page .cmd-hero{background:radial-gradient(ellipse at 85% 0%,rgba(122,125,214,.12),transparent 35%),radial-gradient(ellipse at 12% 100%,rgba(17,161,142,.10),transparent 37%),linear-gradient(116deg,#fff,#f0f8fb 62%,#f4f3fc);border-color:#d2e2ed;box-shadow:0 15px 40px rgba(30,66,95,.08)}body.admin-command-page .cmd-hero:after{opacity:.35;background-image:linear-gradient(rgba(88,128,159,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(88,128,159,.08) 1px,transparent 1px)}
+body.admin-command-page .cmd-eyebrow,body.admin-command-page .cmd-kicker,body.admin-command-page .cmd-index{color:#087f8c}body.admin-command-page .cmd-hero h2{color:#173e5d}body.admin-command-page .cmd-hero h2 em{color:#138b78}body.admin-command-page .cmd-hero p{color:#617991}
+body.admin-command-page .cmd-status-chip{background:#e9f8f5;color:#087568;border-color:#b7ded9}body.admin-command-page .cmd-status-chip.live{color:#14704f;border-color:#bde4ce;background:#e8f8ef}body.admin-command-page .cmd-status-chip.closed{color:#ae3548;border-color:#efc5cc;background:#fff0f2}body.admin-command-page .cmd-status-chip.paused{color:#9a6414;border-color:#edd8a8;background:#fff6e4}
+body.admin-command-page .cmd-meta-item{color:#71869b}body.admin-command-page .cmd-meta-item b{color:#1c4563}body.admin-command-page .cmd-meta-item strong{color:#138b78}body.admin-command-page .cmd-hero-footer{border-top-color:#d8e6ef;background:rgba(236,246,250,.78)}body.admin-command-page .cmd-hero-footer span{color:#6e869c}body.admin-command-page .cmd-hero-footer b{color:#315a74}
+body.admin-command-page .cmd-ring{border-color:rgba(14,126,145,.27)}body.admin-command-page .cmd-ring.ring-one{border-color:rgba(107,97,184,.3)}body.admin-command-page .cmd-ring.ring-two{border-color:rgba(22,132,106,.3)}body.admin-command-page .cmd-core{border-color:#b8d6df;background:radial-gradient(circle at 35% 25%,#fff,#dfedf4 70%);box-shadow:0 0 30px rgba(11,126,143,.08)}body.admin-command-page .cmd-core span{color:#194b66}body.admin-command-page .cmd-core b{color:#16846a}
+body.admin-command-page .cmd-nav{background:rgba(255,255,255,.92);border-color:#d7e2ec;box-shadow:0 3px 12px rgba(23,48,76,.035)}body.admin-command-page .cmd-nav-label{color:#7a8fa4}body.admin-command-page .cmd-nav button{color:#4d6882}body.admin-command-page .cmd-nav button:hover{color:#0d4665;background:#eef7fa;border-color:#c4e0e7}body.admin-command-page .cmd-nav .cmd-recon{background:#e9f4fb;color:#17647e;border-color:#c5dfea}
+body.admin-command-page .cmd-heading h2{color:#193f5d}body.admin-command-page .cmd-stream{color:#7890a5}body.admin-command-page .cmd-panel{background:linear-gradient(145deg,#fff,#f9fcfe);border-color:#d7e2ec;box-shadow:0 8px 24px rgba(23,48,76,.045)}body.admin-command-page .cmd-panel-head h3{color:#1a4160}body.admin-command-page .cmd-panel-head p{color:#6b8095}body.admin-command-page .cmd-tag{color:#56738d;background:#f0f6fa;border-color:#d6e2ec}
+body.admin-command-page .cmd-legend,body.admin-command-page .cmd-empty{color:#7890a6}body.admin-command-page .cmd-mover-row{border-bottom-color:#e6edf3}body.admin-command-page .cmd-symbol{color:#244c6b}body.admin-command-page .cmd-track,body.admin-command-page .cmd-pipe-track,body.admin-command-page .cmd-person-track{background:#e7eff5}body.admin-command-page .cmd-fill.up{background:linear-gradient(90deg,#3d9b82,#16846a)}body.admin-command-page .cmd-fill.down{background:linear-gradient(90deg,#d15d6d,#ef8c91)}body.admin-command-page .cmd-move-value.up{color:#12805e}body.admin-command-page .cmd-move-value.down{color:#c53d52}body.admin-command-page .cmd-move-value.flat{color:#728ba1}
+body.admin-command-page .cmd-pipe-label,body.admin-command-page .cmd-risk-label{color:#5e7891}body.admin-command-page .cmd-pipe-fill,body.admin-command-page .cmd-person-fill{background:linear-gradient(90deg,#4f8dc1,#138c9b)}body.admin-command-page .cmd-pipe-fill.done{background:linear-gradient(90deg,#63b79b,#16846a)}body.admin-command-page .cmd-pipe-fill.risk{background:linear-gradient(90deg,#d15d6d,#c33750)}body.admin-command-page .cmd-pipe-num,body.admin-command-page .cmd-person-value{color:#244866}body.admin-command-page .cmd-person-name{color:#355a77}
+body.admin-command-page .cmd-risk-row{border-color:#dbe5ed;background:#f8fbfd}body.admin-command-page .cmd-risk-count{color:#16846a}body.admin-command-page .cmd-risk-row.alerted .cmd-risk-count{color:#c53d52}body.admin-command-page .cmd-rule-note{border-left-color:#d04a5d;background:#fff5f5}body.admin-command-page .cmd-rule-note b{color:#b63b4e}body.admin-command-page .cmd-rule-note span{color:#6d8195}
+body.admin-command-page .cmd-inline-btn{border-color:#d3cfee;background:#f3f1fd;color:#554b9a}body.admin-command-page .cmd-guard{border-color:#dce6ee;background:#f7fafc}body.admin-command-page .cmd-guard-label{color:#738ba0}body.admin-command-page .cmd-guard-value{color:#244c6a}body.admin-command-page .cmd-guard-value.locked{color:#bd3b50}body.admin-command-page .cmd-guard-value.enabled{color:#16846a}body.admin-command-page .cmd-guard-value.disabled{color:#9b6719}
+body.admin-command-page .cfg-toolbar{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:12px}body.admin-command-page .cfg-tool-group{display:flex;align-items:end;gap:8px;flex-wrap:wrap}body.admin-command-page .cfg-tool-group .input{min-width:210px;width:auto;max-width:300px}body.admin-command-page .cfg-tool-label{display:block;color:#526d85;font-size:11px;font-weight:800;margin-bottom:6px}body.admin-command-page .cfg-file-label{display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+body.admin-command-page .cfg-draft-state,body.admin-command-page .cfg-validation{font-size:11px;color:#48667e;background:#f7fafc;border:1px solid #dce6ee;border-radius:8px;padding:8px 10px;margin:0 0 10px}body.admin-command-page .cfg-draft-state.dirty{color:#80571a;background:#fff7e8;border-color:#ecd6a7}body.admin-command-page .cfg-validation.is-ok{color:#17694f;background:#ecf8f1;border-color:#c2e8d3}body.admin-command-page .cfg-validation.is-error{color:#a43144;background:#fff1f2;border-color:#efc6cc}
+body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-size:10px;font-weight:950;letter-spacing:.13em;text-transform:uppercase;padding:12px 0 6px;border-bottom:1px solid #dce8ef;margin-top:3px}body.admin-command-page .cfg-fixed{padding:10px 12px;background:#f4f7fa;border:1px dashed #d5e1eb;border-radius:8px}body.admin-command-page .cfg-fixed .small{color:#61778c;display:block;line-height:1.55}
+@media(max-width:1100px){body.admin-command-page .cfg-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){body.admin-command-page .cfg-grid{grid-template-columns:minmax(0,1fr)}body.admin-command-page .cfg-tool-group,body.admin-command-page .cfg-tool-group .input{width:100%;max-width:none}body.admin-command-page .cfg-tool-actions .btn,body.admin-command-page .cfg-tool-actions .cfg-file-label{flex:1}}
+
+</style>
+
 </head>
 <body class="admin-command-page">
 <main id="main" class="wrap wide">
@@ -392,10 +436,18 @@ body.admin-command-page [data-scroll]{scroll-margin-top:24px}
     <section class="card" id="configPanel">
       <div class="card-h bar navy"><h2>Rules &amp; configuration</h2><span class="meta" id="cfgUpd"></span></div>
       <div class="card-b">
+        <div class="cfg-toolbar">
+          <div class="cfg-tool-group"><div><label class="cfg-tool-label" for="cfgPreset">Draft preset</label><select class="input" id="cfgPreset">
+            <option value="">Choose a draft preset…</option><option value="saved">Reload last-saved settings</option><option value="balanced">Balanced event profile</option><option value="risk">Conservative risk profile</option><option value="noLoans">No borrowing profile</option>
+          </select></div><button class="btn sm" id="cfgApplyPreset" type="button">Apply to draft</button></div>
+          <div class="cfg-tool-group cfg-tool-actions"><button class="btn sm" id="cfgValidate" type="button">Validate draft</button><button class="btn sm" id="cfgExport" type="button">Export JSON</button><label class="btn sm cfg-file-label" for="cfgImportFile">Import JSON</label><input id="cfgImportFile" type="file" accept="application/json,.json" hidden><button class="btn sm" id="cfgResetDraft" type="button">Discard draft</button></div>
+        </div>
+        <div id="cfgDraftState" class="cfg-draft-state" role="status" aria-live="polite">Loading saved configuration…</div>
+        <div id="cfgValidation" class="cfg-validation" role="status" aria-live="polite">Configuration values will be checked before save.</div>
         <div class="cfg-grid" id="cfg"></div>
-        <div class="row admin-only" style="margin-top:14px"><button class="btn primary sm caps" id="cfgSave" type="button">Save configuration…</button><span class="small muted">The saved configuration is the single source of truth for every page and rule.</span></div>
+        <div class="row admin-only" style="margin-top:14px"><button class="btn primary sm caps" id="cfgSave" type="button">Validate &amp; save configuration…</button><span class="small muted">Saving requires the Event Admin password. Presets and imports only edit the draft until saved.</span></div>
         <div class="rule key" style="margin-top:14px" id="cfgCashRule"></div>
-        <p class="small muted" style="margin:10px 0 0">Live rules · password-confirmed changes are saved centrally. Brokerage is controlled by the configured event rate. No minimum cash buffer. Institutional orders use the configured spread from the live market price; participant-side settlement rules still apply. Short selling remains locked off by the settlement engine.</p>
+        <p class="small muted" style="margin:10px 0 0">The controls above map to existing database-backed settings. Engine safety rules remain fixed: no short selling, no participant self-entry, no minimum cash buffer, and IPO allocation lot size is separate from regular share trading. Changes are audit logged.</p>
       </div>
     </section>
 
@@ -493,12 +545,35 @@ body.admin-command-page [data-scroll]{scroll-margin-top:24px}
     ["orders", "Order Tracking"], ["rejected", "Rejected Orders"], ["trades", "Trade History"], ["ledger", "Cash Ledger"],
     ["commission", "Broker Commission"], ["institutional", "Institutional Investors"], ["ipo_allotments", "IPO Allotments (import template)"],
     ["news", "Market News"], ["prices", "Price History"], ["journal", "Action Journal"], ["audit", "Audit Logs"]];
-  var CFG = [["max_price_move_pct", "Automated price changer cap % (unchanged by news)", "number"], ["brokerage_rate", "Brokerage %", "pct"], ["max_order_value", "Maximum order value (₹)", "number"],
-    ["cash_rule_limit", "Closing cash limit (₹) — closing criterion", "number"], ["initial_capital", "Starting capital per team (₹)", "number"], ["loan_max_principal", "Maximum loan principal (₹)", "number"],
-    ["loan_interest_rate", "Loan interest %", "pct"], ["min_buy_trades", "Minimum settled BUY trades", "int"], ["min_sell_trades", "Minimum settled SELL trades", "int"],
-    ["min_order_value", "Minimum order value (₹) — no minimum", "number"], ["event_name", "Event name", "text"],
-    ["loans_enabled", "Borrowing", "bool"], ["auto_loan_on_settlement", "Auto Bank Loan", "bool"], ["_self_entry", "Participant Self Entry: disabled (orders are created by brokers)", "fixed"], ["_short_sell", "Short selling: prohibited by settlement engine (negative holdings are blocked)", "fixed"], ["_trade_lots", "Regular trade quantity: configured stock lot size; IPO allotment is separate", "fixed"], ["_news_guardrail", "Market News: at most 10% per move, within the ±15% base-price band", "fixed"], ["_inst_restr", "Institutional Restrictions: no institution cash or holdings cap; participant settlement checks remain", "fixed"], ["loan_repayment_required", "Full loan repayment required for eligibility", "bool"],
-    ["auto_list_ipos", "IPOs list at START EVENT (IPO reveal)", "bool"]];
+  // Settings listed here are accepted by the live jse_update_config database function.
+  // Fixed engine guardrails are displayed separately and never submitted as editable values.
+  var CFG = [
+    ["event_name", "Event name", "text", "EVENT SETUP"],
+    ["event_start_at", "Scheduled event start (India time)", "datetime", "EVENT SETUP"],
+    ["initial_capital", "Starting capital per team (₹)", "number", "EVENT SETUP"],
+    ["institutional_cash", "Starting institutional cash (₹)", "number", "EVENT SETUP"],
+    ["brokerage_rate", "Brokerage (%)", "pct", "TRADING RULES"],
+    ["min_order_value", "Minimum order value (₹)", "number", "TRADING RULES"],
+    ["max_order_value", "Maximum order value per order (₹)", "number", "TRADING RULES"],
+    ["max_price_move_pct", "Automated price movement cap (%)", "number", "TRADING RULES"],
+    ["cash_rule_limit", "Maximum closing cash for eligibility (₹)", "number", "ELIGIBILITY"],
+    ["min_buy_trades", "Minimum settled BUY trades", "int", "ELIGIBILITY"],
+    ["min_sell_trades", "Minimum settled SELL trades", "int", "ELIGIBILITY"],
+    ["loan_max_principal", "Maximum loan principal per team (₹)", "number", "BANK & LOANS"],
+    ["loan_interest_rate", "Loan interest (%)", "pct", "BANK & LOANS"],
+    ["loans_enabled", "Allow participant borrowing", "bool", "BANK & LOANS"],
+    ["auto_loan_on_settlement", "Automatically release approved loan on settlement", "bool", "BANK & LOANS"],
+    ["loan_repayment_required", "Require full loan repayment for eligibility", "bool", "BANK & LOANS"],
+    ["institution_overdraft", "Permit institutional cash overdraft", "bool", "INSTITUTIONAL DESK"],
+    ["institution_brokerage", "Charge brokerage on institutional orders", "bool", "INSTITUTIONAL DESK"],
+    ["ipo_application_hours", "IPO application window (hours)", "number", "IPO & LISTING"],
+    ["auto_list_ipos", "Reveal IPOs automatically when event starts", "bool", "IPO & LISTING"],
+    ["_self_entry", "Participant order entry: disabled; orders are created by brokers", "fixed", "FIXED ENGINE GUARDRAILS"],
+    ["_short_sell", "Short selling: prohibited; negative participant holdings are blocked", "fixed", "FIXED ENGINE GUARDRAILS"],
+    ["_trade_lots", "Regular trade lot size is enforced by settlement engine; IPO lots are separate", "fixed", "FIXED ENGINE GUARDRAILS"],
+    ["_news_guardrail", "Market news moves are capped at 10% per event and constrained by the ±15% base-price band", "fixed", "FIXED ENGINE GUARDRAILS"],
+    ["_inst_restr", "Institutional cash/holdings are uncapped; participant cash and holdings checks still apply", "fixed", "FIXED ENGINE GUARDRAILS"]
+  ];
 
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
   function istLocal(ts) { if (!ts) return ""; var d = new Date(new Date(ts).getTime() + 5.5 * 3600000); return d.toISOString().slice(0, 16); }
@@ -645,18 +720,26 @@ body.admin-command-page [data-scroll]{scroll-margin-top:24px}
     if (!$("cfg").children.length) renderConfig(d.config_full || {});
   }
 
+  function cfgInputLimit(key) {
+    var limits={brokerage_rate:{min:"0",max:"99.99"},loan_interest_rate:{min:"0",max:"99.99"},max_price_move_pct:{min:"0.01",max:"10"},min_order_value:{min:"0"},max_order_value:{min:"1"},initial_capital:{min:"0.01"},institutional_cash:{min:"0"},cash_rule_limit:{min:"0"},loan_max_principal:{min:"0"},min_buy_trades:{min:"0"},min_sell_trades:{min:"0"},ipo_application_hours:{min:"0"}};
+    var l=limits[key]||{};return (l.min!==undefined?' min="'+l.min+'"':"")+(l.max!==undefined?' max="'+l.max+'"':"");
+  }
   function renderConfig(cfg) {
-    $("cfg").innerHTML = CFG.map(function (f) {
-      var k = f[0], v = cfg[k];
-      if (f[2] === "fixed") return '<div class="field"><span class="small" style="padding:10px 0;display:block"><b>' + esc(f[1].split(":")[0]) + "</b>:" + esc(f[1].split(":").slice(1).join(":")) + "</span></div>";
-      if (f[2] === "bool") return '<label class="check field"><span><input type="checkbox" data-cfg="' + k + '"' + (v ? " checked" : "") + "> " + esc(f[1]) + "</span></label>";
-      if (f[2] === "datetime") return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + k + '" type="datetime-local" value="' + esc(istLocal(v)) + '"></div>';
-      var shown = f[2] === "pct" ? +(N(v) * 100).toFixed(4) : v;
-      return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + k + '" type="' + (f[2] === "text" ? "text" : "number") + '" step="' + (f[2] === "int" ? "1" : "any") + '" value="' + esc(shown) + '"></div>';
+    var previousGroup="";
+    $("cfg").innerHTML=CFG.map(function(f){
+      var k=f[0],v=cfg[k],group=f[3]||"",prefix=group&&group!==previousGroup?'<div class="cfg-section-title">'+esc(group)+'</div>':"";
+      previousGroup=group;var html="";
+      if(f[2]==="fixed")html='<div class="field cfg-fixed"><span class="small"><b>'+esc(f[1].split(":")[0])+"</b>:"+esc(f[1].split(":").slice(1).join(":"))+"</span></div>";
+      else if(f[2]==="bool")html='<label class="check field"><span><input type="checkbox" data-cfg="'+k+'"'+(v?" checked":"")+"> "+esc(f[1])+"</span></label>";
+      else if(f[2]==="datetime")html='<div class="field"><label for="cfg_'+k+'">'+esc(f[1])+'</label><input class="input" id="cfg_'+k+'" data-cfg="'+k+'" type="datetime-local" value="'+esc(istLocal(v))+'"></div>';
+      else{var shown=f[2]==="pct"?+(N(v)*100).toFixed(4):(v===null||v===undefined?"":v);html='<div class="field"><label for="cfg_'+k+'">'+esc(f[1])+'</label><input class="input" id="cfg_'+k+'" data-cfg="'+k+'" type="'+(f[2]==="text"?"text":"number")+'" step="'+(f[2]==="int"?"1":"any")+'"'+cfgInputLimit(k)+' value="'+esc(shown)+'"></div>';}
+      return prefix+html;
     }).join("");
-    $("cfgUpd").textContent = cfg.updated_by ? "last changed by " + cfg.updated_by + " " + F.datetime(cfg.updated_at) : "";
-    $("cfgCashRule").innerHTML = "<b>₹1,00,000 maximum closing cash criterion</b>" + esc(JSE.cashRuleText(cfg.cash_rule_limit));
-    if (!S.admin) $("cfg").querySelectorAll("input").forEach(function (i) { i.disabled = true; });
+    $("cfgUpd").textContent=cfg.updated_by?"Last saved by "+cfg.updated_by+" · "+F.datetime(cfg.updated_at):"No saved-change metadata returned";
+    $("cfgCashRule").innerHTML="<b>"+esc(F.money(N(cfg.cash_rule_limit))+" closing cash criterion")+"</b> "+esc(JSE.cashRuleText(cfg.cash_rule_limit));
+    if(!S.admin)$("cfg").querySelectorAll("input").forEach(function(i){i.disabled=true;});
+    $("cfg").querySelectorAll("[data-cfg]").forEach(function(i){i.addEventListener("input",configDraftChanged);i.addEventListener("change",configDraftChanged);});
+    configDraftChanged();
   }
 
 
@@ -1289,18 +1372,75 @@ body.admin-command-page [data-scroll]{scroll-margin-top:24px}
   $("allotClear").onclick = function () {
     JSE.toast("Uploaded IPO allotments are locked in the reset baseline. Reset restores them; request an explicit baseline update to change them.", "warn", 8000);
   };
+  // ---- configuration tools: validation, presets, safe import/export and discard ----
+  function cfgType(key){var f=CFG.filter(function(x){return x[0]===key;})[0];return f?f[2]:"";}
+  function configDraftPayload(){var body={};$("cfg").querySelectorAll("[data-cfg]").forEach(function(i){var k=i.getAttribute("data-cfg"),t=cfgType(k),v;if(t==="bool")v=i.checked;else if(t==="datetime")v=i.value?i.value+":00+05:30":"";else if(t==="pct")v=i.value===""?"":N(i.value)/100;else v=i.value;body[k]=v;});return body;}
+  function configDraftChanged(){
+    var dirty=false,cur=(S.st&&S.st.config_full)||{};
+    $("cfg").querySelectorAll("[data-cfg]").forEach(function(i){var k=i.getAttribute("data-cfg"),t=cfgType(k),saved=cur[k],now;if(t==="bool")now=i.checked;else if(t==="datetime")now=i.value;else if(t==="pct")now=i.value===""?"":N(i.value)/100;else now=i.value;if(t==="datetime")saved=istLocal(saved);if(saved===null||saved===undefined)saved="";if(String(now)!==String(saved)&&!(t!=="text"&&t!=="bool"&&t!=="datetime"&&String(now).trim()!==""&&N(now)===N(saved)))dirty=true;});
+    $("cfgDraftState").textContent=dirty?"Unsaved draft changes · not active until the password-confirmed Save action succeeds.":"Draft matches the last-loaded saved configuration.";
+    $("cfgDraftState").className="cfg-draft-state"+(dirty?" dirty":"");
+    var cash=$("cfg").querySelector('[data-cfg="cash_rule_limit"]');if(cash)$("cfgCashRule").innerHTML="<b>"+esc(F.money(N(cash.value))+" closing cash criterion")+"</b> "+esc(JSE.cashRuleText(N(cash.value)));
+  }
+  function validateConfigDraft(){
+    var errors=[],warnings=[],get=function(k){var el=$("cfg").querySelector('[data-cfg="'+k+'"]');return el?el.value:"";},num=function(k){return Number(get(k));},present=function(k){return String(get(k)).trim()!==""&&Number.isFinite(num(k));};
+    if(!String(get("event_name")||"").trim())errors.push("Event name cannot be blank.");
+    if(!present("initial_capital")||num("initial_capital")<=0)errors.push("Starting capital must be a number greater than ₹0.");
+    if(!present("institutional_cash")||num("institutional_cash")<0)errors.push("Institutional starting cash must be a non-negative number.");
+    if(!present("brokerage_rate")||num("brokerage_rate")<0||num("brokerage_rate")>=100)errors.push("Brokerage must be from 0% up to (but not including) 100%.");
+    if(!present("loan_interest_rate")||num("loan_interest_rate")<0||num("loan_interest_rate")>=100)errors.push("Loan interest must be from 0% up to (but not including) 100%.");
+    if(!present("max_price_move_pct")||num("max_price_move_pct")<=0||num("max_price_move_pct")>10)errors.push("Automated price movement must be above 0% and no more than 10%.");
+    if(!present("min_order_value")||num("min_order_value")<0)errors.push("Minimum order value must be a non-negative number.");
+    if(!present("max_order_value")||num("max_order_value")<=0)errors.push("Maximum order value must be greater than ₹0.");
+    if(present("min_order_value")&&present("max_order_value")&&num("min_order_value")>=num("max_order_value"))errors.push("Minimum order value must be lower than maximum order value.");
+    if(!present("cash_rule_limit")||num("cash_rule_limit")<0)errors.push("Closing-cash eligibility limit must be a non-negative number.");
+    if(!present("loan_max_principal")||num("loan_max_principal")<0)errors.push("Maximum loan principal must be a non-negative number.");
+    ["min_buy_trades","min_sell_trades"].forEach(function(k){if(!present(k)||!Number.isInteger(num(k))||num(k)<0)errors.push((k==="min_buy_trades"?"Minimum BUY":"Minimum SELL")+" trade count must be a non-negative whole number.");});
+    if(!present("ipo_application_hours")||num("ipo_application_hours")<0)errors.push("IPO application window must be a non-negative number of hours.");
+    if(get("event_start_at")&&!Number.isFinite(Date.parse(get("event_start_at"))))errors.push("Scheduled start date/time is invalid.");
+    var loans=$("cfg").querySelector('[data-cfg="loans_enabled"]'),auto=$("cfg").querySelector('[data-cfg="auto_loan_on_settlement"]');
+    if(loans&&auto&&!loans.checked&&auto.checked)warnings.push("Auto Bank Loan is on while borrowing is disabled; the main borrowing switch prevents the feature from operating.");
+    var status=(S.st&&(S.st.status||(S.st.event&&S.st.event.status)))||"";if(status&&status!=="NOT_STARTED")warnings.push("The database prevents changing starting capital after the event starts; a reset may be required first.");
+    var el=$("cfgValidation");
+    if(errors.length){el.className="cfg-validation is-error";el.innerHTML="<b>Fix "+errors.length+" issue(s) before saving.</b><ul>"+errors.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>";return{valid:false,errors:errors,warnings:warnings};}
+    el.className="cfg-validation is-ok";el.innerHTML="<b>Configuration checks passed.</b>"+(warnings.length?"<ul>"+warnings.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>":" All editable values passed the client-side checks; the database remains the final validator.");
+    return{valid:true,errors:[],warnings:warnings};
+  }
+  function setConfigDraft(values,apiFormat){
+    var allowed={};CFG.forEach(function(f){if(f[2]!=="fixed")allowed[f[0]]=f[2];});
+    Object.keys(values||{}).forEach(function(k){if(!Object.prototype.hasOwnProperty.call(allowed,k))return;var i=$("cfg").querySelector('[data-cfg="'+k+'"]'),t=allowed[k],v=values[k];if(!i)return;if(t==="bool")i.checked=!!v;else if(t==="datetime")i.value=apiFormat?istLocal(v):String(v||"");else if(t==="pct")i.value=v===""||v===null||v===undefined?"":(apiFormat?N(v)*100:N(v));else i.value=v===null||v===undefined?"":String(v);});
+    configDraftChanged();
+  }
+  $("cfgApplyPreset").onclick=function(){
+    var key=$("cfgPreset").value;if(!key)return JSE.toast("Choose a preset first.","warn");var saved=(S.st&&S.st.config_full)||{};
+    if(key==="saved"){renderConfig(saved);$("cfgValidation").className="cfg-validation";$("cfgValidation").textContent="Draft reloaded from the last-fetched saved configuration.";return;}
+    if(key==="balanced")setConfigDraft({max_price_move_pct:10,max_order_value:2500000,loans_enabled:true,auto_loan_on_settlement:true,loan_max_principal:500000},false);
+    else if(key==="risk")setConfigDraft({max_price_move_pct:5,max_order_value:500000,loans_enabled:false,auto_loan_on_settlement:false,loan_max_principal:0},false);
+    else if(key==="noLoans")setConfigDraft({loans_enabled:false,auto_loan_on_settlement:false,loan_max_principal:0},false);
+    $("cfgValidation").className="cfg-validation";$("cfgValidation").textContent="Preset applied to this draft only. Review the values and validate/save to activate it.";JSE.toast("Preset applied to draft. Nothing has been saved yet.","good",5000);
+  };
+  $("cfgValidate").onclick=function(){var r=validateConfigDraft();if(r.valid)JSE.toast("Configuration validation passed.","good");else JSE.toast("Fix the configuration errors before saving.","bad",7000);};
+  $("cfgResetDraft").onclick=function(){renderConfig((S.st&&S.st.config_full)||{});$("cfgValidation").className="cfg-validation";$("cfgValidation").textContent="Unsaved draft discarded and reloaded from last-fetched saved settings.";JSE.toast("Unsaved draft discarded.","good");};
+  $("cfgExport").onclick=function(){var r=validateConfigDraft();if(!r.valid)return;var payload={format:"jse-config-draft-v1",exported_at:new Date().toISOString(),note:"Draft only; settings are not active until saved by an administrator.",config:configDraftPayload()};var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="JSE_configuration_draft.json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);JSE.toast("Configuration draft exported.","good");};
+  $("cfgImportFile").addEventListener("change",function(){
+    var input=this,file=input.files&&input.files[0];if(!file)return;if(file.size>200000){JSE.toast("Configuration JSON must be smaller than 200 KB.","bad");input.value="";return;}
+    var reader=new FileReader();reader.onload=function(){try{var parsed=JSON.parse(String(reader.result||"")),values=parsed&&parsed.format==="jse-config-draft-v1"?parsed.config:parsed;if(!values||typeof values!=="object"||Array.isArray(values))throw new Error("File must contain a JSON object or JSE configuration export.");
+      var recognized=Object.keys(values).filter(function(k){return CFG.some(function(f){return f[0]===k&&f[2]!=="fixed";});});if(!recognized.length)throw new Error("No supported configuration keys were found in this file.");
+      setConfigDraft(values,parsed.format==="jse-config-draft-v1");$("cfgValidation").className="cfg-validation";$("cfgValidation").textContent="Imported "+recognized.length+" setting(s) into the draft. Unsupported keys were ignored; validate before saving.";JSE.toast("Imported to draft only; nothing has been saved yet.","good",6000);
+    }catch(e){JSE.toast("Import failed: "+e.message,"bad",8000);}input.value="";};
+    reader.onerror=function(){JSE.toast("Could not read selected file.","bad");input.value="";};reader.readAsText(file);
+  });
   // ---- configuration ----
   $("cfgSave").onclick = async function () {
+    var checked=validateConfigDraft();if(!checked.valid){JSE.toast("Fix configuration errors before saving.","bad",7000);return;}
     var body = {}, cur = (S.st && S.st.config_full) || {}, changes = [];
-    $("cfg").querySelectorAll("[data-cfg]").forEach(function (i) {
-      var k = i.getAttribute("data-cfg"), f = CFG.filter(function (x) { return x[0] === k; })[0], v;
-      if (f[2] === "bool") v = i.checked;
-      else if (f[2] === "datetime") v = i.value ? i.value + ":00+05:30" : "";
-      else if (f[2] === "pct") v = i.value === "" ? "" : N(i.value) / 100;
-      else v = i.value;
-      var before = f[2] === "datetime" ? istLocal(cur[k]) : cur[k], after = f[2] === "datetime" ? i.value : v;
-      if (String(after) !== String(before) && !(f[2] !== "text" && f[2] !== "bool" && f[2] !== "datetime" && N(after) === N(before))) {
-        body[k] = v; changes.push("<li><b>" + esc(f[1]) + "</b>: " + esc(f[2] === "pct" ? JSE.rate(before) : before) + " → " + esc(f[2] === "pct" ? JSE.rate(v) : after) + "</li>");
+    var draft=configDraftPayload();
+    $("cfg").querySelectorAll("[data-cfg]").forEach(function(i){
+      var k=i.getAttribute("data-cfg"),f=CFG.filter(function(x){return x[0]===k;})[0],v=draft[k],before=f[2]==="datetime"?istLocal(cur[k]):cur[k],after=f[2]==="datetime"?i.value:v;
+      if(String(after)!==String(before)&&!(f[2]!=="text"&&f[2]!=="bool"&&f[2]!=="datetime"&&N(after)===N(before))){
+        body[k]=v;var beforeText=f[2]==="pct"?JSE.rate(cur[k]):(f[2]==="bool"?(cur[k]?"Enabled":"Disabled"):(before===null||before===undefined||before===""?"—":before));
+        var afterText=f[2]==="pct"?JSE.rate(v):(f[2]==="bool"?(v?"Enabled":"Disabled"):(after===""?"—":after));
+        changes.push("<li><b>"+esc(f[1])+"</b>: "+esc(beforeText)+" → "+esc(afterText)+"</li>");
       }
     });
     if (!changes.length) return JSE.toast("Nothing changed.", "warn");
