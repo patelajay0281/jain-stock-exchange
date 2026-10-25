@@ -1915,5 +1915,68 @@ body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin
   document.addEventListener("DOMContentLoaded",scheduleAdminMasonry);
 })();
 </script>
+
+<style id="jse-admin-two-column-fix">
+/* Two clear desktop columns, packed vertically so card heights never create empty grid cells. */
+body.admin-command-page .adv-grid,
+body.admin-command-page .cmd-grid,
+body.admin-command-page .mi,
+body.admin-command-page .grid.cols-2 {
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  columns:2!important;
+  column-gap:12px!important;
+  column-fill:balance!important;
+  grid-template-columns:none!important;
+  grid-auto-flow:initial!important;
+  grid-auto-rows:initial!important;
+  gap:0!important;
+  overflow:visible!important;
+}
+body.admin-command-page .adv-grid>.adv-card,
+body.admin-command-page .cmd-grid>.cmd-panel,
+body.admin-command-page .mi>.box,
+body.admin-command-page .grid.cols-2>.card {
+  display:inline-block!important;
+  vertical-align:top!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  margin:0 0 12px!important;
+  padding:initial;
+  box-sizing:border-box!important;
+  break-inside:avoid!important;
+  -webkit-column-break-inside:avoid!important;
+  page-break-inside:avoid!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  grid-row-end:auto!important;
+  float:none!important;
+}
+body.admin-command-page .adv-grid>.adv-card *,
+body.admin-command-page .cmd-grid>.cmd-panel *,
+body.admin-command-page .mi>.box *,
+body.admin-command-page .grid.cols-2>.card * {min-width:0}
+body.admin-command-page .adv-grid svg,
+body.admin-command-page .cmd-grid svg,
+body.admin-command-page .mi svg {max-width:100%}
+body.admin-command-page .adv-chart,
+body.admin-command-page .adv-donut,
+body.admin-command-page .adv-bars,
+body.admin-command-page .table-wrap {max-width:100%;min-width:0}
+body.admin-command-page .adv-card,
+body.admin-command-page .cmd-panel,
+body.admin-command-page .mi .box,
+body.admin-command-page .grid.cols-2>.card {height:auto!important;align-self:initial!important}
+@media(max-width:760px){
+ body.admin-command-page .adv-grid,
+ body.admin-command-page .cmd-grid,
+ body.admin-command-page .mi,
+ body.admin-command-page .grid.cols-2 {columns:1!important;column-gap:0!important}
+}
+</style>
+
 </body>
 </html>
