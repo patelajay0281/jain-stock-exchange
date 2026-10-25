@@ -401,7 +401,7 @@
   $("mp").addEventListener("paste", function (e) { var text = (e.clipboardData || window.clipboardData).getData("text"); if (!/^[0-9]+$/.test(text.trim())) e.preventDefault(); });
   $("mp").addEventListener("input", function () { if (!S.user || !(S.user.role === "BROKER" || S.user.role === "ADMIN" || S.user.role === "PIT_MANAGER")) return; $("mp").dataset.edited = "1"; if ($("mp").value !== "" && $("mp").value.includes(".")) $("mp").value = String(Math.trunc(N($("mp").value))); preview(); });
   $("mp").addEventListener("change", function () { if ($("mp").value !== "") $("mp").value = String(Math.round(N($("mp").value))); preview(); });
-  $("sec").addEventListener("change", function () { $("mp").dataset.edited = ""; });
+  $("sec").addEventListener("change", function () { $("mp").dataset.edited = ""; preview(); });
   $("ticket").addEventListener("submit", submit);
   $("loanForm").addEventListener("submit", async function (e) {
     e.preventDefault();
