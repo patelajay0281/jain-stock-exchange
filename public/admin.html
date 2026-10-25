@@ -34,19 +34,194 @@
   .consistency { margin-bottom: 14px; }
   textarea.pv { min-height: 70px; font-family: var(--font); font-size: 13px; }
 </style>
+
+<style>
+/* JSE COMMAND WORLD — separate control-room visual language; scoped to Event Admin only */
+body.admin-command-page{--cmd-bg:#080d16;--cmd-card:#101b2b;--cmd-line:#293b52;--cmd-text:#edf5ff;--cmd-muted:#90a6bf;--cmd-cyan:#42e8d1;--cmd-lime:#c8fa5f;--cmd-violet:#9f8cff;background:radial-gradient(ellipse at 10% -5%,rgba(65,110,168,.28),transparent 34%),radial-gradient(ellipse at 100% 4%,rgba(130,70,218,.16),transparent 29%),linear-gradient(180deg,#080d16 0,#0a111d 420px,#0b111b 100%);color:var(--cmd-text);font-family:"Inter","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body.admin-command-page::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.16;background-image:linear-gradient(rgba(120,157,196,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(120,157,196,.18) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to bottom,black,transparent 82%)}
+body.admin-command-page .wrap.wide{max-width:1680px}
+body.admin-command-page .hd,body.admin-command-page .nav{background:transparent;border-color:#1b293b}
+body.admin-command-page .wordmark{color:#eaf3ff;letter-spacing:.11em}
+body.admin-command-page .env-pill{background:#132c32;color:#75f5dd;border-color:#286b68;border-radius:4px}
+body.admin-command-page .tb-btn{background:#0d1725;color:#c8d9ed;border-color:#25374d;box-shadow:none}
+body.admin-command-page .tb-btn:hover{background:#142236;color:#fff;border-color:#42e8d1}
+body.admin-command-page .tb-btn.dark{background:linear-gradient(110deg,#bdf65a,#7bdf8a);color:#11180d;border-color:#c8fa5f}
+body.admin-command-page .nav a{background:#0d1725;color:#a9bad0;border-color:#223247;box-shadow:none}
+body.admin-command-page .nav a:hover{background:#17263a;color:#fff;border-color:#42e8d1}
+body.admin-command-page .nav a[aria-current="page"]{color:#06120f;background:linear-gradient(120deg,#c8fa5f,#42e8d1);border-color:#c8fa5f;box-shadow:0 0 18px rgba(66,232,209,.18)}
+body.admin-command-page .page-head{border-bottom:1px solid #223247;padding-bottom:14px;margin-bottom:14px}
+body.admin-command-page .page-head h1{color:#f2f7ff;font-size:clamp(26px,3vw,38px);font-weight:900;letter-spacing:-.04em}
+body.admin-command-page .page-head p{color:#9aacc2;max-width:780px}
+body.admin-command-page .conn{color:#a9bdd4;background:#101b2a;border-color:#26384c}
+body.admin-command-page .conn .dot{background:#42e8d1;box-shadow:0 0 10px rgba(66,232,209,.55)}
+body.admin-command-page .kpi{background:linear-gradient(145deg,#111d2c,#0d1623);border-color:#26394e;box-shadow:0 8px 24px rgba(0,0,0,.14)}
+body.admin-command-page .kpi .k{color:#8da3bb}body.admin-command-page .kpi .v{color:#eef5ff;font-weight:900}body.admin-command-page .kpi .s{color:#8399b2}
+body.admin-command-page .kpi.good .v{color:#c8fa5f}body.admin-command-page .kpi.bad .v{color:#ff777f}body.admin-command-page .kpi.warn .v{color:#ffbf6b}body.admin-command-page .kpi.info .v{color:#42e8d1}body.admin-command-page .kpi.accent .v{color:#b7aaff}
+body.admin-command-page .card{color:#eaf2ff;background:linear-gradient(145deg,rgba(16,27,42,.96),rgba(11,19,31,.98));border-color:#24374c;box-shadow:0 12px 32px rgba(0,0,0,.17)}
+body.admin-command-page .card-h{background:linear-gradient(100deg,#152235,#101b2b);border-bottom-color:#24374c}
+body.admin-command-page .card-h h2,body.admin-command-page .card-h h3{color:#eaf2ff;font-weight:850;letter-spacing:-.015em}
+body.admin-command-page .card-h .meta,body.admin-command-page .meta,body.admin-command-page .small.muted,body.admin-command-page .muted{color:#91a4bb}
+body.admin-command-page .card-h.bar h2::before,body.admin-command-page .card-h.bar h3::before{background:#42e8d1}
+body.admin-command-page .card-h.bar.navy h2::before{background:#9f8cff}body.admin-command-page .card-h.bar.green h2::before{background:#c8fa5f}
+body.admin-command-page .input,body.admin-command-page select.input,body.admin-command-page textarea.input{color:#e8f2ff;background:#091321;border-color:#2a3f56;box-shadow:inset 0 1px 3px rgba(0,0,0,.2)}
+body.admin-command-page .input:focus{border-color:#42e8d1;box-shadow:0 0 0 3px rgba(66,232,209,.12)}body.admin-command-page .input::placeholder{color:#647b96}
+body.admin-command-page .field label,body.admin-command-page .label{color:#a9bed5;font-weight:750}
+body.admin-command-page .btn{color:#d4e3f5;background:#111d2d;border-color:#2a3f56;box-shadow:none}
+body.admin-command-page .btn:hover{color:#fff;background:#19283d;border-color:#42e8d1}
+body.admin-command-page .btn.primary{color:#07120f;background:linear-gradient(115deg,#c8fa5f,#42e8d1);border-color:#9feaa4;box-shadow:0 0 18px rgba(66,232,209,.11)}
+body.admin-command-page .btn.primary:hover{color:#07120f;background:linear-gradient(115deg,#d8ff80,#67f3df)}
+body.admin-command-page .btn:disabled{opacity:.35;filter:saturate(.55)}
+body.admin-command-page .pill{background:#141f2f}
+body.admin-command-page .pill.live{color:#c8fa5f;background:#172d24;border-color:#2e6146}
+body.admin-command-page .pill.closed,body.admin-command-page .pill.finalized{color:#ff9ea5;background:#2b1924;border-color:#68404a}
+body.admin-command-page .pill.paused,body.admin-command-page .pill.settlement{color:#ffbf6b;background:#2c241a;border-color:#695233}
+body.admin-command-page .tag{color:#a9c5e5;background:#142236;border-color:#304864}
+body.admin-command-page .tag.red,body.admin-command-page .badge.no{color:#ff9da4;background:#351b27;border-color:#68323e}
+body.admin-command-page .tag.amber,body.admin-command-page .badge.warn{color:#ffd18f;background:#302619;border-color:#6b5230}
+body.admin-command-page .tag.clear,body.admin-command-page .badge.ok{color:#ceff91;background:#192d24;border-color:#345b41}
+body.admin-command-page .tag.blue,body.admin-command-page .badge.prov{color:#b8adff;background:#211e38;border-color:#47406d}
+body.admin-command-page .rule.key,body.admin-command-page .rules{color:#d9e8fa;background:#122137;border-color:#2a4561}
+body.admin-command-page .alert{color:#dbe8f9;background:#142235;border-color:#31475f}
+body.admin-command-page .alert.good{color:#d6ffad;background:#172c22;border-color:#356348}
+body.admin-command-page .alert.bad{color:#ffb2b8;background:#301a24;border-color:#673744}
+body.admin-command-page .alert.warn{color:#ffd18f;background:#302619;border-color:#6b5230}
+body.admin-command-page .alert.info{color:#a7f5ec;background:#102b30;border-color:#27666a}
+body.admin-command-page table.t th{color:#a9bed6;background:#142236;border-bottom-color:#2b4058}
+body.admin-command-page table.t td{color:#d4e1f2;border-bottom-color:#1e3045}
+body.admin-command-page table.t tbody tr:hover td{background:#17263a}body.admin-command-page table.t td b{color:#f2f7ff}
+body.admin-command-page .table-wrap{border-color:#293d53}body.admin-command-page .meta-row{background:#0e1928;color:#9bb0c7;border-color:#26394e}
+body.admin-command-page .pager{background:#101c2b;border-color:#26394e}
+body.admin-command-page .modal-back{background:rgba(2,5,10,.78)}body.admin-command-page .modal{color:#edf4ff;background:#111d2d;border-color:#31465d;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+body.admin-command-page .modal-h{color:#eef5ff;background:#18283d;border-color:#31465d}body.admin-command-page .modal-b{color:#c6d7e9}body.admin-command-page .modal .input{background:#091321;color:#eef5ff}
+body.admin-command-page .moods button{color:#c5d5e8;background:#101b2a;border-color:#2b4058}
+body.admin-command-page .moods button.neg{color:#ff979f;border-color:#70404b}body.admin-command-page .moods button.pos{color:#c8fa5f;border-color:#466a41}
+body.admin-command-page .moods button[aria-pressed="true"]{background:linear-gradient(120deg,#a3f4db,#c8fa5f);color:#07120f;border-color:#a3f4db}
+body.admin-command-page .moods button[aria-pressed="true"] small{color:#25473a}
+body.admin-command-page .cfg-grid .check{padding:10px 12px;background:#0b1624;border:1px solid #273b51;border-radius:10px}
+body.admin-command-page input[type="checkbox"]{accent-color:#42e8d1}
+body.admin-command-page .mi .box{background:#0b1624;border-color:#25394f}body.admin-command-page .mi .box h4{color:#8fa7c0}
+body.admin-command-page .mi .box .v{color:#e7f1ff;font-size:18px}body.admin-command-page .mi .box .v.up{color:#c8fa5f}body.admin-command-page .mi .box .v.down{color:#ff858e}
+body.admin-command-page .sec-title{color:#a4bbd4;border-bottom:1px solid #22364b;padding-bottom:7px}body.admin-command-page .danger{background:#231923;border-color:#533047}
+body.admin-command-page .j-undone td{color:#73869d}body.admin-command-page section.card[id]{scroll-margin-top:24px}body.admin-command-page #cfgCashRule{border-left-color:#c8fa5f}
+body.admin-command-page .cmd-hero{position:relative;overflow:hidden;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) 235px;gap:24px;padding:26px 28px 0;margin:10px 0 14px;border:1px solid #30415a;border-radius:18px;background:radial-gradient(ellipse at 80% 0%,rgba(159,140,255,.22),transparent 34%),radial-gradient(ellipse at 12% 100%,rgba(66,232,209,.1),transparent 37%),linear-gradient(116deg,#101e30,#0a111d 62%,#14132a);box-shadow:0 22px 56px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.045)}
+body.admin-command-page .cmd-hero:after{content:"";position:absolute;inset:0;z-index:-1;opacity:.24;background-image:linear-gradient(rgba(120,157,196,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(120,157,196,.15) 1px,transparent 1px);background-size:28px 28px;mask-image:linear-gradient(90deg,black,transparent 90%)}
+body.admin-command-page .cmd-eyebrow,body.admin-command-page .cmd-kicker,body.admin-command-page .cmd-index{color:#5debd8;font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+body.admin-command-page .cmd-eyebrow{display:flex;align-items:center;gap:9px}.cmd-pulse,.cmd-stream i{width:7px;height:7px;border-radius:50%;background:#c8fa5f;box-shadow:0 0 12px #c8fa5f;display:inline-block}
+body.admin-command-page .cmd-hero h2{color:#f0f6ff;margin:16px 0 10px;font-weight:950;font-size:clamp(30px,4vw,54px);letter-spacing:-.055em;line-height:.99}
+body.admin-command-page .cmd-hero h2 em{color:#c8fa5f;font-style:normal}body.admin-command-page .cmd-hero p{max-width:700px;margin:0;color:#9badc4;font-size:13px;line-height:1.7}
+body.admin-command-page .cmd-live-meta{display:flex;align-items:center;gap:10px 20px;flex-wrap:wrap;margin:20px 0 22px}
+body.admin-command-page .cmd-status-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #35596a;border-radius:999px;background:#102730;color:#9af4e7;padding:8px 12px;font-size:10px;letter-spacing:.09em;font-weight:900}
+body.admin-command-page .cmd-status-chip.live{color:#d4ff93;border-color:#456a3f;background:#182a20}body.admin-command-page .cmd-status-chip.closed{color:#ff9da5;border-color:#6c3d4a;background:#2c1925}body.admin-command-page .cmd-status-chip.paused{color:#ffc77b;border-color:#6c5839;background:#2c251a}
+body.admin-command-page .cmd-status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor}
+body.admin-command-page .cmd-meta-item{display:inline-flex;gap:7px;align-items:center;color:#7d93ad;font-size:9px;font-weight:850;letter-spacing:.1em}
+body.admin-command-page .cmd-meta-item b{color:#e6f0ff;font-size:13px;letter-spacing:0}body.admin-command-page .cmd-meta-item strong{font-size:11px;color:#c8fa5f;letter-spacing:0}
+body.admin-command-page .cmd-hero-footer{grid-column:1/-1;display:flex;gap:12px 28px;flex-wrap:wrap;border-top:1px solid #2a3b52;margin:0 -28px;padding:12px 28px;background:rgba(4,8,15,.28)}
+body.admin-command-page .cmd-hero-footer span{color:#7187a0;font-size:9px;font-weight:850;letter-spacing:.12em}body.admin-command-page .cmd-hero-footer b{color:#bdcde0;margin-left:7px}
+body.admin-command-page .cmd-orbit{align-self:center;justify-self:center;width:195px;height:195px;position:relative;border-radius:50%;display:grid;place-items:center}
+body.admin-command-page .cmd-ring{position:absolute;border:1px solid rgba(66,232,209,.42);border-radius:50%;inset:0}.cmd-ring.ring-one{transform:rotateX(66deg) rotateZ(16deg);border-color:rgba(159,140,255,.5)}.cmd-ring.ring-two{inset:20px;transform:rotateY(65deg) rotateZ(-24deg);border-color:rgba(200,250,95,.4)}
+body.admin-command-page .cmd-core{width:96px;height:96px;border:1px solid #4a7f83;background:radial-gradient(circle at 35% 25%,#21464f,#101a2b 70%);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 42px rgba(66,232,209,.15),inset 0 0 20px rgba(66,232,209,.07)}
+body.admin-command-page .cmd-core span{font-size:21px;font-weight:950;letter-spacing:.16em;color:#efffff}body.admin-command-page .cmd-core b{font-size:9px;letter-spacing:.18em;color:#c8fa5f;margin-top:3px}
+body.admin-command-page .cmd-node{position:absolute;width:9px;height:9px;border-radius:50%;background:#c8fa5f;box-shadow:0 0 14px rgba(200,250,95,.8)}.cmd-node.node-a{top:19px;left:40px}.cmd-node.node-b{right:13px;top:78px;background:#9f8cff;box-shadow:0 0 14px #9f8cff}.cmd-node.node-c{bottom:26px;left:21px;background:#42e8d1;box-shadow:0 0 14px #42e8d1}
+body.admin-command-page .cmd-nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:9px;border:1px solid #25364b;border-radius:12px;background:rgba(12,20,32,.92);margin-bottom:17px}
+body.admin-command-page .cmd-nav-label{color:#647c97;font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;padding:0 8px}
+body.admin-command-page .cmd-nav button{border:1px solid transparent;color:#aabbd0;background:transparent;border-radius:7px;font:750 10px/1.2 "Inter","Segoe UI",sans-serif;padding:9px 10px;cursor:pointer}
+body.admin-command-page .cmd-nav button:hover{color:#ecf6ff;background:#17263a;border-color:#304760}
+body.admin-command-page .cmd-nav .cmd-refresh{color:#0a1713;background:#c8fa5f;font-weight:900;margin-left:auto}
+body.admin-command-page .cmd-nav .cmd-recon{background:#12282d;color:#65eddb;border-color:#27646a}body.admin-command-page .cmd-nav-spacer{flex:1}
+body.admin-command-page .cmd-dashboard{margin:20px 0 26px}body.admin-command-page .cmd-heading{display:flex;align-items:end;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:18px 2px 12px}
+body.admin-command-page .cmd-kicker{display:block;color:#9f8cff;margin-bottom:5px}body.admin-command-page .cmd-heading h2{color:#eef5ff;font-size:24px;font-weight:900;letter-spacing:-.035em;margin:0}
+body.admin-command-page .cmd-stream{color:#8aa0ba;font-size:9px;letter-spacing:.12em;font-weight:850;display:flex;align-items:center;gap:8px}
+body.admin-command-page .cmd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+body.admin-command-page .cmd-panel{min-width:0;border:1px solid #27384e;border-radius:14px;padding:17px 18px;background:linear-gradient(145deg,rgba(17,29,45,.98),rgba(10,17,28,.98));box-shadow:0 13px 32px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.03)}
+body.admin-command-page .cmd-wide{grid-column:span 2}body.admin-command-page .cmd-panel-head{display:flex;justify-content:space-between;align-items:start;gap:14px;margin-bottom:15px}
+body.admin-command-page .cmd-panel-head h3{margin:4px 0 3px;color:#f0f6ff;font-size:17px;font-weight:900;letter-spacing:-.025em}
+body.admin-command-page .cmd-panel-head p{margin:0;color:#849ab4;font-size:11.5px;line-height:1.5}
+body.admin-command-page .cmd-tag{flex:none;color:#7e98b4;border:1px solid #293f56;background:#0b1523;border-radius:5px;padding:5px 7px;font-size:8px;letter-spacing:.13em;font-weight:900}
+body.admin-command-page .cmd-index{color:#55d9ce;font-size:8px;letter-spacing:.15em}
+body.admin-command-page .cmd-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 9px;color:#7289a4;font-size:9px;font-weight:750}
+body.admin-command-page .cmd-legend span{display:inline-flex;align-items:center;gap:6px}body.admin-command-page .cmd-legend span:last-child{margin-left:auto}
+body.admin-command-page .cmd-legend i{width:6px;height:6px;border-radius:50%;display:inline-block}.lg-up{background:#c8fa5f}.lg-down{background:#ff7c88}
+body.admin-command-page .cmd-mover-row{display:grid;grid-template-columns:88px minmax(0,1fr) 65px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #1e2e41}
+body.admin-command-page .cmd-mover-row:last-child{border-bottom:0}body.admin-command-page .cmd-symbol{color:#e7f1ff;font:850 11px/1.2 ui-monospace,Consolas,monospace}
+body.admin-command-page .cmd-track{height:8px;overflow:hidden;border-radius:99px;background:#1a2a3b;box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+body.admin-command-page .cmd-fill{height:100%;border-radius:inherit}.cmd-fill.up{background:linear-gradient(90deg,#368f79,#c8fa5f)}.cmd-fill.down{background:linear-gradient(90deg,#9c354f,#ff7c88)}
+body.admin-command-page .cmd-move-value{text-align:right;font:850 11px/1.2 ui-monospace,Consolas,monospace}.cmd-move-value.up{color:#c8fa5f}.cmd-move-value.down{color:#ff8b95}.cmd-move-value.flat{color:#90a7bf}
+body.admin-command-page .cmd-pipeline,body.admin-command-page .cmd-people,body.admin-command-page .cmd-risk-grid{display:grid;gap:11px}
+body.admin-command-page .cmd-pipe-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(50px,1.3fr) 48px;align-items:center;gap:10px}
+body.admin-command-page .cmd-pipe-label,body.admin-command-page .cmd-risk-label{color:#9db0c7;font-size:10.5px;font-weight:750}
+body.admin-command-page .cmd-pipe-track,body.admin-command-page .cmd-person-track{height:8px;background:#1a2a3b;border-radius:99px;overflow:hidden}
+body.admin-command-page .cmd-pipe-fill,body.admin-command-page .cmd-person-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#3e75b8,#42e8d1)}
+body.admin-command-page .cmd-pipe-fill.done{background:linear-gradient(90deg,#479c74,#c8fa5f)}body.admin-command-page .cmd-pipe-fill.risk{background:linear-gradient(90deg,#a23d56,#ff7c88)}
+body.admin-command-page .cmd-pipe-num,body.admin-command-page .cmd-person-value{color:#eef5ff;text-align:right;font:800 11px/1.2 ui-monospace,Consolas,monospace}
+body.admin-command-page .cmd-person{display:grid;grid-template-columns:minmax(96px,1fr) minmax(40px,1.3fr) 75px;align-items:center;gap:10px}
+body.admin-command-page .cmd-person-name{min-width:0;color:#c4d5e8;font-size:10.5px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.admin-command-page .cmd-person-fill{background:linear-gradient(90deg,#6659b5,#9f8cff,#42e8d1)}
+body.admin-command-page .cmd-risk-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;border:1px solid #283a50;border-radius:8px;background:#0b1522}
+body.admin-command-page .cmd-risk-count{color:#c8fa5f;font:900 14px/1 ui-monospace,Consolas,monospace}body.admin-command-page .cmd-risk-row.alerted .cmd-risk-count{color:#ff8b95}
+body.admin-command-page .cmd-rule-note{display:flex;flex-direction:column;gap:4px;border-left:2px solid #ff8b95;padding:10px 12px;background:rgba(255,124,136,.06);margin-top:11px}
+body.admin-command-page .cmd-rule-note b{color:#ff9aa2;font-size:9px;letter-spacing:.12em}body.admin-command-page .cmd-rule-note span{color:#9bacc1;font-size:10.5px;line-height:1.5}
+body.admin-command-page .cmd-inline-btn{border:1px solid #3d4d79;background:#211d38;color:#c5baff;border-radius:7px;padding:8px 10px;cursor:pointer;font-size:10px;font-weight:850;white-space:nowrap}
+body.admin-command-page .cmd-inline-btn:hover{color:#fff;border-color:#9f8cff}
+body.admin-command-page .cmd-guard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+body.admin-command-page .cmd-guard{border:1px solid #293d52;border-radius:9px;padding:11px 12px;background:#0b1522;min-width:0}
+body.admin-command-page .cmd-guard-label{color:#7289a4;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+body.admin-command-page .cmd-guard-value{color:#eaf2ff;font-size:13px;font-weight:850;margin-top:5px;overflow-wrap:anywhere}
+body.admin-command-page .cmd-guard-value.locked{color:#ff9da5}body.admin-command-page .cmd-guard-value.enabled{color:#c8fa5f}body.admin-command-page .cmd-guard-value.disabled{color:#ffbf6b}
+body.admin-command-page .cmd-empty{color:#6f859f;font-size:11px;padding:10px 2px}
+body.admin-command-page [data-scroll]{scroll-margin-top:24px}
+@media(max-width:1150px){body.admin-command-page .cmd-orbit{width:160px;height:160px}body.admin-command-page .cmd-grid{grid-template-columns:minmax(0,1fr)}body.admin-command-page .cmd-wide{grid-column:auto}body.admin-command-page .cmd-guard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){body.admin-command-page .cmd-hero{grid-template-columns:minmax(0,1fr);padding:22px 18px 0}body.admin-command-page .cmd-orbit{position:absolute;right:-26px;top:12px;width:100px;height:100px;opacity:.22}body.admin-command-page .cmd-core{width:65px;height:65px}body.admin-command-page .cmd-core span{font-size:14px}body.admin-command-page .cmd-hero-footer{margin:0 -18px;padding:12px 18px;gap:8px 16px}body.admin-command-page .cmd-nav .cmd-refresh{margin-left:0}body.admin-command-page .cmd-meta-item{width:calc(50% - 12px)}body.admin-command-page .cmd-guard-grid{grid-template-columns:minmax(0,1fr)}body.admin-command-page .cmd-mover-row{grid-template-columns:65px minmax(0,1fr) 58px;gap:8px}body.admin-command-page .cmd-person{grid-template-columns:90px minmax(0,1fr) 67px;gap:7px}}
+</style>
+
 </head>
-<body>
+<body class="admin-command-page">
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1>Event Admin</h1>
       <p>Central control desk for the event lifecycle, Market News, IPO allotments, teams, brokers, rules and reporting. Protected actions ask for the Event Admin password.</p></div>
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
+
+  <section class="cmd-hero" aria-label="Event control command centre">
+    <div class="cmd-hero-main">
+      <div class="cmd-eyebrow"><span class="cmd-pulse"></span> JSE / DALAL STREET 2026 <span class="cmd-slash">·</span> COMMAND WORLD</div>
+      <h2>Control the floor.<br><em>Read the market.</em></h2>
+      <p>One live operating picture for event status, price action, order flow, participant performance and system guardrails.</p>
+      <div class="cmd-live-meta">
+        <span class="cmd-status-chip" id="cmdStatus"><span class="cmd-status-dot"></span>CONNECTING</span>
+        <span class="cmd-meta-item">CMS 50 <b id="cmdIndexValue">—</b> <strong id="cmdIndexChange">—</strong></span>
+        <span class="cmd-meta-item">BREADTH <b id="cmdBreadth">—</b></span>
+        <span class="cmd-meta-item">SYNC <b id="cmdUpdated">Waiting for feed</b></span>
+      </div>
+    </div>
+    <div class="cmd-orbit" aria-hidden="true"><div class="cmd-ring ring-one"></div><div class="cmd-ring ring-two"></div><div class="cmd-core"><span>JSE</span><b>LIVE OPS</b></div><i class="cmd-node node-a"></i><i class="cmd-node node-b"></i><i class="cmd-node node-c"></i></div>
+    <div class="cmd-hero-footer"><span>CONTROL PLANE <b>READY</b></span><span>RULES ENGINE <b>DATABASE-ENFORCED</b></span><span>CHANGE LOG <b>AUDIT-TRACKED</b></span></div>
+  </section>
+  <nav class="cmd-nav" id="cmdNav" aria-label="Command centre shortcuts">
+    <span class="cmd-nav-label">Jump to</span>
+    <button type="button" data-scroll="eventControl">Event control</button><button type="button" data-scroll="marketNewsSection">Market news</button><button type="button" data-scroll="intelligence">Analytics</button><button type="button" data-scroll="teamManagement">Participants</button><button type="button" data-scroll="ipoRandomBox">IPO tools</button><button type="button" data-scroll="configPanel">Rules &amp; guardrails</button><button type="button" data-scroll="accountsPanel">Accounts</button><button type="button" data-scroll="reconCard">Reconciliation</button><button type="button" data-scroll="reportsPanel">Reports</button>
+    <span class="cmd-nav-spacer"></span><button type="button" class="cmd-refresh" id="cmdRefresh">↻ Sync all</button><button type="button" class="cmd-recon" id="cmdRunRecon">Run checks ↗</button>
+  </nav>
+
   <div class="kpis k8" id="kpis"></div>
   <div id="consistency" class="consistency"></div>
 
+  <section class="cmd-dashboard" id="cmdDashboard" aria-label="Live command analytics">
+    <div class="cmd-heading"><div><span class="cmd-kicker">LIVE TELEMETRY / 01</span><h2>Market &amp; floor signals</h2></div><span class="cmd-stream"><i></i> STREAMING SNAPSHOT</span></div>
+    <div class="cmd-grid">
+      <article class="cmd-panel cmd-wide"><div class="cmd-panel-head"><div><span class="cmd-index">A / PRICE ACTION</span><h3>Share movement radar</h3><p>Top gainers and decliners from the current market feed.</p></div><span class="cmd-tag">LIVE CHANGE %</span></div>
+        <div class="cmd-legend"><span><i class="lg-up"></i>Advancers</span><span><i class="lg-down"></i>Decliners</span><span id="cmdMoverUpdated">Waiting for intelligence feed</span></div><div id="cmdMovers" class="cmd-movers"><div class="cmd-empty">Waiting for current market movers…</div></div>
+      </article>
+      <article class="cmd-panel"><div class="cmd-panel-head"><div><span class="cmd-index">B / ORDER FLOW</span><h3>Settlement pipeline</h3><p>Live queue sizes and completed decisions.</p></div><span class="cmd-tag">ORDERS</span></div><div id="cmdPipeline" class="cmd-pipeline"><div class="cmd-empty">Loading order stages…</div></div></article>
+      <article class="cmd-panel"><div class="cmd-panel-head"><div><span class="cmd-index">C / PARTICIPANTS</span><h3>Net worth leaderboard</h3><p>Top teams in the current performance snapshot.</p></div><span class="cmd-tag">TEAM WEALTH</span></div><div id="cmdPeopleChart" class="cmd-people"><div class="cmd-empty">Waiting for participant analytics…</div></div></article>
+      <article class="cmd-panel"><div class="cmd-panel-head"><div><span class="cmd-index">D / RISK WATCH</span><h3>Exceptions &amp; guardrails</h3><p>Recorded risk signals, not bypass switches.</p></div><span class="cmd-tag">CONTROL CHECK</span></div><div id="cmdRiskChart" class="cmd-risk-grid"><div class="cmd-empty">Loading rule status…</div></div><div class="cmd-rule-note"><b>SHORT SELLING LOCKED OFF</b><span>Negative participant holdings are blocked by the current settlement engine.</span></div></article>
+      <article class="cmd-panel cmd-wide"><div class="cmd-panel-head"><div><span class="cmd-index">E / OPERATING POLICIES</span><h3>Rule guardrails</h3><p>Live configuration values and fixed engine rules, shown separately.</p></div><button type="button" class="cmd-inline-btn" data-scroll="configPanel">Open configuration ↗</button></div><div id="cmdGuardGrid" class="cmd-guard-grid"><div class="cmd-empty">Loading current configuration…</div></div></article>
+    </div>
+  </section>
+
+
   <div class="grid cols-2">
-    <section class="card">
+    <section class="card" id="eventControl">
       <div class="card-h bar navy"><h2>Event control</h2><span class="meta" id="stChanged"></span></div>
       <div class="card-b">
         <div class="status-big"><span class="pill closed" id="stPill"><span class="dot"></span><span id="stText">—</span></span><span class="muted small" id="stInfo"></span></div>
@@ -65,7 +240,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="marketNewsSection">
       <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · company news price band ±15% of base price</span></div>
       <div class="card-b">
         <div class="form-grid">
@@ -86,12 +261,12 @@
   </section>
 
   <div class="grid cols-2" style="margin-top:14px">
-    <section class="card">
+    <section class="card" id="journalSection">
       <div class="card-h bar navy"><h2>Transaction Undo / Redo</h2><span class="meta">Use the action buttons on each transaction; unsafe reversals are blocked</span></div>
       <div class="card-b"><p class="small muted" style="margin-top:0">Every journaled event transaction is listed below with its own guarded Undo or Redo control: settlements, Exchange decisions, Bank rejections, Market News price moves, IPO listings and event-status changes. Locked starting roster, base prices and IPO allotments are restored by Reset and are not treated as reversible event transactions.</p><div class="table-wrap" style="max-height:520px"><table class="t"><thead><tr><th>Time</th><th>Transaction</th><th>By</th><th>State</th><th class="actions">Action</th></tr></thead><tbody id="journal"></tbody></table></div></div>
     </section>
 
-        <section class="card">
+        <section class="card" id="teamManagement">
       <div class="card-h bar green"><h2>Teams</h2><span class="meta" id="tnSum"></span></div>
       <div class="card-b">
         <p class="small muted" style="margin-top:0">Every team gets a unique name from the curated Indian Knowledge System pool. The assignment is random but reproducible (same seed + same pool → same names) and is locked automatically when the event starts.</p>
@@ -127,7 +302,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="rosterSection">
       <div class="card-h bar"><h2>Roster import (Excel / CSV)</h2></div>
       <div class="card-b">
         <div class="form-grid">
@@ -146,7 +321,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="brokerManagement">
       <div class="card-h bar green"><h2>Brokers</h2><span class="meta" id="brSum"></span></div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:320px"><table class="t"><thead><tr><th>Broker</th><th>Name</th><th>Desk</th><th>Contact</th><th class="num">Teams</th><th class="actions"></th></tr></thead><tbody id="brRows"></tbody></table></div></div>
       <div class="card-b"><div class="row">
@@ -156,7 +331,7 @@
       </div><div class="small muted" style="margin-top:8px">Official broker number, broker code and broker name are linked to the existing internal desk. Editing a broker never changes team assignments.</div></div>
     </section>
 
-    <section class="card">
+    <section class="card" id="allotmentsSection">
       <div class="card-h bar"><h2>IPO allotments</h2><span class="meta" id="allotSum"></span></div>
       <div class="card-b small muted" style="padding-bottom:0">Locked baseline allocations restore on every Reset. IPO shares = allotted lots × configured allotment lot size. Normal market orders remain multiples of 50 shares; IPO allotments do not count toward the 5 BUY + 5 SELL assessment.</div>
       <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Team</th><th>IPO</th><th class="num">Lots</th><th class="num">Shares</th><th class="num">Amount</th></tr></thead><tbody id="allotTable"></tbody></table></div></div>
@@ -214,17 +389,17 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="configPanel">
       <div class="card-h bar navy"><h2>Rules &amp; configuration</h2><span class="meta" id="cfgUpd"></span></div>
       <div class="card-b">
         <div class="cfg-grid" id="cfg"></div>
         <div class="row admin-only" style="margin-top:14px"><button class="btn primary sm caps" id="cfgSave" type="button">Save configuration…</button><span class="small muted">The saved configuration is the single source of truth for every page and rule.</span></div>
         <div class="rule key" style="margin-top:14px" id="cfgCashRule"></div>
-        <p class="small muted" style="margin:10px 0 0">Live rules · the Event Admin password is required to save. Brokerage is shown as 0.50% everywhere. No minimum cash buffer. Institutional trades execute at the prevailing market price; no price-variation spread.</p>
+        <p class="small muted" style="margin:10px 0 0">Live rules · password-confirmed changes are saved centrally. Brokerage is controlled by the configured event rate. No minimum cash buffer. Institutional orders use the configured spread from the live market price; participant-side settlement rules still apply. Short selling remains locked off by the settlement engine.</p>
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="accountsPanel">
       <div class="card-h bar navy"><h2>Account controls</h2><span class="meta" id="userSum"></span></div>
       <div class="card-b admin-only">
         <div class="row">
@@ -249,7 +424,7 @@
       <div class="card-b flush"><div class="table-wrap" style="max-height:340px"><table class="t"><thead><tr><th>Username</th><th>Role</th><th>Broker</th><th>Last sign-in</th><th>Status</th><th class="actions"></th></tr></thead><tbody id="users"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
     </section>
 
-    <section class="card admin-only">
+    <section class="card admin-only" id="namesPanel">
       <div class="card-h bar navy"><h2>Bank &amp; Institutional Investor Management</h2><span class="meta">Same accounts, balances and history — only the display name changes</span></div>
       <div class="card-b"><div class="form-grid">
         <div class="field"><label for="rnBank">Bank name</label><input class="input" id="rnBank" maxlength="80"></div>
@@ -266,7 +441,7 @@
         <tbody id="reconRows"><tr><td colspan="8" class="empty">Press “Run checks”.</td></tr></tbody></table></div></div>
     </section>
 
-    <section class="card admin-only">
+    <section class="card admin-only" id="institutionalInventoryPanel">
       <div class="card-h bar navy"><h2>Institutional inventory</h2><span class="meta">Blank = unlimited (as before). Shares the institution can sell; updated with every institutional settlement.</span></div>
       <div class="card-b"><div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
         <div class="field"><label for="ivSym">Company</label><select class="input" id="ivSym" style="min-width:200px"></select></div>
@@ -276,7 +451,7 @@
       <div class="card-b flush"><div class="table-wrap" style="max-height:260px"><table class="t"><thead><tr><th>Company</th><th class="num">Inventory</th><th class="num">In open orders</th><th class="num">Available</th><th>Updated</th></tr></thead><tbody id="ivRows"></tbody></table></div></div>
     </section>
 
-    <section class="card">
+    <section class="card" id="reportsPanel">
       <div class="card-h bar navy"><h2>Reports &amp; exports</h2></div>
       <div class="card-b stack">
         <div class="label">Operational data exports</div>
@@ -322,7 +497,7 @@
     ["cash_rule_limit", "Closing cash limit (₹) — closing criterion", "number"], ["initial_capital", "Starting capital per team (₹)", "number"], ["loan_max_principal", "Maximum loan principal (₹)", "number"],
     ["loan_interest_rate", "Loan interest %", "pct"], ["min_buy_trades", "Minimum settled BUY trades", "int"], ["min_sell_trades", "Minimum settled SELL trades", "int"],
     ["min_order_value", "Minimum order value (₹) — no minimum", "number"], ["event_name", "Event name", "text"],
-    ["loans_enabled", "Borrowing", "bool"], ["auto_loan_on_settlement", "Auto Bank Loan", "bool"], ["_self_entry", "Participant Self Entry: disabled (orders are created by brokers)", "fixed"], ["_inst_restr", "Institutional Restrictions: none", "fixed"], ["loan_repayment_required", "Full loan repayment required for eligibility", "bool"],
+    ["loans_enabled", "Borrowing", "bool"], ["auto_loan_on_settlement", "Auto Bank Loan", "bool"], ["_self_entry", "Participant Self Entry: disabled (orders are created by brokers)", "fixed"], ["_short_sell", "Short selling: prohibited by settlement engine (negative holdings are blocked)", "fixed"], ["_trade_lots", "Regular trade quantity: configured stock lot size; IPO allotment is separate", "fixed"], ["_news_guardrail", "Market News: at most 10% per move, within the ±15% base-price band", "fixed"], ["_inst_restr", "Institutional Restrictions: no institution cash or holdings cap; participant settlement checks remain", "fixed"], ["loan_repayment_required", "Full loan repayment required for eligibility", "bool"],
     ["auto_list_ipos", "IPOs list at START EVENT (IPO reveal)", "bool"]];
 
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
@@ -411,6 +586,11 @@
     $("consistency").innerHTML = '<div class="alert ' + (cs.ok ? "good" : "bad") + '"><b>CMS 50 ' + (cs.ok ? "consistent" : "MISMATCH") + ":</b> " + F.num(cs.equities_active) + " active listed equities = " + F.num(cs.index_equity_components) +
       " equity components · " + F.num(cs.ipos_listed) + " of " + F.num(cs.ipos) + " IPOs listed = " + F.num(cs.index_ipo_components) + " IPO components · " + F.num(cs.index_components) + " components in total.</div>";
     var meta = JSE.STATUS[d.status] || { cls: "closed", text: d.status };
+    $("cmdStatus").className = "cmd-status-chip " + (d.status === "LIVE" ? "live" : d.status === "SETTLEMENT_ONLY" ? "paused" : "closed");
+    $("cmdStatus").innerHTML = '<span class="cmd-status-dot"></span>' + esc(meta.text).toUpperCase();
+    $("cmdUpdated").textContent = F.time(new Date()) + " IST";
+    renderCommandMarketHeader({index:ix,breadth:{}});
+    renderCommandPipeline(d);
     $("stPill").className = "pill " + meta.cls; $("stText").textContent = meta.text;
     var w = d.ipo_window || {};
     $("stInfo").textContent = (d.started_at ? "started " + F.datetime(d.started_at) : "not started") + (d.closed_at ? " · closed " + F.datetime(d.closed_at) : "") + (d.finalized_at ? " · finalized " + F.datetime(d.finalized_at) : "") + " · resets: " + d.reset_count;
@@ -479,6 +659,50 @@
     if (!S.admin) $("cfg").querySelectorAll("input").forEach(function (i) { i.disabled = true; });
   }
 
+
+  // ---- COMMAND WORLD analytics: every chart uses API-backed live snapshots. ----
+  function renderCommandPipeline(d){
+    if(!d)return; var c=d.counts||{},st=d.stats||{};
+    var rows=[{label:"Pit / intake",value:N(c.pit_pending),cls:""},{label:"Exchange queue",value:N(c.exchange_pending),cls:""},{label:"Bank queue",value:N(c.bank_pending),cls:""},{label:"Settled",value:N(st.settled_orders),cls:"done"},{label:"Rejected",value:N(st.rejected_orders),cls:"risk"}];
+    var max=Math.max(1,rows.reduce(function(m,x){return Math.max(m,x.value);},0));
+    $("cmdPipeline").innerHTML=rows.map(function(x){return '<div class="cmd-pipe-row"><span class="cmd-pipe-label">'+esc(x.label)+'</span><div class="cmd-pipe-track"><div class="cmd-pipe-fill '+x.cls+'" style="width:'+Math.max(x.value?2:0,Math.round(x.value/max*100))+'%"></div></div><span class="cmd-pipe-num">'+F.num(x.value)+'</span></div>';}).join("");
+    var r=st.risk||{},risks=[{label:"Short-selling attempts",value:N(r.short_sell)},{label:"Cash shortfall",value:N(r.cash_shortfall)},{label:"Insufficient balance",value:N(r.insufficient_balance)}];
+    $("cmdRiskChart").innerHTML=risks.map(function(x){return '<div class="cmd-risk-row '+(x.value?"alerted":"")+'"><span class="cmd-risk-label">'+esc(x.label)+'</span><span class="cmd-risk-count">'+F.num(x.value)+'</span></div>';}).join("");
+    var cfg=d.config_full||{},rules=[
+      ["STANDARD LOT",F.num(cfg.stock_lot_size||50)+" shares",""],
+      ["BROKERAGE",JSE.rate(cfg.brokerage_rate),"enabled"],
+      ["BORROWING",cfg.loans_enabled?"ENABLED":"DISABLED",cfg.loans_enabled?"enabled":"disabled"],
+      ["AUTO LOAN",cfg.auto_loan_on_settlement?"ENABLED":"DISABLED",cfg.auto_loan_on_settlement?"enabled":"disabled"],
+      ["LOAN CAP",F.money(cfg.loan_max_principal),""],
+      ["INTEREST",JSE.rate(cfg.loan_interest_rate),""],
+      ["MINIMUM BUY / SELL",F.num(cfg.min_buy_trades||5)+" / "+F.num(cfg.min_sell_trades||5),""],
+      ["SHORT SELLING","LOCKED OFF","locked"]
+    ];
+    $("cmdGuardGrid").innerHTML=rules.map(function(x){return '<div class="cmd-guard"><div class="cmd-guard-label">'+esc(x[0])+'</div><div class="cmd-guard-value '+x[2]+'">'+esc(x[1])+'</div></div>';}).join("");
+  }
+  function renderCommandMovers(r){
+    var movers=[],seen={};
+    (r.top_gainers||[]).forEach(function(x){movers.push({symbol:x.symbol,name:x.name||x.symbol,pct:N(x.day_change_pct!==undefined?x.day_change_pct:x.change_pct)});});
+    (r.top_losers||[]).forEach(function(x){movers.push({symbol:x.symbol,name:x.name||x.symbol,pct:N(x.day_change_pct!==undefined?x.day_change_pct:x.change_pct)});});
+    movers=movers.filter(function(x){if(seen[x.symbol])return false;seen[x.symbol]=true;return true;}).sort(function(a,b){return b.pct-a.pct;}).slice(0,10);
+    var max=Math.max(1,movers.reduce(function(m,x){return Math.max(m,Math.abs(x.pct));},0));
+    $("cmdMovers").innerHTML=movers.length?movers.map(function(x){var dir=x.pct>0?"up":x.pct<0?"down":"flat";return '<div class="cmd-mover-row" title="'+esc(x.name)+'"><span class="cmd-symbol">'+esc(x.symbol)+'</span><div class="cmd-track"><div class="cmd-fill '+(x.pct<0?"down":"up")+'" style="width:'+Math.max(x.pct?3:0,Math.round(Math.abs(x.pct)/max*100))+'%"></div></div><span class="cmd-move-value '+dir+'">'+(x.pct>0?"+":"")+F.pct(x.pct)+'</span></div>';}).join(""):'<div class="cmd-empty">No listed-price movement data returned yet.</div>';
+    $("cmdMoverUpdated").textContent="Snapshot · "+F.time(new Date())+" IST";
+  }
+  function renderCommandPeople(r){
+    var list=(r.leaderboard||[]).slice(0,6),max=Math.max(1,list.reduce(function(m,x){return Math.max(m,N(x.net_worth));},0));
+    $("cmdPeopleChart").innerHTML=list.length?list.map(function(t){var v=N(t.net_worth);return '<div class="cmd-person" title="'+esc(t.team)+' · BUY '+N(t.buys)+' · SELL '+N(t.sells)+'"><span class="cmd-person-name">#'+esc(t.rank)+' '+esc(t.name||t.team)+'</span><div class="cmd-person-track"><div class="cmd-person-fill" style="width:'+Math.max(v?2:0,Math.round(v/max*100))+'%"></div></div><span class="cmd-person-value">'+F.short(v)+'</span></div>';}).join(""):'<div class="cmd-empty">Leaderboard data is not available yet.</div>';
+  }
+  function renderCommandMarketHeader(r){
+    if(!r)return;var ix=r.index||{},b=r.breadth||{};
+    $("cmdIndexValue").textContent=ix.value!==undefined?new Intl.NumberFormat("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2}).format(N(ix.value)):"—";
+    $("cmdIndexChange").textContent=ix.change_pct!==undefined?F.pct(ix.change_pct):"—";
+    $("cmdBreadth").textContent=F.num(b.advances)+" ▲ / "+F.num(b.declines)+" ▼";
+  }
+  function renderCommandNav(){
+    $("cmdNav").addEventListener("click",function(e){var b=e.target.closest("[data-scroll]");if(!b)return;var el=$(b.getAttribute("data-scroll"));if(el)el.scrollIntoView({behavior:"smooth",block:"start"});});
+  }
+
   // ---- Market Intelligence (embedded; admin and faculty only) ----
   function secList(list, key) {
     return list && list.length ? "<ul>" + list.map(function (s) { return "<li><span><b>" + esc(s.symbol) + "</b></span><span class=\"" + F.dir(s[key || "day_change_pct"]) + '">' + F.pct(s[key || "day_change_pct"]) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">None yet</div>';
@@ -486,6 +710,7 @@
   async function loadIntel() {
     var r = await JSE.api.get("/api/insights");
     var sent = r.sentiment || {}, fl = r.flow || {}, ins = r.institutional_signal || {}, nw = r.net_worth || {}, ord = r.orders || {};
+    renderCommandMovers(r); renderCommandPeople(r); renderCommandMarketHeader(r);
     var award = function (t, label) { return t ? "<li><span>" + label + " · <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span></span><span>" + F.short(t.net_worth) + "</span></li>" : "<li><span>" + label + '</span><span class="muted">no eligible team yet</span></li>'; };
     $("mi").innerHTML =
       '<div class="box"><h4>Market sentiment</h4><div class="v ' + (sent.label === "BULLISH" ? "up" : sent.label === "BEARISH" ? "down" : "") + '">' + esc(sent.label || "—") + '</div><div class="small muted">CMS 50 ' + F.pct(sent.index_change_pct) + " · recent news " + (sent.recent_news ? sent.recent_news.positive + "+ / " + sent.recent_news.negative + "−" : "—") + "</div></div>" +
@@ -697,6 +922,15 @@
   $("ivSet").onclick = function () { invAct("SET"); };
   $("ivUnl").onclick = function () { invAct("UNLIMITED"); };
   loadInv();
+  // Command shortcuts reuse existing, password-protected administrative actions.
+  renderCommandNav();
+  $("cmdRefresh").addEventListener("click",async function(){
+    var b=$("cmdRefresh");b.disabled=true;
+    try{await Promise.all([load(),loadIntel(),loadNews(),loadSecs()]);JSE.toast("Command world synced with the latest API snapshots.","good");}
+    catch(e){JSE.toast("Sync incomplete: "+e.message,"warn",7000);}
+    finally{b.disabled=false;}
+  });
+  $("cmdRunRecon").addEventListener("click",function(){$("reconRun").click();var el=$("reconCard");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});});
   // ---- lifecycle wiring ----
   document.querySelectorAll("[data-ev]").forEach(function (b) { b.addEventListener("click", function () { eventAction(b.getAttribute("data-ev")); }); });
   $("undoLast").onclick = function () { undoRedo("UNDO"); };
