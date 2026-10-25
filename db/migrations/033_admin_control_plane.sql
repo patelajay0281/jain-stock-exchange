@@ -113,6 +113,8 @@ BEGIN
     loans_enabled = coalesce((p->>'loans_enabled')::boolean,loans_enabled),
     auto_loan_on_settlement = coalesce((p->>'auto_loan_on_settlement')::boolean,auto_loan_on_settlement),
     loan_repayment_required = coalesce((p->>'loan_repayment_required')::boolean,loan_repayment_required),
+    institution_overdraft = coalesce((p->>'institution_overdraft')::boolean,institution_overdraft),
+    institution_brokerage = coalesce((p->>'institution_brokerage')::boolean,institution_brokerage),
     auto_list_ipos = coalesce((p->>'auto_list_ipos')::boolean,auto_list_ipos),
     allow_short_selling = false,
     min_cash_buffer = 0,
