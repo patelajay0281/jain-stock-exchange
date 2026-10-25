@@ -1400,7 +1400,10 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
     if(get("event_start_at")&&!Number.isFinite(Date.parse(get("event_start_at"))))errors.push("Scheduled start date/time is invalid.");
     var loans=$("cfg").querySelector('[data-cfg="loans_enabled"]'),auto=$("cfg").querySelector('[data-cfg="auto_loan_on_settlement"]');
     if(loans&&auto&&!loans.checked&&auto.checked)warnings.push("Auto Bank Loan is on while borrowing is disabled; the main borrowing switch prevents the feature from operating.");
-    var status=(S.st&&(S.st.status||(S.st.event&&S.st.event.status)))||"";if(status&&status!=="NOT_STARTED")warnings.push("The database prevents changing starting capital after the event starts; a reset may be required first.");
+    var status=(S.st&&(S.st.status||(S.st.event&&S.st.event.status)))||"",savedCfg=(S.st&&S.st.config_full)||{};
+    var capitalInput=$("cfg").querySelector('[data-cfg="initial_capital"]');
+    if(status&&status!=="NOT_STARTED"&&capitalInput&&String(N(capitalInput.value))!==String(N(savedCfg.initial_capital)))errors.push("Starting capital can only be changed before the event starts. Restore the saved value or reset the event before changing it.");
+    if(get("event_start_at")===""&&savedCfg.event_start_at)warnings.push("The scheduled start cannot be cleared through the current configuration API. Leave it blank only when no scheduled start is saved; blank will otherwise be treated as no change.");
     var el=$("cfgValidation");
     if(errors.length){el.className="cfg-validation is-error";el.innerHTML="<b>Fix "+errors.length+" issue(s) before saving.</b><ul>"+errors.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>";return{valid:false,errors:errors,warnings:warnings};}
     el.className="cfg-validation is-ok";el.innerHTML="<b>Configuration checks passed.</b>"+(warnings.length?"<ul>"+warnings.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>":" All editable values passed the client-side checks; the database remains the final validator.");
@@ -1443,6 +1446,7 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
     var draft=configDraftPayload();
     $("cfg").querySelectorAll("[data-cfg]").forEach(function(i){
       var k=i.getAttribute("data-cfg"),f=CFG.filter(function(x){return x[0]===k;})[0],v=draft[k],before=f[2]==="datetime"?istLocal(cur[k]):cur[k],after=f[2]==="datetime"?i.value:v;
+      if(f[2]==="datetime"&&!i.value&&cur[k])return; // The current API treats blank as "leave saved start unchanged", not "clear it".
       if(String(after)!==String(before)&&!(f[2]!=="text"&&f[2]!=="bool"&&f[2]!=="datetime"&&N(after)===N(before))){
         body[k]=v;var beforeText=f[2]==="pct"?JSE.rate(cur[k]):(f[2]==="bool"?(cur[k]?"Enabled":"Disabled"):(before===null||before===undefined||before===""?"—":before));
         var afterText=f[2]==="pct"?JSE.rate(v):(f[2]==="bool"?(v?"Enabled":"Disabled"):(after===""?"—":after));
