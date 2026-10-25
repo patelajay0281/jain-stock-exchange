@@ -217,6 +217,7 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
 
 </style>
 
+<link rel="stylesheet" href="/assets/admin-advanced.css?v=1">
 </head>
 <body class="admin-command-page">
 <main id="main" class="wrap wide">
@@ -436,11 +437,16 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
     <section class="card" id="configPanel">
       <div class="card-h bar navy"><h2>Rules &amp; configuration</h2><span class="meta" id="cfgUpd"></span></div>
       <div class="card-b">
+        <div class="cfg-filterbar">
+          <div class="cfg-tool-group"><label class="cfg-filter-search"><span>Search rules</span><input class="input" id="cfgSearch" type="search" placeholder="Search setting, rule or category…"></label>
+            <label class="cfg-filter-select"><span>Category</span><select class="input" id="cfgCategory"><option value="">All categories</option></select></label>
+            <label class="cfg-filter-check"><input type="checkbox" id="cfgChangedOnly"> Changed only</label></div><span class="cfg-match-count" id="cfgMatchCount">All settings</span>
+        </div>
         <div class="cfg-toolbar">
-          <div class="cfg-tool-group"><div><label class="cfg-tool-label" for="cfgPreset">Draft preset</label><select class="input" id="cfgPreset">
-            <option value="">Choose a draft preset…</option><option value="saved">Reload last-saved settings</option><option value="balanced">Balanced event profile</option><option value="risk">Conservative risk profile</option><option value="noLoans">No borrowing profile</option>
+          <div class="cfg-tool-group"><div><label class="cfg-tool-label" for="cfgPreset">Draft profile (does not save)</label><select class="input" id="cfgPreset">
+            <option value="">Choose a draft preset…</option><option value="saved">Reload saved settings</option><option value="balanced">Balanced event profile</option><option value="risk">Conservative risk profile</option><option value="noLoans">No borrowing profile</option>
           </select></div><button class="btn sm" id="cfgApplyPreset" type="button">Apply to draft</button></div>
-          <div class="cfg-tool-group cfg-tool-actions"><button class="btn sm" id="cfgValidate" type="button">Validate draft</button><button class="btn sm" id="cfgExport" type="button">Export JSON</button><label class="btn sm cfg-file-label" for="cfgImportFile">Import JSON</label><input id="cfgImportFile" type="file" accept="application/json,.json" hidden><button class="btn sm" id="cfgResetDraft" type="button">Discard draft</button></div>
+          <div class="cfg-tool-group cfg-tool-actions"><button class="btn sm" id="cfgValidate" type="button">Run validation</button><button class="btn sm" id="cfgExport" type="button">Export JSON</button><label class="btn sm cfg-file-label" for="cfgImportFile">Import JSON</label><input id="cfgImportFile" type="file" accept="application/json,.json" hidden><button class="btn sm" id="cfgResetDraft" type="button">Discard draft</button></div>
         </div>
         <div id="cfgDraftState" class="cfg-draft-state" role="status" aria-live="polite">Loading saved configuration…</div>
         <div id="cfgValidation" class="cfg-validation" role="status" aria-live="polite">Configuration values will be checked before save.</div>
@@ -545,34 +551,28 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
     ["orders", "Order Tracking"], ["rejected", "Rejected Orders"], ["trades", "Trade History"], ["ledger", "Cash Ledger"],
     ["commission", "Broker Commission"], ["institutional", "Institutional Investors"], ["ipo_allotments", "IPO Allotments (import template)"],
     ["news", "Market News"], ["prices", "Price History"], ["journal", "Action Journal"], ["audit", "Audit Logs"]];
-  // Settings listed here are accepted by the live jse_update_config database function.
-  // Fixed engine guardrails are displayed separately and never submitted as editable values.
+  // Only show live-enforced options as editable. Fixed engine guardrails are explained separately.
   var CFG = [
-    ["event_name", "Event name", "text", "EVENT SETUP"],
-    ["event_start_at", "Scheduled event start (India time)", "datetime", "EVENT SETUP"],
-    ["initial_capital", "Starting capital per team (₹)", "number", "EVENT SETUP"],
-    ["institutional_cash", "Starting institutional cash (₹)", "number", "EVENT SETUP"],
-    ["brokerage_rate", "Brokerage (%)", "pct", "TRADING RULES"],
-    ["min_order_value", "Minimum order value (₹)", "number", "TRADING RULES"],
-    ["max_order_value", "Maximum order value per order (₹)", "number", "TRADING RULES"],
-    ["max_price_move_pct", "Automated price movement cap (%)", "number", "TRADING RULES"],
-    ["cash_rule_limit", "Maximum closing cash for eligibility (₹)", "number", "ELIGIBILITY"],
-    ["min_buy_trades", "Minimum settled BUY trades", "int", "ELIGIBILITY"],
-    ["min_sell_trades", "Minimum settled SELL trades", "int", "ELIGIBILITY"],
-    ["loan_max_principal", "Maximum loan principal per team (₹)", "number", "BANK & LOANS"],
-    ["loan_interest_rate", "Loan interest (%)", "pct", "BANK & LOANS"],
-    ["loans_enabled", "Allow participant borrowing", "bool", "BANK & LOANS"],
-    ["auto_loan_on_settlement", "Automatically release approved loan on settlement", "bool", "BANK & LOANS"],
-    ["loan_repayment_required", "Require full loan repayment for eligibility", "bool", "BANK & LOANS"],
-    ["institution_overdraft", "Permit institutional cash overdraft", "bool", "INSTITUTIONAL DESK"],
-    ["institution_brokerage", "Charge brokerage on institutional orders", "bool", "INSTITUTIONAL DESK"],
-    ["ipo_application_hours", "IPO application window (hours)", "number", "IPO & LISTING"],
-    ["auto_list_ipos", "Reveal IPOs automatically when event starts", "bool", "IPO & LISTING"],
-    ["_self_entry", "Participant order entry: disabled; orders are created by brokers", "fixed", "FIXED ENGINE GUARDRAILS"],
-    ["_short_sell", "Short selling: prohibited; negative participant holdings are blocked", "fixed", "FIXED ENGINE GUARDRAILS"],
-    ["_trade_lots", "Regular trade lot size is enforced by settlement engine; IPO lots are separate", "fixed", "FIXED ENGINE GUARDRAILS"],
-    ["_news_guardrail", "Market news moves are capped at 10% per event and constrained by the ±15% base-price band", "fixed", "FIXED ENGINE GUARDRAILS"],
-    ["_inst_restr", "Institutional cash/holdings are uncapped; participant cash and holdings checks still apply", "fixed", "FIXED ENGINE GUARDRAILS"]
+    ["event_name","Event name","text","EVENT SETUP"],["event_start_at","Scheduled event start (India time)","datetime","EVENT SETUP"],
+    ["initial_capital","Starting capital per team (₹)","number","EVENT SETUP"],["institutional_cash","Initial institutional cash (₹)","number","EVENT SETUP"],
+    ["brokerage_rate","Brokerage rate (%)","pct","TRADING RULES"],["stock_lot_size","Regular trading lot size (shares)","int","TRADING RULES"],
+    ["max_order_quantity","Maximum shares per order","int","TRADING RULES"],["min_order_value","Minimum order value (₹)","number","TRADING RULES"],
+    ["max_order_value","Maximum order value per order (₹)","number","TRADING RULES"],["max_order_price_deviation_pct","Maximum order price deviation (%)","number","TRADING RULES"],
+    ["institutional_spread_pct","Institutional counterparty spread (%)","number","TRADING RULES"],
+    ["max_company_pct","Maximum company exposure (% of team funds; 0 = off)","number","RISK CONTROLS"],
+    ["max_price_move_pct","Maximum Market News movement (%)","number","RISK CONTROLS"],["allow_short_selling","Allow short selling (currently unavailable to enable safely)","bool","RISK CONTROLS"],
+    ["cash_rule_limit","Closing-cash eligibility limit (₹)","number","ELIGIBILITY"],["min_buy_trades","Minimum settled BUY trades","int","ELIGIBILITY"],["min_sell_trades","Minimum settled SELL trades","int","ELIGIBILITY"],
+    ["loan_max_principal","Maximum loan principal per team (₹)","number","BANK & LOANS"],["loan_interest_rate","Loan interest rate (%)","pct","BANK & LOANS"],
+    ["loans_enabled","Allow participant borrowing","bool","BANK & LOANS"],["auto_loan_on_settlement","Automatically draw approved loan at Bank settlement","bool","BANK & LOANS"],
+    ["loan_repayment_required","Require full loan repayment for eligibility","bool","BANK & LOANS"],["ipo_application_hours","IPO application window (hours)","number","IPO & LISTING"],
+    ["auto_list_ipos","Reveal IPOs automatically when event starts","bool","IPO & LISTING"],
+    ["_self_entry","Participant self-entry is disabled; the broker creates participant orders","fixed","FIXED ENGINE GUARDRAILS"],
+    ["_price_tick","Price tick is fixed at ₹1: the current price engine enforces whole-rupee prices","fixed","FIXED ENGINE GUARDRAILS"],
+    ["_short_model","Short selling ON is blocked until short-position, collateral, covering and reversal accounting exists","fixed","FIXED ENGINE GUARDRAILS"],
+    ["_trade_lots","IPO allotment lots remain separately configurable from regular trading lots","fixed","FIXED ENGINE GUARDRAILS"],
+    ["_news_guardrail","Market News moves are capped at 10% per event and constrained by the ±15% base-price band","fixed","FIXED ENGINE GUARDRAILS"],
+    ["_inst_restr","Institutional accounts are transaction-based; participant-side cash and holding checks still apply","fixed","FIXED ENGINE GUARDRAILS"],
+    ["_inst_fee","Institutional spread is configurable; brokerage follows the participant-side settlement model","fixed","FIXED ENGINE GUARDRAILS"]
   ];
 
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
@@ -721,24 +721,28 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
   }
 
   function cfgInputLimit(key) {
-    var limits={brokerage_rate:{min:"0",max:"99.99"},loan_interest_rate:{min:"0",max:"99.99"},max_price_move_pct:{min:"0.01",max:"10"},min_order_value:{min:"0"},max_order_value:{min:"1"},initial_capital:{min:"0.01"},institutional_cash:{min:"0"},cash_rule_limit:{min:"0"},loan_max_principal:{min:"0"},min_buy_trades:{min:"0"},min_sell_trades:{min:"0"},ipo_application_hours:{min:"0"}};
+    var limits={brokerage_rate:{min:"0",max:"99.99"},loan_interest_rate:{min:"0",max:"99.99"},max_price_move_pct:{min:"0.01",max:"10"},max_order_price_deviation_pct:{min:"0.01",max:"15"},institutional_spread_pct:{min:"0",max:"10"},max_company_pct:{min:"0",max:"100"},min_order_value:{min:"0"},max_order_value:{min:"1"},initial_capital:{min:"0.01"},institutional_cash:{min:"0"},cash_rule_limit:{min:"0"},loan_max_principal:{min:"0"},min_buy_trades:{min:"0"},min_sell_trades:{min:"0"},ipo_application_hours:{min:"0"},stock_lot_size:{min:"1"},max_order_quantity:{min:"1"}};
     var l=limits[key]||{};return (l.min!==undefined?' min="'+l.min+'"':"")+(l.max!==undefined?' max="'+l.max+'"':"");
   }
   function renderConfig(cfg) {
     var previousGroup="";
     $("cfg").innerHTML=CFG.map(function(f){
-      var k=f[0],v=cfg[k],group=f[3]||"",prefix=group&&group!==previousGroup?'<div class="cfg-section-title">'+esc(group)+'</div>':"";
+      var k=f[0],v=cfg[k],group=f[3]||"",prefix=group&&group!==previousGroup?'<div class="cfg-section-title" data-cfg-section="'+esc(group)+'">'+esc(group)+'</div>':"";
       previousGroup=group;var html="";
       if(f[2]==="fixed")html='<div class="field cfg-fixed"><span class="small"><b>'+esc(f[1].split(":")[0])+"</b>:"+esc(f[1].split(":").slice(1).join(":"))+"</span></div>";
+      else if(f[2]==="bool"&&k==="allow_short_selling")html='<div class="field cfg-short-setting"><div><label for="cfg_'+k+'">Allow Short Selling</label><p class="cfg-field-help">OFF is enforced by current trade checks. ON is blocked until short-position accounting, collateral, covering and reversal logic exists.</p><span class="cfg-short-state" data-short-state>'+(v?"ON REQUESTED · UNAVAILABLE":"OFF · SELL ONLY FROM HELD SHARES")+'</span></div><label class="cfg-switch" title="Turning this on is currently rejected by the backend"><input id="cfg_'+k+'" type="checkbox" data-cfg="'+k+'"'+(v?" checked":"")+'><span class="cfg-switch-track"></span></label></div>';
       else if(f[2]==="bool")html='<label class="check field"><span><input type="checkbox" data-cfg="'+k+'"'+(v?" checked":"")+"> "+esc(f[1])+"</span></label>";
       else if(f[2]==="datetime")html='<div class="field"><label for="cfg_'+k+'">'+esc(f[1])+'</label><input class="input" id="cfg_'+k+'" data-cfg="'+k+'" type="datetime-local" value="'+esc(istLocal(v))+'"></div>';
       else{var shown=f[2]==="pct"?+(N(v)*100).toFixed(4):(v===null||v===undefined?"":v);html='<div class="field"><label for="cfg_'+k+'">'+esc(f[1])+'</label><input class="input" id="cfg_'+k+'" data-cfg="'+k+'" type="'+(f[2]==="text"?"text":"number")+'" step="'+(f[2]==="int"?"1":"any")+'"'+cfgInputLimit(k)+' value="'+esc(shown)+'"></div>';}
-      return prefix+html;
+      return prefix+'<div class="cfg-entry" data-cfg-entry="'+esc(k)+'" data-category="'+esc(group)+'" data-label="'+esc(f[1].toLowerCase())+'">'+html+'</div>';
     }).join("");
     $("cfgUpd").textContent=cfg.updated_by?"Last saved by "+cfg.updated_by+" · "+F.datetime(cfg.updated_at):"No saved-change metadata returned";
     $("cfgCashRule").innerHTML="<b>"+esc(F.money(N(cfg.cash_rule_limit))+" closing cash criterion")+"</b> "+esc(JSE.cashRuleText(cfg.cash_rule_limit));
-    if(!S.admin)$("cfg").querySelectorAll("input").forEach(function(i){i.disabled=true;});
+    var cats=[];CFG.forEach(function(f){if(f[3]&&cats.indexOf(f[3])<0)cats.push(f[3]);});
+    $("cfgCategory").innerHTML='<option value="">All categories</option>'+cats.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join("");
+    if(!S.admin)$("cfg").querySelectorAll("input,select").forEach(function(i){i.disabled=true;});
     $("cfg").querySelectorAll("[data-cfg]").forEach(function(i){i.addEventListener("input",configDraftChanged);i.addEventListener("change",configDraftChanged);});
+    $("cfgSearch").oninput=applyConfigFilters;$("cfgCategory").onchange=applyConfigFilters;$("cfgChangedOnly").onchange=applyConfigFilters;
     configDraftChanged();
   }
 
@@ -1375,12 +1379,25 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
   // ---- configuration tools: validation, presets, safe import/export and discard ----
   function cfgType(key){var f=CFG.filter(function(x){return x[0]===key;})[0];return f?f[2]:"";}
   function configDraftPayload(){var body={};$("cfg").querySelectorAll("[data-cfg]").forEach(function(i){var k=i.getAttribute("data-cfg"),t=cfgType(k),v;if(t==="bool")v=i.checked;else if(t==="datetime")v=i.value?i.value+":00+05:30":"";else if(t==="pct")v=i.value===""?"":N(i.value)/100;else v=i.value;body[k]=v;});return body;}
+  function configValueChanged(key,i,cur){
+    var t=cfgType(key),saved=cur[key],now;if(t==="bool")now=i.checked;else if(t==="datetime")now=i.value;else if(t==="pct")now=i.value===""?"":N(i.value)/100;else now=i.value;if(t==="datetime")saved=istLocal(saved);if(saved===null||saved===undefined)saved="";
+    return String(now)!==String(saved)&&!(t!=="text"&&t!=="bool"&&t!=="datetime"&&String(now).trim()!==""&&N(now)===N(saved));
+  }
+  function applyConfigFilters(){
+    var search=(($("cfgSearch")&&$("cfgSearch").value)||"").trim().toLowerCase(),category=($("cfgCategory")&&$("cfgCategory").value)||"",changedOnly=!!($("cfgChangedOnly")&&$("cfgChangedOnly").checked),cur=(S.st&&S.st.config_full)||{},visible=0;
+    $("cfg").querySelectorAll("[data-cfg-entry]").forEach(function(entry){var key=entry.getAttribute("data-cfg-entry"),input=entry.querySelector("[data-cfg]"),label=entry.getAttribute("data-label")||"",cat=entry.getAttribute("data-category")||"",match=(!search||(label+" "+key+" "+cat.toLowerCase()).indexOf(search)>=0)&&(!category||cat===category)&&(!changedOnly||!input||configValueChanged(key,input,cur));entry.style.display=match?"":"none";if(match)visible++;});
+    $("cfg").querySelectorAll("[data-cfg-section]").forEach(function(h){var cat=h.getAttribute("data-cfg-section"),entries=Array.from($("cfg").querySelectorAll("[data-cfg-entry]")).filter(function(e){return e.getAttribute("data-category")===cat;});h.style.display=entries.some(function(e){return e.style.display!=="none";})?"":"none";});
+    if($("cfgMatchCount"))$("cfgMatchCount").textContent=visible+" setting(s) shown"+(changedOnly?" · changed only":"");
+  }
   function configDraftChanged(){
     var dirty=false,cur=(S.st&&S.st.config_full)||{};
-    $("cfg").querySelectorAll("[data-cfg]").forEach(function(i){var k=i.getAttribute("data-cfg"),t=cfgType(k),saved=cur[k],now;if(t==="bool")now=i.checked;else if(t==="datetime")now=i.value;else if(t==="pct")now=i.value===""?"":N(i.value)/100;else now=i.value;if(t==="datetime")saved=istLocal(saved);if(saved===null||saved===undefined)saved="";if(String(now)!==String(saved)&&!(t!=="text"&&t!=="bool"&&t!=="datetime"&&String(now).trim()!==""&&N(now)===N(saved)))dirty=true;});
+    $("cfg").querySelectorAll("[data-cfg]").forEach(function(i){if(configValueChanged(i.getAttribute("data-cfg"),i,cur))dirty=true;});
     $("cfgDraftState").textContent=dirty?"Unsaved draft changes · not active until the password-confirmed Save action succeeds.":"Draft matches the last-loaded saved configuration.";
     $("cfgDraftState").className="cfg-draft-state"+(dirty?" dirty":"");
     var cash=$("cfg").querySelector('[data-cfg="cash_rule_limit"]');if(cash)$("cfgCashRule").innerHTML="<b>"+esc(F.money(N(cash.value))+" closing cash criterion")+"</b> "+esc(JSE.cashRuleText(N(cash.value)));
+    var short=$("cfg").querySelector('[data-cfg="allow_short_selling"]'),state=$("cfg").querySelector("[data-short-state]");
+    if(short&&state){state.textContent=short.checked?"ON REQUESTED · BACKEND WILL REJECT UNTIL SHORT LEDGER IS READY":"OFF · SELL ONLY FROM HELD SHARES";short.closest(".cfg-short-setting").classList.toggle("requested",short.checked);}
+    applyConfigFilters();
   }
   function validateConfigDraft(){
     var errors=[],warnings=[],get=function(k){var el=$("cfg").querySelector('[data-cfg="'+k+'"]');return el?el.value:"";},num=function(k){return Number(get(k));},present=function(k){return String(get(k)).trim()!==""&&Number.isFinite(num(k));};
@@ -1397,12 +1414,19 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
     if(!present("loan_max_principal")||num("loan_max_principal")<0)errors.push("Maximum loan principal must be a non-negative number.");
     ["min_buy_trades","min_sell_trades"].forEach(function(k){if(!present(k)||!Number.isInteger(num(k))||num(k)<0)errors.push((k==="min_buy_trades"?"Minimum BUY":"Minimum SELL")+" trade count must be a non-negative whole number.");});
     if(!present("ipo_application_hours")||num("ipo_application_hours")<0)errors.push("IPO application window must be a non-negative number of hours.");
+    if(!present("stock_lot_size")||!Number.isInteger(num("stock_lot_size"))||num("stock_lot_size")<=0)errors.push("Regular trading lot size must be a positive whole number.");
+    if(!present("max_order_quantity")||!Number.isInteger(num("max_order_quantity"))||num("max_order_quantity")<=0)errors.push("Maximum order quantity must be a positive whole number.");
+    if(!present("max_company_pct")||num("max_company_pct")<0||num("max_company_pct")>100)errors.push("Maximum company exposure must be between 0% and 100%; 0% disables the cap.");
+    if(!present("institutional_spread_pct")||num("institutional_spread_pct")<0||num("institutional_spread_pct")>10)errors.push("Institutional spread must be between 0% and 10%.");
+    if(!present("max_order_price_deviation_pct")||num("max_order_price_deviation_pct")<=0||num("max_order_price_deviation_pct")>15)errors.push("Maximum order price deviation must be above 0% and no more than 15%.");
+    var shortToggle=$("cfg").querySelector('[data-cfg="allow_short_selling"]');if(shortToggle&&shortToggle.checked)errors.push("Short selling ON is not available safely yet. The current database enforces non-negative holdings and has no short-liability, collateral, covering or reversal ledger. Keep this switch OFF; the backend rejects ON.");
     if(get("event_start_at")&&!Number.isFinite(Date.parse(get("event_start_at"))))errors.push("Scheduled start date/time is invalid.");
     var loans=$("cfg").querySelector('[data-cfg="loans_enabled"]'),auto=$("cfg").querySelector('[data-cfg="auto_loan_on_settlement"]');
     if(loans&&auto&&!loans.checked&&auto.checked)warnings.push("Auto Bank Loan is on while borrowing is disabled; the main borrowing switch prevents the feature from operating.");
     var status=(S.st&&(S.st.status||(S.st.event&&S.st.event.status)))||"",savedCfg=(S.st&&S.st.config_full)||{};
     var capitalInput=$("cfg").querySelector('[data-cfg="initial_capital"]');
     if(status&&status!=="NOT_STARTED"&&capitalInput&&String(N(capitalInput.value))!==String(N(savedCfg.initial_capital)))errors.push("Starting capital can only be changed before the event starts. Restore the saved value or reset the event before changing it.");
+    var lotInput=$("cfg").querySelector('[data-cfg="stock_lot_size"]');if(status&&status!=="NOT_STARTED"&&lotInput&&String(N(lotInput.value))!==String(N(savedCfg.stock_lot_size)))errors.push("Regular lot size can only change before the event starts so existing orders cannot become invalid.");
     if(get("event_start_at")===""&&savedCfg.event_start_at)warnings.push("The scheduled start cannot be cleared through the current configuration API. Leave it blank only when no scheduled start is saved; blank will otherwise be treated as no change.");
     var el=$("cfgValidation");
     if(errors.length){el.className="cfg-validation is-error";el.innerHTML="<b>Fix "+errors.length+" issue(s) before saving.</b><ul>"+errors.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>";return{valid:false,errors:errors,warnings:warnings};}
