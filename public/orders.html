@@ -25,8 +25,130 @@
   .ins-form { display: grid; grid-template-columns: minmax(0, 2fr) auto minmax(0, 1fr) minmax(0, 2fr) auto; gap: 12px; align-items: end; }
   @media (max-width: 900px) { .detail-extra, .ins-form { grid-template-columns: minmax(0, 1fr); } }
 </style>
+
+<style>
+  /* Order Tracking — modern blue visual theme. Visual-only overrides; preserve the page layout and workflow. */
+  body.order-tracking-page {
+    background: linear-gradient(180deg, #edf4ff 0, #f4f7fc 220px, #f3f6fb 100%);
+    color: #142846;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body.order-tracking-page .hd,
+  body.order-tracking-page .nav { background: transparent; }
+  body.order-tracking-page .wordmark { color: #102c52; letter-spacing: .065em; }
+  body.order-tracking-page .env-pill {
+    color: #24578d; background: #e4efff; border-color: #b9d2f3; border-radius: 6px;
+  }
+  body.order-tracking-page .tb-btn {
+    color: #18365f; background: #fff; border-color: #c6d7ee;
+    box-shadow: 0 1px 3px rgba(18,49,91,.06);
+  }
+  body.order-tracking-page .tb-btn:hover { border-color: #91add1; background: #f8fbff; }
+  body.order-tracking-page .tb-btn.dark {
+    color: #fff; background: linear-gradient(135deg,#244879,#10294e); border-color: #18365f;
+  }
+  body.order-tracking-page .nav a {
+    color: #254361; background: rgba(255,255,255,.96); border-color: #d2deed;
+    box-shadow: 0 1px 2px rgba(16,42,79,.035);
+  }
+  body.order-tracking-page .nav a:hover { color:#122e54; background:#f4f8fe; border-color:#aec3df; }
+  body.order-tracking-page .nav a[aria-current="page"] {
+    color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f;
+    box-shadow:0 2px 5px rgba(16,42,79,.16);
+  }
+  body.order-tracking-page .page-head h1 { color:#10294e; font-weight:850; }
+  body.order-tracking-page .page-head p { color:#5d7494; }
+  body.order-tracking-page .pill.round {
+    color:#244b7a; background:#f8fbff; border-color:#cbdcf0;
+    box-shadow:0 2px 6px rgba(20,54,94,.05);
+  }
+  body.order-tracking-page .steps {
+    background:linear-gradient(180deg,#fff,#f7faff); border-color:#d5e2f2;
+    box-shadow:0 3px 10px rgba(20,54,94,.04);
+  }
+  body.order-tracking-page .steps .st { color:#254361; }
+  body.order-tracking-page .steps .st .n {
+    color:#214b7d; background:#e7f0ff; border-color:#c9dcf4;
+  }
+  body.order-tracking-page .steps .arr { color:#8098b8; }
+  body.order-tracking-page .kpi {
+    background:#fff; border-color:#d6e2f1; box-shadow:0 4px 13px rgba(19,48,86,.055);
+  }
+  body.order-tracking-page .kpi .k { color:#627b9b; }
+  body.order-tracking-page .kpi .v { color:#18365f; font-weight:850; }
+  body.order-tracking-page .kpi .s { color:#7185a0; }
+  body.order-tracking-page .kpi.good .v { color:#087443; }
+  body.order-tracking-page .kpi.bad .v { color:#bd303e; }
+  body.order-tracking-page .kpi.warn .v { color:#986016; }
+  body.order-tracking-page .card {
+    background:#fff; border-color:#d6e2f1; box-shadow:0 5px 16px rgba(19,48,86,.05);
+  }
+  body.order-tracking-page .card-h {
+    background:linear-gradient(180deg,#fbfdff,#f0f5fc); border-bottom-color:#dce6f3;
+  }
+  body.order-tracking-page .card-h h2,
+  body.order-tracking-page .card-h h3 { color:#18365f; font-weight:800; }
+  body.order-tracking-page .card-h .meta,
+  body.order-tracking-page .card-h .note { color:#667e9e; }
+  body.order-tracking-page .trk-filters .input {
+    color:#173657; background-color:#fff; border-color:#c8d8eb;
+    box-shadow:inset 0 1px 1px rgba(16,42,79,.02);
+  }
+  body.order-tracking-page .trk-filters .input:focus {
+    border-color:#527bb0; box-shadow:0 0 0 3px rgba(43,86,143,.12);
+  }
+  body.order-tracking-page .meta-row {
+    background:#f5f8fd; color:#607894; border-bottom-color:#dce6f3;
+  }
+  body.order-tracking-page .table-wrap { border-color:#d8e4f2; }
+  body.order-tracking-page table.t th {
+    background:#edf3fb; color:#405b7d; border-bottom-color:#d6e2f1;
+  }
+  body.order-tracking-page table.t td {
+    color:#203a5c; border-bottom-color:#e4ecf5;
+  }
+  body.order-tracking-page table.t tbody tr:hover td { background:#f5f9ff; }
+  body.order-tracking-page table.t td b { color:#17365c; }
+  body.order-tracking-page tr.row-main.open td { background:#edf5ff; }
+  body.order-tracking-page .ord-no { color:#225ca8; }
+  body.order-tracking-page .trade.buy { color:#13804c; }
+  body.order-tracking-page .trade.sell { color:#bd303e; }
+  body.order-tracking-page .last-act .ev { color:#7186a1; }
+  body.order-tracking-page .pager {
+    background:#f8fbff; border-top-color:#dbe6f3;
+  }
+  body.order-tracking-page .pager .btn {
+    color:#24466f; background:#fff; border-color:#c8d8eb;
+  }
+  body.order-tracking-page .pager .btn:hover { background:#eef5ff; border-color:#9eb9dd; }
+  body.order-tracking-page .pager .btn.primary {
+    color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f;
+  }
+  body.order-tracking-page .detail-extra h4 { color:#315679; }
+  body.order-tracking-page .detail-extra ul { color:#435c7a; }
+  body.order-tracking-page .detail-extra .timeline { border-left-color:#cbdcf0; }
+  body.order-tracking-page .empty { color:#667e9e; }
+  body.order-tracking-page .empty b { color:#18365f; }
+  body.order-tracking-page .btn {
+    color:#204369; background:#fff; border-color:#c8d8eb;
+    box-shadow:0 1px 2px rgba(16,42,79,.035);
+  }
+  body.order-tracking-page .btn:hover { background:#f3f8ff; border-color:#a8bed9; }
+  body.order-tracking-page .btn.primary {
+    color:#fff; background:linear-gradient(135deg,#244879,#10294e);
+    border-color:#18365f; box-shadow:0 2px 6px rgba(16,42,79,.15);
+  }
+  body.order-tracking-page .btn.primary:hover {
+    background:linear-gradient(135deg,#1a3b68,#0b2142); border-color:#10294e;
+  }
+  body.order-tracking-page .input:focus-visible,
+  body.order-tracking-page .btn:focus-visible { outline:3px solid rgba(57,103,162,.24); outline-offset:2px; }
+</style>
+
 </head>
-<body>
+<body class="order-tracking-page">
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1 id="h1">Order Tracking</h1>
