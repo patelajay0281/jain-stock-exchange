@@ -6,8 +6,124 @@
 <title>Exchange Settlement · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/jse.css?v=325">
+
+<style>
+  /* STYLE B — Premium Navy Accents. Exchange page only; preserve all page geometry and workflow. */
+  body.exchange-page {
+    background: linear-gradient(180deg, #edf3fb 0, #f3f6fb 220px, #f3f6fa 100%);
+    color: #142846;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body.exchange-page .hd,
+  body.exchange-page .nav { background: transparent; }
+  body.exchange-page .wordmark { color: #10294e; letter-spacing: .065em; }
+  body.exchange-page .env-pill { color:#244d7c; background:#e5eef9; border-color:#c4d5eb; border-radius:6px; }
+  body.exchange-page .tb-btn {
+    color:#17345a; background:#fff; border-color:#cbd8e8;
+    box-shadow:0 1px 3px rgba(16,42,79,.06);
+  }
+  body.exchange-page .tb-btn:hover { border-color:#91add1; background:#f8fbff; }
+  body.exchange-page .tb-btn.dark {
+    color:#fff; background:linear-gradient(135deg,#203f6d,#10294e); border-color:#18365f;
+  }
+  body.exchange-page .nav a {
+    color:#254361; background:rgba(255,255,255,.96); border-color:#d2deed;
+    box-shadow:0 1px 2px rgba(16,42,79,.035);
+  }
+  body.exchange-page .nav a:hover { color:#122e54; background:#f4f8fe; border-color:#aec3df; }
+  body.exchange-page .nav a[aria-current="page"] {
+    color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f;
+    box-shadow:0 2px 5px rgba(16,42,79,.16);
+  }
+  body.exchange-page .band {
+    color:#fff; background:linear-gradient(110deg,#0f2038 0%,#16375a 58%,#1f456b 100%);
+    box-shadow:0 7px 20px rgba(16,42,79,.14);
+  }
+  body.exchange-page .band h1 { color:#fff; font-weight:850; letter-spacing:.005em; }
+  body.exchange-page .band p { color:#e0eafa; }
+  body.exchange-page .band .tag {
+    color:#edf4ff; background:rgba(255,255,255,.08); border-color:rgba(210,226,247,.32);
+  }
+  body.exchange-page .kpi {
+    background:#fff; border-color:#d7e2ef; box-shadow:0 4px 13px rgba(19,48,86,.055);
+  }
+  body.exchange-page .kpi .k { color:#667e9c; }
+  body.exchange-page .kpi .v { color:#18365f; font-weight:850; }
+  body.exchange-page .kpi .s { color:#7185a0; }
+  body.exchange-page .kpi.good .v { color:#13804c; }
+  body.exchange-page .kpi.bad .v { color:#b42332; }
+  body.exchange-page .kpi.warn .v { color:#9a5b14; }
+  body.exchange-page .card {
+    background:#fff; border-color:#d7e2ef; box-shadow:0 5px 16px rgba(19,48,86,.055);
+  }
+  body.exchange-page .card-h {
+    background:linear-gradient(180deg,#f8fbff,#f0f5fb); border-bottom-color:#d9e4f1;
+  }
+  body.exchange-page .card-h h2,
+  body.exchange-page .card-h h3 { color:#18365f; font-weight:800; }
+  body.exchange-page .card-h .meta,
+  body.exchange-page .card-h .note { color:#647a98; }
+  body.exchange-page .card-h.bar h2::before,
+  body.exchange-page .card-h.bar h3::before { background:#315c91; }
+  body.exchange-page .card-h.bar.navy h2::before,
+  body.exchange-page .card-h.bar.navy h3::before { background:#18365f; }
+  body.exchange-page .alert.warn {
+    color:#754719; background:#fff7e8; border-color:#f0d7a6;
+  }
+  body.exchange-page .alert.info {
+    color:#214c82; background:#edf5ff; border-color:#c5daf5;
+  }
+  body.exchange-page .alert.bad {
+    color:#8f2631; background:#fff0f1; border-color:#efc7ce;
+  }
+  body.exchange-page .alert.good {
+    color:#14532d; background:#edf9f1; border-color:#b9e1ca;
+  }
+  body.exchange-page .txn {
+    background:#fff; border-color:#d7e2ef; border-left-color:#315c91;
+    box-shadow:0 3px 10px rgba(19,48,86,.055);
+  }
+  body.exchange-page .txn.risk { border-left-color:#c43b49; }
+  body.exchange-page .txn-h { border-bottom-color:#e1e9f3; background:#f8fbff; }
+  body.exchange-page .txn-h .no { color:#18365f; }
+  body.exchange-page .txn-f .k,
+  body.exchange-page .txn-trio .k { color:#667e9c; }
+  body.exchange-page .txn-f .v,
+  body.exchange-page .txn-trio .v { color:#18365f; }
+  body.exchange-page .txn-trio { background:#f1f6fc; border-color:#d8e3f0; }
+  body.exchange-page .txn-a { border-top-color:#e0e8f2; }
+  body.exchange-page .btn {
+    color:#1d3c64; background:#fff; border-color:#c8d7e9;
+    box-shadow:0 1px 2px rgba(16,42,79,.035);
+  }
+  body.exchange-page .btn:hover { background:#f3f7fc; border-color:#a8bed9; }
+  body.exchange-page .btn.primary {
+    color:#fff; background:linear-gradient(135deg,#244879,#10294e);
+    border-color:#18365f; box-shadow:0 2px 6px rgba(16,42,79,.16);
+  }
+  body.exchange-page .btn.primary:hover {
+    background:linear-gradient(135deg,#1a3b68,#0b2142); border-color:#10294e;
+  }
+  body.exchange-page .btn.approve,
+  body.exchange-page .btn.good { color:#fff; background:#16794b; border-color:#16794b; }
+  body.exchange-page .btn.reject,
+  body.exchange-page .btn.bad { color:#fff; background:#b83240; border-color:#b83240; }
+  body.exchange-page .table-wrap { border-color:#dbe5f1; }
+  body.exchange-page table.t { color:#17345a; }
+  body.exchange-page table.t th {
+    background:#edf3fa; color:#3c5778; border-bottom-color:#d7e2ef;
+  }
+  body.exchange-page table.t td { color:#203a5c; border-bottom-color:#e5ecf4; }
+  body.exchange-page table.t tbody tr:hover td { background:#f6f9fe; }
+  body.exchange-page table.t td b { color:#17345a; }
+  body.exchange-page .empty { color:#657c99; }
+  body.exchange-page .empty b { color:#18365f; }
+</style>
+
 </head>
-<body>
+<body class="exchange-page">
 <main id="main" class="wrap wide">
   <section class="band">
     <div><h1>JAIN STOCK EXCHANGE</h1><p>Review submitted orders before they move into bank settlement.</p></div>
