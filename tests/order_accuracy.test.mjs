@@ -124,11 +124,13 @@ test("10 a retried submission (same request key) creates one order", async () =>
   await cleanup();
 });
 
-test("6 a price change while an order is pending: valid within ±15%, closed beyond it; executes at its own price", async () => {
-  const o = await submit(T1, "BUY", 50); ok(o);
+test("6 market price changes never reject an order; broker-entered price is used through settlement", async () => {
+  const executionPrice = Math.max(1, Math.round(mkt * 0.7));
+  const o = await submit(T1, "BUY", 50, { price: executionPrice }); ok(o);
+  assert.equal(N(o.data.order.price), executionPrice, "order uses the price entered in the ticket");
   ok(await POST("/api/market-news", { symbol: S, mood: "POSITIVE", headline: "small move" }, ADMIN), "news");
   let od = (await GET("/api/order?id=" + o.data.order.id, ADMIN)).data.order;
-  assert.equal(od.status, "EXCHANGE_PENDING", "a small move keeps the order open");
+  assert.equal(od.status, "EXCHANGE_PENDING", "market price changes do not stale-reject the order");
   ok(await approve(o.data.order.id)); const st = await settle(o.data.order.id);
   assert.equal(st.data.status, "BANK_SETTLED"); assert.equal(N(st.data.price ?? st.data.trade_value / 50), N(o.data.order.price), "settles at the order's own price");
   mkt = await price(S);
@@ -145,7 +147,7 @@ test("Market News stays inside the permanent ±15% band from the base price", as
   mkt = await price(S);
 });
 
-test("negotiated pair price must be within ±15% of the market price", async () => {
+test("negotiated pair price remains separately constrained to ±15% of the market price", async () => {
   const pair = async (p) => track(await POST("/api/orders", { idempotency_key: randomUUID(), legs: [
     { team: T1, symbol: S, side: "BUY", quantity: 50, expected_price: mkt, negotiated_price: p },
     { team: T2, symbol: S, side: "SELL", quantity: 50, expected_price: mkt, negotiated_price: p }] }, PIT));
@@ -157,11 +159,13 @@ test("negotiated pair price must be within ±15% of the market price", async () 
 
 test("9 institutional inventory and team holdings move together", async () => {
   ok(await POST("/api/institution-inventory", { action: "SET", symbol: S, quantity: 100, reason: "test" }, ADMIN));
-  const io = async (side, qty, team = T1) => track(await POST("/api/institutional-order", { counterparty_team: team, symbol: S, side, quantity: qty, expected_price: mkt, idempotency_key: randomUUID() }, INST));
+  const io = async (side, qty, team = T1, priceOverride) => track(await POST("/api/institutional-order", { counterparty_team: team, symbol: S, side, quantity: qty, expected_price: mkt, ...(priceOverride ? { price: priceOverride } : {}), idempotency_key: randomUUID() }, INST));
   const tooMany = await io("SELL", 150);
   assert.equal(tooMany.status, 409); assert.equal(tooMany.data.code, "INSTITUTION_INVENTORY");
   const h0 = holding(await detail(T1), S);
-  const o = await io("SELL", 100); ok(o);
+  const institutionalExecutionPrice = Math.max(1, Math.round(mkt * 0.8));
+  const o = await io("SELL", 100, T1, institutionalExecutionPrice); ok(o);
+  assert.equal(N(o.data.order.price), institutionalExecutionPrice, "institutional ticket price is the execution price");
   const o2 = await io("SELL", 50); assert.equal(o2.data.code, "INSTITUTION_INVENTORY", "reserved by the open order");
   ok(await approve(o.data.order.id)); const s = await settle(o.data.order.id); assert.equal(s.data.status, "BANK_SETTLED", JSON.stringify(s.data));
   let inv = (await GET("/api/institution-inventory", ADMIN)).data.items.find((x) => x.symbol === S);
