@@ -145,8 +145,8 @@
           <div class="field"><label for="sec">Security</label><select class="input" id="sec"></select></div>
           <div class="field"><label for="qty">Quantity (shares)</label><input class="input" id="qty" type="number" min="50" step="50" value="50" inputmode="numeric" placeholder="Select quantity"><span class="hint" id="lotHint">Multiples of 50 shares.</span></div>
           <div class="span-2 live-px" id="curPxBox"><div class="k">Current market price · same as the Market page</div><div class="v" id="curPx">—</div><div class="s" id="curPxMeta">Select a stock</div></div>
-          <div class="field span-2"><label for="instPriceIn">Order price per share</label><input class="input locked" id="instPriceIn" readonly tabindex="-1" value="—">
-            <span class="hint">Market price <span id="mktPrice">—</span> · <span id="instNote">market price</span></span></div>
+          <div class="field span-2"><label for="instPriceIn">Order price per share</label><input class="input" id="instPriceIn" type="number" min="1" step="1" inputmode="numeric" value="" aria-label="Execution price per share">
+            <span class="hint">Market reference <span id="mktPrice">—</span> · <span id="instNote">market price</span>. You may execute at the entered price.</span></div>
         </div>
         <div class="sidebtns" role="group" aria-label="Transaction side">
           <button type="button" class="buy" data-side="BUY" aria-pressed="true">BUY · Institution Buys</button>
@@ -221,19 +221,19 @@
     $("sideNote").textContent = teamBuys
       ? "Institution SELL: the participant BUYS at the live Market price + " + spreadText + "; the participant pays trade value plus brokerage."
       : "Institution BUY: the participant SELLS at the live Market price − " + spreadText + "; the participant receives trade value less brokerage.";
-    if (!s) { JSE.livePx(null); $("mktPrice").textContent = "—"; $("instPriceIn").value = "—"; $("instNote").textContent = "select a security"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; refreshSubmit(); return; }
-    var ip = instPrice(s);
+    if (!s) { JSE.livePx(null); $("mktPrice").textContent = "—"; $("instPriceIn").value = ""; $("instPriceIn").dataset.edited = ""; $("instNote").textContent = "select a security"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; refreshSubmit(); return; }
+    var ip = $("instPriceIn").dataset.edited === "1" ? N($("instPriceIn").value) : instPrice(s);
     $("mktPrice").textContent = F.price(s.price);
     $("instNote").textContent = S.side === "BUY" ? "institution buys · market − spread" : "institution sells · market + spread";
     JSE.livePx(s);
-    $("instPriceIn").value = N(ip).toFixed(2);
+    if ($("instPriceIn").dataset.edited !== "1") $("instPriceIn").value = String(Math.round(N(ip)));
     var flexIpoSell = flexibleIpoSell();
     $("lotHint").textContent = flexIpoSell
       ? "The participant sells IPO shares in any whole-share quantity."
       : "Multiples of " + s.lot_size + " shares.";
     $("qty").step = flexIpoSell ? 1 : s.lot_size;
     $("qty").min = flexIpoSell ? 1 : s.lot_size;
-    var tv = q > 0 ? Math.round(q * ip * 100) / 100 : 0, brk = Math.round(tv * N(r.brokerage_rate) * 100 + 1e-6) / 100;
+    var tv = q > 0 && ip > 0 ? Math.round(q * ip * 100) / 100 : 0, brk = Math.round(tv * N(r.brokerage_rate) * 100 + 1e-6) / 100;
     $("pvTv").textContent = F.money(tv);
     $("pvBrk").textContent = F.money(brk);
     $("pvAmt").textContent = F.money(teamBuys ? tv + brk : tv - brk);
@@ -377,10 +377,11 @@
       $("nGo").disabled = !S.canNews || ["NOT_STARTED", "LIVE", "SETTLEMENT_ONLY"].indexOf(S.status) < 0;
     }
   });
-  document.querySelectorAll("[data-side]").forEach(function (b) { b.addEventListener("click", function () { S.side = b.getAttribute("data-side"); document.querySelectorAll("[data-side]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); preview(); }); });
+  document.querySelectorAll("[data-side]").forEach(function (b) { b.addEventListener("click", function () { S.side = b.getAttribute("data-side"); document.querySelectorAll("[data-side]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); $("instPriceIn").dataset.edited = ""; preview(); }); });
   $("cp").addEventListener("change", refreshSubmit);
   $("asset").addEventListener("change", function () { $("sec").value = ""; fillSecs(); preview(); });
-  $("sec").addEventListener("change", preview);
+  $("sec").addEventListener("change", function () { $("instPriceIn").dataset.edited = ""; preview(); });
+  $("instPriceIn").addEventListener("input", function () { $("instPriceIn").dataset.edited = "1"; preview(); });
   $("qty").addEventListener("input", preview);
   ["histQ", "histSide", "histStatus"].forEach(function (id) {
     $(id).addEventListener(id === "histQ" ? "input" : "change", renderHistory);
@@ -394,7 +395,9 @@
     var q = N($("qty").value); if (!Number.isSafeInteger(q) || q <= 0) return JSE.toast("Enter a positive whole-share quantity.", "warn"); if (!quantityValid(s, q)) return JSE.toast("Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant.", "warn");
     var b = $("go"); b.disabled = true;
     try {
-      var body = { side: S.side, symbol: s.symbol, quantity: q, expected_price: s.price, counterparty_team: $("cp").value, idempotency_key: S.key };
+      var enteredPrice = N($("instPriceIn").value);
+      if (!Number.isInteger(enteredPrice) || enteredPrice <= 0) throw new Error("Enter a valid positive whole-number execution price.");
+      var body = { side: S.side, symbol: s.symbol, quantity: q, expected_price: s.price, price: enteredPrice, counterparty_team: $("cp").value, idempotency_key: S.key };
       if (S.inst) body.institution_id = Number(S.inst);
       var r = await JSE.api.post("/api/institutional-order", body);
       $("result").innerHTML = '<div class="alert good"><b>' + esc(r.order.order_no) + "</b> " + esc(r.order.team) + " " + (r.order.team_side === "BUY" ? "buys" : "sells") + " " + F.num(r.order.quantity) + " " + esc(r.order.symbol) +
