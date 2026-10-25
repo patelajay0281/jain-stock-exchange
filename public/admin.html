@@ -1977,5 +1977,20 @@ body.admin-command-page .grid.cols-2>.card {height:auto!important;align-self:ini
 }
 </style>
 
+<script id="jse-admin-terminal-last">
+(function () {
+  function placeTerminalLast() {
+    var main = document.getElementById("main");
+    var terminal = document.getElementById("advancedAnalytics");
+    if (!main || !terminal || terminal.parentElement === main && main.lastElementChild === terminal) return;
+    // Keep the Market Intelligence Terminal as the final section of Event Admin.
+    main.appendChild(terminal);
+    if (typeof window.scheduleAdminMasonry === "function") window.scheduleAdminMasonry();
+  }
+  placeTerminalLast();
+  document.addEventListener("DOMContentLoaded", placeTerminalLast, { once: true });
+})();
+</script>
+
 </body>
 </html>
