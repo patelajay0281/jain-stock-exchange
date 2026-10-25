@@ -697,10 +697,10 @@ body.admin-command-page [data-scroll]{scroll-margin-top:24px}
     if(!r)return;var ix=r.index||{},b=r.breadth||{};
     $("cmdIndexValue").textContent=ix.value!==undefined?new Intl.NumberFormat("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2}).format(N(ix.value)):"—";
     $("cmdIndexChange").textContent=ix.change_pct!==undefined?F.pct(ix.change_pct):"—";
-    $("cmdBreadth").textContent=F.num(b.advances)+" ▲ / "+F.num(b.declines)+" ▼";
+    if(b.advances!==undefined&&b.declines!==undefined) $("cmdBreadth").textContent=F.num(b.advances)+" ▲ / "+F.num(b.declines)+" ▼";
   }
   function renderCommandNav(){
-    $("cmdNav").addEventListener("click",function(e){var b=e.target.closest("[data-scroll]");if(!b)return;var el=$(b.getAttribute("data-scroll"));if(el)el.scrollIntoView({behavior:"smooth",block:"start"});});
+    document.addEventListener("click",function(e){var b=e.target.closest("[data-scroll]");if(!b)return;var el=$(b.getAttribute("data-scroll"));if(el)el.scrollIntoView({behavior:"smooth",block:"start"});});
   }
 
   // ---- Market Intelligence (embedded; admin and faculty only) ----
