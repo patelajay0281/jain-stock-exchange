@@ -251,6 +251,32 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
   <div class="kpis k8" id="kpis"></div>
   <div id="consistency" class="consistency"></div>
 
+  <section class="adv-analytics" id="advancedAnalytics" aria-label="Live financial charts and analytics">
+    <div class="adv-head">
+      <div><span class="adv-eyebrow">JSE / QUANT DESK</span><h2>Market intelligence terminal</h2><p>Recorded price history, order flow, risk distribution, participant wealth and cash activity.</p></div>
+      <div class="adv-controls">
+        <label><span>Security</span><select id="chartSymbol" class="input"><option value="">Loading securities…</option></select></label>
+        <label><span>History window</span><select id="chartRange" class="input"><option value="1">1 hour</option><option value="6">6 hours</option><option value="24" selected>24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="720">30 days</option></select></label>
+        <button class="btn primary sm" id="advancedRefresh" type="button">↻ Refresh analytics</button>
+      </div>
+    </div>
+    <div class="adv-statusline"><span id="advancedStatus"><i></i> Connecting to analytics feed…</span><span id="advancedCoverage">Historical charts use only recorded database events.</span></div>
+    <div class="adv-grid">
+      <article class="adv-card adv-span-8"><div class="adv-card-head"><div><span class="adv-index">01 / PRICE ACTION</span><h3 id="priceChartTitle">Security price history</h3><p>Actual recorded price changes, not synthetic/interpolated quotes.</p></div><div class="adv-stat-pills" id="priceChartStats"></div></div><div id="priceLineChart" class="adv-chart"><div class="adv-empty">Loading real price history…</div></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">02 / MARKET INDEX</span><h3>CMS 50 reconstructed path</h3><p>Price-history snapshots of listed index components.</p></div></div><div id="indexLineChart" class="adv-chart"><div class="adv-empty">Loading index observations…</div></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">03 / ORDER FLOW</span><h3>Order lifecycle mix</h3><p>Mutually exclusive order-status groups.</p></div></div><div id="orderStatusDonut" class="adv-donut"></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">04 / MARKET BREADTH</span><h3>Advancers vs decliners</h3><p>Listed securities vs their index base.</p></div></div><div id="breadthDonut" class="adv-donut"></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">05 / RISK PROFILE</span><h3>Recorded risk signals</h3><p>Persisted risk events and price-stale/company-limit rejects.</p></div></div><div id="riskDonut" class="adv-donut"></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">06 / CAPITAL ALLOCATION</span><h3>Portfolio composition</h3><p>Participant holdings at current prices plus cash.</p></div></div><div id="portfolioDonut" class="adv-donut"></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">07 / CASH CONTROL</span><h3>Participant cash flow</h3><p>Hourly net cash-ledger movement.</p></div></div><div id="cashflowLineChart" class="adv-chart"></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">08 / OPERATIONS</span><h3>Settlement performance</h3><p>Hourly settled order counts.</p></div></div><div id="settlementTrendChart" class="adv-chart"></div></article>
+      <article class="adv-card adv-span-4"><div class="adv-card-head"><div><span class="adv-index">09 / BROKER PERFORMANCE</span><h3>Brokerage earned</h3><p>Active commissions; reversals excluded.</p></div></div><div id="brokerPerformanceChart" class="adv-bars"></div></article>
+      <article class="adv-card adv-span-6"><div class="adv-card-head"><div><span class="adv-index">10 / SECTOR ROTATION</span><h3>Sector return vs base</h3><p>Current price return against each security's index base.</p></div></div><div id="sectorPerformanceChart" class="adv-bars"></div></article>
+      <article class="adv-card adv-span-6"><div class="adv-card-head"><div><span class="adv-index">11 / PARTICIPANT PERFORMANCE</span><h3>Net-worth leaders</h3><p>Canonical net-worth values from team metrics.</p></div><div class="adv-stat-pills" id="participantChartStats"></div></div><div id="participantPerformanceChart" class="adv-bars"></div></article>
+      <article class="adv-card adv-span-12"><div class="adv-card-head"><div><span class="adv-index">12 / NEWS &amp; PRICE RESPONSE</span><h3>Market News impact ledger</h3><p>Recorded requested and actual movement, before/after price and reversal state.</p></div><span class="adv-data-tag" id="newsImpactCount">Latest events</span></div><div class="table-wrap"><table class="t adv-news-table"><thead><tr><th>Time (IST)</th><th>Security</th><th>Sentiment</th><th class="num">Requested</th><th class="num">Actual</th><th class="num">Before</th><th class="num">After</th><th>Status</th></tr></thead><tbody id="newsImpactRows"><tr><td colspan="8" class="empty">Loading Market News history…</td></tr></tbody></table></div></article>
+    </div>
+  </section>
+
   <section class="cmd-dashboard" id="cmdDashboard" aria-label="Live command analytics">
     <div class="cmd-heading"><div><span class="cmd-kicker">LIVE TELEMETRY / 01</span><h2>Market &amp; floor signals</h2></div><span class="cmd-stream"><i></i> STREAMING SNAPSHOT</span></div>
     <div class="cmd-grid">
@@ -746,6 +772,136 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
     configDraftChanged();
   }
 
+
+  // ---- LIVE ANALYTICS: every visual is rendered from the authenticated admin analytics API. ----
+  var ADV_COLORS = ["#0b8793","#6f63b8","#19a078","#da9d43","#d45264","#5486be","#55b7b0","#9a78be","#e18059","#6d879a"];
+  function advTime(v) {
+    if (!v) return "—";
+    var d = new Date(v);
+    return Number.isFinite(d.getTime()) ? d.toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Asia/Kolkata"}) : "—";
+  }
+  function advDate(v) {
+    if (!v) return "—";
+    var d = new Date(v);
+    return Number.isFinite(d.getTime()) ? d.toLocaleDateString("en-IN", {day:"2-digit",month:"short",timeZone:"Asia/Kolkata"}) + " " + advTime(v) : "—";
+  }
+  function advEmpty(msg) { return '<div class="adv-empty">' + esc(msg) + "</div>"; }
+  function renderAdvLine(id, rows, key, opt) {
+    var el = $(id);
+    if (!el) return;
+    if (!Array.isArray(rows) || rows.length < 2) {
+      el.innerHTML = advEmpty((opt && opt.empty) || "Not enough recorded observations in this time window.");
+      return;
+    }
+    var w = 760, h = 184, m = {l:57,r:12,t:10,b:27}, pw = w - m.l - m.r, ph = h - m.t - m.b;
+    var vals = rows.map(function(r) { return N(r[key]); });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) { el.innerHTML = advEmpty("No numeric history is available."); return; }
+    if (lo === hi) { var pad = Math.max(Math.abs(lo) * .02, 1); lo -= pad; hi += pad; }
+    else { var pad2 = (hi - lo) * .12; lo -= pad2; hi += pad2; }
+    var x = function(i) { return m.l + i / (rows.length - 1) * pw; };
+    var y = function(v) { return m.t + (hi - v) / (hi - lo) * ph; };
+    var path = rows.map(function(r,i) { return (i ? "L" : "M") + x(i).toFixed(2) + " " + y(N(r[key])).toFixed(2); }).join(" ");
+    var area = path + " L" + x(rows.length-1).toFixed(2) + " " + (m.t+ph) + " L" + m.l + " " + (m.t+ph) + " Z";
+    var grids = "";
+    for (var i=0;i<5;i++) {
+      var gy = m.t + i * ph / 4, value = hi - i * (hi-lo) / 4;
+      grids += '<line class="adv-axis" x1="' + m.l + '" x2="' + (w-m.r) + '" y1="' + gy + '" y2="' + gy + '"/><text x="' + (m.l-8) + '" y="' + (gy+3) + '" text-anchor="end">' + esc(opt && opt.money ? F.short(value) : value.toFixed(1)) + "</text>";
+    }
+    var labels = "";
+    [0,Math.floor((rows.length-1)/2),rows.length-1].forEach(function(i) {
+      labels += '<text x="' + x(i) + '" y="' + (h-7) + '" text-anchor="' + (i===0 ? "start" : i===rows.length-1 ? "end" : "middle") + '">' + esc(advTime(rows[i].at || rows[i].created_at)) + "</text>";
+    });
+    var dots = rows.map(function(r,i) {
+      if (rows.length > 100 && i % Math.ceil(rows.length/45) !== 0 && i !== rows.length-1) return "";
+      var label = advDate(r.at || r.created_at) + " · " + (opt && opt.money ? F.money(N(r[key])) : N(r[key]).toLocaleString("en-IN",{maximumFractionDigits:2}));
+      return '<circle cx="' + x(i) + '" cy="' + y(N(r[key])) + '" r="2.5" fill="' + ((opt && opt.color) || "#0b8793") + '"><title>' + esc(label) + "</title></circle>";
+    }).join("");
+    var color = (opt && opt.color) || "#0b8793";
+    el.innerHTML = '<svg viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="' + esc((opt && opt.label) || "History line chart") + '" preserveAspectRatio="none">' +
+      grids + '<path class="adv-area" d="' + area + '" style="fill:' + ((opt && opt.area) || "rgba(13,135,146,.09)") + '"/><path class="adv-line" d="' + path + '" style="stroke:' + color + '"/>' + dots + labels + "</svg>";
+  }
+  function renderAdvDonut(id, rows) {
+    var el = $(id);
+    if (!el) return;
+    rows = (rows || []).map(function(x) { return {label:String(x.label || "Other"),value:Math.max(0,N(x.value))}; }).filter(function(x) { return x.value > 0; });
+    var total = rows.reduce(function(a,x) { return a + x.value; }, 0);
+    if (!total) { el.innerHTML = advEmpty("No recorded values in this category yet."); return; }
+    var r=63, circumference=2*Math.PI*r, offset=0;
+    var parts=rows.map(function(x,i) {
+      var dash=x.value/total*circumference, color=ADV_COLORS[i%ADV_COLORS.length];
+      var node='<circle cx="88" cy="88" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="21" stroke-dasharray="' + dash + " " + (circumference-dash) + '" stroke-dashoffset="' + (-offset) + '" transform="rotate(-90 88 88)"><title>' + esc(x.label + ": " + F.num(x.value) + " (" + (x.value/total*100).toFixed(1) + "%)") + "</title></circle>";
+      offset += dash; return node;
+    }).join("");
+    var legend=rows.slice(0,9).map(function(x,i) {
+      return '<div class="adv-legend-row"><i style="background:' + ADV_COLORS[i%ADV_COLORS.length] + '"></i><span title="' + esc(x.label) + '">' + esc(x.label) + "</span><b>" + F.num(x.value) + "</b></div>";
+    }).join("");
+    el.innerHTML='<svg viewBox="0 0 176 176" role="img" aria-label="Doughnut chart"><circle cx="88" cy="88" r="' + r + '" fill="none" stroke="#edf2f6" stroke-width="21"/>' + parts +
+      '<text x="88" y="84" text-anchor="middle" class="donut-total">' + esc(F.short(total)) + '</text><text x="88" y="101" text-anchor="middle" class="donut-caption">TOTAL</text></svg><div class="adv-legend">' + legend + "</div>";
+  }
+  function renderAdvBars(id, rows, labelKey, valueKey, opt) {
+    var el=$(id);
+    if (!el) return;
+    rows=(rows||[]).slice(0,(opt&&opt.limit)||7).filter(function(r) { return Number.isFinite(Number(r[valueKey])); });
+    if (!rows.length) { el.innerHTML=advEmpty("No records available for this chart."); return; }
+    var max=Math.max.apply(null,rows.map(function(r) { return Math.abs(N(r[valueKey])); }))||1;
+    el.innerHTML=rows.map(function(r) {
+      var v=N(r[valueKey]), negative=v<0, width=Math.max(v?2:0,Math.abs(v)/max*100), cl=negative?"neg":(opt&&opt.colorBySign?"pos":""),shown=opt&&opt.money?F.short(v):(opt&&opt.percent?F.pct(v):F.num(v));
+      return '<div class="adv-bar-row" title="' + esc(String(r[labelKey]||"")) + '"><span class="adv-bar-label">' + esc(String(r[labelKey]||"—")) + '</span><div class="adv-bar-track"><div class="adv-bar-fill ' + cl + '" style="width:' + Math.min(100,width) + '%"></div></div><span class="adv-bar-value">' + esc(shown) + "</span></div>";
+    }).join("");
+  }
+  function renderAdvancedCharts(d) {
+    if (!d) return;
+    var st=d.summary||{}, prices=d.price_history||[], idx=d.index_history||[];
+    $("priceChartTitle").textContent=(d.selected_symbol||"Selected security")+" · price history";
+    var latest=prices.length?prices[prices.length-1]:null;
+    $("priceChartStats").innerHTML='<span class="adv-stat">Last <b>' + esc(latest?F.price(latest.new_price):"—") + '</b></span><span class="adv-stat">High <b>' + esc(prices.length?F.price(Math.max.apply(null,prices.map(function(x){return N(x.new_price);} ))):"—") + '</b></span><span class="adv-stat">Low <b>' + esc(prices.length?F.price(Math.min.apply(null,prices.map(function(x){return N(x.new_price);} ))):"—") + "</b></span>";
+    renderAdvLine("priceLineChart",prices,"new_price",{money:true,label:"Recorded stock price",color:"#0b8793",empty:"No price-history rows for this security and time window. It will populate after a recorded price change."});
+    renderAdvLine("indexLineChart",idx,"index_value",{label:"CMS 50 historical index",color:"#6f63b8",area:"rgba(111,99,184,.09)",empty:"No historical index points are available yet."});
+    renderAdvDonut("orderStatusDonut",d.order_status||[]);
+    renderAdvDonut("breadthDonut",[{label:"Advancing",value:N((d.breadth||{}).advances)},{label:"Declining",value:N((d.breadth||{}).declines)},{label:"Unchanged",value:N((d.breadth||{}).unchanged)}]);
+    renderAdvDonut("riskDonut",d.risk||[]); renderAdvDonut("portfolioDonut",d.portfolio||[]);
+    renderAdvLine("cashflowLineChart",d.cashflow||[],"net_flow",{money:true,label:"Hourly net ledger cash flow",color:"#148463",empty:"No cash-ledger history is available for this time window."});
+    renderAdvLine("settlementTrendChart",d.settlement_trend||[],"settled",{label:"Hourly settled orders",color:"#12876e",empty:"No settlement history is available yet."});
+    renderAdvBars("brokerPerformanceChart",d.brokers||[],"broker","commissions",{money:true,limit:6});
+    renderAdvBars("sectorPerformanceChart",d.sectors||[],"sector","avg_change_pct",{percent:true,limit:8});
+    renderAdvBars("participantPerformanceChart",d.participant_performance||[],"team","net_worth",{money:true,limit:8});
+    var leaders=d.participant_performance||[];
+    $("participantChartStats").innerHTML='<span class="adv-stat">Teams <b>' + F.num(st.active_teams||leaders.length) + '</b></span><span class="adv-stat">Top net worth <b>' + esc(leaders.length?F.short(N(leaders[0].net_worth)):"—") + "</b></span>";
+    var news=d.news||[];
+    $("newsImpactCount").textContent=news.length+" recorded event(s)";
+    $("newsImpactRows").innerHTML=news.length?news.map(function(x) {
+      return '<tr' + (x.reversed?' class="j-undone"':"") + '><td>' + esc(advDate(x.created_at)) + '</td><td><b>' + esc(x.symbol||"—") + '</b></td><td>' + esc(x.mood||"—") + '</td><td class="num ' + F.dir(N(x.requested_pct)) + '">' + esc(F.pct(N(x.requested_pct))) + '</td><td class="num ' + F.dir(N(x.actual_pct)) + '"><b>' + esc(F.pct(N(x.actual_pct))) + '</b></td><td class="num">' + esc(F.price(x.previous_price)) + '</td><td class="num">' + esc(F.price(x.new_price)) + '</td><td>' + (x.reversed?'<span class="badge warn">REVERSED</span>':'<span class="badge ok">ACTIVE</span>') + "</td></tr>";
+    }).join(""):'<tr><td colspan="8" class="empty">No Market News events have been recorded.</td></tr>';
+    $("advancedCoverage").textContent="Recorded data · "+F.num(st.price_history_points||0)+" price changes · no synthetic quotes";
+    $("advancedStatus").className="";
+    $("advancedStatus").innerHTML="<i></i> Live database snapshot · "+esc(advTime(d.generated_at))+" IST";
+  }
+  var advancedBusy=false;
+  async function loadAdvancedAnalytics() {
+    if (advancedBusy) return;
+    advancedBusy=true;
+    var status=$("advancedStatus");
+    if (status) { status.className="loading"; status.innerHTML="<i></i> Refreshing database analytics…"; }
+    try {
+      var symbol=$("chartSymbol").value||"", hours=Number($("chartRange").value||24);
+      var d=await JSE.api.get("/api/admin-analytics",{symbol:symbol,range_hours:hours});
+      S.advanced=d;
+      var stocks=d.stocks||[];
+      if (stocks.length) {
+        var old=$("chartSymbol").value||d.selected_symbol||stocks[0].symbol;
+        $("chartSymbol").innerHTML=stocks.map(function(x){return '<option value="' + esc(x.symbol) + '">' + esc(x.symbol) + " · " + esc(x.name) + "</option>";}).join("");
+        $("chartSymbol").value=stocks.some(function(x){return x.symbol===old;})?old:(d.selected_symbol||stocks[0].symbol);
+      }
+      renderAdvancedCharts(d);
+    } catch(e) {
+      if(status){status.className="bad";status.innerHTML="<i></i> Analytics API error · "+esc(e.message||"Request failed");}
+      if(!$("priceLineChart").querySelector("svg"))$("priceLineChart").innerHTML=advEmpty("Analytics feed unavailable. Check the backend deployment and try again.");
+    } finally { advancedBusy=false; }
+  }
+  $("chartSymbol").addEventListener("change",function(){loadAdvancedAnalytics();});
+  $("chartRange").addEventListener("change",function(){loadAdvancedAnalytics();});
+  $("advancedRefresh").addEventListener("click",function(){loadAdvancedAnalytics();});
 
   // ---- COMMAND WORLD analytics: every chart uses API-backed live snapshots. ----
   function renderCommandPipeline(d){
@@ -1517,6 +1673,8 @@ body.admin-command-page .cfg-section-title{grid-column:1/-1;color:#087f8c;font-s
     if (!S.admin) document.querySelectorAll(".admin-only").forEach(function (x) { x.classList.add("hidden"); });
     poller = JSE.poll(load, 10000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
     JSE.poll(loadIntel, 10000, { onError: function () {} });
+    JSE.poll(loadAdvancedAnalytics, 15000, { onError: function () { var n=$("advancedStatus"); if(n){n.className="bad";n.textContent="Analytics refresh failed";} } });
+    loadAdvancedAnalytics().catch(function() {});
     JSE.poll(loadNews, 20000);
     JSE.poll(loadSecs, 30000);
     loadTeamNames().catch(function (e) { JSE.toast(e.message, "bad"); });
