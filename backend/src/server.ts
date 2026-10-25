@@ -443,7 +443,7 @@ get("/api/admin-state", async (ctx) => {
 get("/api/admin-analytics", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
   const symbol = (q(ctx, "symbol") || "").trim().toUpperCase().slice(0, 24);
-  const requestedHours = Number(q(ctx, "range_hours") || 24);
+  const requestedHours = Number(q(ctx, "range_hours") || 720);
   const hours = [1, 6, 24, 72, 168, 720].includes(requestedHours) ? requestedHours : 24;
   const sql = [
     "WITH args AS (SELECT $1::text AS symbol,$2::integer AS hours,now()-($2::text||' hours')::interval AS since_at),",
