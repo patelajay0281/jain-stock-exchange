@@ -430,7 +430,7 @@ post("/api/institutional-order", async (ctx) => {
 });
 
 // ---- market news (Event Admin and the Institutional desk, as on Hatchable: the one price engine) ----
-post("/api/market-news", async (ctx) => { need(ctx, "ADMIN"); return mutate(ctx, "jse_market_news", ctx.body || {}); });
+post("/api/market-news", async (ctx) => { need(ctx, "ADMIN", "INSTITUTIONAL"); return mutate(ctx, "jse_market_news", ctx.body || {}, ORDER_CACHES.concat(["pub:market", "pub:news:"])); });
 
 // ---- event administration ----
 get("/api/admin-state", async (ctx) => {
