@@ -2012,5 +2012,70 @@ body.admin-command-page .grid.cols-2>.card {
   body.admin-command-page .grid.cols-2 { grid-template-columns:minmax(0,1fr)!important; }
 }
 </style>
+<style id="jse-admin-readable-type">
+/* Accessibility pass: larger, readable typography across the Event Admin only. */
+body.admin-command-page { font-size:16px!important; line-height:1.5!important; }
+body.admin-command-page #main { font-size:16px!important; }
+body.admin-command-page .page-head,
+body.admin-command-page .cmd-hero,
+body.admin-command-page .cmd-dashboard,
+body.admin-command-page .card,
+body.admin-command-page .adv-analytics,
+body.admin-command-page .cmd-panel { font-size:15px!important; }
+body.admin-command-page h1 { font-size:clamp(26px,2.1vw,34px)!important; line-height:1.2!important; }
+body.admin-command-page h2 { font-size:21px!important; line-height:1.3!important; }
+body.admin-command-page h3 { font-size:18px!important; line-height:1.35!important; }
+body.admin-command-page h4 { font-size:15px!important; line-height:1.4!important; }
+body.admin-command-page p,
+body.admin-command-page .small,
+body.admin-command-page .muted,
+body.admin-command-page .meta,
+body.admin-command-page .cmd-tag,
+body.admin-command-page .cmd-kicker,
+body.admin-command-page .cmd-index,
+body.admin-command-page .adv-eyebrow,
+body.admin-command-page .adv-statusline,
+body.admin-command-page .label,
+body.admin-command-page label,
+body.admin-command-page .field label { font-size:14px!important; line-height:1.5!important; }
+body.admin-command-page .cmd-nav-label,
+body.admin-command-page .cmd-shortcuts button,
+body.admin-command-page .cmd-refresh,
+body.admin-command-page .cmd-recon,
+body.admin-command-page .cmd-nav button,
+body.admin-command-page .cmd-shortcuts [data-scroll] { font-size:13px!important; }
+body.admin-command-page button,
+body.admin-command-page .btn,
+body.admin-command-page input,
+body.admin-command-page select,
+body.admin-command-page textarea { font-size:15px!important; line-height:1.4!important; }
+body.admin-command-page .controls .btn { font-size:14px!important; padding:12px 10px!important; }
+body.admin-command-page .moods button { font-size:13px!important; line-height:1.4!important; padding:10px 5px!important; }
+body.admin-command-page .moods button small { font-size:12px!important; line-height:1.35!important; }
+body.admin-command-page table,
+body.admin-command-page .t { font-size:14px!important; }
+body.admin-command-page table th,
+body.admin-command-page .t th { font-size:12px!important; line-height:1.4!important; }
+body.admin-command-page table td,
+body.admin-command-page .t td { font-size:14px!important; line-height:1.5!important; }
+body.admin-command-page .mi .box h4 { font-size:13px!important; letter-spacing:.06em!important; }
+body.admin-command-page .mi .box .v { font-size:22px!important; }
+body.admin-command-page .mi ul,
+body.admin-command-page .mi li { font-size:14px!important; line-height:1.5!important; }
+body.admin-command-page .kpis .kpi-label,
+body.admin-command-page .kpis .label { font-size:12px!important; }
+body.admin-command-page .kpis .kpi-value,
+body.admin-command-page .kpis .value { font-size:clamp(23px,1.8vw,30px)!important; }
+body.admin-command-page .adv-controls label span { font-size:14px!important; }
+body.admin-command-page .adv-controls select,
+body.admin-command-page .adv-controls button { min-height:42px; }
+@media(max-width:760px) {
+  body.admin-command-page { font-size:16px!important; }
+  body.admin-command-page .cmd-nav button,
+  body.admin-command-page .cmd-shortcuts button { font-size:13px!important; }
+  body.admin-command-page table th,
+  body.admin-command-page .t th { font-size:12px!important; }
+}
+</style>
 </body>
 </html>
