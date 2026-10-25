@@ -384,6 +384,7 @@ body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin
  body.admin-command-page .cmd-panel,body.admin-command-page .cmd-panel.cmd-wide,body.admin-command-page .mi .box,body.admin-command-page .mi .box.wide2,body.admin-command-page .grid.cols-2>.card{grid-column:span 1!important}
 }
 </style>
+<link rel="stylesheet" href="/assets/admin-advanced.css?v=2">
 </head>
 <body class="admin-command-page">
 <main id="main" class="wrap wide">
@@ -410,7 +411,7 @@ body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin
   </section>
   <nav class="cmd-nav" id="cmdNav" aria-label="Command centre shortcuts">
     <span class="cmd-nav-label">Jump to</span>
-    <button type="button" data-scroll="eventControl">Event control</button><button type="button" data-scroll="marketNewsSection">Market news</button><button type="button" data-scroll="intelligence">Analytics</button><button type="button" data-scroll="teamManagement">Participants</button><button type="button" data-scroll="ipoRandomBox">IPO tools</button><button type="button" data-scroll="configPanel">Rules &amp; guardrails</button><button type="button" data-scroll="accountsPanel">Accounts</button><button type="button" data-scroll="reconCard">Reconciliation</button><button type="button" data-scroll="reportsPanel">Reports</button>
+    <button type="button" data-scroll="eventControl">Event control</button><button type="button" data-scroll="marketNewsSection">Market news</button><button type="button" data-scroll="advancedAnalytics">Analytics</button><button type="button" data-scroll="teamManagement">Participants</button><button type="button" data-scroll="ipoRandomBox">IPO tools</button><button type="button" data-scroll="configPanel">Rules &amp; guardrails</button><button type="button" data-scroll="accountsPanel">Accounts</button><button type="button" data-scroll="reconCard">Reconciliation</button><button type="button" data-scroll="reportsPanel">Reports</button>
     <span class="cmd-nav-spacer"></span><button type="button" class="cmd-refresh" id="cmdRefresh">↻ Sync all</button><button type="button" class="cmd-recon" id="cmdRunRecon">Run checks ↗</button>
   </nav>
 
@@ -422,7 +423,7 @@ body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin
       <div><span class="adv-eyebrow">JSE / QUANT DESK</span><h2>Market intelligence terminal</h2><p>Recorded price history, order flow, risk distribution, participant wealth and cash activity.</p></div>
       <div class="adv-controls">
         <label><span>Security</span><select id="chartSymbol" class="input"><option value="">Loading securities…</option></select></label>
-        <label><span>History window</span><select id="chartRange" class="input"><option value="1">1 hour</option><option value="6">6 hours</option><option value="24" selected>24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="720">30 days</option></select></label>
+        <label><span>History window</span><select id="chartRange" class="input"><option value="1">1 hour</option><option value="6">6 hours</option><option value="24">24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="720" selected>30 days</option></select></label>
         <button class="btn primary sm" id="advancedRefresh" type="button">↻ Refresh analytics</button>
       </div>
     </div>
@@ -751,6 +752,8 @@ body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin
     ["max_order_quantity","Maximum shares per order","int","TRADING RULES"],["min_order_value","Minimum order value (₹)","number","TRADING RULES"],
     ["max_order_value","Maximum order value per order (₹)","number","TRADING RULES"],["max_order_price_deviation_pct","Maximum order price deviation (%)","number","TRADING RULES"],
     ["institutional_spread_pct","Institutional counterparty spread (%)","number","TRADING RULES"],
+    ["institution_overdraft","Allow institutional cash overdraft","bool","INSTITUTIONAL DESK"],
+    ["institution_brokerage","Charge brokerage on institutional orders","bool","INSTITUTIONAL DESK"],
     ["max_company_pct","Maximum company exposure (% of team funds; 0 = off)","number","RISK CONTROLS"],
     ["max_price_move_pct","Maximum Market News movement (%)","number","RISK CONTROLS"],["allow_short_selling","Allow short selling (currently unavailable to enable safely)","bool","RISK CONTROLS"],
     ["cash_rule_limit","Closing-cash eligibility limit (₹)","number","ELIGIBILITY"],["min_buy_trades","Minimum settled BUY trades","int","ELIGIBILITY"],["min_sell_trades","Minimum settled SELL trades","int","ELIGIBILITY"],
@@ -987,6 +990,21 @@ body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin
     el.innerHTML = '<svg viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="' + esc((opt && opt.label) || "History line chart") + '" preserveAspectRatio="none">' +
       grids + '<path class="adv-area" d="' + area + '" style="fill:' + ((opt && opt.area) || "rgba(13,135,146,.09)") + '"/><path class="adv-line" d="' + path + '" style="stroke:' + color + '"/>' + dots + labels + "</svg>";
   }
+  function renderAdvMultiLine(id, rows, series) {
+    var el=$(id);if(!el)return;
+    if(!Array.isArray(rows)||rows.length<2){el.innerHTML=advEmpty("Not enough settlement observations in this time window.");return;}
+    var w=760,h=184,m={l:43,r:12,t:10,b:27},pw=w-m.l-m.r,ph=h-m.t-m.b;
+    var vals=[];series.forEach(function(z){rows.forEach(function(r){vals.push(N(r[z.key]));});});
+    var lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals);
+    if(!Number.isFinite(lo)||!Number.isFinite(hi)){el.innerHTML=advEmpty("No numeric observations are available.");return;}
+    if(lo===hi){hi+=1;lo=Math.max(0,lo-1);}else{var p=(hi-lo)*.12;lo=Math.max(0,lo-p);hi+=p;}
+    var x=function(i){return m.l+i/(rows.length-1)*pw;},y=function(v){return m.t+(hi-v)/(hi-lo)*ph;},grids="";
+    for(var i=0;i<5;i++){var gy=m.t+i*ph/4,val=hi-i*(hi-lo)/4;grids+='<line class="adv-axis" x1="'+m.l+'" x2="'+(w-m.r)+'" y1="'+gy+'" y2="'+gy+'"/><text x="'+(m.l-7)+'" y="'+(gy+3)+'" text-anchor="end">'+esc(F.num(val))+'</text>';}
+    var paths=series.map(function(z){var path=rows.map(function(r,i){return(i?"L":"M")+x(i).toFixed(2)+" "+y(N(r[z.key])).toFixed(2);}).join(" "),dots=rows.map(function(r,i){if(rows.length>100&&i%Math.ceil(rows.length/40)!==0&&i!==rows.length-1)return"";return'<circle cx="'+x(i)+'" cy="'+y(N(r[z.key]))+'" r="2.5" fill="'+z.color+'"><title>'+esc(z.label+" · "+advDate(r.at)+" · "+F.num(r[z.key]))+'</title></circle>';}).join("");return'<path class="adv-line" d="'+path+'" style="stroke:'+z.color+'"/>'+dots;}).join("");
+    var labels="";[0,Math.floor((rows.length-1)/2),rows.length-1].forEach(function(i){labels+='<text x="'+x(i)+'" y="'+(h-7)+'" text-anchor="'+(i===0?"start":i===rows.length-1?"end":"middle")+'">'+esc(advTime(rows[i].at))+'</text>';});
+    var legend=series.map(function(z){return'<span class="adv-multi-legend"><i style="background:'+z.color+'"></i>'+esc(z.label)+'</span>';}).join("");
+    el.innerHTML='<div class="adv-multi-legend-wrap">'+legend+'</div><svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Settlement trends line chart" preserveAspectRatio="none">'+grids+paths+labels+'</svg>';
+  }
   function renderAdvDonut(id, rows) {
     var el = $(id);
     if (!el) return;
@@ -1028,7 +1046,7 @@ body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin
     renderAdvDonut("breadthDonut",[{label:"Advancing",value:N((d.breadth||{}).advances)},{label:"Declining",value:N((d.breadth||{}).declines)},{label:"Unchanged",value:N((d.breadth||{}).unchanged)}]);
     renderAdvDonut("riskDonut",d.risk||[]); renderAdvDonut("portfolioDonut",d.portfolio||[]);
     renderAdvLine("cashflowLineChart",d.cashflow||[],"net_flow",{money:true,label:"Hourly net ledger cash flow",color:"#148463",empty:"No cash-ledger history is available for this time window."});
-    renderAdvLine("settlementTrendChart",d.settlement_trend||[],"settled",{label:"Hourly settled orders",color:"#12876e",empty:"No settlement history is available yet."});
+    renderAdvMultiLine("settlementTrendChart",d.settlement_trend||[],[{key:"settled",label:"Settled",color:"#178b6b"},{key:"rejected",label:"Rejected",color:"#d45264"}]);
     renderAdvBars("brokerPerformanceChart",d.brokers||[],"broker","commissions",{money:true,limit:6});
     renderAdvBars("sectorPerformanceChart",d.sectors||[],"sector","avg_change_pct",{percent:true,limit:8});
     renderAdvBars("participantPerformanceChart",d.participant_performance||[],"team","net_worth",{money:true,limit:8});
