@@ -342,6 +342,48 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 @media(max-width:520px){body.admin-command-page .wrap.wide{width:calc(100% - 12px)}body.admin-command-page .cfg-grid{grid-template-columns:minmax(0,1fr)!important}body.admin-command-page .cmd-nav button{padding:8px 7px;font-size:9px}body.admin-command-page .cmd-heading h2{font-size:19px!important}body.admin-command-page .kpi{padding:11px!important}}
 </style>
 
+<style id="jse-admin-gap-pack">
+/* Content-first packing: variable-width cards and measured row spans avoid empty grid cells. */
+body.admin-command-page .adv-grid,
+body.admin-command-page .cmd-grid,
+body.admin-command-page .mi,
+body.admin-command-page .grid.cols-2 {
+  display:grid!important;grid-auto-flow:dense!important;grid-auto-rows:6px!important;
+  align-items:stretch!important;gap:10px!important;
+}
+body.admin-command-page .adv-grid{grid-template-columns:repeat(12,minmax(0,1fr))!important}
+body.admin-command-page .adv-card{grid-row-end:span 24}
+body.admin-command-page .cmd-grid{grid-template-columns:repeat(12,minmax(0,1fr))!important}
+body.admin-command-page .cmd-panel{grid-column:span 6!important;grid-row-end:span 24}
+body.admin-command-page .cmd-panel.cmd-wide{grid-column:span 12!important}
+body.admin-command-page .mi{grid-template-columns:repeat(12,minmax(0,1fr))!important}
+body.admin-command-page .mi .box{grid-column:span 3!important;grid-row-end:span 12;min-width:0}
+body.admin-command-page .mi .box:nth-child(3n+1){grid-column:span 4!important}
+body.admin-command-page .mi .box:nth-child(3n+2){grid-column:span 3!important}
+body.admin-command-page .mi .box:nth-child(3n){grid-column:span 5!important}
+body.admin-command-page .mi .box.wide2{grid-column:span 6!important}
+body.admin-command-page .grid.cols-2{grid-template-columns:repeat(12,minmax(0,1fr))!important}
+body.admin-command-page .grid.cols-2>.card{grid-column:span 6!important;grid-row-end:span 24;min-width:0}
+body.admin-command-page .adv-card,body.admin-command-page .cmd-panel,body.admin-command-page .mi .box,body.admin-command-page .grid.cols-2>.card{align-self:start}
+body.admin-command-page .adv-chart,body.admin-command-page .adv-donut,body.admin-command-page .adv-bars{min-width:0}
+@media(max-width:1050px){
+ body.admin-command-page .adv-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+ body.admin-command-page .adv-span-8,body.admin-command-page .adv-span-6,body.admin-command-page .adv-span-4{grid-column:span 3!important}
+ body.admin-command-page .adv-span-12{grid-column:span 6!important}
+ body.admin-command-page .cmd-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+ body.admin-command-page .cmd-panel,body.admin-command-page .cmd-panel.cmd-wide{grid-column:span 6!important}
+ body.admin-command-page .mi{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+ body.admin-command-page .mi .box,body.admin-command-page .mi .box:nth-child(n){grid-column:span 3!important}
+ body.admin-command-page .mi .box.wide2{grid-column:span 6!important}
+ body.admin-command-page .grid.cols-2{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+ body.admin-command-page .grid.cols-2>.card{grid-column:span 3!important}
+}
+@media(max-width:620px){
+ body.admin-command-page .adv-grid,body.admin-command-page .cmd-grid,body.admin-command-page .mi,body.admin-command-page .grid.cols-2{grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:6px!important}
+ body.admin-command-page .adv-span-4,body.admin-command-page .adv-span-6,body.admin-command-page .adv-span-8,body.admin-command-page .adv-span-12,
+ body.admin-command-page .cmd-panel,body.admin-command-page .cmd-panel.cmd-wide,body.admin-command-page .mi .box,body.admin-command-page .mi .box.wide2,body.admin-command-page .grid.cols-2>.card{grid-column:span 1!important}
+}
+</style>
 </head>
 <body class="admin-command-page">
 <main id="main" class="wrap wide">
@@ -1075,26 +1117,41 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     return list && list.length ? "<ul>" + list.map(function (s) { return "<li><span><b>" + esc(s.symbol) + "</b></span><span class=\"" + F.dir(s[key || "day_change_pct"]) + '">' + F.pct(s[key || "day_change_pct"]) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">None yet</div>';
   }
   async function loadIntel() {
-    var r = await JSE.api.get("/api/insights");
-    var sent = r.sentiment || {}, fl = r.flow || {}, ins = r.institutional_signal || {}, nw = r.net_worth || {}, ord = r.orders || {};
-    renderCommandMovers(r); renderCommandPeople(r); renderCommandMarketHeader(r);
-    var award = function (t, label) { return t ? "<li><span>" + label + " · <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span></span><span>" + F.short(t.net_worth) + "</span></li>" : "<li><span>" + label + '</span><span class="muted">no eligible team yet</span></li>'; };
-    $("mi").innerHTML =
-      '<div class="box"><h4>Market sentiment</h4><div class="v ' + (sent.label === "BULLISH" ? "up" : sent.label === "BEARISH" ? "down" : "") + '">' + esc(sent.label || "—") + '</div><div class="small muted">CMS 50 ' + F.pct(sent.index_change_pct) + " · recent news " + (sent.recent_news ? sent.recent_news.positive + "+ / " + sent.recent_news.negative + "−" : "—") + "</div></div>" +
-      '<div class="box"><h4>Market breadth</h4><div class="v"><span class="up">▲ ' + r.breadth.advances + '</span> <span class="down">▼ ' + r.breadth.declines + '</span> <span class="flat">■ ' + r.breadth.unchanged + '</span></div><div class="small muted">' + (r.index.components || 0) + " CMS 50 components</div></div>" +
-      '<div class="box"><h4>Net buying / selling flow</h4><div class="v ' + F.dir(fl.net_team_flow) + '">' + F.signedMoney(fl.net_team_flow) + '</div><div class="small muted">teams bought ' + F.short(fl.team_buy_value) + " · sold " + F.short(fl.team_sell_value) + "</div></div>" +
-      '<div class="box"><h4>Institutional signal</h4><div class="v">' + esc(ins.label || "—") + '</div><div class="small muted">net ' + F.signedMoney(ins.net) + "</div></div>" +
-      '<div class="box"><h4>Settled orders</h4><div class="v">' + F.num(ord.settled) + '</div><div class="small muted">' + F.num(ord.pit_pending) + " at Pit · " + F.num(ord.pending) + " open · " + F.num(ord.rejected) + " rejected (" + F.num(ord.stale) + " stale)</div></div>" +
-      '<div class="box"><h4>Top gainers</h4>' + secList(r.top_gainers) + "</div>" +
-      '<div class="box"><h4>Top losers</h4>' + secList(r.top_losers) + "</div>" +
-      '<div class="box"><h4>Winner · Runner-Up' + (r.final ? "" : " (provisional)") + "</h4><ul>" + award(r.winner, "Winner") + award(r.runner_up, "Runner-Up") + "</ul></div>" +
-      '<div class="box"><h4>Buy pressure (30 min)</h4>' + (r.buy_pressure.length ? "<ul>" + r.buy_pressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="up">' + F.short(p.buy_value) + " vs " + F.short(p.sell_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No buy-heavy securities</div>') + "</div>" +
-      '<div class="box"><h4>Sell pressure (30 min)</h4>' + (r.sell_pressure.length ? "<ul>" + r.sell_pressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="down">' + F.short(p.sell_value) + " vs " + F.short(p.buy_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No sell-heavy securities</div>') + "</div>" +
-      '<div class="box wide2"><h4>Sector analysis</h4><ul>' + (r.sectors || []).map(function (s) { return "<li><span>" + esc(s.sector) + ' <span class="tiny muted">' + s.securities + " · ▲" + s.advances + " ▼" + s.declines + '</span></span><span class="' + F.dir(s.avg_change_pct) + '">' + F.pct(s.avg_change_pct) + " · " + F.short(s.traded_value) + "</span></li>"; }).join("") + "</ul></div>" +
-      '<div class="box wide2"><h4>Participant performance</h4><div class="small muted" style="margin-bottom:4px">' + F.num(nw.eligible) + " eligible · " + F.num(nw.assessment_met) + " met assessment · highest " + F.short(nw.highest) + " · average " + F.short(nw.average) + "</div><ul>" +
-        (r.leaderboard || []).map(function (t) { return "<li><span>#" + t.rank + " <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span> " + JSE.badge.award(t.award) + '</span><span>' + F.short(t.net_worth) + ' <span class="tiny muted">B' + t.buys + " S" + t.sells + (t.eligible ? " ✓" : "") + "</span></span></li>"; }).join("") + "</ul></div>" +
-      '<div class="box wide2"><h4>Alerts</h4>' + (r.alerts.length ? '<ul class="alerts">' + r.alerts.map(function (a) { return '<li><span class="badge ' + (a.level === "bad" ? "no" : a.level === "warn" ? "warn" : "prov") + '">' + esc(a.level) + "</span> " + esc(a.text) + "</li>"; }).join("") + "</ul>" : '<div class="small muted">No alerts.</div>') + "</div>";
-    $("miMeta").textContent = "Live · " + F.time(new Date()) + " IST · same data as portfolios and order tracking";
+    var host = $("mi"), meta = $("miMeta");
+    try {
+      var r = await JSE.api.get("/api/insights");
+      if (!r || r.success === false) throw new Error((r && r.error) || "Insights API returned no usable data.");
+      var sent = r.sentiment || {}, fl = r.flow || {}, ins = r.institutional_signal || {}, nw = r.net_worth || {}, ord = r.orders || {};
+      var breadth = r.breadth || {}, index = r.index || {}, buyPressure = Array.isArray(r.buy_pressure) ? r.buy_pressure : [];
+      var sellPressure = Array.isArray(r.sell_pressure) ? r.sell_pressure : [], sectors = Array.isArray(r.sectors) ? r.sectors : [];
+      var gainers = Array.isArray(r.top_gainers) ? r.top_gainers : [], losers = Array.isArray(r.top_losers) ? r.top_losers : [];
+      var leaderboard = Array.isArray(r.leaderboard) ? r.leaderboard : [], alerts = Array.isArray(r.alerts) ? r.alerts : [];
+      renderCommandMovers(r); renderCommandPeople(r); renderCommandMarketHeader(r);
+      var award = function (t, label) { return t ? "<li><span>" + label + " · <b>" + esc(t.name || "—") + '</b> <span class="mono tiny">' + esc(t.team || "") + "</span></span><span>" + F.short(t.net_worth) + "</span></li>" : "<li><span>" + label + '</span><span class="muted">no eligible team yet</span></li>'; };
+      host.innerHTML =
+        '<div class="box"><h4>Market sentiment</h4><div class="v ' + (sent.label === "BULLISH" ? "up" : sent.label === "BEARISH" ? "down" : "") + '">' + esc(sent.label || "—") + '</div><div class="small muted">CMS 50 ' + F.pct(sent.index_change_pct) + " · recent news " + (sent.recent_news ? F.num(sent.recent_news.positive) + "+ / " + F.num(sent.recent_news.negative) + "−" : "—") + "</div></div>" +
+        '<div class="box"><h4>Market breadth</h4><div class="v"><span class="up">▲ ' + F.num(breadth.advances) + '</span> <span class="down">▼ ' + F.num(breadth.declines) + '</span> <span class="flat">■ ' + F.num(breadth.unchanged) + '</span></div><div class="small muted">' + F.num(index.components) + " CMS 50 components</div></div>" +
+        '<div class="box"><h4>Net buying / selling flow</h4><div class="v ' + F.dir(fl.net_team_flow) + '">' + F.signedMoney(fl.net_team_flow) + '</div><div class="small muted">teams bought ' + F.short(fl.team_buy_value) + " · sold " + F.short(fl.team_sell_value) + "</div></div>" +
+        '<div class="box"><h4>Institutional signal</h4><div class="v">' + esc(ins.label || "—") + '</div><div class="small muted">net ' + F.signedMoney(ins.net) + "</div></div>" +
+        '<div class="box"><h4>Settled orders</h4><div class="v">' + F.num(ord.settled) + '</div><div class="small muted">' + F.num(ord.pit_pending) + " at Pit · " + F.num(ord.pending) + " open · " + F.num(ord.rejected) + " rejected (" + F.num(ord.stale) + " stale)</div></div>" +
+        '<div class="box"><h4>Top gainers</h4>' + secList(gainers) + "</div>" +
+        '<div class="box"><h4>Top losers</h4>' + secList(losers) + "</div>" +
+        '<div class="box"><h4>Winner · Runner-Up' + (r.final ? "" : " (provisional)") + "</h4><ul>" + award(r.winner, "Winner") + award(r.runner_up, "Runner-Up") + "</ul></div>" +
+        '<div class="box"><h4>Buy pressure (30 min)</h4>' + (buyPressure.length ? "<ul>" + buyPressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="up">' + F.short(p.buy_value) + " vs " + F.short(p.sell_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No buy-heavy securities</div>') + "</div>" +
+        '<div class="box"><h4>Sell pressure (30 min)</h4>' + (sellPressure.length ? "<ul>" + sellPressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="down">' + F.short(p.sell_value) + " vs " + F.short(p.buy_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No sell-heavy securities</div>') + "</div>" +
+        '<div class="box wide2"><h4>Sector analysis</h4><ul>' + sectors.map(function (s) { return "<li><span>" + esc(s.sector || "Other") + ' <span class="tiny muted">' + F.num(s.securities) + " · ▲" + F.num(s.advances) + " ▼" + F.num(s.declines) + '</span></span><span class="' + F.dir(s.avg_change_pct) + '">' + F.pct(s.avg_change_pct) + " · " + F.short(s.traded_value) + "</span></li>"; }).join("") + "</ul></div>" +
+        '<div class="box wide2"><h4>Participant performance</h4><div class="small muted" style="margin-bottom:4px">' + F.num(nw.eligible) + " eligible · " + F.num(nw.assessment_met) + " met assessment · highest " + F.short(nw.highest) + " · average " + F.short(nw.average) + "</div><ul>" +
+          leaderboard.map(function (t) { return "<li><span>#" + F.num(t.rank) + " <b>" + esc(t.name || t.team) + '</b> <span class="mono tiny">' + esc(t.team || "") + "</span> " + JSE.badge.award(t.award) + '</span><span>' + F.short(t.net_worth) + ' <span class="tiny muted">B' + F.num(t.buys) + " S" + F.num(t.sells) + (t.eligible ? " ✓" : "") + "</span></span></li>"; }).join("") + "</ul></div>" +
+        '<div class="box wide2"><h4>Alerts</h4>' + (alerts.length ? '<ul class="alerts">' + alerts.map(function (a) { return '<li><span class="badge ' + (a.level === "bad" ? "no" : a.level === "warn" ? "warn" : "prov") + '">' + esc(a.level || "info") + "</span> " + esc(a.text || "") + "</li>"; }).join("") + "</ul>" : '<div class="small muted">No alerts.</div>') + "</div>";
+      if (meta) meta.textContent = "Live · " + F.time(new Date()) + " IST · same data as portfolios and order tracking";
+      if (host) host.removeAttribute("data-error");
+      if (typeof scheduleAdminMasonry === "function") scheduleAdminMasonry();
+    } catch (e) {
+      if (host) { host.dataset.error = "true"; host.innerHTML = '<div class="alert bad" role="status"><b>Market Intelligence could not load.</b><div class="small">' + esc(e && e.message ? e.message : "Insights request failed") + '</div><button type="button" class="btn sm" id="miRetry">Retry intelligence feed</button></div>'; }
+      if (meta) meta.textContent = "Feed unavailable · last attempt " + F.time(new Date());
+      var retry = $("miRetry"); if (retry) retry.onclick = function () { loadIntel(); };
+      console.error("JSE Market Intelligence failed:", e);
+    }
   }
 
   async function loadBrokerRoster() {
@@ -1808,6 +1865,36 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     JSE.poll(loadIpoAdmin, 10000, { onError: function (e) { $("ipoToolResult").textContent = "IPO tools reconnecting: " + e.message; } });
     if (location.hash === "#intelligence") setTimeout(function () { $("intelligence").scrollIntoView(); }, 400);
   });
+})();
+</script>
+<script id="jse-admin-masonry">
+(function(){
+  var roots=[".adv-grid",".cmd-grid",".mi",".grid.cols-2"];
+  var queued=false;
+  function pack(){
+    queued=false;
+    document.querySelectorAll(roots.join(",")).forEach(function(grid){
+      var css=getComputedStyle(grid), row=parseFloat(css.gridAutoRows)||6, gap=parseFloat(css.rowGap)||10;
+      grid.querySelectorAll(":scope > .adv-card,:scope > .cmd-panel,:scope > .box,:scope > .card").forEach(function(card){
+        card.style.gridRowEnd="auto";
+        var h=card.getBoundingClientRect().height;
+        if(h>0) card.style.gridRowEnd="span "+Math.max(1,Math.ceil((h+gap)/(row+gap)));
+      });
+    });
+  }
+  window.scheduleAdminMasonry=function(){
+    if(queued)return;queued=true;
+    requestAnimationFrame(function(){requestAnimationFrame(pack);});
+  };
+  window.addEventListener("load",scheduleAdminMasonry);
+  window.addEventListener("resize",scheduleAdminMasonry,{passive:true});
+  if("ResizeObserver" in window){
+    var ro=new ResizeObserver(scheduleAdminMasonry);
+    document.addEventListener("DOMContentLoaded",function(){
+      document.querySelectorAll(".adv-grid,.cmd-grid,.mi,.grid.cols-2").forEach(function(el){ro.observe(el);});
+    });
+  }
+  document.addEventListener("DOMContentLoaded",scheduleAdminMasonry);
 })();
 </script>
 </body>
