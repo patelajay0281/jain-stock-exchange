@@ -63,6 +63,43 @@
   body.market-page .nav { padding-top: 0; padding-bottom: 0; }
   body.market-page .wrap { padding-top: 0; }
   body.market-page .cmsbar { margin-top: 0; }
+
+  /* Broadcast-safe visual refresh: colours and typography only; preserve the existing Market layout. */
+  body.market-page {
+    background: linear-gradient(180deg, #eaf2fc 0%, #f4f8fe 180px, #f1f5fb 100%);
+    color: #10203a;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body.market-page .hd, body.market-page .nav { background: transparent; }
+  body.market-page .env-pill { color:#24578d; background:#e4efff; border-color:#b9d2f3; border-radius:999px; }
+  body.market-page .tb-btn { color:#18365f; background:rgba(255,255,255,.94); border-color:#c6d7ee; box-shadow:0 1px 3px rgba(18,49,91,.06); }
+  body.market-page .tb-btn.dark { color:#fff; background:linear-gradient(135deg,#174a91,#0b2b58); border-color:#174a91; }
+  body.market-page .market-nav-wrap { color:#446387; font-family:"Inter","Segoe UI",system-ui,sans-serif; font-weight:650; }
+  body.market-page .market-nav-select { color:#173b69; background:rgba(255,255,255,.96); border:1px solid #bfd2ec; border-radius:6px; font:650 12px/1.35 "Inter","Segoe UI",system-ui,sans-serif; box-shadow:0 1px 2px rgba(24,58,102,.06); }
+  body.market-page .cmsbar { background:rgba(255,255,255,.97); border-color:#cbdcf1; box-shadow:0 6px 20px rgba(24,58,102,.08); }
+  body.market-page .cmsbar::before { background:#2468d8; }
+  body.market-page .cmsbar .id h1 { color:#10284d; font-family:"Inter","Segoe UI",system-ui,sans-serif; letter-spacing:.035em; }
+  body.market-page .cmsbar .ix .lbl { color:#24466f; }
+  body.market-page .cmsbar .ix .val { color:#0e2445; }
+  body.market-page .cmsbar .ix .chg { color:#395779; }
+  body.market-page .cmsbar .live { color:#25496f; background:#eaf3ff; border-color:#c4d9f4; }
+  body.market-page .cmsbar .live.live { color:#08754a; background:#e7f8ef; border-color:#9ddbb9; }
+  body.market-page .cmsbar .live.closed, body.market-page .cmsbar .live.finalized,
+  body.market-page .cmsbar .live.offline { color:#b42332; background:#fff0f1; border-color:#f1c5cc; }
+  body.market-page .tile { color:#122543; background:#fff; border-color:#d4e0f0; box-shadow:0 2px 8px rgba(24,58,102,.055); }
+  body.market-page .tile.up { background:linear-gradient(135deg,#effbf5 0%,#e3f8ed 100%); border-color:#b8e8d0; }
+  body.market-page .tile.down { background:linear-gradient(135deg,#fff4f5 0%,#ffe7eb 100%); border-color:#f2c5ce; }
+  body.market-page .tile.up::after, body.market-page .tile.down::after { background:rgba(255,255,255,.42); }
+  body.market-page .tile-name { color:#132746; font-family:"Inter","Segoe UI",system-ui,sans-serif; font-weight:650; letter-spacing:-.012em; }
+  body.market-page .tile-kind { color:#58708d; letter-spacing:.095em; }
+  body.market-page .tile-price { color:#0e2445; font-family:"Inter","Segoe UI",system-ui,sans-serif; letter-spacing:-.018em; }
+  body.market-page .tile-foot { color:#243e60; letter-spacing:-.012em; }
+  .owner-watermark { display:flex; justify-content:flex-end; align-items:center; padding:0 18px 12px; color:#557394; font:700 10px/1.4 "Inter","Segoe UI",system-ui,sans-serif; letter-spacing:.12em; text-transform:lowercase; opacity:.78; user-select:none; pointer-events:none; }
+  .owner-watermark span { display:inline-block; padding:4px 9px; border:1px solid rgba(154,177,207,.45); border-radius:999px; background:rgba(255,255,255,.68); }
+  @media (max-width:640px) { .owner-watermark { padding-right:12px; padding-bottom:9px; } }
+
 </style>
 </head>
 <body>
@@ -79,6 +116,7 @@
   <ul class="mgrid" id="grid" aria-live="off" aria-label="Market wall"></ul>
   <p class="sr-only" id="disc"></p>
 </main>
+<footer class="owner-watermark" aria-label="Website watermark"><span>@ajay_np</span></footer>
 <script src="/assets/config.js?v=325"></script>
 <script src="/assets/jse.js?v=328"></script>
 <script>
