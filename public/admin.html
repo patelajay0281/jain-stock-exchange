@@ -1922,33 +1922,33 @@ body.admin-command-page .adv-grid,
 body.admin-command-page .cmd-grid,
 body.admin-command-page .mi,
 body.admin-command-page .grid.cols-2 {
-  display:block!important;
+  display:grid!important;
   width:100%!important;
   max-width:100%!important;
   min-width:0!important;
-  columns:2!important;
-  column-gap:12px!important;
-  column-fill:balance!important;
-  grid-template-columns:none!important;
-  grid-auto-flow:initial!important;
-  grid-auto-rows:initial!important;
-  gap:0!important;
+  columns:unset!important;
+  column-gap:normal!important;
+  column-fill:initial!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  grid-auto-rows:auto!important;
+  gap:12px!important;
   overflow:visible!important;
 }
 body.admin-command-page .adv-grid>.adv-card,
 body.admin-command-page .cmd-grid>.cmd-panel,
 body.admin-command-page .mi>.box,
 body.admin-command-page .grid.cols-2>.card {
-  display:inline-block!important;
-  vertical-align:top!important;
-  width:100%!important;
+  display:block!important;
+  vertical-align:initial!important;
+  width:auto!important;
   min-width:0!important;
   max-width:100%!important;
-  margin:0 0 12px!important;
+  margin:0!important;
   box-sizing:border-box!important;
-  break-inside:avoid!important;
-  -webkit-column-break-inside:avoid!important;
-  page-break-inside:avoid!important;
+  break-inside:initial!important;
+  -webkit-column-break-inside:initial!important;
+  page-break-inside:initial!important;
   grid-column:auto!important;
   grid-row:auto!important;
   grid-row-end:auto!important;
@@ -1973,7 +1973,7 @@ body.admin-command-page .grid.cols-2>.card {height:auto!important;align-self:ini
  body.admin-command-page .adv-grid,
  body.admin-command-page .cmd-grid,
  body.admin-command-page .mi,
- body.admin-command-page .grid.cols-2 {columns:1!important;column-gap:0!important}
+ body.admin-command-page .grid.cols-2 {grid-template-columns:minmax(0,1fr)!important;columns:unset!important;column-gap:normal!important}
 }
 </style>
 
@@ -1992,5 +1992,25 @@ body.admin-command-page .grid.cols-2>.card {height:auto!important;align-self:ini
 })();
 </script>
 
+<style id="jse-admin-fill-viewport">
+/* Use the available desktop width instead of leaving the right half empty. */
+body.admin-command-page #main { width:100%; max-width:1680px; }
+body.admin-command-page .grid.cols-2 {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+  columns:unset!important;
+}
+body.admin-command-page .grid.cols-2>.card {
+  display:block!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  margin:0!important;
+}
+@media(max-width:760px) {
+  body.admin-command-page .grid.cols-2 { grid-template-columns:minmax(0,1fr)!important; }
+}
+</style>
 </body>
 </html>
