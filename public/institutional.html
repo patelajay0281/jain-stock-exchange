@@ -227,19 +227,19 @@
     $("instNote").textContent = S.side === "BUY" ? "institution buys · market − spread" : "institution sells · market + spread";
     JSE.livePx(s);
     $("instPriceIn").value = N(ip).toFixed(2);
-    var flexibleIpoSell = flexibleIpoSell();
-    $("lotHint").textContent = flexibleIpoSell
+    var flexIpoSell = flexibleIpoSell();
+    $("lotHint").textContent = flexIpoSell
       ? "The participant sells IPO shares in any whole-share quantity."
       : "Multiples of " + s.lot_size + " shares.";
-    $("qty").step = flexibleIpoSell ? 1 : s.lot_size;
-    $("qty").min = flexibleIpoSell ? 1 : s.lot_size;
+    $("qty").step = flexIpoSell ? 1 : s.lot_size;
+    $("qty").min = flexIpoSell ? 1 : s.lot_size;
     var tv = q > 0 ? Math.round(q * ip * 100) / 100 : 0, brk = Math.round(tv * N(r.brokerage_rate) * 100 + 1e-6) / 100;
     $("pvTv").textContent = F.money(tv);
     $("pvBrk").textContent = F.money(brk);
     $("pvAmt").textContent = F.money(teamBuys ? tv + brk : tv - brk);
     var checks = [];
     if (!Number.isSafeInteger(q) || q <= 0) checks.push(["bad", "Enter a positive whole-share quantity."]);
-    else if (q % s.lot_size && !flexibleIpoSell) checks.push(["bad", "Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant."]);
+    else if (q % s.lot_size && !flexIpoSell) checks.push(["bad", "Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant."]);
     // Institutional orders have no order-value cap; participant cash and holdings checks remain server-enforced.
     $("checks").innerHTML = checks.map(function (c) { return '<div class="alert ' + c[0] + '" style="margin-bottom:8px">' + esc(c[1]) + "</div>"; }).join("");
     refreshSubmit();
