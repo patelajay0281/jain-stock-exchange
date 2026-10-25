@@ -9123,12 +9123,15 @@ BEGIN
   END IF;
   EXECUTE v_fn;
 
-  -- Participant instruction intake (same lot rule as the order it will create)
+  -- Participant instructions use the same configured regular lot as the eventual order.
+  -- Flexible IPO allotment lots do not change the lot for later market trades.
   v_fn := pg_get_functiondef('public.jse_instruction_action(jsonb,jsonb)'::regprocedure);
   IF position('v_qty % (SELECT stock_lot_size FROM event_config WHERE id=1)' IN v_fn)=0 THEN
-    IF position('v_qty % 50 <> 0' IN v_fn)=0 THEN RAISE EXCEPTION '033: regular lot validation anchor not found in jse_instruction_action'; END IF;
-    v_fn := replace(v_fn,'v_qty % 50 <> 0','v_qty % (SELECT stock_lot_size FROM event_config WHERE id=1) <> 0');
-    v_fn := replace(v_fn,'Normal market instructions must be a multiple of 50 shares.','Normal market instructions must be a multiple of the configured regular lot size.');
+    v_old := 'v_qty % s.lot_size <> 0 AND NOT (s.kind = ''IPO'' AND v_side = ''SELL'')';
+    v_new := 'v_qty % (SELECT stock_lot_size FROM event_config WHERE id=1) <> 0';
+    IF position(v_old IN v_fn)=0 THEN RAISE EXCEPTION '033: regular lot validation anchor not found in jse_instruction_action'; END IF;
+    v_fn := replace(v_fn,v_old,v_new);
+    v_fn := replace(v_fn,'Quantity must be a multiple of ' || s.lot_size || ' shares.','Quantity must be a multiple of ' || (SELECT stock_lot_size FROM event_config WHERE id=1) || ' shares.');
   END IF;
   IF position('ORDER_QUANTITY_LIMIT' IN v_fn)=0 THEN
     v_old := '    SELECT count(*) INTO v_open FROM instructions WHERE team_id = t.id AND status = ''OPEN'';';
