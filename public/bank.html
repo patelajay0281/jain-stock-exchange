@@ -13,8 +13,155 @@
   @media (max-width: 1100px) { .lp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .lp-grid .field { grid-column: 1 / -1; } }
   @media (max-width: 640px) { .lp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
+
+<style>
+  /* Bank Settlement visual refresh — keep the established CMS green theme, structure and workflow. */
+  body.bank-page {
+    background: linear-gradient(180deg, #edf6f1 0, #f4f8f6 220px, #f3f7f5 100%);
+    color: #17372e;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body.bank-page .hd,
+  body.bank-page .nav { background: transparent; }
+  body.bank-page .wordmark { color: #103b2f; letter-spacing: .065em; }
+  body.bank-page .env-pill {
+    color: #21624b; background: #e1f2e9; border-color: #b6dcc8; border-radius: 6px;
+  }
+  body.bank-page .tb-btn {
+    color: #1b4b3a; background: #fff; border-color: #c5dfd1;
+    box-shadow: 0 1px 3px rgba(16, 69, 47, .06);
+  }
+  body.bank-page .tb-btn:hover { border-color: #87bba1; background: #f7fcf9; }
+  body.bank-page .tb-btn.dark {
+    color: #fff; background: linear-gradient(135deg, #176447, #0b382b);
+    border-color: #14563e;
+  }
+  body.bank-page .nav a {
+    color: #285342; background: rgba(255,255,255,.96); border-color: #d0e4d9;
+    box-shadow: 0 1px 2px rgba(16,69,47,.035);
+  }
+  body.bank-page .nav a:hover { color: #103b2f; background: #f2fbf6; border-color: #a9d2bc; }
+  body.bank-page .nav a[aria-current="page"] {
+    color: #fff; background: linear-gradient(135deg, #176447, #0b382b);
+    border-color: #14563e; box-shadow: 0 2px 5px rgba(10,75,48,.16);
+  }
+  body.bank-page .page-head h1 { color: #123f30; font-weight: 850; }
+  body.bank-page .band.green {
+    color: #fff; background: linear-gradient(112deg, #0d2d24 0%, #14513e 54%, #1d6b50 100%);
+    box-shadow: 0 7px 20px rgba(15,72,50,.14);
+  }
+  body.bank-page .band.green h1 { color: #fff; font-weight: 850; letter-spacing: .005em; }
+  body.bank-page .band.green p { color: #d8eee3; }
+  body.bank-page .band.green .tag {
+    color: #effaf4; background: rgba(255,255,255,.09); border-color: rgba(214,242,227,.30);
+  }
+  body.bank-page .kpi {
+    background: #fff; border-color: #d5e7dd; box-shadow: 0 4px 13px rgba(16,69,47,.055);
+  }
+  body.bank-page .kpi .k { color: #5a7d6c; }
+  body.bank-page .kpi .v { color: #174735; font-weight: 850; }
+  body.bank-page .kpi .s { color: #6b8b7b; }
+  body.bank-page .kpi.good .v { color: #087443; }
+  body.bank-page .kpi.bad .v { color: #bd303e; }
+  body.bank-page .kpi.warn .v { color: #986016; }
+  body.bank-page .card {
+    background: #fff; border-color: #d6e7de; box-shadow: 0 5px 16px rgba(16,69,47,.05);
+  }
+  body.bank-page .card-h {
+    background: linear-gradient(180deg, #fbfefc, #f0f8f3); border-bottom-color: #dcebe3;
+  }
+  body.bank-page .card-h h2,
+  body.bank-page .card-h h3 { color: #174735; font-weight: 800; }
+  body.bank-page .card-h .meta,
+  body.bank-page .card-h .note { color: #668878; }
+  body.bank-page .card-h.bar h2::before,
+  body.bank-page .card-h.bar h3::before { background: #21845b; }
+  body.bank-page .card-h.bar.green h2::before,
+  body.bank-page .card-h.bar.green h3::before { background: #21845b; }
+  body.bank-page .card-h.bar.navy h2::before,
+  body.bank-page .card-h.bar.navy h3::before { background: #176447; }
+  body.bank-page .alert.warn {
+    color: #754719; background: #fff8e9; border-color: #f0d7a6;
+  }
+  body.bank-page .alert.info {
+    color: #215a42; background: #edf8f1; border-color: #c3e3d0;
+  }
+  body.bank-page .alert.bad {
+    color: #8f2631; background: #fff0f1; border-color: #efc7ce;
+  }
+  body.bank-page .alert.good {
+    color: #14532d; background: #edf9f1; border-color: #b9e1ca;
+  }
+  body.bank-page .txn-grid.green {
+    background: linear-gradient(180deg, #eef7f1, #e8f4ed);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+  body.bank-page .txn.bank {
+    background: #fff; border-color: #d2e5d9; border-left-color: #21845b;
+    box-shadow: 0 3px 10px rgba(16,69,47,.05);
+  }
+  body.bank-page .txn.bank.risk { border-left-color: #c43b49; }
+  body.bank-page .txn-h { border-bottom-color: #dfede5; background: #f8fcf9; }
+  body.bank-page .txn-h .no { color: #174735; }
+  body.bank-page .txn-f .k,
+  body.bank-page .txn-trio .k { color: #648674; }
+  body.bank-page .txn-f .v,
+  body.bank-page .txn-trio .v { color: #174735; }
+  body.bank-page .txn-trio { background: #f0f7f3; border-color: #d6e8dd; }
+  body.bank-page .txn-a { border-top-color: #dfede5; }
+  body.bank-page .btn {
+    color: #20533f; background: #fff; border-color: #c5dfd1;
+    box-shadow: 0 1px 2px rgba(16,69,47,.035);
+  }
+  body.bank-page .btn:hover { background: #f2fbf6; border-color: #9dcdb4; }
+  body.bank-page .btn.primary {
+    color: #fff; background: linear-gradient(135deg, #176447, #0b382b);
+    border-color: #14563e; box-shadow: 0 2px 6px rgba(10,75,48,.16);
+  }
+  body.bank-page .btn.primary:hover {
+    background: linear-gradient(135deg, #12563b, #082e22); border-color: #0b382b;
+  }
+  body.bank-page .btn.approve,
+  body.bank-page .btn.good { color: #fff; background: #16794b; border-color: #16794b; }
+  body.bank-page .btn.reject,
+  body.bank-page .btn.bad { color: #fff; background: #b83240; border-color: #b83240; }
+  body.bank-page .input {
+    color: #173c2f; background-color: #fff; border-color: #c6dfd1;
+    box-shadow: inset 0 1px 1px rgba(16,69,47,.025);
+  }
+  body.bank-page select.input { background-color: #fff; }
+  body.bank-page .input::placeholder { color: #879f92; }
+  body.bank-page .input:focus {
+    border-color: #348b63; box-shadow: 0 0 0 3px rgba(33,132,91,.13);
+  }
+  body.bank-page .input[readonly],
+  body.bank-page .input.locked { background-color: #eff7f2; color: #285342; }
+  body.bank-page .mini {
+    background: #f1f8f4; border-color: #d5e7dd;
+  }
+  body.bank-page .mini .k { color: #648674; }
+  body.bank-page .mini .v { color: #174735; }
+  body.bank-page .lp-act { border-top-color: #dfede5; }
+  body.bank-page .team-card { background: #fff; border-color: #d2e5d9; }
+  body.bank-page .team-card:hover { border-color: #97c8ae; }
+  body.bank-page .team-card.sel { border-color: #21845b; box-shadow: 0 0 0 2px rgba(33,132,91,.12); }
+  body.bank-page .team-card .tn,
+  body.bank-page .team-card .nums b { color: #174735; }
+  body.bank-page table.t { color: #204a39; }
+  body.bank-page table.t th {
+    background: #edf6f0; color: #476b59; border-bottom-color: #d6e7dd;
+  }
+  body.bank-page table.t td { color: #234a39; border-bottom-color: #e3eee7; }
+  body.bank-page table.t tbody tr:hover td { background: #f6fbf8; }
+  body.bank-page table.t td b { color: #174735; }
+  body.bank-page .empty { color: #668878; }
+  body.bank-page .empty b { color: #174735; }
+</style>
+
 </head>
-<body>
+<body class="bank-page">
 <main id="main" class="wrap wide">
   <section class="band green">
     <div><h1 id="bankName">CMS BANK LTD</h1><p>Approve or reject exchange-approved transactions based on available participant cash and settlement requirements.</p></div>
