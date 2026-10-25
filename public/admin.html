@@ -2077,5 +2077,90 @@ body.admin-command-page .adv-controls button { min-height:42px; }
   body.admin-command-page .t th { font-size:12px!important; }
 }
 </style>
+<style id="jse-admin-restore-semantic-colors">
+/* Restore the original action-by-action color language and visual hierarchy. */
+body.admin-command-page .controls .btn.ev-start,
+body.admin-command-page .btn.ev-start {
+  color:#fff!important; background:linear-gradient(135deg,#16803c,#11632f)!important;
+  border:1px solid #0f6a32!important; box-shadow:0 3px 9px rgba(22,128,60,.18)!important;
+}
+body.admin-command-page .controls .btn.ev-pause,
+body.admin-command-page .btn.ev-pause {
+  color:#fff!important; background:linear-gradient(135deg,#d97706,#a84d08)!important;
+  border:1px solid #b45309!important; box-shadow:0 3px 9px rgba(217,119,6,.16)!important;
+}
+body.admin-command-page .controls .btn.ev-close,
+body.admin-command-page .btn.ev-close {
+  color:#fff!important; background:linear-gradient(135deg,#dc3545,#a61b2b)!important;
+  border:1px solid #b42332!important; box-shadow:0 3px 9px rgba(220,53,69,.16)!important;
+}
+body.admin-command-page .controls .btn.ev-finalize,
+body.admin-command-page .btn.ev-finalize {
+  color:#fff!important; background:linear-gradient(135deg,#7252c7,#4c329b)!important;
+  border:1px solid #5c3eb0!important; box-shadow:0 3px 9px rgba(114,82,199,.16)!important;
+}
+body.admin-command-page .controls .btn.ev-reset,
+body.admin-command-page .btn.ev-reset {
+  color:#fff!important; background:linear-gradient(135deg,#344054,#172033)!important;
+  border:1px solid #344054!important; box-shadow:0 3px 9px rgba(23,32,51,.16)!important;
+}
+body.admin-command-page .controls .btn.ev-neutral,
+body.admin-command-page .btn.ev-neutral {
+  color:#fff!important; background:linear-gradient(135deg,#2870c7,#174a91)!important;
+  border:1px solid #1c5ca9!important; box-shadow:0 3px 9px rgba(40,112,199,.14)!important;
+}
+body.admin-command-page .controls .btn.ev-start:hover:not(:disabled),
+body.admin-command-page .btn.ev-start:hover:not(:disabled),
+body.admin-command-page .controls .btn.ev-pause:hover:not(:disabled),
+body.admin-command-page .btn.ev-pause:hover:not(:disabled),
+body.admin-command-page .controls .btn.ev-close:hover:not(:disabled),
+body.admin-command-page .btn.ev-close:hover:not(:disabled),
+body.admin-command-page .controls .btn.ev-finalize:hover:not(:disabled),
+body.admin-command-page .btn.ev-finalize:hover:not(:disabled),
+body.admin-command-page .controls .btn.ev-reset:hover:not(:disabled),
+body.admin-command-page .btn.ev-reset:hover:not(:disabled),
+body.admin-command-page .controls .btn.ev-neutral:hover:not(:disabled),
+body.admin-command-page .btn.ev-neutral:hover:not(:disabled) { filter:brightness(1.08)!important; transform:translateY(-1px); }
+body.admin-command-page .controls .btn:disabled,
+body.admin-command-page .btn.ev-start:disabled,
+body.admin-command-page .btn.ev-pause:disabled,
+body.admin-command-page .btn.ev-close:disabled,
+body.admin-command-page .btn.ev-finalize:disabled,
+body.admin-command-page .btn.ev-reset:disabled,
+body.admin-command-page .btn.ev-neutral:disabled {
+  opacity:.62!important; filter:saturate(.72)!important; cursor:not-allowed!important;
+}
+body.admin-command-page .moods button.neg,
+body.admin-command-page .moods button[class*="neg"] {
+  color:#a61b2b!important; background:linear-gradient(180deg,#fff,#fff1f2)!important; border-color:#f0a8b0!important;
+}
+body.admin-command-page .moods button.pos,
+body.admin-command-page .moods button[class*="pos"] {
+  color:#116b37!important; background:linear-gradient(180deg,#fff,#eaf8ef)!important; border-color:#9bd5ad!important;
+}
+body.admin-command-page .moods button[aria-pressed="true"] {
+  box-shadow:inset 0 0 0 2px rgba(21,94,239,.18),0 3px 10px rgba(21,94,239,.12)!important;
+}
+body.admin-command-page .moods button:focus-visible,
+body.admin-command-page .moods button:hover { filter:brightness(.98); box-shadow:0 2px 8px rgba(23,32,51,.1); }
+body.admin-command-page #nGo,
+body.admin-command-page #advancedRefresh {
+  color:#fff!important; background:linear-gradient(120deg,#356fe0,#2452b8)!important; border-color:#2452b8!important;
+  box-shadow:0 3px 9px rgba(37,82,184,.2)!important;
+}
+body.admin-command-page .card-h.bar { border-left:4px solid #4675d8; }
+body.admin-command-page .card-h.bar.navy { border-left-color:#5265b8; }
+body.admin-command-page .card-h.bar.green { border-left-color:#16803c; }
+body.admin-command-page #marketNewsSection .card-h { border-left-color:#7c5bd6; }
+body.admin-command-page #eventControl .card-h { border-left-color:#3274d9; }
+body.admin-command-page #reportsPanel .card-h { border-left-color:#16803c; }
+body.admin-command-page #marketNewsSection .table-wrap tbody tr:hover,
+body.admin-command-page #journalSection .table-wrap tbody tr:hover { background:rgba(66,133,244,.07)!important; }
+body.admin-command-page .pill.open,
+body.admin-command-page .pill.live { background:#e8f7ed!important;color:#126a36!important;border-color:#9ed8b0!important; }
+body.admin-command-page .pill.closed { background:#fff0f1!important;color:#b42332!important;border-color:#f1b8bf!important; }
+body.admin-command-page .pill.paused { background:#fff5e5!important;color:#9a4b06!important;border-color:#f0d19b!important; }
+body.admin-command-page .status-big .pill { font-weight:850!important; }
+</style>
 </body>
 </html>
