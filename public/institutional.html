@@ -26,12 +26,89 @@
   @media (max-width: 1100px) { .inst-grid { grid-template-columns: minmax(0, 1fr); } .moods { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   @media (max-width: 640px) { .moods { grid-template-columns: repeat(2, minmax(0, 1fr)); } .live-list { grid-template-columns: minmax(0, 1fr); } }
 </style>
+<style>
+
+  /* Institutional desk refinement — scoped UI skin; existing business flow and element IDs remain intact. */
+  body.institutional-page {
+    background: linear-gradient(180deg,#edf4ff 0,#f4f7fc 220px,#f3f6fb 100%);
+    color:#142846; font-family:"Inter","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  body.institutional-page .hd, body.institutional-page .nav { background:transparent; }
+  body.institutional-page .wordmark { color:#102c52; letter-spacing:.065em; }
+  body.institutional-page .env-pill { color:#24578d; background:#e4efff; border-color:#b9d2f3; border-radius:6px; }
+  body.institutional-page .tb-btn { color:#18365f; background:#fff; border-color:#c6d7ee; box-shadow:0 1px 3px rgba(18,49,91,.06); }
+  body.institutional-page .tb-btn:hover { border-color:#91add1; background:#f8fbff; }
+  body.institutional-page .tb-btn.dark { color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f; }
+  body.institutional-page .nav a { color:#254361; background:rgba(255,255,255,.96); border-color:#d2deed; box-shadow:0 1px 2px rgba(16,42,79,.035); }
+  body.institutional-page .nav a:hover { color:#122e54; background:#f4f8fe; border-color:#aec3df; }
+  body.institutional-page .nav a[aria-current="page"] { color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f; box-shadow:0 2px 5px rgba(16,42,79,.16); }
+  body.institutional-page .page-head h1 { color:#10294e; font-weight:850; }
+  body.institutional-page .page-head p { color:#5d7494; }
+  body.institutional-page .kpi { background:#fff; border-color:#d6e2f1; box-shadow:0 4px 13px rgba(19,48,86,.055); }
+  body.institutional-page .kpi .k { color:#627b9b; }
+  body.institutional-page .kpi .v { color:#18365f; font-weight:850; }
+  body.institutional-page .kpi .s { color:#7185a0; }
+  body.institutional-page .kpi.good .v { color:#087443; } body.institutional-page .kpi.bad .v { color:#bd303e; }
+  body.institutional-page .card { background:#fff; border-color:#d6e2f1; box-shadow:0 5px 16px rgba(19,48,86,.05); }
+  body.institutional-page .card-h { background:linear-gradient(180deg,#fbfdff,#f0f5fc); border-bottom-color:#dce6f3; }
+  body.institutional-page .card-h h2, body.institutional-page .card-h h3 { color:#18365f; font-weight:800; }
+  body.institutional-page .card-h .meta, body.institutional-page .card-h .note { color:#667e9e; }
+  body.institutional-page .card-h.bar h2::before, body.institutional-page .card-h.bar h3::before { background:#315c91; }
+  body.institutional-page .card-h.bar.navy h2::before, body.institutional-page .card-h.bar.navy h3::before { background:#18365f; }
+  body.institutional-page .card-h.bar.green h2::before, body.institutional-page .card-h.bar.green h3::before { background:#16805a; }
+  body.institutional-page .input { color:#173657; background-color:#fff; border-color:#c8d8eb; box-shadow:inset 0 1px 1px rgba(16,42,79,.02); }
+  body.institutional-page .input:focus { border-color:#527bb0; box-shadow:0 0 0 3px rgba(43,86,143,.12); }
+  body.institutional-page .input[readonly], body.institutional-page .input.locked { background:#eef3f9; color:#244361; }
+  body.institutional-page .field label { color:#254361; font-weight:750; }
+  body.institutional-page .sidebtns button { border-color:#d1deed; color:#254361; background:#fff; }
+  body.institutional-page .sidebtns button[aria-pressed="true"].buy { background:#16803c; border-color:#16803c; color:#fff; }
+  body.institutional-page .sidebtns button[aria-pressed="true"].sell { background:#c62828; border-color:#c62828; color:#fff; }
+  body.institutional-page .sumline { border-bottom-color:#e2eaf4; color:#385573; }
+  body.institutional-page .sumline b { color:#18365f; }
+  body.institutional-page .sumline.total { background:#f2f7fd; border:1px solid #dbe7f5; border-radius:9px; padding:12px 13px; margin-top:8px; }
+  body.institutional-page .sumline.total b { color:#173f70; font-size:18px; }
+  body.institutional-page .live-px { background:#f1f6fd; border-color:#ccdaeb; }
+  body.institutional-page .live-px .k { color:#607895; }
+  body.institutional-page .live-px .v { color:#18365f; }
+  body.institutional-page .btn { color:#204369; background:#fff; border-color:#c8d8eb; box-shadow:0 1px 2px rgba(16,42,79,.035); }
+  body.institutional-page .btn:hover { background:#f3f8ff; border-color:#a8bed9; }
+  body.institutional-page .btn.primary { color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f; box-shadow:0 2px 6px rgba(16,42,79,.15); }
+  body.institutional-page .btn.primary:hover { background:linear-gradient(135deg,#1a3b68,#0b2142); border-color:#10294e; }
+  body.institutional-page .btn:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; }
+  body.institutional-page .live-list { background:#fbfdff; }
+  body.institutional-page .live-row { background:#fff; border-color:#d8e4f2; }
+  body.institutional-page .live-row.up { background:#eef9f2; border-color:#c9ead6; }
+  body.institutional-page .live-row.down { background:#fff1f2; border-color:#f1cbd1; }
+  body.institutional-page .live-row .n { color:#18365f; }
+  body.institutional-page .live-row .p { color:#18365f; }
+  body.institutional-page .live-row .c { font-weight:800; }
+  body.institutional-page .table-wrap { border-color:#d8e4f2; }
+  body.institutional-page table.t th { background:#edf3fb; color:#405b7d; border-bottom-color:#d6e2f1; }
+  body.institutional-page table.t td { color:#203a5c; border-bottom-color:#e4ecf5; }
+  body.institutional-page table.t tbody tr:hover td { background:#f5f9ff; }
+  body.institutional-page table.t td b { color:#17365c; }
+  body.institutional-page .moods button { background:#fff; color:#254361; border-color:#d2deed; }
+  body.institutional-page .moods button.neg { color:#b42332; }
+  body.institutional-page .moods button.pos { color:#13804c; }
+  body.institutional-page .moods button[aria-pressed="true"] { background:#244879; border-color:#18365f; color:#fff; }
+  body.institutional-page .alert.warn { color:#754719; background:#fff7e8; border-color:#f0d7a6; }
+  body.institutional-page .alert.info { color:#214c82; background:#edf5ff; border-color:#c5daf5; }
+  body.institutional-page .alert.bad { color:#8f2631; background:#fff0f1; border-color:#efc7ce; }
+  body.institutional-page .alert.good { color:#14532d; background:#edf9f1; border-color:#b9e1ca; }
+  .inst-history-controls { display:grid; grid-template-columns:minmax(220px,2fr) repeat(2,minmax(150px,1fr)) auto; gap:10px; align-items:end; padding-top:14px; padding-bottom:14px; }
+  .inst-history-controls .field label { display:block; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#5c7594; margin-bottom:5px; }
+  .inst-history-count { margin-left:auto; color:#607895; font-size:11px; font-weight:700; white-space:nowrap; }
+  @media (max-width:900px) { .inst-history-controls { grid-template-columns:repeat(2,minmax(0,1fr)); } .inst-history-controls .field:first-child { grid-column:1/-1; } }
+  @media (max-width:640px) { .inst-history-controls { grid-template-columns:minmax(0,1fr); } .inst-history-controls .field:first-child { grid-column:auto; } }
+
+</style>
 </head>
-<body>
+<body class="institutional-page">
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1>Institutional Investors <span id="instName" class="muted" style="font-weight:600"></span></h1>
-      <p id="ruleText">Institutional trading desk with unrestricted cash and holdings. Institutional transactions use the prevailing market price and follow the normal Exchange → Bank workflow.</p></div>
+      <p id="ruleText">Trade with participant teams at the configured institutional spread from the live Market price. Every transaction follows the normal Exchange → Bank workflow; participant settlement rules still apply.</p></div>
     <div class="tools"><select class="input sm hidden" id="instSel" aria-label="Institution" style="width:auto"></select>
       <span class="pill not-started" id="mkt"><span class="dot"></span><span id="mktText">Market</span></span></div>
   </div>
@@ -78,7 +155,7 @@
         <div>
           <div class="sumline"><span>Trade Value</span><b id="pvTv">₹0</b></div>
           <div class="sumline"><span id="pvBrkK">Brokerage · 0.50%</span><b id="pvBrk">₹0</b></div>
-          <div class="sumline total"><span>Transaction Value</span><b id="pvAmt">₹0</b></div>
+          <div class="sumline total"><span>Team settlement amount</span><b id="pvAmt">₹0</b></div>
         </div>
         <div class="small muted" id="sideNote"></div>
         <div id="checks"></div>
@@ -93,8 +170,15 @@
   </div>
 
   <section class="card" style="margin-top:18px">
-    <div class="card-h bar navy"><h2>Institutional Transaction History</h2><span class="tag">Latest 200</span></div>
+    <div class="card-h bar navy"><h2>Institutional Transaction History</h2><span class="tag" id="historyCount">Latest 80</span></div>
     <div class="card-b small muted" style="padding-bottom:0">Every institutional transaction is recorded here — there is no institutional portfolio, cash or holdings dashboard.</div>
+    <div class="card-b inst-history-controls">
+      <div class="field"><label for="histQ">Search transactions</label><input class="input" id="histQ" type="search" placeholder="Order, team, broker or security"></div>
+      <div class="field"><label for="histSide">Institution side</label><select class="input" id="histSide"><option value="">BUY + SELL</option><option value="BUY">Institution BUY</option><option value="SELL">Institution SELL</option></select></div>
+      <div class="field"><label for="histStatus">Status</label><select class="input" id="histStatus"><option value="">All statuses</option><option value="PENDING">Pending</option><option value="SETTLED">Settled</option><option value="REJECTED">Rejected</option></select></div>
+      <button class="btn" id="historyReset" type="button">Clear filters</button>
+      <span class="inst-history-count" id="historyMeta" aria-live="polite">Loading transactions…</span>
+    </div>
     <div class="card-b flush"><div class="table-wrap" style="max-height:560px"><table class="t">
       <thead><tr><th>Time</th><th>Transaction</th><th>Counterparty</th><th>Security</th><th>Side</th><th class="num">Quantity</th><th class="num">Price</th><th class="num">Trade value</th><th class="num">Brokerage</th><th>Status</th></tr></thead>
       <tbody id="orders"><tr><td colspan="10" class="empty">Loading institutional transaction desk…</td></tr></tbody></table></div></div>
@@ -113,21 +197,37 @@
   function rules() { return (S.data && S.data.rules) || { spread_pct: 0, brokerage_rate: 0.005, max_order_value: 2500000, min_order_value: 0 }; }
   function list() { var k = $("asset").value; return S.data ? S.data.market.filter(function (s) { return k === "IPO" ? s.type === "IPO" : s.type !== "IPO"; }) : []; }
   function sec() { var sym = $("sec").value; return S.data ? S.data.market.filter(function (s) { return s.symbol === sym; })[0] : null; }
-  // Institutional trades execute at the prevailing market price.
-  function instPrice(s) { return N(s.price); }
+  // The institution's execution price includes the configured spread against the live Market reference.
+  // Institution BUY means the participant sells at market minus spread; Institution SELL means the participant buys at market plus spread.
+  function instPrice(s) {
+    var spread = Math.max(0, N(rules().spread_pct));
+    var factor = 1 + (S.side === "SELL" ? spread : -spread) / 100;
+    return Math.round((N(s.price) * factor + Number.EPSILON) * 100) / 100;
+  }
+  function flexibleIpoSell() { return $("asset").value === "IPO" && S.side === "BUY"; }
+  function quantityValid(s, q) {
+    if (!s || !Number.isSafeInteger(q) || q <= 0) return false;
+    return flexibleIpoSell() || (N(s.lot_size) > 0 && q % N(s.lot_size) === 0);
+  }
+  function refreshSubmit() {
+    var s = sec(), q = Number($("qty").value);
+    $("go").disabled = !(S.status === "LIVE" && S.canTrade && !!$("cp").value && quantityValid(s, q));
+  }
 
   function preview() {
     var s = sec(), q = N($("qty").value), r = rules(), teamBuys = S.side === "SELL";
     $("pvBrkK").textContent = "Brokerage · " + JSE.rate(r.brokerage_rate);
-    $("sideNote").textContent = teamBuys ? "SELL: the institution sells to the selected participant team at the prevailing market price; brokerage applies as configured."
-                                         : "BUY: the institution buys from the selected participant team at the prevailing market price; the counterparty must meet its settlement obligations.";
-    if (!s) { JSE.livePx(null); $("mktPrice").textContent = "—"; $("instPriceIn").value = "—"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; return; }
+    var spreadText = JSE.rate(r.spread_pct) + " spread";
+    $("sideNote").textContent = teamBuys
+      ? "Institution SELL: the participant BUYS at the live Market price + " + spreadText + "; the participant pays trade value plus brokerage."
+      : "Institution BUY: the participant SELLS at the live Market price − " + spreadText + "; the participant receives trade value less brokerage.";
+    if (!s) { JSE.livePx(null); $("mktPrice").textContent = "—"; $("instPriceIn").value = "—"; $("instNote").textContent = "select a security"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; refreshSubmit(); return; }
     var ip = instPrice(s);
     $("mktPrice").textContent = F.price(s.price);
-    $("instNote").textContent = "market price";
+    $("instNote").textContent = S.side === "BUY" ? "institution buys · market − spread" : "institution sells · market + spread";
     JSE.livePx(s);
     $("instPriceIn").value = N(ip).toFixed(2);
-    var flexibleIpoSell = $("asset").value === "IPO" && S.side === "BUY";
+    var flexibleIpoSell = flexibleIpoSell();
     $("lotHint").textContent = flexibleIpoSell
       ? "The participant sells IPO shares in any whole-share quantity."
       : "Multiples of " + s.lot_size + " shares.";
@@ -138,9 +238,11 @@
     $("pvBrk").textContent = F.money(brk);
     $("pvAmt").textContent = F.money(teamBuys ? tv + brk : tv - brk);
     var checks = [];
-    if (q && q % s.lot_size && !flexibleIpoSell) checks.push(["bad", "Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant."]);
-    // Institutional orders have no maximum order-value cap. Counterparty settlement rules are enforced by the server.
+    if (!Number.isSafeInteger(q) || q <= 0) checks.push(["bad", "Enter a positive whole-share quantity."]);
+    else if (q % s.lot_size && !flexibleIpoSell) checks.push(["bad", "Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant."]);
+    // Institutional orders have no order-value cap; participant cash and holdings checks remain server-enforced.
     $("checks").innerHTML = checks.map(function (c) { return '<div class="alert ' + c[0] + '" style="margin-bottom:8px">' + esc(c[1]) + "</div>"; }).join("");
+    refreshSubmit();
   }
 
   function fillSecs() {
@@ -151,8 +253,40 @@
     if (v && l.some(function (s) { return s.symbol === v; })) $("sec").value = v;
   }
 
+  function renderHistory() {
+    var d = S.data;
+    if (!d) return;
+    var q = $("histQ").value.trim().toLowerCase();
+    var side = $("histSide").value;
+    var status = $("histStatus").value;
+    var all = d.orders || [];
+    var rows = all.filter(function (o) {
+      if (side && o.side !== side) return false;
+      if (status === "PENDING" && ["PIT_PENDING", "EXCHANGE_PENDING", "EXCHANGE_APPROVED", "BANK_PENDING"].indexOf(o.status) < 0) return false;
+      if (status === "SETTLED" && o.status !== "BANK_SETTLED") return false;
+      if (status === "REJECTED" && ["PIT_REJECTED", "EXCHANGE_REJECTED", "BANK_REJECTED"].indexOf(o.status) < 0) return false;
+      if (q) {
+        var hay = [o.order_no, o.team, o.team_name, o.broker, o.security, o.symbol, o.side, o.status, o.reject_reason].join(" ").toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+    $("historyCount").textContent = rows.length === all.length ? "Latest " + all.length : rows.length + " of " + all.length;
+    $("historyMeta").textContent = rows.length + " transaction(s) shown";
+    $("orders").innerHTML = rows.length ? rows.map(function (o) {
+      var iside = o.side;
+      return '<tr><td class="nowrap">' + F.datetime(o.created_at) + '</td><td><a class="mono" href="/orders.html?order=' + encodeURIComponent(o.order_no) + '">' + esc(o.order_no) + "</a></td>" +
+        "<td><b>" + esc(o.team) + '</b><span class="sub">' + esc(o.team_name || "") + (o.broker ? " · " + esc(o.broker) : "") + "</span></td>" +
+        "<td><b>" + esc(o.security) + '</b><span class="sub">' + esc(o.symbol) + "</span></td>" +
+        '<td><span class="side-txt ' + iside.toLowerCase() + '">' + esc(iside) + '</span><span class="sub">Institution ' + (iside === "BUY" ? "buys" : "sells") + "</span></td>" +
+        '<td class="num">' + F.num(o.quantity) + '</td><td class="num">' + F.price(o.price) + '</td><td class="num">' + F.money(o.trade_value) + '</td><td class="num">' + F.money(o.brokerage) + "</td>" +
+        "<td>" + JSE.badge.status(o.status, o.reject_code) + (o.reject_reason ? '<span class="sub" style="max-width:260px;white-space:normal">' + esc(o.reject_reason) + "</span>" : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="10" class="empty">No institutional transactions match these filters.</td></tr>';
+  }
+
   function render() {
     var d = S.data, st = d.stats, r = d.rules;
+    if (r.text) $("ruleText").textContent = r.text;
     if ((d.institutions || []).length > 1 && S.canSwitch) {
       var sel = $("instSel"); sel.classList.remove("hidden");
       if (!sel.options.length) sel.innerHTML = d.institutions.map(function (i) { return '<option value="' + i.id + '">' + esc(i.code + " · " + i.name) + "</option>"; }).join("");
@@ -187,15 +321,7 @@
       var dir = F.dir(s.change_pct);
       return '<div class="live-row ' + dir + '"><span class="n">' + esc(s.name) + (s.type === "IPO" ? ' <span class="badge ipo">IPO</span>' : "") + '</span><span class="p">' + F.price(s.price) + '<span class="c ' + dir + '">' + F.arrowPct(s.change_pct) + "</span></span></div>";
     }).join("") : '<div class="empty">No listed securities.</div>';
-    $("orders").innerHTML = d.orders.length ? d.orders.map(function (o) {
-      var iside = o.side;
-      return '<tr><td class="nowrap">' + F.datetime(o.created_at) + '</td><td><a class="mono" href="/orders.html?order=' + encodeURIComponent(o.order_no) + '">' + esc(o.order_no) + "</a></td>" +
-        "<td><b>" + esc(o.team) + '</b><span class="sub">' + esc(o.team_name || "") + (o.broker ? " · " + esc(o.broker) : "") + "</span></td>" +
-        "<td><b>" + esc(o.security) + '</b><span class="sub">' + esc(o.symbol) + "</span></td>" +
-        '<td><span class="side-txt ' + iside.toLowerCase() + '">' + esc(iside) + '</span><span class="sub">Institution ' + (iside === "BUY" ? "buys" : "sells") + "</span></td>" +
-        '<td class="num">' + F.num(o.quantity) + '</td><td class="num">' + F.price(o.price) + '</td><td class="num">' + F.money(o.trade_value) + '</td><td class="num">' + F.money(o.brokerage) + "</td>" +
-        "<td>" + JSE.badge.status(o.status, o.reject_code) + (o.reject_reason ? '<span class="sub" style="max-width:260px;white-space:normal">' + esc(o.reject_reason) + "</span>" : "") + "</td></tr>";
-    }).join("") : '<tr><td colspan="10" class="empty">No institutional transactions yet.</td></tr>';
+    renderHistory();
     preview();
   }
 
@@ -219,7 +345,8 @@
     $("mkt").className = "pill " + meta.cls; $("mktText").textContent = meta.text;
     $("notLive").classList.toggle("hidden", live);
     $("notLive").innerHTML = live ? "" : "<b>Market is " + esc(meta.text) + ".</b> New institutional transactions are accepted only while the market is LIVE.";
-    $("go").disabled = !live || !S.canTrade;
+    refreshSubmit();
+    $("nGo").disabled = !S.canNews || ["NOT_STARTED", "LIVE", "SETTLEMENT_ONLY"].indexOf(s) < 0 || S.newsBusy;
   }
   function renderMoods() {
     $("moods").innerHTML = MOODS.map(function (m) { return '<button type="button" class="' + m[3] + '" data-mood="' + m[0] + '" aria-pressed="' + (S.mood === m[0]) + '">' + m[1] + (m[0] === "NORMAL" ? " *" : "") + "</button>"; }).join("");
@@ -229,26 +356,42 @@
 
   $("moods").addEventListener("click", function (e) { var b = e.target.closest("[data-mood]"); if (!b) return; S.mood = b.getAttribute("data-mood"); renderMoods(); });
   $("nGo").addEventListener("click", async function () {
-    if (S.newsBusy) return;
-    var sym = $("nSec").value; if (!sym) return JSE.toast("Select a company.", "warn");
-    S.newsBusy = true; $("nGo").disabled = true; $("nStatus").textContent = "Applying…";
+    if (S.newsBusy || !S.canNews) return;
+    var sym = $("nSec").value;
+    if (!sym) return JSE.toast("Select a company.", "warn");
+    if (["NOT_STARTED", "LIVE", "SETTLEMENT_ONLY"].indexOf(S.status) < 0) return JSE.toast("Market News is unavailable after the market closes.", "warn");
+    S.newsBusy = true; $("nGo").disabled = true; $("nStatus").textContent = "Applying market-news move…";
     try {
       var r = await JSE.api.post("/api/market-news", { symbol: sym, mood: S.mood });
       var x = r.news || r;
-      $("nStatus").textContent = (x.symbol || sym) + " " + F.signedPct(x.applied_pct) + " → " + F.price(x.new_price);
+      $("nStatus").textContent = (x.symbol || sym) + " " + F.signedPct(x.applied_pct) + " → " + F.price(x.new_price) +
+        (N(x.stale_orders) ? " · " + F.num(x.stale_orders) + " stale order(s) closed" : "");
       JSE.toast("Market News applied: " + (x.symbol || sym) + " " + F.signedPct(x.applied_pct), "good");
-      loadNews(); load();
-    } catch (ex) { $("nStatus").textContent = ex.message; JSE.toast(ex.message, "bad"); }
-    S.newsBusy = false; $("nGo").disabled = !S.canNews;
+      // Refresh authoritative market prices, institutional quote previews and the news log after the API invalidates its caches.
+      try { await Promise.all([loadNews(), load()]); } catch (refreshError) { $("nStatus").textContent += " · Refreshing the display…"; }
+    } catch (ex) {
+      $("nStatus").textContent = ex.message;
+      JSE.toast(ex.message, "bad");
+    } finally {
+      S.newsBusy = false;
+      $("nGo").disabled = !S.canNews || ["NOT_STARTED", "LIVE", "SETTLEMENT_ONLY"].indexOf(S.status) < 0;
+    }
   });
   document.querySelectorAll("[data-side]").forEach(function (b) { b.addEventListener("click", function () { S.side = b.getAttribute("data-side"); document.querySelectorAll("[data-side]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); preview(); }); });
+  $("cp").addEventListener("change", refreshSubmit);
   $("asset").addEventListener("change", function () { $("sec").value = ""; fillSecs(); preview(); });
   $("sec").addEventListener("change", preview);
   $("qty").addEventListener("input", preview);
+  ["histQ", "histSide", "histStatus"].forEach(function (id) {
+    $(id).addEventListener(id === "histQ" ? "input" : "change", renderHistory);
+  });
+  $("historyReset").addEventListener("click", function () {
+    $("histQ").value = ""; $("histSide").value = ""; $("histStatus").value = ""; renderHistory();
+  });
   $("ticket").addEventListener("submit", async function (e) {
     e.preventDefault();
     var s = sec(); if (!s || !$("cp").value) return JSE.toast("Select the participant counterparty and the security.", "warn");
-    var q = N($("qty").value); if (!q || (q % s.lot_size && !($("asset").value === "IPO" && S.side === "BUY"))) return JSE.toast("Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant.", "warn");
+    var q = N($("qty").value); if (!Number.isSafeInteger(q) || q <= 0) return JSE.toast("Enter a positive whole-share quantity.", "warn"); if (!quantityValid(s, q)) return JSE.toast("Quantity must be a multiple of " + s.lot_size + " shares, except for IPO sells by the participant.", "warn");
     var b = $("go"); b.disabled = true;
     try {
       var body = { side: S.side, symbol: s.symbol, quantity: q, expected_price: s.price, counterparty_team: $("cp").value, idempotency_key: S.key };
@@ -264,18 +407,22 @@
       if (ex.status && ex.status < 500) S.key = JSE.uuid();
       if (ex.code === "PRICE_CHANGED") load();
     }
-    b.disabled = S.status !== "LIVE" || !S.canTrade;
+    refreshSubmit();
   });
   $("instSel").addEventListener("change", function () { S.inst = $("instSel").value; poller.now(); });
 
-  var poller;
+  var poller, newsPoller;
   renderMoods();
   JSE.page({ id: "institutional" }).then(function (user) {
     if (!user) return;
     S.canTrade = user.role === "ADMIN" || user.role === "INSTITUTIONAL";
-    S.canNews = false;
+    S.canNews = user.role === "ADMIN" || user.role === "INSTITUTIONAL";
+    $("newsCard").hidden = !S.canNews;
+    $("newsCard").setAttribute("aria-hidden", String(!S.canNews));
+    $("nGo").disabled = !S.canNews;
     S.canSwitch = user.role !== "INSTITUTIONAL";
-    if (!S.canTrade) { $("go").disabled = true; $("nGo").disabled = true; }
+    if (!S.canTrade) $("go").disabled = true;
+    if (!S.canNews) $("nGo").disabled = true;
     JSE.onStatus(applyStatus);
     // live prices come from the same feed as the Market page, every 5 s
     JSE.poll(async function () {
@@ -287,7 +434,10 @@
       if (changed) { render(); } else preview();
     }, 5000, { onError: function () {} });
     poller = JSE.poll(load, 10000, { onError: function (e) { $("orders").innerHTML = '<tr><td colspan="10" class="empty">Reconnecting… ' + esc(e.message) + "</td></tr>"; } });
-    // Market News is administered only from Event Admin; this desk is for institutional trades.
+    if (S.canNews) {
+      loadNews().catch(function (e) { $("nStatus").textContent = "News history unavailable; retrying. " + e.message; });
+      newsPoller = JSE.poll(loadNews, 15000, { onError: function (e) { $("nStatus").textContent = "News history unavailable; retrying. " + e.message; } });
+    }
   });
 })();
 </script>
