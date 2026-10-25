@@ -11,8 +11,77 @@
   @media (max-width: 900px) { .cash-filters { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 640px) { .cash-filters { grid-template-columns: minmax(0, 1fr); } }
 </style>
+
+<style>
+  /* Blue finance theme — cash; page-scoped visual overrides only. */
+  body.cash-page {
+    background:linear-gradient(180deg,#edf4ff 0,#f4f7fc 220px,#f3f6fb 100%);
+    color:#142846; font-family:"Inter","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  body.cash-page .hd, body.cash-page .nav { background:transparent; }
+  body.cash-page .wordmark { color:#102c52; letter-spacing:.065em; }
+  body.cash-page .env-pill { color:#24578d; background:#e4efff; border-color:#b9d2f3; border-radius:6px; }
+  body.cash-page .tb-btn { color:#18365f; background:#fff; border-color:#c6d7ee; box-shadow:0 1px 3px rgba(18,49,91,.06); }
+  body.cash-page .tb-btn:hover { border-color:#91add1; background:#f8fbff; }
+  body.cash-page .tb-btn.dark { color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f; }
+  body.cash-page .nav a { color:#254361; background:rgba(255,255,255,.96); border-color:#d2deed; box-shadow:0 1px 2px rgba(16,42,79,.035); }
+  body.cash-page .nav a:hover { color:#122e54; background:#f4f8fe; border-color:#aec3df; }
+  body.cash-page .nav a[aria-current="page"] { color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f; box-shadow:0 2px 5px rgba(16,42,79,.16); }
+  body.cash-page .page-head h1 { color:#10294e; font-weight:850; }
+  body.cash-page .page-head p { color:#5d7494; }
+  body.cash-page .conn { color:#31577f; background:#f8fbff; border-color:#cbdcf0; }
+  body.cash-page .conn .dot { background:#2c68b2; }
+  body.cash-page .kpi { background:#fff; border-color:#d6e2f1; box-shadow:0 4px 13px rgba(19,48,86,.055); }
+  body.cash-page .kpi .k { color:#627b9b; }
+  body.cash-page .kpi .v { color:#18365f; font-weight:850; }
+  body.cash-page .kpi .s { color:#7185a0; }
+  body.cash-page .kpi.good .v { color:#087443; }
+  body.cash-page .kpi.bad .v { color:#bd303e; }
+  body.cash-page .card { background:#fff; border-color:#d6e2f1; box-shadow:0 5px 16px rgba(19,48,86,.05); }
+  body.cash-page .card-h { background:linear-gradient(180deg,#fbfdff,#f0f5fc); border-bottom-color:#dce6f3; }
+  body.cash-page .card-h h2, body.cash-page .card-h h3 { color:#18365f; font-weight:800; }
+  body.cash-page .card-h .meta { color:#667e9e; }
+  body.cash-page .card-h.bar h2::before, body.cash-page .card-h.bar h3::before { background:#315c91; }
+  body.cash-page .card-h.bar.navy h2::before, body.cash-page .card-h.bar.navy h3::before { background:#18365f; }
+  body.cash-page .input { color:#173657; background-color:#fff; border-color:#c8d8eb; box-shadow:inset 0 1px 1px rgba(16,42,79,.02); }
+  body.cash-page .input:focus { border-color:#527bb0; box-shadow:0 0 0 3px rgba(43,86,143,.12); }
+  body.cash-page .check { color:#345574; }
+  body.cash-page .check input { accent-color:#244879; }
+  body.cash-page .chips .chip, body.cash-page .chip { color:#345574; background:#fff; border-color:#d1dfef; }
+  body.cash-page .chips .chip:hover, body.cash-page .chip:hover { color:#18365f; border-color:#abc3e0; background:#f5f9ff; }
+  body.cash-page .chips .chip[aria-pressed="true"], body.cash-page .chip[aria-pressed="true"] { color:#fff; background:#244879; border-color:#18365f; box-shadow:0 1px 3px rgba(16,42,79,.10); }
+  body.cash-page .btn { color:#204369; background:#fff; border-color:#c8d8eb; box-shadow:0 1px 2px rgba(16,42,79,.035); }
+  body.cash-page .btn:hover { background:#f3f8ff; border-color:#a8bed9; }
+  body.cash-page .btn.primary { color:#fff; background:linear-gradient(135deg,#244879,#10294e); border-color:#18365f; box-shadow:0 2px 6px rgba(16,42,79,.15); }
+  body.cash-page .btn.primary:hover { background:linear-gradient(135deg,#1a3b68,#0b2142); border-color:#10294e; }
+  body.cash-page .meta-row { background:#f5f8fd; color:#607894; border-bottom-color:#dce6f3; }
+  body.cash-page .table-wrap { border-color:#d8e4f2; }
+  body.cash-page table.t th { background:#edf3fb; color:#405b7d; border-bottom-color:#d6e2f1; }
+  body.cash-page table.t td { color:#203a5c; border-bottom-color:#e4ecf5; }
+  body.cash-page table.t tbody tr:hover td { background:#f5f9ff; }
+  body.cash-page table.t td b { color:#17365c; }
+  body.cash-page tr.row-main { cursor:pointer; }
+  body.cash-page tr.row-main:hover td { background:#f0f6ff; }
+  body.cash-page tr.row-main.open td { background:#edf5ff; }
+  body.cash-page tr.risky td { background:#fff5f5; }
+  body.cash-page .act { color:#234361; }
+  body.cash-page .act.bad { color:#b42332; }
+  body.cash-page .act.good { color:#087443; }
+  body.cash-page pre.js { color:#345574; background:#f2f7fd; border-color:#d6e2f1; }
+  body.cash-page .pager { background:#f8fbff; border-top-color:#dbe6f3; }
+  body.cash-page .pager .btn { color:#24466f; border-color:#c8d8eb; }
+  body.cash-page .pager .btn:hover { background:#eef5ff; border-color:#9eb9dd; }
+  body.cash-page .empty { color:#667e9e; }
+  body.cash-page .empty b { color:#18365f; }
+  body.cash-page .alert.info { color:#214c82; background:#edf5ff; border-color:#c5daf5; }
+  body.cash-page .alert.warn { color:#754719; background:#fff7e8; border-color:#f0d7a6; }
+  body.cash-page .alert.good { color:#14532d; background:#edf9f1; border-color:#b9e1ca; }
+  body.cash-page .alert.bad { color:#8f2631; background:#fff0f1; border-color:#efc7ce; }
+</style>
+
 </head>
-<body>
+<body class="cash-page">
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1>Cash Ledger</h1><p>Complete cash movement audit trail. Current cash is shown separately from ledger movement.</p></div>
