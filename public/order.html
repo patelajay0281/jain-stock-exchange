@@ -25,9 +25,122 @@
   .team-card .tm { font-size: 11.5px; color: var(--muted-2); }
   .team-card .nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 7px; font-size: 11px; color: var(--muted-2); }
   .team-card .nums b { display: block; font-size: 12.5px; color: var(--ink); }
+
+  /* STYLE B — Premium Navy Accents.
+     CSS-only skin for Create Order. Do not alter dimensions, ordering, fields, or workflow. */
+  body.order-page {
+    background: linear-gradient(180deg, #edf3fb 0, #f4f7fb 220px, #f3f6fa 100%);
+    color: #142846;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body.order-page .hd,
+  body.order-page .nav { background: transparent; }
+  body.order-page .wordmark { color: #10294e; letter-spacing: .065em; }
+  body.order-page .env-pill {
+    color: #244d7c; background: #e5eef9; border-color: #c4d5eb; border-radius: 6px;
+  }
+  body.order-page .tb-btn {
+    color: #17345a; background: #fff; border-color: #cbd8e8;
+    box-shadow: 0 1px 3px rgba(16, 42, 79, .06);
+  }
+  body.order-page .tb-btn:hover { border-color: #91add1; background: #f8fbff; }
+  body.order-page .tb-btn.dark {
+    color: #fff; background: linear-gradient(135deg, #203f6d, #10294e);
+    border-color: #18365f;
+  }
+  body.order-page .nav a {
+    color: #254361; background: rgba(255,255,255,.94);
+    border-color: #d2deed; box-shadow: 0 1px 2px rgba(16,42,79,.035);
+  }
+  body.order-page .nav a:hover { color: #122e54; background: #f4f8fe; border-color: #aec3df; }
+  body.order-page .nav a[aria-current="page"] {
+    color: #fff; background: linear-gradient(135deg, #244879, #10294e);
+    border-color: #18365f; box-shadow: 0 2px 5px rgba(16,42,79,.16);
+  }
+  body.order-page .page-head h1 { color: #10294e; font-weight: 850; }
+  body.order-page .card {
+    background: #fff; border-color: #d7e2ef;
+    box-shadow: 0 5px 16px rgba(19,48,86,.055);
+  }
+  body.order-page .card-h {
+    background: linear-gradient(180deg, #f8fbff, #f0f5fb);
+    border-bottom-color: #d9e4f1;
+  }
+  body.order-page .card-h h2,
+  body.order-page .card-h h3 { color: #18365f; font-weight: 800; }
+  body.order-page .card-h .meta,
+  body.order-page .card-h .note { color: #647a98; }
+  body.order-page .field label { color: #254361; font-weight: 750; }
+  body.order-page .form-sec {
+    color: #25466f; border-top-color: #dbe5f1;
+  }
+  body.order-page .input {
+    color: #172f50; background-color: #fff; border-color: #c8d7e9;
+    box-shadow: inset 0 1px 1px rgba(16,42,79,.025);
+  }
+  body.order-page select.input {
+    background-color: #fff;
+  }
+  body.order-page .input::placeholder { color: #8799b0; }
+  body.order-page .input:focus {
+    border-color: #527bb0; box-shadow: 0 0 0 3px rgba(43,86,143,.12);
+  }
+  body.order-page .input[readonly],
+  body.order-page .input.locked { background-color: #eef3f9; color: #244361; }
+  body.order-page .btn {
+    color: #1d3c64; background: #fff; border-color: #c8d7e9;
+    box-shadow: 0 1px 2px rgba(16,42,79,.035);
+  }
+  body.order-page .btn:hover { background: #f3f7fc; border-color: #a8bed9; }
+  body.order-page .btn.primary {
+    color: #fff; background: linear-gradient(135deg, #244879, #10294e);
+    border-color: #18365f; box-shadow: 0 2px 6px rgba(16,42,79,.16);
+  }
+  body.order-page .btn.primary:hover {
+    background: linear-gradient(135deg, #1a3b68, #0b2142); border-color: #10294e;
+  }
+  body.order-page .btn:focus-visible,
+  body.order-page .tb-btn:focus-visible {
+    outline: 3px solid rgba(57,103,162,.28); outline-offset: 2px;
+  }
+  body.order-page .mini {
+    background: #f2f6fc; border-color: #d8e3f0;
+  }
+  body.order-page .mini .k { color: #647a98; }
+  body.order-page .mini .v { color: #18365f; }
+  body.order-page .live-px {
+    background: #f1f6fd; border-color: #ccdaeb;
+  }
+  body.order-page .live-px .k { color: #607895; }
+  body.order-page .live-px .v { color: #18365f; }
+  body.order-page .hint { color: #657c99; }
+  body.order-page .submit-row { border-top-color: #d9e4f1; }
+  body.order-page .alert.warn {
+    background: #fff7e8; border-color: #f0d7a6; color: #754719;
+  }
+  body.order-page .alert.info {
+    background: #edf5ff; border-color: #c5daf5; color: #214c82;
+  }
+  body.order-page .team-card {
+    background: #fff; border-color: #d6e1ee;
+  }
+  body.order-page .team-card:hover { border-color: #a9bfdc; }
+  body.order-page .team-card.sel {
+    border-color: #244879; box-shadow: 0 0 0 2px rgba(36,72,121,.12);
+  }
+  body.order-page .team-card .tn { color: #18365f; }
+  body.order-page .team-card .nums b { color: #17345a; }
+  body.order-page .from-ins { background: #edf5ff; border-color: #c7dcf5; }
+  body.order-page .lockline { color: #375575; }
+  body.order-page .done {
+    border-color: #b9e1ca; background: #edf9f1;
+  }
+
 </style>
 </head>
-<body>
+<body class="order-page">
 <main id="main" class="wrap wide">
   <div class="page-head">
     <div><h1>Create Order</h1></div>
