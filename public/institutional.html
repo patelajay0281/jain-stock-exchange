@@ -222,7 +222,7 @@
       ? "Institution SELL: the participant BUYS at the live Market price + " + spreadText + "; the participant pays trade value plus brokerage."
       : "Institution BUY: the participant SELLS at the live Market price − " + spreadText + "; the participant receives trade value less brokerage.";
     if (!s) { JSE.livePx(null); $("mktPrice").textContent = "—"; $("instPriceIn").value = ""; $("instPriceIn").dataset.edited = ""; $("instNote").textContent = "select a security"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; refreshSubmit(); return; }
-    var ip = $("instPriceIn").dataset.edited === "1" ? N($("instPriceIn").value) : instPrice(s);
+    var ip = $("instPriceIn").dataset.edited === "1" ? N($("instPriceIn").value) : Math.round(N(instPrice(s)));
     $("mktPrice").textContent = F.price(s.price);
     $("instNote").textContent = $("instPriceIn").dataset.edited === "1" ? "manual execution price" : (S.side === "BUY" ? "institution buys · market − spread" : "institution sells · market + spread");
     if ($("instPriceIn").dataset.edited === "1") $("sideNote").textContent = "Execution uses your entered price " + F.price(ip) + "; current market reference is " + F.price(s.price) + ". Market price changes will not reject this order.";
