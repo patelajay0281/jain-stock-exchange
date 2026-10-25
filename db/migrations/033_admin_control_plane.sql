@@ -178,7 +178,7 @@ BEGIN
     v_new := 'v_qty % (SELECT stock_lot_size FROM event_config WHERE id=1) <> 0';
     IF position(v_old IN v_fn)=0 THEN RAISE EXCEPTION '033: regular lot validation anchor not found in jse_instruction_action'; END IF;
     v_fn := replace(v_fn,v_old,v_new);
-    v_fn := replace(v_fn,'Quantity must be a multiple of ' || s.lot_size || ' shares.','Quantity must be a multiple of ' || (SELECT stock_lot_size FROM event_config WHERE id=1) || ' shares.');
+    v_fn := replace(v_fn,'Quantity must be a multiple of '' || s.lot_size || '' shares.','Quantity must be a multiple of '' || (SELECT stock_lot_size FROM event_config WHERE id=1) || '' shares.');
   END IF;
   IF position('ORDER_QUANTITY_LIMIT' IN v_fn)=0 THEN
     v_old := '    SELECT count(*) INTO v_open FROM instructions WHERE team_id = t.id AND status = ''OPEN'';';
