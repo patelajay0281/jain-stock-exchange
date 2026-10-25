@@ -9,14 +9,12 @@ DECLARE
   r record;
 BEGIN
   v_fn := pg_get_functiondef('public.jse_place_order(jsonb,jsonb)'::regprocedure);
-  v_old := $old$  -- the broker's screen showed a price; if Market News moved it since, ask the broker to review (no silent re-quote)
-  IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
+  v_old := $old$  IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
     RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
       MESSAGE = 'MARKET PRICE CHANGED: ' || v_sec.symbol || ' moved from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
                 ' (Market News). The order was not submitted — review the new value with the participant and submit again.';
   END IF;$old$;
-  v_new := $new$  -- A market move is informational only. Execute at the explicit ticket price when supplied.
-$new$;
+  v_new := $new$  NULL;$new$;
   IF position(v_new IN v_fn) = 0 THEN
     IF position(v_old IN v_fn) = 0 THEN RAISE EXCEPTION '034: expected jse_place_order price guard not found'; END IF;
     v_fn := replace(v_fn, v_old, v_new);
@@ -43,14 +41,12 @@ $new$;
   EXECUTE v_fn;
 
   v_fn := pg_get_functiondef('public.jse_place_institutional_order(jsonb,jsonb)'::regprocedure);
-  v_old := $old$  -- expected_price = the prevailing MARKET price the desk saw (the institutional price is derived from it)
-  IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
+  v_old := $old$  IF v_expected IS NOT NULL AND v_expected <> v_sec.price THEN
     RAISE EXCEPTION USING ERRCODE = 'JSE01', DETAIL = 'PRICE_CHANGED', HINT = '409',
       MESSAGE = 'MARKET PRICE CHANGED: ' || v_sec.symbol || ' moved from ' || jse_inr(v_expected) || ' to ' || jse_inr(v_sec.price) ||
                 ' (Market News). The institutional price is recalculated from the new market price — review and submit again.';
   END IF;$old$;
-  v_new := $new$  -- Market moves do not reject an institutional order; execution price is explicit when supplied.
-$new$;
+  v_new := $new$  NULL;$new$;
   IF position(v_new IN v_fn) = 0 THEN
     IF position(v_old IN v_fn) = 0 THEN RAISE EXCEPTION '034: expected institutional price guard not found'; END IF;
     v_fn := replace(v_fn, v_old, v_new);
