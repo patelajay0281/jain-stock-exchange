@@ -224,7 +224,8 @@
     if (!s) { JSE.livePx(null); $("mktPrice").textContent = "—"; $("instPriceIn").value = ""; $("instPriceIn").dataset.edited = ""; $("instNote").textContent = "select a security"; $("pvTv").textContent = "₹0"; $("pvBrk").textContent = "₹0"; $("pvAmt").textContent = "₹0"; $("checks").innerHTML = ""; refreshSubmit(); return; }
     var ip = $("instPriceIn").dataset.edited === "1" ? N($("instPriceIn").value) : instPrice(s);
     $("mktPrice").textContent = F.price(s.price);
-    $("instNote").textContent = S.side === "BUY" ? "institution buys · market − spread" : "institution sells · market + spread";
+    $("instNote").textContent = $("instPriceIn").dataset.edited === "1" ? "manual execution price" : (S.side === "BUY" ? "institution buys · market − spread" : "institution sells · market + spread");
+    if ($("instPriceIn").dataset.edited === "1") $("sideNote").textContent = "Execution uses your entered price " + F.price(ip) + "; current market reference is " + F.price(s.price) + ". Market price changes will not reject this order.";
     JSE.livePx(s);
     if ($("instPriceIn").dataset.edited !== "1") $("instPriceIn").value = String(Math.round(N(ip)));
     var flexIpoSell = flexibleIpoSell();
