@@ -433,6 +433,24 @@ post("/api/institutional-order", async (ctx) => {
 post("/api/market-news", async (ctx) => { need(ctx, "ADMIN", "INSTITUTIONAL"); return mutate(ctx, "jse_market_news", ctx.body || {}, ORDER_CACHES.concat(["pub:market", "pub:news:"])); });
 
 // ---- event administration ----
+get("/api/events", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  return json(ctx, await call("jse_event_registry_action", actor(ctx), { action: "STATE" }));
+});
+post("/api/events", async (ctx) => {
+  need(ctx, "ADMIN");
+  // Switching/creating an event changes the active database projection, so invalidate every read cache.
+  return mutate(ctx, "jse_event_registry_action", ctx.body || {});
+});
+get("/api/event-controls", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  return json(ctx, await call("jse_event_controls", actor(ctx), { action: "STATE" }));
+});
+post("/api/event-controls", async (ctx) => {
+  need(ctx, "ADMIN");
+  return mutate(ctx, "jse_event_controls", ctx.body || {});
+});
+
 get("/api/admin-state", async (ctx) => {
   const u = need(ctx, "ADMIN", "VIEWER");
   // per role: saved IPO listing prices are visible to administrators only
