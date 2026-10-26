@@ -465,6 +465,21 @@ post("/api/manual-price", async (ctx) => {
   return mutate(ctx, "jse_manual_set_market_price", ctx.body || {}, ORDER_CACHES.concat(["pub:market", "pub:news:"]));
 });
 
+// Recent quote movements from the active event: automated models, Market News and manual overrides.
+get("/api/pricing-activity", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  const requested = Number(q(ctx, "limit") || 25);
+  const limit = Math.max(1, Math.min(60, Number.isFinite(requested) ? Math.trunc(requested) : 25));
+  const result = await rawQuery(
+    "SELECT ph.id,ph.created_at,s.symbol,s.name,ph.source,ph.previous_price,ph.new_price,ph.change_pct,ph.order_id,ph.settlement_id " +
+    "FROM price_history ph JOIN securities s ON s.id=ph.security_id " +
+    "WHERE left(ph.source,5)='AUTO_' OR ph.source IN ('MARKET_NEWS','ADMIN_MANUAL_PRICE') " +
+    "ORDER BY ph.created_at DESC,ph.id DESC LIMIT $1",
+    [limit]
+  );
+  return json(ctx, { success: true, rows: result.rows });
+});
+
 get("/api/admin-state", async (ctx) => {
   const u = need(ctx, "ADMIN", "VIEWER");
   // per role: saved IPO listing prices are visible to administrators only
