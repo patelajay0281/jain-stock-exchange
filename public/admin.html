@@ -2112,6 +2112,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     ]);
     await loadEventRegistry().catch(function(){});
     await loadDeskControls().catch(function(){});
+    window.dispatchEvent(new CustomEvent("jse:event-activated"));
   }
   async function runEventRegistryAction(opts, body, successMessage) {
     try {
@@ -2400,6 +2401,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   if(nSec&&window.MutationObserver)new MutationObserver(refreshManualSecurities).observe(nSec,{childList:true,subtree:true});
   document.addEventListener("DOMContentLoaded",load);
   if(document.readyState!=="loading")load();
+  window.addEventListener("jse:event-activated",function(){load().catch(function(){});});
   window.addEventListener("focus",function(){if(currentEvent)refreshManualSecurities();});
 })();
 </script>
