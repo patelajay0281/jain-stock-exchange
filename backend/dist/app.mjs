@@ -10286,15 +10286,18 @@ BEGIN
     PERFORM public.jse_fail('INVALID_PRICING_CONFIG','Pricing settings contain an invalid number.',400);
   END;
 
-  SELECT to_jsonb(e)-'updated_at' INTO v_before FROM public.jse_events e WHERE id=v_event.id;
+  SELECT jsonb_build_object('pricing_method',pricing_method,'pricing_enabled',pricing_enabled,
+      'pricing_config',pricing_config) INTO v_before
+    FROM public.jse_events WHERE id=v_event.id;
   IF v_action='SET' THEN
-    v_after:=jsonb_build_object('pricing_method',v_method);
     UPDATE public.jse_events SET pricing_method=v_method,updated_at=now() WHERE id=v_event.id;
   ELSE
     UPDATE public.jse_events SET pricing_method=v_method,pricing_enabled=v_enabled,pricing_config=v_config,updated_at=now()
       WHERE id=v_event.id;
-    SELECT to_jsonb(e)-'updated_at' INTO v_after FROM public.jse_events e WHERE id=v_event.id;
   END IF;
+  SELECT jsonb_build_object('pricing_method',pricing_method,'pricing_enabled',pricing_enabled,
+      'pricing_config',pricing_config) INTO v_after
+    FROM public.jse_events WHERE id=v_event.id;
   IF v_before IS DISTINCT FROM v_after THEN
     PERFORM public.jse_audit(a,'PRICING_CONTROL_UPDATED','event',v_event.id::text,NULL,NULL,v_before,v_after,
       jsonb_build_object('event_name',v_event.event_name,'method',v_method,'pricing_enabled',v_enabled));
