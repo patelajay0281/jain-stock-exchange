@@ -542,3 +542,23 @@ body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid .card,body.
  body.admin-command-page .cmd-hero-footer{gap:6px 12px!important}
  body.admin-command-page .page-head{align-items:flex-start!important}
 }
+
+
+/* Final appearance defaults must follow the currently selected palette until a custom override is chosen. */
+body.admin-command-page{
+  --jse-user-accent:var(--jse-theme-accent);
+  --jse-user-surface:var(--jse-theme-surface);
+}
+/* Avoid the earlier equal-width columns stretching the appearance controls into empty space. */
+@media(min-width:1121px){
+ body.admin-command-page .jse-appearance-bar{grid-template-columns:minmax(145px,1.3fr) minmax(100px,.9fr) minmax(86px,.72fr) minmax(92px,.8fr) 56px 56px auto!important;gap:7px!important}
+ body.admin-command-page .jse-appearance-intro{grid-column:auto!important}
+ body.admin-command-page .jse-custom-color-control{width:56px!important}
+ body.admin-command-page .jse-custom-color-control input{width:56px!important}
+}
+@media(min-width:981px) and (max-width:1120px){
+ body.admin-command-page .jse-appearance-bar{grid-template-columns:minmax(155px,1.1fr) repeat(3,minmax(88px,.8fr)) 54px 54px auto!important}
+ body.admin-command-page .jse-appearance-intro{grid-column:auto!important}
+ body.admin-command-page .jse-custom-color-control{width:54px!important}
+ body.admin-command-page .jse-custom-color-control input{width:54px!important}
+}
