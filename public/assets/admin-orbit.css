@@ -1213,3 +1213,39 @@ body.admin-command-page #jseWorkspace-governance #reportsPanel #sheetSel{max-wid
  body.admin-command-page .hd-in .env-pill{display:none!important}
  body.admin-command-page .hd-right .tb-btn{font-size:9px!important;padding:6px 7px!important}
 }
+
+
+/* Inputs fill their labelled field only; inline/action-row controls stay compact. */
+body.admin-command-page .jse-workspace-grid .input,
+body.admin-command-page .jse-workspace-grid input:not([type=checkbox]):not([type=radio]):not([type=color]),
+body.admin-command-page .jse-workspace-grid select,
+body.admin-command-page .jse-workspace-grid textarea{
+  width:auto!important;max-width:100%!important;min-width:0!important;
+}
+body.admin-command-page .jse-workspace-grid .field>.input,
+body.admin-command-page .jse-workspace-grid .field>input:not([type=checkbox]):not([type=radio]):not([type=color]),
+body.admin-command-page .jse-workspace-grid .field>select,
+body.admin-command-page .jse-workspace-grid .field>textarea,
+body.admin-command-page .jse-workspace-grid .jse-pricing-select-wrap select,
+body.admin-command-page .jse-workspace-grid .adv-controls label .input,
+body.admin-command-page .jse-workspace-grid .cfg-filter-search>.input,
+body.admin-command-page .jse-workspace-grid .cfg-filter-select>.input,
+body.admin-command-page .jse-workspace-grid .cfg-tool-group>div>.input{
+  width:100%!important;max-width:100%!important;min-width:0!important;
+}
+body.admin-command-page .jse-workspace-grid .row>.input,
+body.admin-command-page .jse-workspace-grid .row>select,
+body.admin-command-page .jse-workspace-grid .row>input:not([type=checkbox]):not([type=radio]):not([type=color]){
+  flex:0 1 auto!important;width:auto!important;min-width:160px!important;
+}
+body.admin-command-page .jse-workspace-grid .row>.btn,
+body.admin-command-page .jse-workspace-grid .row>a.btn{flex:0 0 auto!important}
+body.admin-command-page #jseWorkspace-governance #reportsPanel #sheetSel{flex:0 1 290px!important;width:auto!important;min-width:180px!important}
+body.admin-command-page #jseWorkspace-pricing #pricingMethodPanel .jse-pricing-command-grid>*{min-width:0!important}
+body.admin-command-page #jseWorkspace-pricing #pricingMethodPanel .jse-engine-switch{justify-content:space-between!important}
+body.admin-command-page #jseWorkspace-pricing #pricingMethodPanel .jse-pricing-select-wrap{min-width:0!important}
+@media(max-width:620px){
+ body.admin-command-page .jse-workspace-grid .row>.input,
+ body.admin-command-page .jse-workspace-grid .row>select,
+ body.admin-command-page .jse-workspace-grid .row>input:not([type=checkbox]):not([type=radio]):not([type=color]){min-width:0!important;flex:1 1 100%!important;width:100%!important}
+}
