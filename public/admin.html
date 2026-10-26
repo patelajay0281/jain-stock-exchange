@@ -345,7 +345,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 
 
 
-<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.19">
+<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.20">
 </head>
 <body class="admin-command-page">
 <aside id="jseAdminSidebar" aria-label="Event Admin primary navigation">
@@ -387,7 +387,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
 
-  <section class="jse-appearance-bar" aria-label="Console appearance settings">
+  <section id="jseAppearanceBar" class="jse-appearance-bar" aria-label="Console appearance settings">
     <div class="jse-appearance-intro"><span class="jse-appearance-symbol">✳</span><div><strong>Personalize your console</strong><small>Change the palette, spacing and box style without changing event data.</small></div></div>
     <label><span>Colour theme</span><select id="jseThemeSelect" class="input"><option value="ocean">Ocean teal</option><option value="royal">Royal blue</option><option value="mint">Fresh mint</option><option value="paper">Warm paper</option><option value="coral">Coral studio</option><option value="violet">Violet intelligence</option></select></label>
     <label><span>Layout density</span><select id="jseDensitySelect" class="input"><option value="comfortable">Comfortable</option><option value="compact">Compact</option><option value="spacious">Spacious</option></select></label>
@@ -2624,6 +2624,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   };
   var head=main.querySelector(".page-head");
   var toolbar=$("cmdNav");
+  var appearance=$("jseAppearanceBar");
   if(head&&toolbar)head.insertAdjacentElement("afterend",toolbar);
 
   var tabs=document.createElement("nav");
@@ -2724,6 +2725,11 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       record.tab.setAttribute("aria-selected",on?"true":"false");
       record.tab.tabIndex=on?0:-1;
     });
+    /* Keep the live appearance controls in the active workspace, directly under its heading. */
+    if(appearance&&pagesById[workspace])pagesById[workspace].page.insertBefore(appearance,pagesById[workspace].grid);
+    /* Use the top title strip as the compact breadcrumb; the workspace heading is the true page title. */
+    var breadcrumb=main.querySelector(".jse-page-title h1");
+    if(breadcrumb)breadcrumb.textContent="Event Admin  /  "+pagesById[workspace].meta.title;
     body.setAttribute("data-active-workspace",workspace);
     setSidebarActive(targetId,workspace);
     try{history.replaceState(null,"","#"+(targetId||"jseWorkspace-"+workspace));}catch(e){}
@@ -2791,7 +2797,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var initialTarget=location.hash?decodeURIComponent(location.hash.slice(1)):"";
   if(initialTarget&&$(initialTarget))setActive(targetWorkspace[initialTarget]||"overview",initialTarget,false);
   else if(initialTarget.indexOf("jseWorkspace-")===0&&pagesById[initialTarget.slice("jseWorkspace-".length)])setActive(initialTarget.slice("jseWorkspace-".length),null,false);
-  else setActive("overview",null,false);
+  else setActive("pricing",null,false);
 })();
 </script>
 </body>
