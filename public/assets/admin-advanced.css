@@ -751,3 +751,106 @@ body.admin-command-page #pricingActivityRefresh{min-height:38px!important;font-s
  body.admin-command-page .jse-pricing-model{min-height:70px!important}
  body.admin-command-page .jse-price-activity-table{max-height:360px!important}
 }
+
+/* JSE CONTROL CENTRE 5.1 — compact, colorful, premium light-mode system */
+body.admin-command-page{--jse-bg:#f2f6fa;--jse-surface:#fff;--jse-ink:#193b53;--jse-muted:#637d90;--jse-line:#d8e5ed;--jse-blue:#236cb3;--jse-teal:#07858a;background:radial-gradient(ellipse at 88% 0%,rgba(92,177,197,.12),transparent 31%),radial-gradient(ellipse at 0% 20%,rgba(133,151,224,.08),transparent 28%),#f2f6fa!important;font-size:15px!important}
+body.admin-command-page #main{width:auto!important;max-width:none!important;margin-left:258px!important;padding:12px 16px 28px!important;min-width:0!important}
+body.admin-command-page .wrap.wide{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+body.admin-command-page #jseAdminSidebar{background:linear-gradient(180deg,#fff,#f5fafc)!important;border-right:1px solid #d9e5ee!important;box-shadow:8px 0 24px rgba(31,68,98,.04)!important}
+body.admin-command-page .jse-brand-mark{background:linear-gradient(145deg,#167b92,#285db1)!important;box-shadow:0 5px 12px rgba(25,112,151,.18)!important}
+body.admin-command-page .jse-sidebar-event{background:linear-gradient(135deg,#edf8fa,#eef4ff)!important;border:1px solid #d4e8ef!important;border-radius:12px!important;padding:12px!important}
+body.admin-command-page .jse-side-link{min-height:39px!important;border-radius:8px!important;font-size:12px!important}
+body.admin-command-page .jse-side-link.is-active{background:#e6f3fb!important;color:#185f99!important;box-shadow:inset 3px 0 #1687a2!important}
+body.admin-command-page .jse-appearance-bar{display:flex!important;align-items:center!important;gap:10px!important;flex-wrap:wrap!important;margin:0 0 10px!important;padding:9px 12px!important;border:1px solid #dbe6ee!important;border-radius:12px!important;background:rgba(255,255,255,.96)!important;box-shadow:0 3px 12px rgba(36,68,95,.025)!important}
+body.admin-command-page .jse-appearance-intro{flex:1 1 250px!important;min-width:190px!important}
+body.admin-command-page .jse-appearance-intro strong{font-size:12px!important}
+body.admin-command-page .jse-appearance-intro small{font-size:10px!important}
+body.admin-command-page .jse-appearance-bar>label{min-width:130px!important;flex:0 1 155px!important;font-size:10px!important}
+body.admin-command-page .jse-appearance-bar select{min-height:35px!important;padding:6px 9px!important;font-size:11px!important}
+body.admin-command-page .cmd-hero{display:grid!important;grid-template-columns:minmax(0,1fr) 135px!important;gap:10px!important;min-height:0!important;margin:0 0 10px!important;padding:14px 16px 0!important;border:1px solid #cfe1ec!important;border-radius:14px!important;background:linear-gradient(112deg,#f5fbff,#fff 58%,#eff9f7)!important;box-shadow:0 5px 18px rgba(36,78,108,.045)!important}
+body.admin-command-page .cmd-hero-main{padding:0 0 11px!important}
+body.admin-command-page .cmd-hero h2{font-size:clamp(23px,2.1vw,31px)!important;line-height:1.12!important;letter-spacing:-.04em!important;margin:7px 0!important}
+body.admin-command-page .cmd-hero p{max-width:760px!important;font-size:12px!important;margin:7px 0 10px!important;line-height:1.5!important}
+body.admin-command-page .cmd-orbit{width:125px!important;height:115px!important;min-height:115px!important;transform:scale(.8)!important;margin:auto!important}
+body.admin-command-page .cmd-hero-footer{grid-column:1/-1!important;margin:0 -16px!important;padding:8px 16px!important}
+body.admin-command-page .cmd-live-meta{gap:7px!important}
+body.admin-command-page #cmdNav{display:flex!important;gap:6px!important;align-items:center!important;position:sticky!important;top:0!important;z-index:70!important;margin:0 0 10px!important;padding:7px!important;border:1px solid #d5e3ec!important;border-radius:11px!important;background:rgba(255,255,255,.97)!important;box-shadow:0 4px 16px rgba(29,62,90,.06)!important;backdrop-filter:blur(12px)!important}
+body.admin-command-page #cmdNav button{min-height:32px!important;padding:6px 9px!important;border-radius:7px!important;font-size:10px!important;white-space:nowrap!important}
+body.admin-command-page .cmd-quick-jump{min-width:135px!important;flex:1 1 160px!important}
+body.admin-command-page #jseWorkspaceTabs{position:sticky!important;top:48px!important;z-index:65!important;display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:5px!important;margin:0 0 10px!important;padding:6px!important;border:1px solid #d7e4ec!important;border-radius:11px!important;background:rgba(255,255,255,.97)!important;box-shadow:0 5px 15px rgba(29,62,90,.045)!important;backdrop-filter:blur(12px)!important}
+body.admin-command-page .jse-workspace-tab{flex:0 0 auto!important;min-height:37px!important;padding:7px 10px!important;font-size:10px!important;border-radius:8px!important}
+body.admin-command-page .jse-workspace-tab-num{width:19px!important;height:19px!important;font-size:9px!important}
+body.admin-command-page .jse-workspace-page{min-width:0!important}
+body.admin-command-page .jse-workspace-heading{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin:0 0 10px!important;padding:2px 1px 9px!important;border-bottom:1px solid #d9e5ed!important}
+body.admin-command-page .jse-workspace-kicker{display:inline-flex!important;margin:0 0 3px!important;color:#07858a!important;font-size:9px!important;font-weight:950!important;letter-spacing:.15em!important}
+body.admin-command-page .jse-workspace-title{margin:0!important;font-size:23px!important;line-height:1.2!important;letter-spacing:-.035em!important;color:#193b53!important}
+body.admin-command-page .jse-workspace-description{margin:4px 0 0!important;color:#6a8294!important;font-size:11px!important;line-height:1.45!important}
+body.admin-command-page .jse-workspace-status{flex:0 0 auto!important;max-width:240px!important;padding:6px 9px!important;border:1px solid #d8e7ef!important;border-radius:8px!important;background:#f5fafc!important;color:#55768b!important;font-size:9px!important;font-weight:800!important;text-align:right!important}
+body.admin-command-page .jse-workspace-grid{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;align-items:start!important;gap:11px!important;min-width:0!important}
+body.admin-command-page .jse-workspace-grid>*{grid-column:span 6!important;min-width:0!important;width:100%!important;margin:0!important}
+body.admin-command-page .jse-workspace-grid>.cmd-hero,body.admin-command-page .jse-workspace-grid>#kpis,body.admin-command-page .jse-workspace-grid>#consistency,body.admin-command-page .jse-workspace-grid>#cmdDashboard,body.admin-command-page .jse-workspace-grid>.jse-overview-shortcuts,body.admin-command-page .jse-workspace-grid>#eventRegistryPanel,body.admin-command-page .jse-workspace-grid>#advancedAnalytics,body.admin-command-page .jse-workspace-grid>#pricingMethodPanel,body.admin-command-page .jse-workspace-grid>#pricingActivityPanel,body.admin-command-page .jse-workspace-grid>#marketNewsSection,body.admin-command-page .jse-workspace-grid>#intelligence,body.admin-command-page .jse-workspace-grid>#configPanel,body.admin-command-page .jse-workspace-grid>#reportsPanel,body.admin-command-page .jse-workspace-grid>#journalSection{grid-column:1/-1!important}
+body.admin-command-page .jse-workspace-grid>#kpis{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+body.admin-command-page .jse-workspace-grid>#cmdDashboard{display:block!important}
+body.admin-command-page .jse-workspace-grid .card,body.admin-command-page .jse-workspace-grid .adv-card,body.admin-command-page .jse-workspace-grid .cmd-panel{border-color:#d8e5ed!important;box-shadow:0 3px 12px rgba(29,62,90,.035)!important}
+body.admin-command-page .jse-workspace-grid .card-h{padding:12px 15px!important}
+body.admin-command-page .jse-workspace-grid .card-b{padding:13px 15px!important}
+body.admin-command-page .jse-workspace-grid .card-h h2{font-size:16px!important;line-height:1.3!important}
+body.admin-command-page .jse-workspace-grid .card-h p{font-size:11px!important;line-height:1.5!important}
+body.admin-command-page .jse-workspace-grid .card-b label{font-size:11px!important}
+body.admin-command-page .jse-workspace-grid .input,body.admin-command-page .jse-workspace-grid select,body.admin-command-page .jse-workspace-grid input:not([type=checkbox]):not([type=radio]){min-height:37px!important;font-size:12px!important}
+body.admin-command-page .jse-workspace-grid .btn{min-height:35px!important;font-size:11px!important}
+body.admin-command-page .jse-workspace-grid .t th{font-size:10px!important}
+body.admin-command-page .jse-workspace-grid .t td{font-size:11px!important}
+body.admin-command-page .jse-workspace-grid .cmd-heading{margin:0 0 8px!important}
+body.admin-command-page .jse-workspace-grid .cmd-heading h2{font-size:17px!important}
+body.admin-command-page .jse-workspace-grid .cmd-grid{gap:9px!important}
+body.admin-command-page .jse-workspace-grid .cmd-panel{padding:12px!important}
+body.admin-command-page .jse-workspace-grid .cmd-panel-head h3{font-size:13px!important}
+body.admin-command-page .jse-workspace-grid .kpi{padding:11px!important;border-radius:11px!important}
+body.admin-command-page .jse-workspace-grid .kpi .v{font-size:21px!important}
+body.admin-command-page .jse-workspace-grid .kpi .l{font-size:9px!important}
+body.admin-command-page .jse-workspace-grid .adv-grid{gap:10px!important}
+body.admin-command-page .jse-workspace-grid .adv-card{border-radius:12px!important;min-width:0!important}
+body.admin-command-page .jse-workspace-grid .adv-card-head{padding:12px 13px 8px!important}
+body.admin-command-page .jse-workspace-grid .adv-card-head h3{font-size:14px!important}
+body.admin-command-page .jse-workspace-grid .adv-chart{min-height:230px!important}
+body.admin-command-page .jse-overview-shortcuts{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+body.admin-command-page .jse-overview-shortcuts button{display:flex!important;align-items:center!important;gap:9px!important;min-width:0!important;min-height:67px!important;padding:10px!important;text-align:left!important;border:1px solid #d8e5ed!important;border-radius:10px!important;background:linear-gradient(140deg,#fff,#f8fbfd)!important;color:#294c66!important;box-shadow:0 2px 8px rgba(34,68,99,.025)!important}
+body.admin-command-page .jse-overview-shortcuts button:hover{background:#eff8fc!important;border-color:#9ec9db!important}
+body.admin-command-page .jse-overview-shortcuts .quick-icon{display:grid!important;place-items:center!important;width:32px!important;height:32px!important;min-width:32px!important;border-radius:9px!important;background:#e7f3fc!important;color:#286ea7!important;font-size:16px!important;font-weight:900!important}
+body.admin-command-page .jse-overview-shortcuts button>span:nth-child(2){display:flex!important;flex-direction:column!important;flex:1!important;min-width:0!important;gap:3px!important}
+body.admin-command-page .jse-overview-shortcuts button b{display:block!important;color:#254b66!important;font-size:11px!important;line-height:1.3!important;font-weight:900!important}
+body.admin-command-page .jse-overview-shortcuts button small{display:block!important;color:#72889a!important;font-size:9px!important;line-height:1.4!important;font-weight:600!important}
+body.admin-command-page .jse-overview-shortcuts .quick-arrow{color:#91a4b4!important;font-size:15px!important}
+body.admin-command-page .jse-workspace-page[data-workspace-page="pricing"] .jse-workspace-heading{border-bottom-color:#d7d0f2!important}
+body.admin-command-page .jse-workspace-page[data-workspace-page="pricing"] .jse-workspace-kicker{color:#7057b7!important}
+body.admin-command-page .jse-workspace-page[data-workspace-page="pricing"] .jse-workspace-status{background:#f4f0ff!important;border-color:#e1d8fa!important;color:#6954a8!important}
+body.admin-command-page .jse-workspace-page[data-workspace-page="analytics"] .jse-workspace-kicker{color:#087f83!important}
+body.admin-command-page .jse-workspace-page[data-workspace-page="events"] .jse-workspace-kicker{color:#286fb3!important}
+body.admin-command-page .jse-workspace-page[data-workspace-page="governance"] .jse-workspace-kicker{color:#b33d4d!important}
+body.admin-command-page .jse-workspace-page[data-workspace-page="ipo"] .jse-workspace-kicker{color:#a06b18!important}
+body.admin-command-page .admin-jump-highlight{outline:3px solid #6bb5cb!important;outline-offset:3px!important}
+body.admin-command-page[data-jse-theme="royal"]{--jse-blue:#315dc2;--jse-teal:#2674ba}
+body.admin-command-page[data-jse-theme="mint"]{--jse-blue:#247b65;--jse-teal:#078b82}
+body.admin-command-page[data-jse-theme="paper"]{--jse-blue:#9a6a37;--jse-teal:#39837e}
+body.admin-command-page[data-jse-theme="coral"]{--jse-blue:#bf5b52;--jse-teal:#168a8a}
+body.admin-command-page[data-jse-theme="violet"]{--jse-blue:#7153b8;--jse-teal:#257c91}
+body.admin-command-page[data-jse-theme="royal"] .jse-workspace-tab[aria-selected="true"]{background:#edf1ff!important;color:#315dc2!important;box-shadow:inset 0 -2px #315dc2!important}
+body.admin-command-page[data-jse-theme="mint"] .jse-workspace-tab[aria-selected="true"]{background:#e8f7f0!important;color:#247b65!important;box-shadow:inset 0 -2px #247b65!important}
+body.admin-command-page[data-jse-theme="paper"] .jse-workspace-tab[aria-selected="true"]{background:#faf1e6!important;color:#875d32!important;box-shadow:inset 0 -2px #b8884c!important}
+body.admin-command-page[data-jse-theme="coral"] .jse-workspace-tab[aria-selected="true"]{background:#fff0ee!important;color:#b94f48!important;box-shadow:inset 0 -2px #bf5b52!important}
+body.admin-command-page[data-jse-theme="violet"] .jse-workspace-tab[aria-selected="true"]{background:#f1edff!important;color:#7153b8!important;box-shadow:inset 0 -2px #7153b8!important}
+body.admin-command-page[data-jse-box="sharp"] .jse-workspace-grid .card,body.admin-command-page[data-jse-box="sharp"] .jse-workspace-grid .adv-card{border-radius:3px!important}
+body.admin-command-page[data-jse-box="flat"] .jse-workspace-grid .card,body.admin-command-page[data-jse-box="flat"] .jse-workspace-grid .adv-card{box-shadow:none!important;border-radius:5px!important}
+body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid .card,body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid .adv-card{box-shadow:0 9px 25px rgba(30,66,96,.09)!important;border-color:#d1e0e9!important}
+body.admin-command-page[data-jse-density="compact"] .jse-workspace-grid{gap:7px!important}
+body.admin-command-page[data-jse-density="compact"] .jse-workspace-grid .card-b{padding:9px 11px!important}
+body.admin-command-page[data-jse-density="spacious"] .jse-workspace-grid{gap:15px!important}
+body.admin-command-page[data-jse-density="spacious"] .jse-workspace-grid .card-b{padding:18px!important}
+body.admin-command-page.admin-text-plus{font-size:17px!important}
+body.admin-command-page.admin-text-plus .jse-workspace-grid .card-h h2{font-size:19px!important}
+body.admin-command-page.admin-text-plus .jse-workspace-grid .card-b label,body.admin-command-page.admin-text-plus .jse-workspace-grid .t td{font-size:13px!important}
+body.admin-command-page.admin-text-plus .jse-workspace-grid .input,body.admin-command-page.admin-text-plus .jse-workspace-grid select{font-size:14px!important;min-height:42px!important}
+@media(max-width:1350px){body.admin-command-page #main{margin-left:238px!important;padding:10px 11px 22px!important}body.admin-command-page .jse-overview-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.admin-command-page .jse-workspace-status{display:none!important}}
+@media(max-width:980px){body.admin-command-page #main{margin-left:0!important;padding:10px 10px 22px!important}body.admin-command-page .cmd-hero{grid-template-columns:minmax(0,1fr) 105px!important;padding:13px 13px 0!important}body.admin-command-page .cmd-orbit{transform:scale(.66)!important;width:95px!important;margin-left:-8px!important}body.admin-command-page #cmdNav{position:relative!important;top:auto!important;overflow-x:auto!important;flex-wrap:nowrap!important}body.admin-command-page #jseWorkspaceTabs{top:0!important}body.admin-command-page .jse-workspace-grid>*{grid-column:1/-1!important}body.admin-command-page .jse-workspace-grid>#kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}body.admin-command-page .jse-workspace-grid .adv-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:640px){body.admin-command-page .jse-appearance-intro{flex-basis:100%!important}body.admin-command-page .jse-appearance-bar>label{flex:1 1 120px!important}body.admin-command-page .cmd-hero{grid-template-columns:minmax(0,1fr)!important}body.admin-command-page .cmd-orbit{display:none!important}body.admin-command-page .cmd-hero h2{font-size:25px!important}body.admin-command-page .jse-workspace-title{font-size:20px!important}body.admin-command-page .jse-workspace-grid>#kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.admin-command-page .jse-overview-shortcuts{grid-template-columns:minmax(0,1fr)!important}body.admin-command-page .jse-workspace-grid .adv-grid{grid-template-columns:minmax(0,1fr)!important}body.admin-command-page .jse-workspace-grid .adv-span-8,body.admin-command-page .jse-workspace-grid .adv-span-4{grid-column:1/-1!important}body.admin-command-page #jseWorkspaceTabs{gap:4px!important;padding:5px!important}body.admin-command-page .jse-workspace-tab{padding:7px 8px!important;font-size:9px!important}body.admin-command-page .jse-workspace-heading{align-items:flex-start!important}}
