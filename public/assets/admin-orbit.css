@@ -350,3 +350,121 @@ body.admin-command-page .jse-workspace-grid>#kpis .kpi .v{font-size:17px!importa
 body.admin-command-page .jse-workspace-grid>#kpis .kpi .s{font-size:8px!important;color:var(--jse-ctl-muted)!important}
 body.admin-command-page .jse-workspace-grid .consistency{margin:0!important}
 @media(max-width:980px){body.admin-command-page .jse-workspace-grid>#kpis.kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+
+/* ===== MagicPath parity pass: keep the existing live app shell, compress its chrome ===== */
+body.admin-command-page .hd{
+  box-sizing:border-box!important;display:flex!important;align-items:center!important;gap:0!important;
+  height:42px!important;min-height:42px!important;margin:0!important;padding:0 10px 0 222px!important;
+  max-width:none!important;background:var(--jse-ctl-page)!important;border-bottom:1px solid var(--jse-ctl-border)!important;
+  box-shadow:none!important;position:relative!important;z-index:90!important;
+}
+body.admin-command-page .hd-in{
+  order:2!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;
+  flex:0 0 auto!important;gap:7px!important;width:auto!important;min-height:42px!important;max-width:none!important;
+  margin:0!important;padding:0!important;flex-wrap:nowrap!important;
+}
+body.admin-command-page .hd-in .wordmark{display:none!important}
+body.admin-command-page .hd-in .env-pill{font-size:7px!important;padding:3px 5px!important;line-height:1.2!important}
+body.admin-command-page .hd-right{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important}
+body.admin-command-page .hd-right .tb-btn,
+body.admin-command-page .hd-in .tb-btn{
+  min-height:28px!important;padding:5px 8px!important;border:1px solid var(--jse-ctl-border)!important;
+  border-radius:7px!important;background:var(--jse-ctl-surface)!important;color:var(--jse-ctl-ink)!important;
+  box-shadow:none!important;font-size:8px!important;white-space:nowrap!important
+}
+body.admin-command-page .hd-right .tb-btn.dark,
+body.admin-command-page .hd-in .tb-btn.dark{
+  background:var(--jse-ctl-accent)!important;border-color:var(--jse-ctl-accent)!important;color:#fff!important
+}
+body.admin-command-page .nav{
+  order:1!important;flex:1 1 auto!important;min-width:0!important;width:auto!important;max-width:none!important;
+  height:42px!important;display:flex!important;align-items:center!important;margin:0!important;padding:0!important;
+  background:transparent!important;border:0!important;box-shadow:none!important
+}
+body.admin-command-page .nav-in{
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:2px!important;
+  flex-wrap:nowrap!important;min-width:0!important;width:100%!important;height:42px!important;margin:0!important;
+  padding:0 7px 0 0!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:thin!important
+}
+body.admin-command-page .nav-in a{
+  flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;min-height:28px!important;
+  padding:5px 7px!important;border:1px solid transparent!important;border-radius:6px!important;
+  background:transparent!important;color:var(--jse-ctl-muted)!important;box-shadow:none!important;
+  font:650 8px/1.2 'DM Sans',Inter,sans-serif!important;white-space:nowrap!important
+}
+body.admin-command-page .nav-in a:hover{
+  color:var(--jse-ctl-accent)!important;background:var(--jse-ctl-soft)!important;border-color:var(--jse-ctl-border)!important
+}
+body.admin-command-page .nav-in a[aria-current="page"]{
+  color:var(--jse-ctl-accent)!important;background:var(--jse-ctl-soft)!important;
+  border-color:var(--jse-ctl-border)!important;font-weight:800!important;box-shadow:inset 0 -2px var(--jse-ctl-accent)!important
+}
+body.admin-command-page .skip{z-index:120!important}
+body.admin-command-page #jseAdminSidebar{z-index:100!important}
+
+/* The top strip becomes a breadcrumb; the active workspace heading supplies the large title. */
+body.admin-command-page .page-head{
+  display:flex!important;align-items:center!important;gap:12px!important;
+  padding:0 1px 9px!important;margin:0 0 7px!important;border-bottom:1px solid var(--jse-ctl-border)!important;
+  min-height:28px!important
+}
+body.admin-command-page .jse-page-title{min-width:0!important;flex:1 1 auto!important}
+body.admin-command-page .jse-page-title h1{
+  margin:0!important;color:var(--jse-ctl-muted)!important;font:700 9px/1.3 'DM Sans',Inter,sans-serif!important;
+  letter-spacing:.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
+}
+body.admin-command-page .jse-page-title>p,
+body.admin-command-page .jse-page-context{display:none!important}
+body.admin-command-page .conn{flex:0 0 auto!important;padding:5px 8px!important;font-size:8px!important}
+body.admin-command-page #main{padding-top:12px!important}
+body.admin-command-page #cmdNav{
+  display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:wrap!important;
+  padding:6px 8px!important;margin:0 0 10px!important;background:var(--jse-ctl-surface)!important;
+  border:1px solid var(--jse-ctl-border)!important;border-radius:9px!important;box-shadow:none!important
+}
+body.admin-command-page #cmdNav .cmd-quick-jump{display:flex!important;flex:1 1 210px!important;min-width:190px!important}
+body.admin-command-page #cmdNav #adminQuickFind{height:29px!important;min-height:29px!important;max-width:320px!important;background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;color:var(--jse-ctl-ink)!important;font-size:9px!important}
+body.admin-command-page #cmdNav #cmdRefresh,
+body.admin-command-page #cmdNav #cmdRunRecon{min-height:29px!important;padding:5px 8px!important;border-radius:6px!important;font-size:8px!important}
+body.admin-command-page #cmdNav #cmdRefresh{background:var(--jse-ctl-soft)!important;color:var(--jse-ctl-accent)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page #cmdNav #cmdRunRecon{background:var(--jse-ctl-surface)!important;color:var(--jse-ctl-ink)!important;border-color:var(--jse-ctl-border)!important}
+
+/* The appearance toolbar is now inside the selected workspace, below its title (not after all content). */
+body.admin-command-page .jse-workspace-page>.jse-appearance-bar{
+  position:relative!important;margin:0 0 11px!important;z-index:1!important;
+  grid-template-columns:minmax(155px,1.25fr) minmax(94px,.9fr) minmax(84px,.78fr) minmax(90px,.82fr) 54px 54px auto!important;
+}
+body.admin-command-page .jse-workspace-page>.jse-appearance-bar .jse-appearance-intro{min-width:0!important}
+body.admin-command-page .jse-workspace-page>.jse-appearance-bar .jse-appearance-intro strong{font-size:9px!important}
+body.admin-command-page .jse-workspace-page>.jse-appearance-bar .jse-appearance-intro small{font-size:8px!important}
+body.admin-command-page .jse-workspace-page>.jse-workspace-heading .jse-workspace-title{font-size:23px!important}
+body.admin-command-page .jse-workspace-page>.jse-workspace-heading .jse-workspace-description{max-width:760px!important;font-size:10px!important}
+body.admin-command-page .jse-workspace-grid #pricingMethodPanel .jse-pricing-header h2{font-size:14px!important}
+body.admin-command-page .jse-workspace-grid #pricingMethodPanel .jse-pricing-header{padding:12px 15px!important}
+body.admin-command-page .jse-workspace-grid #pricingMethodPanel .jse-pricing-command-grid{gap:7px!important}
+body.admin-command-page .jse-workspace-grid #pricingMethodPanel .jse-pricing-model-grid{gap:7px!important}
+body.admin-command-page .jse-workspace-grid #pricingActivityPanel .jse-price-activity-head{padding:11px 14px!important}
+
+@media(max-width:1120px){
+ body.admin-command-page .hd{padding-left:202px!important}
+ body.admin-command-page .nav-in a{padding:5px 5px!important;font-size:7px!important}
+ body.admin-command-page .jse-workspace-page>.jse-appearance-bar{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body.admin-command-page .jse-workspace-page>.jse-appearance-bar .jse-appearance-intro{grid-column:1/-1!important}
+}
+@media(max-width:980px){
+ body.admin-command-page .hd{padding:0 8px!important;height:38px!important;min-height:38px!important}
+ body.admin-command-page .hd-in{min-height:38px!important}
+ body.admin-command-page .nav,body.admin-command-page .nav-in{height:38px!important}
+ body.admin-command-page .nav-in a{font-size:7px!important}
+ body.admin-command-page #main{padding-top:10px!important}
+ body.admin-command-page .jse-workspace-page>.jse-appearance-bar{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:620px){
+ body.admin-command-page .hd-in .env-pill{display:none!important}
+ body.admin-command-page .hd-in .tb-btn{font-size:7px!important;padding:4px 5px!important}
+ body.admin-command-page .nav-in a{padding:4px 5px!important;font-size:7px!important}
+ body.admin-command-page .jse-workspace-page>.jse-appearance-bar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page .jse-workspace-page>.jse-appearance-bar .jse-appearance-intro{grid-column:1/-1!important}
+ body.admin-command-page .jse-workspace-page>.jse-workspace-heading{align-items:flex-start!important}
+}
