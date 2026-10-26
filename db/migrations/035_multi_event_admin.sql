@@ -123,6 +123,67 @@ BEGIN
 END
 $patch_reset$;
 
+-- These triggers enforce derived-state rules during normal trades. Only explicit event
+-- snapshot replay bypasses them, so restoration doesn't double-apply settlement side effects.
+CREATE OR REPLACE FUNCTION public.jse__inst_order_guard()
+RETURNS trigger LANGUAGE plpgsql AS $function$
+DECLARE inv integer; v_sym text;
+BEGIN
+  IF current_setting('jse.maintenance',true)='on' THEN RETURN NEW; END IF;
+  IF NEW.account_type <> 'INSTITUTION' OR NEW.side <> 'SELL' THEN RETURN NEW; END IF;
+  SELECT quantity INTO inv FROM public.institutional_inventory WHERE security_id=NEW.security_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN NEW; END IF;
+  IF NEW.quantity > inv - public.jse__inst_reserved(NEW.security_id,NEW.id) THEN
+    SELECT symbol INTO v_sym FROM public.securities WHERE id=NEW.security_id;
+    RAISE EXCEPTION USING ERRCODE='JSE01',DETAIL='INSTITUTION_INVENTORY',HINT='409',
+      MESSAGE='The institutional investor has only ' || greatest(inv-public.jse__inst_reserved(NEW.security_id,NEW.id),0) || ' ' || v_sym ||
+              ' shares available to sell (inventory ' || inv || ', in open orders ' || public.jse__inst_reserved(NEW.security_id,NEW.id) || ').';
+  END IF;
+  RETURN NEW;
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION public.jse__inst_settlement_inventory()
+RETURNS trigger LANGUAGE plpgsql AS $function$
+DECLARE v_delta integer; v_left integer; v_sym text;
+BEGIN
+  IF current_setting('jse.maintenance',true)='on' THEN RETURN NEW; END IF;
+  IF NEW.account_type IS DISTINCT FROM 'INSTITUTION' THEN RETURN NEW; END IF;
+  IF TG_OP='INSERT' AND NEW.reversed_at IS NULL THEN
+    v_delta:=CASE WHEN NEW.side='SELL' THEN -NEW.quantity ELSE NEW.quantity END;
+  ELSIF TG_OP='UPDATE' AND OLD.reversed_at IS NULL AND NEW.reversed_at IS NOT NULL THEN
+    v_delta:=CASE WHEN NEW.side='SELL' THEN NEW.quantity ELSE -NEW.quantity END;
+  ELSIF TG_OP='UPDATE' AND OLD.reversed_at IS NOT NULL AND NEW.reversed_at IS NULL THEN
+    v_delta:=CASE WHEN NEW.side='SELL' THEN -NEW.quantity ELSE NEW.quantity END;
+  ELSE RETURN NEW;
+  END IF;
+  UPDATE public.institutional_inventory SET quantity=quantity+v_delta,updated_at=now() WHERE security_id=NEW.security_id
+    RETURNING quantity INTO v_left;
+  IF FOUND AND v_left<0 THEN
+    SELECT symbol INTO v_sym FROM public.securities WHERE id=NEW.security_id;
+    RAISE EXCEPTION USING ERRCODE='JSE01',DETAIL='INSTITUTION_INVENTORY',HINT='409',
+      MESSAGE='Settlement blocked: the institutional investor does not have enough ' || v_sym || ' shares.';
+  END IF;
+  RETURN NEW;
+EXCEPTION WHEN check_violation THEN
+  RAISE EXCEPTION USING ERRCODE='JSE01',DETAIL='INSTITUTION_INVENTORY',HINT='409',
+    MESSAGE='Settlement blocked: institutional inventory would become negative.';
+END
+$function$;
+
+CREATE OR REPLACE FUNCTION public.jse_special_cash_limit_guard()
+RETURNS trigger LANGUAGE plpgsql AS $function$
+DECLARE v_limit numeric;
+BEGIN
+  IF current_setting('jse.maintenance',true)='on' THEN RETURN NEW; END IF;
+  SELECT cash_limit INTO v_limit FROM public.jse_special_accounts WHERE team_id=NEW.id;
+  IF FOUND AND NEW.cash>v_limit THEN
+    RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BIG BULL cash limit is ₹1,00,00,000.00; this balance change is blocked.';
+  END IF;
+  RETURN NEW;
+END
+$function$;
+
 CREATE OR REPLACE FUNCTION public.jse__restore_event_snapshot(p_snapshot jsonb)
 RETURNS void LANGUAGE plpgsql AS $function$
 DECLARE r record; v_cols text; v_max bigint; v_seq text; v_data jsonb;
@@ -132,11 +193,7 @@ BEGIN
  END IF;
  PERFORM set_config('jse.maintenance','on',true);
  SET CONSTRAINTS ALL DEFERRED;
- ALTER TABLE public.orders DISABLE TRIGGER jse_inst_order_guard_trg;
- ALTER TABLE public.settlements DISABLE TRIGGER jse_inst_settlement_inventory_trg;
- ALTER TABLE public.teams DISABLE TRIGGER jse_special_cash_limit_guard_trg;
-
- DELETE FROM public.sessions WHERE user_id IN (SELECT id FROM public.app_users WHERE role<>'ADMIN');
+DELETE FROM public.sessions WHERE user_id IN (SELECT id FROM public.app_users WHERE role<>'ADMIN');
  FOR r IN SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'
    AND table_name NOT IN ('schema_migrations','jse_locked_baseline','jse_events','sessions','audit_log_archive') ORDER BY table_name
  LOOP
@@ -155,12 +212,7 @@ BEGIN
    IF v_cols IS NULL THEN CONTINUE; END IF;
    EXECUTE format('INSERT INTO public.%I (%s) SELECT %s FROM jsonb_populate_recordset(NULL::public.%I,$1)',r.table_name,v_cols,v_cols,r.table_name) USING v_data;
  END LOOP;
-
- ALTER TABLE public.orders ENABLE TRIGGER jse_inst_order_guard_trg;
- ALTER TABLE public.settlements ENABLE TRIGGER jse_inst_settlement_inventory_trg;
- ALTER TABLE public.teams ENABLE TRIGGER jse_special_cash_limit_guard_trg;
-
- FOR r IN SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND column_default LIKE 'nextval(%'
+FOR r IN SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND column_default LIKE 'nextval(%'
    AND table_name NOT IN ('schema_migrations','jse_events','jse_locked_baseline','sessions','audit_log_archive')
  LOOP
    v_seq:=pg_get_serial_sequence(format('public.%I',r.table_name),r.column_name);
