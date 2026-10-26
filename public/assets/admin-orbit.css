@@ -131,3 +131,148 @@ body.admin-command-page #cmdNav button[data-scroll],body.admin-command-page #cmd
 body.admin-command-page #cmdNav .cmd-quick-jump{display:flex!important;flex:1 1 240px!important;min-width:220px!important}
 body.admin-command-page #cmdNav #adminQuickFind{width:min(360px,100%)!important;max-width:none!important}
 body.admin-command-page #cmdNav #cmdRefresh{margin-left:auto!important}
+
+
+/* JSE CONTROL ROOM — refined light-market design, scoped to Event Admin only */
+body.admin-command-page{
+  --jse-bg:#f2f6fb;--jse-panel:#fff;--jse-ink:#172d4b;--jse-muted:#647790;
+  --jse-border:#dce6f2;--jse-accent:#245fe5;--jse-accent-soft:#eaf1ff;
+  --jse-success:#16865d;--jse-warning:#a55c0b;--jse-danger:#c63e50;
+  background:linear-gradient(180deg,#f7f9fd 0%,#f0f4fa 100%)!important;color:var(--jse-ink)!important;
+}
+body.admin-command-page:before{opacity:.10!important;background-image:linear-gradient(#a9bdd51c 1px,transparent 1px),linear-gradient(90deg,#a9bdd51c 1px,transparent 1px)!important}
+body.admin-command-page #jseAdminSidebar{background:#fbfcff!important;border-right:1px solid #dce5f0!important;box-shadow:5px 0 25px rgba(30,55,90,.035)!important}
+body.admin-command-page #main{padding-top:24px!important}
+body.admin-command-page .page-head{border-bottom:1px solid #dbe5f1!important}
+body.admin-command-page .jse-page-title h1{font-size:29px!important;letter-spacing:-.055em!important}
+body.admin-command-page .jse-page-title>p{font-size:12px!important}
+body.admin-command-page .jse-appearance-bar{border-color:#dbe5f0!important;background:rgba(255,255,255,.9)!important;box-shadow:0 6px 20px rgba(25,50,85,.035)!important}
+body.admin-command-page .jse-appearance-intro strong{font-size:12px!important}
+body.admin-command-page .jse-appearance-bar select{max-width:160px!important;min-height:36px!important;font-size:11px!important}
+body.admin-command-page #cmdNav{padding:10px 12px!important;margin-bottom:17px!important;border:1px solid #dbe5f0!important;border-radius:13px!important;background:#fff!important;box-shadow:0 4px 15px rgba(25,50,85,.035)!important}
+body.admin-command-page #cmdNav .cmd-refresh{border-radius:9px!important;min-height:35px!important}
+body.admin-command-page .jse-workspace-grid{gap:16px!important}
+body.admin-command-page .jse-workspace-heading{position:relative!important;border:0!important;margin:0 0 18px!important;padding:5px 2px 15px!important}
+body.admin-command-page .jse-workspace-heading:after{content:"";position:absolute;bottom:0;left:2px;width:68px;height:3px;border-radius:3px;background:linear-gradient(90deg,#245fe5,#30b7aa)!important}
+body.admin-command-page .jse-workspace-kicker{color:#4771c4!important;font-size:9px!important;letter-spacing:.16em!important}
+body.admin-command-page .jse-workspace-title{font-size:25px!important;letter-spacing:-.05em!important}
+body.admin-command-page .jse-workspace-description{font-size:12px!important;color:#6e7f98!important}
+body.admin-command-page .jse-workspace-status{background:#f8fbff!important;border-color:#dce6f2!important;color:#60738f!important}
+body.admin-command-page .jse-workspace-grid .card,body.admin-command-page .jse-workspace-grid .panel,body.admin-command-page .jse-workspace-grid .admin-card,body.admin-command-page .jse-workspace-grid .cmd-card,body.admin-command-page .jse-workspace-grid .section-card,body.admin-command-page .jse-workspace-grid .kpi{
+  border-color:#dce5f0!important;border-radius:15px!important;box-shadow:0 5px 18px rgba(31,58,94,.045)!important
+}
+body.admin-command-page .jse-workspace-grid .card-h{background:linear-gradient(110deg,#f8faff,#f1f6fc)!important;border-bottom-color:#e3eaf3!important}
+body.admin-command-page .jse-workspace-grid .card-h h2,body.admin-command-page .jse-workspace-grid .card-h h3{color:#1d3658!important}
+body.admin-command-page .jse-workspace-grid .card-b{padding:19px!important}
+body.admin-command-page .jse-workspace-grid .btn{min-height:35px!important;border-radius:9px!important;font-size:11px!important}
+body.admin-command-page .jse-workspace-grid .btn.primary{background:linear-gradient(110deg,#2865e9,#347fe7)!important;border-color:#2865e9!important;box-shadow:0 4px 10px rgba(40,101,233,.15)!important}
+body.admin-command-page .jse-workspace-grid .input,body.admin-command-page .jse-workspace-grid input:not([type=checkbox]):not([type=radio]):not([type=color]),body.admin-command-page .jse-workspace-grid select,body.admin-command-page .jse-workspace-grid textarea{min-height:36px!important;border-color:#d8e3f0!important;background:#fbfdff!important;border-radius:9px!important;color:#233a59!important}
+body.admin-command-page .jse-workspace-grid input[type=checkbox]{accent-color:#2865e9}
+body.admin-command-page .cmd-hero{grid-template-columns:minmax(0,1fr) 180px!important;padding:25px 27px 0!important;border-color:#d5e3f7!important;background:radial-gradient(ellipse at 78% 0%,rgba(92,130,232,.13),transparent 35%),linear-gradient(120deg,#fff 0%,#f0f6ff 100%)!important;box-shadow:0 9px 24px rgba(32,67,120,.055)!important}
+body.admin-command-page .cmd-hero:after{opacity:.20!important;background-image:linear-gradient(#8ba7d51b 1px,transparent 1px),linear-gradient(90deg,#8ba7d51b 1px,transparent 1px)!important}
+body.admin-command-page .cmd-hero h2{font-size:clamp(28px,3.4vw,43px)!important;color:#172d4b!important}
+body.admin-command-page .cmd-hero h2 em{color:#245fe5!important}
+body.admin-command-page .cmd-hero p{color:#617590!important}
+body.admin-command-page .cmd-eyebrow{color:#4370c5!important}
+body.admin-command-page .cmd-live-meta{margin:16px 0 20px!important}
+body.admin-command-page .cmd-status-chip{background:#e9f8f0!important;border-color:#c5ead6!important;color:#147b54!important}
+body.admin-command-page .cmd-meta-item b{color:#203b60!important}
+body.admin-command-page .cmd-hero-footer{background:#f5f8fd!important;border-top-color:#e0e8f3!important}
+body.admin-command-page .cmd-hero-footer span{color:#7e8fa7!important}
+body.admin-command-page .cmd-hero-footer b{color:#365274!important}
+body.admin-command-page .cmd-orbit{width:160px!important;height:160px!important}
+body.admin-command-page .cmd-ring{border-color:#b4c9f0!important}
+body.admin-command-page .cmd-ring.ring-one{border-color:#b9b0ed!important}
+body.admin-command-page .cmd-ring.ring-two{border-color:#9dd9cf!important}
+body.admin-command-page .cmd-core{background:radial-gradient(circle at 35% 25%,#fff,#e7f1ff 75%)!important;border-color:#c4d6f3!important;box-shadow:0 8px 24px rgba(45,94,175,.11)!important}
+body.admin-command-page .cmd-core span{color:#244d9a!important}
+body.admin-command-page .cmd-core b{color:#16865d!important}
+body.admin-command-page .cmd-node{box-shadow:0 0 0 4px rgba(37,95,229,.08)!important}
+body.admin-command-page .cmd-nav{background:#fff!important;border-color:#dce5f0!important;box-shadow:0 4px 15px rgba(25,50,85,.035)!important}
+body.admin-command-page .cmd-nav button{color:#526984!important}
+body.admin-command-page .cmd-nav button:hover{background:#edf3ff!important;color:#245fe5!important}
+body.admin-command-page .cmd-nav .cmd-refresh{background:#245fe5!important;color:#fff!important}
+body.admin-command-page .cmd-panel{background:#fff!important;border-color:#dce5f0!important;box-shadow:0 5px 18px rgba(31,58,94,.045)!important}
+body.admin-command-page .cmd-panel-head h3{color:#1d3658!important}
+body.admin-command-page .cmd-panel-head p{color:#7889a1!important}
+body.admin-command-page .cmd-tag{background:#f4f7fc!important;border-color:#dfe7f1!important;color:#6c7f99!important}
+body.admin-command-page .cmd-track{background:#edf2f8!important}
+body.admin-command-page .cmd-symbol{color:#2a4262!important}
+body.admin-command-page .cmd-mover-row{border-bottom-color:#edf1f7!important}
+body.admin-command-page .cmd-heading h2{color:#1c3455!important}
+body.admin-command-page .cmd-stream{color:#7285a0!important}
+body.admin-command-page .jse-overview-shortcuts>button{border-color:#dce5f0!important;box-shadow:0 4px 12px rgba(25,50,85,.035)!important}
+body.admin-command-page .jse-overview-shortcuts>button:hover{border-color:#a9c2f3!important;box-shadow:0 8px 20px rgba(36,95,229,.09)!important}
+body.admin-command-page .jse-overview-shortcuts .quick-icon{background:#edf3ff!important;color:#245fe5!important}
+body.admin-command-page .jse-overview-shortcuts b{font-size:12px!important}
+body.admin-command-page .jse-overview-shortcuts small{font-size:10px!important}
+body.admin-command-page .jse-workspace-grid #eventRegistryPanel,body.admin-command-page .jse-workspace-grid #eventControl{grid-column:span 6!important}
+body.admin-command-page .jse-workspace-grid #marketNewsSection,body.admin-command-page .jse-workspace-grid #intelligence{grid-column:span 6!important}
+body.admin-command-page .jse-workspace-grid #teamManagement,body.admin-command-page .jse-workspace-grid #bigBullBox,body.admin-command-page .jse-workspace-grid #rosterSection,body.admin-command-page .jse-workspace-grid #brokerManagement{grid-column:span 6!important}
+body.admin-command-page .jse-workspace-grid #allotmentsSection,body.admin-command-page .jse-workspace-grid #ipoRandomBox,body.admin-command-page .jse-workspace-grid #companyBaseImportBox,body.admin-command-page .jse-workspace-grid #ipoIssueSizeBox{grid-column:span 6!important}
+body.admin-command-page .jse-workspace-grid #configPanel,body.admin-command-page .jse-workspace-grid #accountsPanel,body.admin-command-page .jse-workspace-grid #namesPanel,body.admin-command-page .jse-workspace-grid #institutionalInventoryPanel{grid-column:span 6!important}
+body.admin-command-page .jse-workspace-grid #journalSection,body.admin-command-page .jse-workspace-grid #reconCard,body.admin-command-page .jse-workspace-grid #reportsPanel{grid-column:span 6!important}
+body.admin-command-page .jse-workspace-grid #pricingMethodPanel,body.admin-command-page .jse-workspace-grid #pricingActivityPanel{grid-column:span 12!important}
+body.admin-command-page .jse-pricing-panel{overflow:hidden!important;border:1px solid #d5e2f2!important;border-radius:16px!important}
+body.admin-command-page .jse-pricing-header{padding:22px 24px!important;background:linear-gradient(105deg,#f5f8ff,#edf5ff)!important;border-bottom:1px solid #dce6f3!important}
+body.admin-command-page .jse-pricing-header h2{font-size:22px!important;letter-spacing:-.04em!important}
+body.admin-command-page .jse-pricing-subtitle{font-size:12px!important}
+body.admin-command-page .jse-pricing-command-grid{padding:0 0 4px!important}
+body.admin-command-page .jse-engine-switch{border-radius:12px!important;background:#f7faff!important;border-color:#dce6f2!important}
+body.admin-command-page .jse-pricing-select-wrap select{min-height:42px!important}
+body.admin-command-page .jse-pricing-save{min-height:42px!important;padding:0 18px!important}
+body.admin-command-page .jse-pricing-sectionline{margin:22px 0 12px!important}
+body.admin-command-page .jse-pricing-sectionline>div strong{font-size:12px!important;color:#213b60!important}
+body.admin-command-page .jse-pricing-sectionline>div span{font-size:10px!important}
+body.admin-command-page .jse-pricing-model-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
+body.admin-command-page .jse-pricing-model{min-height:84px!important;padding:13px!important;border-radius:12px!important;background:#fff!important;border-color:#dce5f0!important}
+body.admin-command-page .jse-pricing-model:hover{border-color:#9bbaf1!important;box-shadow:0 5px 15px rgba(36,95,229,.06)!important}
+body.admin-command-page .jse-pricing-model.is-disabled{opacity:.58!important;background:#f7f9fc!important}
+body.admin-command-page .jse-pricing-model:has(input:checked){background:#f3f7ff!important;border-color:#93b3f2!important;box-shadow:inset 0 0 0 1px #d6e3fc!important}
+body.admin-command-page .jse-model-icon{background:#edf3ff!important;color:#245fe5!important;border-radius:10px!important}
+body.admin-command-page .jse-pricing-quick-grid{gap:12px!important}
+body.admin-command-page .jse-rule-switch,body.admin-command-page .jse-pricing-number{border-radius:11px!important;background:#f8faff!important;border-color:#dce5f0!important;padding:13px!important}
+body.admin-command-page .jse-pricing-advanced{border-color:#dce5f0!important;border-radius:12px!important}
+body.admin-command-page .jse-pricing-advanced summary{background:#f5f8fd!important}
+body.admin-command-page .jse-pricing-advanced-grid{gap:16px!important}
+body.admin-command-page .jse-hybrid-weight-wrap{background:#f8faff!important;border-color:#dce5f0!important}
+body.admin-command-page .jse-pricing-result{border-radius:9px!important}
+body.admin-command-page .jse-pricing-activity-panel{border-radius:15px!important}
+body.admin-command-page .jse-workspace-grid .table-wrap{border-radius:11px!important}
+body.admin-command-page .jse-workspace-grid table.t th{background:#f2f6fb!important;color:#61748f!important}
+body.admin-command-page .jse-workspace-grid table.t td{color:#344c6b!important}
+body.admin-command-page .jse-workspace-grid table.t tbody tr:hover td{background:#f7faff!important}
+body.admin-command-page .jse-workspace-grid .alert,body.admin-command-page .jse-workspace-grid .rules{border-radius:10px!important}
+body.admin-command-page .jse-workspace-grid .mi .box{background:#f7faff!important;border-color:#e0e8f2!important}
+body.admin-command-page .jse-workspace-grid .mi .box .v{font-size:21px!important}
+body.admin-command-page .jse-workspace-grid .mi .box h4{color:#7b8ba2!important}
+body.admin-command-page .jse-workspace-grid .danger{background:#fff5f5!important;border-color:#f0d4d8!important}
+body.admin-command-page .jse-workspace-grid .cmd-nav{position:static!important}
+body.admin-command-page :focus-visible{outline:3px solid #9bbaf1!important;outline-offset:2px!important}
+@media(max-width:1200px){
+ body.admin-command-page .jse-workspace-grid #eventRegistryPanel,body.admin-command-page .jse-workspace-grid #eventControl,
+ body.admin-command-page .jse-workspace-grid #marketNewsSection,body.admin-command-page .jse-workspace-grid #intelligence,
+ body.admin-command-page .jse-workspace-grid #teamManagement,body.admin-command-page .jse-workspace-grid #bigBullBox,
+ body.admin-command-page .jse-workspace-grid #rosterSection,body.admin-command-page .jse-workspace-grid #brokerManagement,
+ body.admin-command-page .jse-workspace-grid #allotmentsSection,body.admin-command-page .jse-workspace-grid #ipoRandomBox,
+ body.admin-command-page .jse-workspace-grid #companyBaseImportBox,body.admin-command-page .jse-workspace-grid #ipoIssueSizeBox,
+ body.admin-command-page .jse-workspace-grid #configPanel,body.admin-command-page .jse-workspace-grid #accountsPanel,
+ body.admin-command-page .jse-workspace-grid #namesPanel,body.admin-command-page .jse-workspace-grid #institutionalInventoryPanel,
+ body.admin-command-page .jse-workspace-grid #journalSection,body.admin-command-page .jse-workspace-grid #reconCard,
+ body.admin-command-page .jse-workspace-grid #reportsPanel{grid-column:span 12!important}
+}
+@media(max-width:760px){
+ body.admin-command-page .cmd-hero{grid-template-columns:1fr!important;padding:20px 18px 0!important}
+ body.admin-command-page .cmd-orbit{display:none!important}
+ body.admin-command-page .jse-pricing-header{align-items:flex-start!important;flex-direction:column!important;padding:18px!important}
+ body.admin-command-page .jse-pricing-command-grid{grid-template-columns:1fr!important}
+ body.admin-command-page .jse-pricing-model-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page .jse-workspace-grid .card-b{padding:14px!important}
+}
+@media(max-width:520px){
+ body.admin-command-page .jse-pricing-model-grid{grid-template-columns:1fr!important}
+ body.admin-command-page .jse-pricing-advanced-grid{grid-template-columns:1fr!important}
+ body.admin-command-page .jse-workspace-title{font-size:22px!important}
+ body.admin-command-page .jse-pricing-sectionline{align-items:flex-start!important;gap:8px!important}
+ body.admin-command-page .jse-pricing-number{align-items:flex-start!important}
+}
