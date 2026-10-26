@@ -6,7 +6,7 @@
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/jse.css?v=325">
-<link rel="stylesheet" href="/assets/admin-advanced.css?v=20261026.5">
+<link rel="stylesheet" href="/assets/admin-advanced.css?v=20261026.7">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -395,6 +395,13 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     <span class="conn" id="conn"><span class="dot"></span><span id="connText">Loading…</span></span>
   </div>
 
+  <section class="jse-appearance-bar" aria-label="Console appearance settings">
+    <div class="jse-appearance-intro"><span class="jse-appearance-symbol">✳</span><div><strong>Personalize your console</strong><small>Change the palette, spacing and box style without changing event data.</small></div></div>
+    <label><span>Colour theme</span><select id="jseThemeSelect" class="input"><option value="ocean">Ocean teal</option><option value="royal">Royal blue</option><option value="mint">Fresh mint</option><option value="paper">Warm paper</option><option value="coral">Coral studio</option><option value="violet">Violet intelligence</option></select></label>
+    <label><span>Layout density</span><select id="jseDensitySelect" class="input"><option value="comfortable">Comfortable</option><option value="compact">Compact</option><option value="spacious">Spacious</option></select></label>
+    <label><span>Box style</span><select id="jseBoxStyleSelect" class="input"><option value="soft">Soft rounded</option><option value="elevated">Elevated cards</option><option value="sharp">Sharp edges</option><option value="flat">Flat / minimal</option></select></label>
+  </section>
+
   <section class="cmd-hero" aria-label="Event control command centre">
     <div class="cmd-hero-main">
       <div class="cmd-eyebrow"><span class="cmd-pulse"></span> <span id="activeEventTitle">JSE / DALAL STREET 2026</span> <span class="cmd-slash">·</span> COMMAND WORLD</div>
@@ -517,33 +524,89 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       </div>
     </section>
 
-        <section class="card jse-pricing-panel" id="pricingMethodPanel">
-      <div class="card-h bar"><h2>Pricing Method</h2><span class="meta">One selected method per event</span></div>
+            <section class="card jse-pricing-panel" id="pricingMethodPanel">
+      <div class="card-h bar jse-pricing-header">
+        <div><span class="jse-section-eyebrow">JSE / QUANT CONTROL</span><h2>Pricing Control Studio</h2><p class="jse-pricing-subtitle">Choose how prices move, activate only the models you want, and set firm event-level guardrails.</p></div>
+        <span class="jse-pricing-state" id="pricingEngineStatus"><i></i><b id="pricingEngineStatusText">Loading pricing engine…</b></span>
+      </div>
       <div class="card-b">
-        <div class="jse-pricing-control">
-          <div class="jse-pricing-field">
-            <label for="pricingMethodSelect">Choose pricing method</label>
+        <div class="jse-pricing-command-grid">
+          <label class="jse-engine-switch" for="pricingEngineEnabled">
+            <span class="jse-engine-switch-copy"><strong>Automatic pricing engine</strong><small>Master switch for trade-driven and news-driven price changes.</small></span>
+            <input type="checkbox" class="admin-only" id="pricingEngineEnabled" checked>
+            <span class="jse-toggle-visual" aria-hidden="true"></span>
+          </label>
+          <div class="jse-pricing-select-wrap">
+            <label for="pricingMethodSelect">Active pricing method</label>
             <select class="input admin-only" id="pricingMethodSelect">
-              <option value="MANUAL">Manual pricing — administrator sets the share price</option>
-              <option value="NEWS_DRIVEN">News-driven — news sentiment and severity</option>
-              <option value="MOMENTUM">Momentum — recent movements and trading activity</option>
-              <option value="MEAN_REVERSION">Mean reversion — moves towards a reference value</option>
-              <option value="SUPPLY_DEMAND">Supply and demand — buy/sell pressure and liquidity</option>
-              <option value="SECTOR_INDEX">Sector and index-linked — correlated sector/index movements</option>
-              <option value="VOLATILITY">Volatility-based — observed volatility and movement limits</option>
-              <option value="HYBRID">Hybrid — combine pricing approaches</option>
-              <option value="SCENARIO">Scenario-based — administrator-selected market regime or round</option>
+              <option value="MANUAL">Manual pricing</option>
+              <option value="NEWS_DRIVEN">News-driven</option>
+              <option value="MOMENTUM">Momentum</option>
+              <option value="MEAN_REVERSION">Mean reversion</option>
+              <option value="SUPPLY_DEMAND">Supply and demand</option>
+              <option value="SECTOR_INDEX">Sector and index-linked</option>
+              <option value="VOLATILITY">Volatility-based</option>
+              <option value="HYBRID">Hybrid weighted model</option>
+              <option value="SCENARIO">Scenario-based</option>
             </select>
-            <p class="jse-pricing-help">Select one method, then apply it. The choice is saved separately for each event; no additional parameter setup is required here.</p>
+            <small>Saved independently for the active event.</small>
           </div>
-          <button class="btn primary admin-only" id="pricingMethodApply" type="button">Apply selected method</button>
+          <button class="btn primary admin-only jse-pricing-save" id="pricingMethodApply" type="button">Save &amp; activate</button>
         </div>
-        <div class="jse-pricing-current" aria-live="polite">
-          <span class="jse-pricing-current-label">SAVED SELECTION</span>
-          <strong id="pricingMethodActive">Loading selected method…</strong>
-          <span id="pricingMethodEvent">Checking active event</span>
+
+        <div class="jse-pricing-sectionline"><div><strong>Available pricing models</strong><span>Switch models on or off. The active model must remain enabled.</span></div><span id="pricingMethodCount" class="jse-count-chip">9 models</span></div>
+        <div class="jse-pricing-model-grid" id="pricingEnabledMethods">
+          <label class="jse-pricing-model" data-model-card="MANUAL"><span class="jse-model-icon">M</span><span class="jse-model-copy"><strong>Manual</strong><small>Administrator sets each quote</small></span><input type="checkbox" data-pricing-method="MANUAL" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="NEWS_DRIVEN"><span class="jse-model-icon">N</span><span class="jse-model-copy"><strong>News-driven</strong><small>Sentiment and severity response</small></span><input type="checkbox" data-pricing-method="NEWS_DRIVEN" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="MOMENTUM"><span class="jse-model-icon">↗</span><span class="jse-model-copy"><strong>Momentum</strong><small>Recent price trend and trading</small></span><input type="checkbox" data-pricing-method="MOMENTUM" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="MEAN_REVERSION"><span class="jse-model-icon">↔</span><span class="jse-model-copy"><strong>Mean reversion</strong><small>Pull towards reference value</small></span><input type="checkbox" data-pricing-method="MEAN_REVERSION" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="SUPPLY_DEMAND"><span class="jse-model-icon">⇄</span><span class="jse-model-copy"><strong>Supply &amp; demand</strong><small>Buy/sell pressure and liquidity proxy</small></span><input type="checkbox" data-pricing-method="SUPPLY_DEMAND" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="SECTOR_INDEX"><span class="jse-model-icon">▥</span><span class="jse-model-copy"><strong>Sector &amp; index</strong><small>Correlated price response</small></span><input type="checkbox" data-pricing-method="SECTOR_INDEX" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="VOLATILITY"><span class="jse-model-icon">∿</span><span class="jse-model-copy"><strong>Volatility-based</strong><small>Observed movement and risk limits</small></span><input type="checkbox" data-pricing-method="VOLATILITY" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="HYBRID"><span class="jse-model-icon">⧉</span><span class="jse-model-copy"><strong>Hybrid</strong><small>Weighted combination of enabled models</small></span><input type="checkbox" data-pricing-method="HYBRID" checked><span class="jse-model-switch"></span></label>
+          <label class="jse-pricing-model" data-model-card="SCENARIO"><span class="jse-model-icon">◈</span><span class="jse-model-copy"><strong>Scenario-based</strong><small>Bull, bear, crash, rally or sideways</small></span><input type="checkbox" data-pricing-method="SCENARIO" checked><span class="jse-model-switch"></span></label>
         </div>
-        <p class="small muted jse-pricing-result" id="pricingMethodResult" role="status">Reading the saved pricing-method selection.</p>
+
+        <div class="jse-pricing-sectionline"><div><strong>Automation rules</strong><span>Choose when pricing runs and set a per-trade movement cap.</span></div></div>
+        <div class="jse-pricing-quick-grid">
+          <label class="jse-rule-switch" for="pricingApplyTrades"><input type="checkbox" id="pricingApplyTrades" checked><span><strong>React to settled trades</strong><small>Update the next market quote after each settled trade.</small></span></label>
+          <label class="jse-rule-switch" for="pricingApplyNews"><input type="checkbox" id="pricingApplyNews" checked><span><strong>React to market news</strong><small>News moves prices only when News-driven or Hybrid is active.</small></span></label>
+          <label class="jse-pricing-number" for="pricingMaxMove"><span><strong>Maximum move per trade</strong><small>Hard-capped by the event’s existing price-band rule.</small></span><span class="jse-number-unit"><input class="input admin-only" id="pricingMaxMove" type="number" min="0.05" max="10" step="0.05" value="0.75"><b>%</b></span></label>
+        </div>
+
+        <details class="jse-pricing-advanced">
+          <summary><span><strong>Advanced model tuning</strong><small>Trend window, reversion strength, sector correlation, volatility multiplier and hybrid weights.</small></span><span class="jse-details-chevron">＋</span></summary>
+          <div class="jse-pricing-advanced-grid">
+            <label>Momentum lookback <small>Number of recent price changes</small><select class="input admin-only" id="pricingLookback"><option value="2">2 changes</option><option value="3">3 changes</option><option value="5" selected>5 changes</option><option value="8">8 changes</option><option value="10">10 changes</option><option value="15">15 changes</option><option value="20">20 changes</option></select></label>
+            <label>Mean reversion strength <small>How strongly price returns to base</small><input class="input admin-only" id="pricingReversionStrength" type="number" min="0" max="0.5" step="0.01" value="0.12"></label>
+            <label>Supply/demand strength <small>Response to order size</small><input class="input admin-only" id="pricingSupplyStrength" type="number" min="0" max="3" step="0.05" value="0.75"></label>
+            <label>Sector link strength <small>Peer-price correlation (max 0.75)</small><input class="input admin-only" id="pricingSectorStrength" type="number" min="0" max="0.75" step="0.05" value="0.35"></label>
+            <label>Volatility multiplier <small>Scales the observed volatility</small><input class="input admin-only" id="pricingVolatilityMultiplier" type="number" min="0" max="3" step="0.05" value="0.45"></label>
+            <label>Market scenario <small>Used when Scenario-based or Hybrid is active</small><select class="input admin-only" id="pricingScenario"><option value="SIDEWAYS">Sideways market</option><option value="BULL">Bull market</option><option value="BEAR">Bear market</option><option value="CRASH">Market crash</option><option value="RALLY">Market rally</option></select></label>
+          </div>
+          <div class="jse-hybrid-weight-wrap"><div><strong>Hybrid component weights</strong><small>Zero removes a component from the blend; remaining weights are normalized automatically.</small></div>
+            <div class="jse-hybrid-weight-grid">
+              <label>News<input class="input admin-only" id="weightNews" type="number" min="0" max="100" step="1" value="40"></label>
+              <label>Momentum<input class="input admin-only" id="weightMomentum" type="number" min="0" max="100" step="1" value="20"></label>
+              <label>Mean reversion<input class="input admin-only" id="weightReversion" type="number" min="0" max="100" step="1" value="15"></label>
+              <label>Supply/demand<input class="input admin-only" id="weightSupply" type="number" min="0" max="100" step="1" value="15"></label>
+              <label>Sector/index<input class="input admin-only" id="weightSector" type="number" min="0" max="100" step="1" value="5"></label>
+              <label>Volatility<input class="input admin-only" id="weightVolatility" type="number" min="0" max="100" step="1" value="5"></label>
+              <label>Scenario<input class="input admin-only" id="weightScenario" type="number" min="0" max="100" step="1" value="0"></label>
+            </div>
+          </div>
+        </details>
+
+        <div class="jse-manual-price-editor" id="manualPriceEditor" hidden>
+          <div><span class="jse-section-eyebrow">MANUAL OVERRIDE</span><h3>Set a share price</h3><p>Only available while Manual pricing is selected. Price is a whole number and stays within the configured base-price band.</p></div>
+          <div class="jse-manual-price-form">
+            <label for="manualPriceSymbol">Listed security<select class="input admin-only" id="manualPriceSymbol"><option value="">Loading securities…</option></select></label>
+            <label for="manualPriceValue">New price (₹)<input class="input admin-only" id="manualPriceValue" type="number" min="1" step="1" placeholder="Enter whole-number price"></label>
+            <button class="btn primary admin-only" id="manualPriceApply" type="button">Set share price</button>
+          </div>
+        </div>
+        <div class="jse-pricing-saved-banner" aria-live="polite"><span class="jse-pricing-saved-dot"></span><div><strong id="pricingMethodActive">Loading selected method…</strong><small id="pricingMethodEvent">Loading active event…</small></div><span id="pricingMethodCountSummary" class="jse-count-chip">Reading settings</span></div>
+        <p class="small jse-pricing-result" id="pricingMethodResult" role="status">Loading pricing settings from the active event.</p>
       </div>
     </section>
 
@@ -2164,68 +2227,205 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 (function(){
   "use strict";
   var $=function(id){return document.getElementById(id);};
-  var labels={
-    MANUAL:"Manual pricing",
-    NEWS_DRIVEN:"News-driven",
-    MOMENTUM:"Momentum",
-    MEAN_REVERSION:"Mean reversion",
-    SUPPLY_DEMAND:"Supply and demand",
-    SECTOR_INDEX:"Sector and index-linked",
-    VOLATILITY:"Volatility-based",
-    HYBRID:"Hybrid",
-    SCENARIO:"Scenario-based"
+  var models=[
+    {id:"MANUAL",name:"Manual",desc:"Administrator-set quotes"},
+    {id:"NEWS_DRIVEN",name:"News-driven",desc:"Sentiment and severity"},
+    {id:"MOMENTUM",name:"Momentum",desc:"Recent trend and trades"},
+    {id:"MEAN_REVERSION",name:"Mean reversion",desc:"Return towards reference"},
+    {id:"SUPPLY_DEMAND",name:"Supply and demand",desc:"Buy/sell pressure"},
+    {id:"SECTOR_INDEX",name:"Sector and index-linked",desc:"Related market movements"},
+    {id:"VOLATILITY",name:"Volatility-based",desc:"Observed movement"},
+    {id:"HYBRID",name:"Hybrid",desc:"Weighted model combination"},
+    {id:"SCENARIO",name:"Scenario-based",desc:"Selected market regime"}
+  ];
+  var defaults={
+    enabled_methods:{MANUAL:true,NEWS_DRIVEN:true,MOMENTUM:true,MEAN_REVERSION:true,SUPPLY_DEMAND:true,SECTOR_INDEX:true,VOLATILITY:true,HYBRID:true,SCENARIO:true},
+    apply_on_trades:true,apply_on_news:true,max_move_per_trade_pct:0.75,momentum_lookback:5,
+    mean_reversion_strength:0.12,supply_demand_strength:0.75,sector_link_strength:0.35,
+    volatility_multiplier:0.45,scenario:"SIDEWAYS",
+    hybrid_weights:{NEWS_DRIVEN:40,MOMENTUM:20,MEAN_REVERSION:15,SUPPLY_DEMAND:15,SECTOR_INDEX:5,VOLATILITY:5,SCENARIO:0}
   };
-  var select=$("pricingMethodSelect"),apply=$("pricingMethodApply"),active=$("pricingMethodActive"),
-      event=$("pricingMethodEvent"),result=$("pricingMethodResult");
-  if(!select||!apply||!active||!event||!result)return;
-  function announce(message,kind){
-    result.textContent=message;
-    result.className="small jse-pricing-result"+(kind?" "+kind:"");
+  var select=$("pricingMethodSelect"),apply=$("pricingMethodApply"),result=$("pricingMethodResult");
+  if(!select||!apply||!result)return;
+  var currentEvent=null;
+  function show(message,kind){result.textContent=message;result.className="small jse-pricing-result"+(kind?" "+kind:"");}
+  function checked(id){return !!$(id).checked;}
+  function number(id,fallback){var v=Number($(id).value);return Number.isFinite(v)?v:fallback;}
+  function getEnabled(){var v={};models.forEach(function(m){var el=document.querySelector('[data-pricing-method="'+m.id+'"]');v[m.id]=!!(el&&el.checked);});return v;}
+  function renderOptions(){
+    var enabled=getEnabled();
+    Array.prototype.forEach.call(select.options,function(o){o.disabled=!enabled[o.value];});
+    var n=Object.keys(enabled).filter(function(k){return enabled[k];}).length;
+    $("pricingMethodCount").textContent=n+" / "+models.length+" enabled";
+    $("pricingMethodCountSummary").textContent=n+" models enabled";
+    models.forEach(function(m){
+      var card=document.querySelector('[data-model-card="'+m.id+'"]');
+      if(card)card.classList.toggle("is-disabled",!enabled[m.id]);
+    });
+    $("manualPriceEditor").hidden=select.value!=="MANUAL";
+  }
+  function readConfig(){
+    return {
+      enabled_methods:getEnabled(),
+      apply_on_trades:checked("pricingApplyTrades"),
+      apply_on_news:checked("pricingApplyNews"),
+      max_move_per_trade_pct:number("pricingMaxMove",0.75),
+      momentum_lookback:number("pricingLookback",5),
+      mean_reversion_strength:number("pricingReversionStrength",0.12),
+      supply_demand_strength:number("pricingSupplyStrength",0.75),
+      sector_link_strength:number("pricingSectorStrength",0.35),
+      volatility_multiplier:number("pricingVolatilityMultiplier",0.45),
+      scenario:$("pricingScenario").value,
+      hybrid_weights:{
+        NEWS_DRIVEN:number("weightNews",40),MOMENTUM:number("weightMomentum",20),
+        MEAN_REVERSION:number("weightReversion",15),SUPPLY_DEMAND:number("weightSupply",15),
+        SECTOR_INDEX:number("weightSector",5),VOLATILITY:number("weightVolatility",5),
+        SCENARIO:number("weightScenario",0)
+      }
+    };
+  }
+  function fillConfig(raw){
+    var c=Object.assign({},defaults,raw||{});
+    c.enabled_methods=Object.assign({},defaults.enabled_methods,c.enabled_methods||{});
+    c.hybrid_weights=Object.assign({},defaults.hybrid_weights,c.hybrid_weights||{});
+    models.forEach(function(m){var el=document.querySelector('[data-pricing-method="'+m.id+'"]');if(el)el.checked=!!c.enabled_methods[m.id];});
+    $("pricingApplyTrades").checked=c.apply_on_trades!==false;
+    $("pricingApplyNews").checked=c.apply_on_news!==false;
+    $("pricingMaxMove").value=c.max_move_per_trade_pct==null?defaults.max_move_per_trade_pct:c.max_move_per_trade_pct;
+    $("pricingLookback").value=String(c.momentum_lookback||5);
+    $("pricingReversionStrength").value=c.mean_reversion_strength==null?0.12:c.mean_reversion_strength;
+    $("pricingSupplyStrength").value=c.supply_demand_strength==null?0.75:c.supply_demand_strength;
+    $("pricingSectorStrength").value=c.sector_link_strength==null?0.35:c.sector_link_strength;
+    $("pricingVolatilityMultiplier").value=c.volatility_multiplier==null?0.45:c.volatility_multiplier;
+    $("pricingScenario").value=c.scenario||"SIDEWAYS";
+    $("weightNews").value=c.hybrid_weights.NEWS_DRIVEN;
+    $("weightMomentum").value=c.hybrid_weights.MOMENTUM;
+    $("weightReversion").value=c.hybrid_weights.MEAN_REVERSION;
+    $("weightSupply").value=c.hybrid_weights.SUPPLY_DEMAND;
+    $("weightSector").value=c.hybrid_weights.SECTOR_INDEX;
+    $("weightVolatility").value=c.hybrid_weights.VOLATILITY;
+    $("weightScenario").value=c.hybrid_weights.SCENARIO;
+  }
+  async function refreshManualSecurities(){
+    var source=$("nSec"),target=$("manualPriceSymbol");
+    if(!source||!target||!source.options.length)return;
+    var previous=target.value;
+    target.innerHTML="";
+    Array.prototype.forEach.call(source.options,function(o,i){
+      if(i===0||!o.value)return;
+      target.add(new Option(o.text,o.value));
+    });
+    if(!target.options.length)target.add(new Option("No listed securities",""));
+    if(previous)target.value=previous;
   }
   async function load(){
     try{
       var r=await JSE.api.get("/api/pricing-method");
-      var method=labels[r.method]?r.method:"NEWS_DRIVEN";
-      select.value=method;
-      active.textContent=labels[method];
-      event.textContent=r.event_name?r.event_name+" · event-specific selection":"No active event";
+      currentEvent=r;
+      select.value=r.method||"NEWS_DRIVEN";
+      $("pricingEngineEnabled").checked=r.pricing_enabled!==false;
+      fillConfig(r.config||defaults);
+      $("pricingMethodActive").textContent=models.find(function(m){return m.id===select.value;})?.name||select.value;
+      $("pricingMethodEvent").textContent=(r.event_name||"Active event")+" · settings saved to this event";
+      $("pricingEngineStatus").classList.toggle("is-paused",r.pricing_enabled===false);
+      $("pricingEngineStatusText").textContent=r.pricing_enabled===false?"Automatic pricing paused":"Pricing engine enabled";
       apply.disabled=!r.event_id;
-      announce("Saved selection loaded from the active event.", "good");
+      renderOptions();
+      refreshManualSecurities();
+      show("Loaded saved pricing setup for "+(r.event_name||"the active event")+".","good");
     }catch(e){
-      active.textContent="Could not load selection";
-      event.textContent="Pricing-method API unavailable";
+      $("pricingEngineStatus").classList.add("is-paused");
+      $("pricingEngineStatusText").textContent="Pricing API unavailable";
+      $("pricingMethodActive").textContent="Could not load pricing settings";
+      $("pricingMethodEvent").textContent="Check API connection and migration";
       apply.disabled=true;
-      announce("Could not load the saved selection: "+(e.message||"API error"),"error");
+      show("Could not load the saved setup: "+(e.message||"API error"),"error");
     }
   }
-  apply.addEventListener("click",async function(){
-    var method=select.value;
-    if(!labels[method])return;
-    var prior=apply.textContent;
-    apply.disabled=true;apply.textContent="Applying…";
-    try{
-      var password=await JSE.adminConfirm({
-        title:"Apply pricing method",
-        text:"Set "+labels[method]+" as the selected pricing method for the active event? This choice is saved for this event and is recorded in the audit log.",
-        confirmText:"Apply method"
-      });
-      if(!password){return;}
-      var r=await JSE.api.post("/api/pricing-method",{action:"SET",method:method,admin_password:password});
-      active.textContent=labels[r.method||method];
-      event.textContent=(r.event_name||"Active event")+" · event-specific selection";
-      announce(r.message||("Saved "+labels[method]+"."),"good");
-      JSE.toast(r.message||("Pricing method saved: "+labels[method]),"good",5000);
-    }catch(e){
-      announce("Pricing method was not changed: "+(e.message||"Request failed"),"error");
-      if(JSE.toast)JSE.toast("Pricing method was not changed: "+(e.message||"Request failed"),"bad",6500);
-      await load().catch(function(){});
-    }finally{
-      apply.disabled=false;apply.textContent=prior;
-    }
+  models.forEach(function(m){
+    var el=document.querySelector('[data-pricing-method="'+m.id+'"]');
+    if(el)el.addEventListener("change",function(){
+      if(!el.checked&&select.value===m.id){
+        var fallback=models.find(function(candidate){return candidate.id!==m.id&&getEnabled()[candidate.id];});
+        if(fallback)select.value=fallback.id;
+      }
+      renderOptions();
+    });
   });
+  select.addEventListener("change",renderOptions);
+  $("pricingScenario").addEventListener("change",function(){});
+  apply.addEventListener("click",async function(){
+    var method=select.value,enabled=getEnabled();
+    if(!enabled[method]){show("Enable the selected model before applying the pricing setup.","error");return;}
+    if(!Object.keys(enabled).some(function(k){return enabled[k];})){show("Enable at least one pricing model.","error");return;}
+    var config=readConfig(),max=number("pricingMaxMove",0.75);
+    if(max<0.05||max>10){show("Per-trade movement must be between 0.05% and 10%; the server also enforces the event cap.","error");return;}
+    if(Object.keys(config.hybrid_weights).every(function(k){return config.hybrid_weights[k]===0;})){show("Hybrid must have at least one component with a positive weight.","error");return;}
+    var prior=apply.textContent;apply.disabled=true;apply.textContent="Saving setup…";
+    try{
+      var password=await JSE.adminConfirm({title:"Save pricing engine setup",text:"Save the selected pricing method, model switches, automation rules and limits for "+((currentEvent&&currentEvent.event_name)||"the active event")+"? All changes are audit-logged.",confirmText:"Save & activate"});
+      if(!password)return;
+      var r=await JSE.api.post("/api/pricing-method",{action:"CONFIGURE",method:method,pricing_enabled:checked("pricingEngineEnabled"),config:config,admin_password:password});
+      currentEvent=r;
+      $("pricingMethodActive").textContent=models.find(function(m){return m.id===r.method;})?.name||r.method;
+      $("pricingMethodEvent").textContent=(r.event_name||"Active event")+" · settings saved to this event";
+      $("pricingEngineStatus").classList.toggle("is-paused",!r.pricing_enabled);
+      $("pricingEngineStatusText").textContent=r.pricing_enabled?"Pricing engine enabled":"Automatic pricing paused";
+      renderOptions();
+      show(r.message||"Pricing configuration saved.","good");
+      JSE.toast(r.message||"Pricing configuration saved.","good",5000);
+    }catch(e){
+      show("Pricing setup was not saved: "+(e.message||"Request failed"),"error");
+      JSE.toast("Pricing setup was not saved: "+(e.message||"Request failed"),"bad",6500);
+    }finally{apply.disabled=false;apply.textContent=prior;}
+  });
+  $("manualPriceApply").addEventListener("click",async function(){
+    var symbol=$("manualPriceSymbol").value,price=number("manualPriceValue",0);
+    if(!symbol||!Number.isInteger(price)||price<=0){show("Choose a listed security and enter a positive whole-number price.","error");return;}
+    var prior=this.textContent;this.disabled=true;this.textContent="Updating price…";
+    try{
+      var password=await JSE.adminConfirm({title:"Set manual share price",text:"Apply the entered quote to this listed security? Pending orders will not be rejected or rewritten; the change is recorded in price history and the audit log.",confirmText:"Set price"});
+      if(!password)return;
+      var r=await JSE.api.post("/api/manual-price",{security_id:Number(symbol),price:price,admin_password:password});
+      $("pricingMethodResult").textContent=r.message||"Manual price updated.";
+      $("manualPriceValue").value="";
+      show(r.message||"Manual price updated.","good");
+      if(JSE.toast)JSE.toast(r.message||"Manual price updated.","good",5000);
+      document.dispatchEvent(new CustomEvent("jse:pricing-price-updated",{detail:r}));
+    }catch(e){
+      show("Manual price was not changed: "+(e.message||"Request failed"),"error");
+    }finally{this.disabled=false;this.textContent=prior;}
+  });
+  var nSec=$("nSec");
+  if(nSec&&window.MutationObserver)new MutationObserver(refreshManualSecurities).observe(nSec,{childList:true,subtree:true});
   document.addEventListener("DOMContentLoaded",load);
   if(document.readyState!=="loading")load();
-  window.addEventListener("hashchange",function(){load().catch(function(){});});
+  window.addEventListener("focus",function(){if(currentEvent)refreshManualSecurities();});
+})();
+</script>
+
+<script id="jse-admin-appearance-control">
+(function(){
+  "use strict";
+  var body=document.body;
+  var theme=document.getElementById("jseThemeSelect"),density=document.getElementById("jseDensitySelect"),box=document.getElementById("jseBoxStyleSelect");
+  if(!theme||!density||!box)return;
+  var defaults={theme:"ocean",density:"comfortable",box:"soft"};
+  function read(key){try{return localStorage.getItem("jse-admin-"+key)||defaults[key];}catch(e){return defaults[key];}}
+  function save(key,value){try{localStorage.setItem("jse-admin-"+key,value);}catch(e){}}
+  function apply(key,value,select){
+    var allowed=select?Array.prototype.map.call(select.options,function(o){return o.value;}):[];
+    if(allowed.indexOf(value)<0)value=defaults[key];
+    body.setAttribute("data-jse-"+(key==="box"?"box":key),value);
+    if(select)select.value=value;
+    save(key,value);
+  }
+  apply("theme",read("theme"),theme);
+  apply("density",read("density"),density);
+  apply("box",read("box"),box);
+  theme.addEventListener("change",function(){apply("theme",theme.value,theme);});
+  density.addEventListener("change",function(){apply("density",density.value,density);});
+  box.addEventListener("change",function(){apply("box",box.value,box);});
 })();
 </script>
 
