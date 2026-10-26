@@ -335,6 +335,12 @@ BEGIN
    IF v_target.is_active THEN
      UPDATE public.event_config SET event_name=v_name,updated_at=now(),updated_by=jse_actor_name(a) WHERE id=1;
      UPDATE public.jse_events SET state_snapshot=public.jse__capture_event_snapshot() WHERE id=v_new_id;
+   ELSE
+     -- Keep the saved event's config name aligned so activation doesn't restore an old label.
+     UPDATE public.jse_events
+       SET state_snapshot=jsonb_set(state_snapshot, '{event_config,0,event_name}', to_jsonb(v_name), true)
+       WHERE id=v_new_id AND jsonb_typeof(state_snapshot->'event_config')='array'
+         AND jsonb_array_length(state_snapshot->'event_config')>0;
    END IF;
    PERFORM jse_audit(a,'EVENT_RENAMED','event',v_new_id::text,NULL,NULL,jsonb_build_object('event_name',v_target.event_name),jsonb_build_object('event_name',v_name),NULL);
    RETURN jsonb_build_object('success',true,'action','RENAME','event_id',v_new_id,'event_name',v_name);
