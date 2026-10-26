@@ -346,7 +346,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 
 
 <link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.25">
-<link id="jse-admin-redesign-css" rel="stylesheet" href="/assets/admin-redesign.css?v=20261026.2">
+<link id="jse-admin-redesign-css" rel="stylesheet" href="/assets/admin-redesign.css?v=20261026.3">
 </head>
 <body class="admin-command-page">
 <aside id="jseAdminSidebar" aria-label="Event Admin primary navigation">
@@ -2809,7 +2809,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var link=document.getElementById("jse-admin-redesign-css");
   var head=document.querySelector("#main .page-head");
   if(!link||!head||document.getElementById("jseAdminDesignToggle"))return;
-  var key="jse-event-admin-visual-mode-v2";
+  var key="jse-event-admin-visual-mode-v3";
   var mode="new";
   try{mode=localStorage.getItem(key)||"new";}catch(e){}
   function apply(){
