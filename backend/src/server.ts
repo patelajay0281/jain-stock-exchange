@@ -460,6 +460,10 @@ post("/api/pricing-method", async (ctx) => {
   need(ctx, "ADMIN");
   return mutate(ctx, "jse_pricing_method", ctx.body || {});
 });
+post("/api/manual-price", async (ctx) => {
+  need(ctx, "ADMIN");
+  return mutate(ctx, "jse_manual_set_market_price", ctx.body || {}, ORDER_CACHES.concat(["pub:market", "pub:news:"]));
+});
 
 get("/api/admin-state", async (ctx) => {
   const u = need(ctx, "ADMIN", "VIEWER");
