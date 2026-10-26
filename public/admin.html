@@ -345,7 +345,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 
 
 
-<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.17">
+<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.18">
 </head>
 <body class="admin-command-page">
 <aside id="jseAdminSidebar" aria-label="Event Admin primary navigation">
@@ -2454,8 +2454,8 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   if(!theme||!density||!box)return;
 
   /* v2 deliberately clears the previous broken fixed-colour overrides. */
-  var prefix="jse-admin-v2-";
-  var defaults={theme:"royal",density:"compact",box:"soft",accent:"",surface:""};
+  var prefix="jse-admin-v3-";
+  var defaults={theme:"ocean",density:"compact",box:"soft",accent:"",surface:""};
   var controls={theme:theme,density:density,box:box,accent:accent,surface:surface};
   function read(key){
     try{var value=localStorage.getItem(prefix+key);return value===null?defaults[key]:value;}
@@ -2466,7 +2466,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     var token=key==="accent"?"--jse-ctl-accent":"--jse-ctl-surface";
     var value=window.getComputedStyle(body).getPropertyValue(token).trim();
     if(/^#[0-9a-f]{6}$/i.test(value))return value;
-    var fallback=key==="accent"?"#315cc9":"#ffffff";
+    var fallback=key==="accent"?"#087f8c":"#ffffff";
     var probe=document.createElement("span");
     probe.style.color=value||fallback;probe.style.display="none";
     body.appendChild(probe);
