@@ -439,8 +439,10 @@ get("/api/events", async (ctx) => {
 });
 post("/api/events", async (ctx) => {
   need(ctx, "ADMIN");
-  // Switching/creating an event changes the active database projection, so invalidate every read cache.
-  return mutate(ctx, "jse_event_registry_action", ctx.body || {});
+  const out = await mutate(ctx, "jse_event_registry_action", ctx.body || {});
+  // User/team identities are event-scoped; force every desk to revalidate sessions after a switch/create.
+  if (["ACTIVATE", "CREATE"].includes(String(ctx.body?.action || "").toUpperCase())) sessions.clear();
+  return out;
 });
 get("/api/event-controls", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
