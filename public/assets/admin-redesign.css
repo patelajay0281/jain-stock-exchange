@@ -1,116 +1,151 @@
-/* JSE EVENT ADMIN — TOTAL LIGHT CONTROL-PLANE REDESIGN
-   Scoped exclusively to Event Admin. Existing forms, IDs, handlers and APIs remain intact. */
+/* JSE EVENT ADMIN — STRUCTURAL REDESIGN / WORKSPACE EDITION
+   Layout and hierarchy are changed; existing feature nodes and handlers are preserved. */
 body.admin-command-page.jse-redesign-active{
-  --rd-ink:#142d45;--rd-muted:#62778b;--rd-line:#dbe5ed;--rd-paper:#f3f7fa;
-  --rd-white:#fff;--rd-blue:#1769aa;--rd-blue2:#0c4c80;--rd-cyan:#d9f4f1;
-  --rd-green:#16795c;--rd-red:#b83a48;--rd-amber:#a86b14;
-  background:#f2f6f9!important;color:var(--rd-ink)!important;
-  font-family:Inter,"Segoe UI",Arial,sans-serif!important;font-size:15px!important;
+ --rd-ink:#172f43;--rd-muted:#60768a;--rd-line:#d8e3ea;--rd-canvas:#f4f7f9;
+ --rd-card:#fff;--rd-blue:#155e8c;--rd-teal:#0e8d83;--rd-soft:#e8f4f3;
+ margin:0!important;background:var(--rd-canvas)!important;color:var(--rd-ink)!important;
+ font-family:Inter,"Segoe UI",Arial,sans-serif!important;font-size:15px!important;
 }
 body.admin-command-page.jse-redesign-active *{box-sizing:border-box}
 body.admin-command-page.jse-redesign-active::before{display:none!important}
 body.admin-command-page.jse-redesign-active #jseAdminSidebar{
-  width:264px!important;inset:0 auto 0 0!important;padding:24px 18px 18px!important;
-  background:#102e48!important;border-right:0!important;box-shadow:8px 0 30px #173b5412!important;
+ position:fixed!important;inset:0 auto 0 0!important;width:248px!important;height:100dvh!important;
+ overflow-y:auto!important;padding:22px 15px 18px!important;background:#173a50!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;z-index:100!important;
 }
-body.admin-command-page.jse-redesign-active .jse-brand-row{padding:4px 2px 24px!important;border-bottom:1px solid #ffffff26!important;gap:13px!important}
-body.admin-command-page.jse-redesign-active .jse-brand-mark{width:48px!important;height:48px!important;flex-basis:48px!important;border-radius:15px!important;background:linear-gradient(145deg,#7ce0d3,#b9f1e8)!important;color:#10354e!important;box-shadow:none!important}
-body.admin-command-page.jse-redesign-active .jse-brand-copy strong{font-size:14px!important;letter-spacing:.08em!important;color:#fff!important}
-body.admin-command-page.jse-redesign-active .jse-brand-copy span{font-size:10px!important;letter-spacing:.13em!important;color:#a9c5d8!important}
-body.admin-command-page.jse-redesign-active .jse-side-collapse{color:#e8f4fc!important;background:#1d425d!important;border:1px solid #315a73!important;border-radius:9px!important}
-body.admin-command-page.jse-redesign-active .jse-sidebar-event{margin:22px 0!important;padding:17px!important;border:1px solid #315a73!important;border-radius:15px!important;background:#173b56!important;box-shadow:none!important}
-body.admin-command-page.jse-redesign-active .jse-sidebar-event-top{font-size:10px!important;letter-spacing:.13em!important;color:#9bc7d4!important}
-body.admin-command-page.jse-redesign-active .jse-sidebar-event strong{display:block!important;margin:10px 0 5px!important;color:#fff!important;font-size:16px!important;line-height:1.35!important}
-body.admin-command-page.jse-redesign-active .jse-sidebar-event>span{color:#b8d0df!important;font-size:12px!important}
-body.admin-command-page.jse-redesign-active .jse-sidebar-event a{display:flex!important;justify-content:space-between!important;margin-top:15px!important;color:#92e9dd!important;font-size:12px!important;font-weight:750!important}
-body.admin-command-page.jse-redesign-active .jse-side-group-label{margin:24px 9px 9px!important;color:#83a6bd!important;font-size:10px!important;font-weight:800!important;letter-spacing:.16em!important}
-body.admin-command-page.jse-redesign-active .jse-side-nav{gap:5px!important}
-body.admin-command-page.jse-redesign-active .jse-side-link{min-height:46px!important;padding:11px 12px!important;border:1px solid transparent!important;border-radius:11px!important;color:#d4e5ef!important;font-size:13px!important;font-weight:650!important;gap:12px!important}
-body.admin-command-page.jse-redesign-active .jse-side-icon{width:25px!important;font-size:18px!important;color:#9ec4d6!important}
-body.admin-command-page.jse-redesign-active .jse-side-link:hover{background:#1a405b!important;color:#fff!important}
-body.admin-command-page.jse-redesign-active .jse-side-link.is-active{background:#e2f5f2!important;color:#104b55!important;border-color:#b8e5df!important;box-shadow:inset 3px 0 #29a99b!important}
-body.admin-command-page.jse-redesign-active .jse-side-link.is-active .jse-side-icon{color:#167d79!important}
-body.admin-command-page.jse-redesign-active .jse-sidebar-footer{border-top:1px solid #ffffff24!important;color:#a8c5d8!important;padding-top:16px!important}
-body.admin-command-page.jse-redesign-active .jse-footer-signal{font-size:12px!important}
-body.admin-command-page.jse-redesign-active #main{margin-left:264px!important;width:auto!important;max-width:none!important;padding:0 clamp(22px,3vw,52px) 54px!important}
-body.admin-command-page.jse-redesign-active .hd{left:264px!important;padding-left:clamp(22px,3vw,52px)!important;background:#fff!important;border-bottom:1px solid #e0e8ef!important;box-shadow:0 3px 15px #163b5207!important}
+body.admin-command-page.jse-redesign-active .jse-brand-row{display:grid!important;grid-template-columns:44px 1fr 28px!important;align-items:center!important;gap:10px!important;padding:3px 2px 21px!important;border-bottom:1px solid #ffffff24!important}
+body.admin-command-page.jse-redesign-active .jse-brand-mark{width:44px!important;height:44px!important;flex-basis:44px!important;border-radius:12px!important;background:#c5eee5!important;color:#173a50!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .jse-brand-copy strong{font-size:13px!important;letter-spacing:.07em!important;color:#fff!important}
+body.admin-command-page.jse-redesign-active .jse-brand-copy span{font-size:9px!important;letter-spacing:.14em!important;color:#a9c9d5!important}
+body.admin-command-page.jse-redesign-active .jse-side-collapse{color:#e6f4f7!important;background:#234c62!important;border:1px solid #3b6375!important;border-radius:8px!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event{margin:19px 0 24px!important;padding:15px!important;background:#20465c!important;border:1px solid #386175!important;border-radius:11px!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event-top{font-size:9px!important;letter-spacing:.15em!important;color:#a4d9d1!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event strong{display:block!important;margin:10px 0 5px!important;color:#fff!important;font-size:15px!important;line-height:1.35!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event>span{color:#b8d0dc!important;font-size:11px!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event a{display:flex!important;justify-content:space-between!important;margin-top:14px!important;color:#9ce6db!important;font-size:11px!important;font-weight:750!important}
+body.admin-command-page.jse-redesign-active .jse-side-group-label{margin:23px 8px 8px!important;color:#8fb5c4!important;font-size:9px!important;font-weight:850!important;letter-spacing:.17em!important}
+body.admin-command-page.jse-redesign-active .jse-side-nav{gap:4px!important}
+body.admin-command-page.jse-redesign-active .jse-side-link{display:flex!important;align-items:center!important;min-height:42px!important;padding:9px 10px!important;border:1px solid transparent!important;border-radius:8px!important;color:#d5e6ed!important;font-size:12px!important;font-weight:650!important;gap:10px!important}
+body.admin-command-page.jse-redesign-active .jse-side-icon{width:24px!important;font-size:17px!important;color:#a5c9d3!important}
+body.admin-command-page.jse-redesign-active .jse-side-link:hover{background:#285269!important;color:#fff!important}
+body.admin-command-page.jse-redesign-active .jse-side-link.is-active{background:#d9f1eb!important;border-color:#d9f1eb!important;color:#174b4c!important;box-shadow:inset 3px 0 #32a69a!important}
+body.admin-command-page.jse-redesign-active .jse-side-link.is-active .jse-side-icon{color:#177f78!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-footer{margin-top:22px!important;padding-top:14px!important;border-top:1px solid #ffffff26!important;color:#a8c6d4!important;font-size:10px!important}
+body.admin-command-page.jse-redesign-active #main{margin-left:248px!important;width:auto!important;max-width:none!important;padding:0 clamp(22px,3.2vw,54px) 60px!important}
+body.admin-command-page.jse-redesign-active .hd{left:248px!important;height:49px!important;min-height:49px!important;padding-left:clamp(22px,3.2vw,54px)!important;background:#fff!important;border-bottom:1px solid #dce6ec!important;box-shadow:none!important}
 body.admin-command-page.jse-redesign-active .hd-in,body.admin-command-page.jse-redesign-active .nav-in{max-width:none!important}
-body.admin-command-page.jse-redesign-active .page-head{display:flex!important;align-items:center!important;gap:22px!important;min-height:156px!important;margin:0 -2px 22px!important;padding:30px 0 22px!important;border-bottom:1px solid #dce6ee!important}
-body.admin-command-page.jse-redesign-active .jse-page-title{flex:1!important;min-width:0!important}
-body.admin-command-page.jse-redesign-active .jse-page-title h1{font-size:clamp(30px,3vw,43px)!important;line-height:1.12!important;letter-spacing:-.045em!important;color:#14344f!important;font-weight:800!important;margin:0 0 11px!important}
-body.admin-command-page.jse-redesign-active .jse-page-title p{max-width:780px!important;color:#5c7285!important;font-size:14px!important;line-height:1.65!important;margin:0!important}
-body.admin-command-page.jse-redesign-active .jse-page-context{margin-top:14px!important;font-size:10px!important;letter-spacing:.12em!important;color:#8094a5!important}
-body.admin-command-page.jse-redesign-active .jse-page-context b{color:#1769aa!important}
-body.admin-command-page.jse-redesign-active .conn{flex:none!important;border:1px solid #d6e6e4!important;background:#edf9f6!important;color:#17664f!important;border-radius:30px!important;padding:10px 14px!important;font-size:12px!important;font-weight:750!important}
-body.admin-command-page.jse-redesign-active .jse-admin-design-toggle{border:1px solid #cbdce7!important;background:#fff!important;color:#24516f!important;border-radius:10px!important;padding:10px 13px!important;font-size:12px!important;font-weight:750!important;white-space:nowrap!important}
-body.admin-command-page.jse-redesign-active .jse-appearance-bar{display:grid!important;grid-template-columns:minmax(240px,1.5fr) repeat(3,minmax(150px,1fr))!important;align-items:end!important;gap:14px!important;padding:18px 20px!important;margin:0 0 24px!important;background:#fff!important;border:1px solid #dce6ee!important;border-radius:16px!important;box-shadow:0 4px 18px #244a6408!important}
-body.admin-command-page.jse-redesign-active .jse-appearance-intro strong{font-size:14px!important;color:#193d58!important}
-body.admin-command-page.jse-redesign-active .jse-appearance-intro small{font-size:12px!important;color:#72869a!important;line-height:1.5!important}
-body.admin-command-page.jse-redesign-active .jse-appearance-bar label{display:grid!important;gap:7px!important;color:#61778b!important;font-size:11px!important;font-weight:800!important;letter-spacing:.04em!important}
-body.admin-command-page.jse-redesign-active .jse-appearance-bar select{width:100%!important;min-height:42px!important;font-size:13px!important}
-body.admin-command-page.jse-redesign-active #jseWorkspaceTabs{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 25px!important;padding:0 0 15px!important;border-bottom:1px solid #dbe5ed!important}
-body.admin-command-page.jse-redesign-active #jseWorkspaceTabs button{min-height:39px!important;padding:9px 15px!important;border:1px solid #d8e3eb!important;border-radius:10px!important;background:#fff!important;color:#4e667b!important;font-size:12px!important;font-weight:750!important}
-body.admin-command-page.jse-redesign-active #jseWorkspaceTabs button[aria-selected=true],body.admin-command-page.jse-redesign-active #jseWorkspaceTabs button.is-active{background:#164e77!important;color:#fff!important;border-color:#164e77!important;box-shadow:0 4px 10px #164e7724!important}
+body.admin-command-page.jse-redesign-active .page-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:16px 24px!important;min-height:158px!important;margin:0!important;padding:29px 0 24px!important;border-bottom:1px solid #dbe5eb!important}
+body.admin-command-page.jse-redesign-active .jse-page-title{min-width:0!important}
+body.admin-command-page.jse-redesign-active .jse-page-title h1{margin:0 0 10px!important;color:#173c53!important;font-size:clamp(30px,3vw,44px)!important;line-height:1.08!important;letter-spacing:-.05em!important;font-weight:800!important}
+body.admin-command-page.jse-redesign-active .jse-page-title p{max-width:740px!important;margin:0!important;color:#607789!important;font-size:13px!important;line-height:1.65!important}
+body.admin-command-page.jse-redesign-active .jse-page-context{margin-top:12px!important;font-size:9px!important;letter-spacing:.15em!important;color:#7c92a0!important}
+body.admin-command-page.jse-redesign-active .jse-page-context b{color:#176a78!important}
+body.admin-command-page.jse-redesign-active .conn{grid-column:2!important;grid-row:1!important;align-self:start!important;white-space:nowrap!important;padding:8px 12px!important;border:1px solid #d4e7df!important;border-radius:7px!important;background:#edf8f3!important;color:#17674d!important;font-size:11px!important;font-weight:750!important}
+body.admin-command-page.jse-redesign-active .jse-admin-design-toggle{grid-column:2!important;grid-row:1!important;align-self:end!important;white-space:nowrap!important;border:1px solid #ccdbe4!important;border-radius:7px!important;background:#fff!important;color:#27526b!important;padding:9px 11px!important;font-size:11px!important;font-weight:750!important}
+body.admin-command-page.jse-redesign-active .jse-mobile-menu{display:none!important}
+body.admin-command-page.jse-redesign-active #cmdNav{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;margin:0!important;padding:13px 0!important;border-bottom:1px solid #dce6ec!important;background:transparent!important}
+body.admin-command-page.jse-redesign-active #cmdNav button{min-height:34px!important;padding:7px 10px!important;border-radius:6px!important;font-size:11px!important}
+body.admin-command-page.jse-redesign-active #jseWorkspaceTabs{display:flex!important;gap:0!important;overflow-x:auto!important;margin:0 -1px 28px!important;padding:0!important;border-bottom:1px solid #cbd9e2!important;background:transparent!important}
+body.admin-command-page.jse-redesign-active #jseWorkspaceTabs button{display:flex!important;align-items:center!important;gap:9px!important;min-height:51px!important;padding:0 17px!important;white-space:nowrap!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0!important;background:transparent!important;color:#62798a!important;font-size:11px!important;font-weight:800!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active #jseWorkspaceTabs button[aria-selected=true]{border-bottom-color:#168a82!important;background:transparent!important;color:#164b56!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-tab-num{font-size:9px!important;color:#93a6b1!important;letter-spacing:.08em!important}
 body.admin-command-page.jse-redesign-active #jseWorkspaceHost{min-width:0!important}
-body.admin-command-page.jse-redesign-active .jse-workspace-page,body.admin-command-page.jse-redesign-active [id^=jseWorkspace-]{min-width:0!important}
-body.admin-command-page.jse-redesign-active .cmd-hero,body.admin-command-page.jse-redesign-active .cmd-heading{padding:25px 28px!important;border-radius:17px!important;background:linear-gradient(120deg,#153f60,#216b83)!important;color:#fff!important;box-shadow:0 9px 24px #163f5c16!important}
-body.admin-command-page.jse-redesign-active .cmd-heading h2,body.admin-command-page.jse-redesign-active .cmd-hero h2{font-size:clamp(24px,2.4vw,32px)!important;line-height:1.2!important;letter-spacing:-.025em!important;color:#fff!important}
-body.admin-command-page.jse-redesign-active .cmd-heading p,body.admin-command-page.jse-redesign-active .cmd-hero p{font-size:14px!important;line-height:1.65!important;color:#d4e7f0!important}
-body.admin-command-page.jse-redesign-active .cmd-grid,body.admin-command-page.jse-redesign-active .adv-grid{gap:18px!important;align-items:start!important}
-body.admin-command-page.jse-redesign-active .cmd-panel,body.admin-command-page.jse-redesign-active .adv-card,body.admin-command-page.jse-redesign-active .card,body.admin-command-page.jse-redesign-active .jse-workspace-card{min-width:0!important;overflow:visible!important;border:1px solid #dce6ed!important;border-radius:16px!important;background:#fff!important;box-shadow:0 4px 18px #21476108!important}
-body.admin-command-page.jse-redesign-active .cmd-panel:hover,body.admin-command-page.jse-redesign-active .adv-card:hover,body.admin-command-page.jse-redesign-active .card:hover{border-color:#c4d8e5!important;box-shadow:0 8px 26px #2147610d!important}
-body.admin-command-page.jse-redesign-active .cmd-panel-head,body.admin-command-page.jse-redesign-active .adv-card-head,body.admin-command-page.jse-redesign-active .card-h{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;min-height:60px!important;padding:17px 21px!important;background:#f8fbfd!important;border-bottom:1px solid #e5edf2!important;border-radius:15px 15px 0 0!important;color:#1d425e!important}
-body.admin-command-page.jse-redesign-active .cmd-panel-head h2,body.admin-command-page.jse-redesign-active .cmd-panel-head h3,body.admin-command-page.jse-redesign-active .adv-card-head h2,body.admin-command-page.jse-redesign-active .adv-card-head h3,body.admin-command-page.jse-redesign-active .card-h h2,body.admin-command-page.jse-redesign-active .card-h h3{font-size:15px!important;font-weight:800!important;line-height:1.35!important;color:#1b405c!important;margin:0!important;letter-spacing:-.01em!important}
-body.admin-command-page.jse-redesign-active .cmd-panel-body,body.admin-command-page.jse-redesign-active .adv-card-body,body.admin-command-page.jse-redesign-active .card-b{padding:22px!important;color:#29475e!important;font-size:14px!important;line-height:1.6!important}
-body.admin-command-page.jse-redesign-active .cmd-panel p,body.admin-command-page.jse-redesign-active .adv-card p,body.admin-command-page.jse-redesign-active .card p{font-size:13px!important;line-height:1.6!important;color:#657b8d!important}
-body.admin-command-page.jse-redesign-active .kpi,body.admin-command-page.jse-redesign-active .mi .box,body.admin-command-page.jse-redesign-active .metric-card{padding:20px!important;border:1px solid #dce7ee!important;border-radius:14px!important;background:#fff!important;box-shadow:none!important}
-body.admin-command-page.jse-redesign-active .kpi .v,body.admin-command-page.jse-redesign-active .mi .box .v,body.admin-command-page.jse-redesign-active .metric-card strong{font-size:clamp(24px,2vw,32px)!important;line-height:1.1!important;color:#163d5b!important;font-weight:800!important;letter-spacing:-.04em!important}
-body.admin-command-page.jse-redesign-active .kpi .l,body.admin-command-page.jse-redesign-active .mi .box h4,body.admin-command-page.jse-redesign-active .metric-card label{font-size:10px!important;font-weight:800!important;letter-spacing:.11em!important;color:#70879a!important}
-body.admin-command-page.jse-redesign-active .kpi .s{font-size:12px!important;color:#6d8294!important}
-body.admin-command-page.jse-redesign-active .form-grid,body.admin-command-page.jse-redesign-active .cfg-grid,body.admin-command-page.jse-redesign-active .evt-desk-grid,body.admin-command-page.jse-redesign-active .jse-pricing-command-grid,body.admin-command-page.jse-redesign-active .jse-pricing-model-grid,body.admin-command-page.jse-redesign-active .jse-pricing-advanced-grid{gap:16px!important}
-body.admin-command-page.jse-redesign-active label{font-size:12px!important;line-height:1.5!important;font-weight:750!important;color:#425e73!important}
-body.admin-command-page.jse-redesign-active input:not([type=checkbox]):not([type=radio]):not([type=range]),body.admin-command-page.jse-redesign-active select,body.admin-command-page.jse-redesign-active textarea{width:100%;min-height:43px!important;padding:10px 12px!important;border:1px solid #cbd9e3!important;border-radius:9px!important;background:#fff!important;color:#193b54!important;font-family:inherit!important;font-size:14px!important;line-height:1.45!important;box-shadow:inset 0 1px 2px #173b5207!important}
-body.admin-command-page.jse-redesign-active textarea{min-height:105px!important;resize:vertical!important}
-body.admin-command-page.jse-redesign-active input:focus,body.admin-command-page.jse-redesign-active select:focus,body.admin-command-page.jse-redesign-active textarea:focus{outline:3px solid #5ebdb42b!important;border-color:#309c99!important}
-body.admin-command-page.jse-redesign-active button,body.admin-command-page.jse-redesign-active .btn,body.admin-command-page.jse-redesign-active .tb-btn{min-height:38px!important;border-radius:9px!important;font-family:inherit!important;font-size:12px!important;font-weight:750!important;letter-spacing:0!important;text-transform:none!important;box-shadow:none!important;transition:background .15s,border-color .15s,transform .15s!important}
-body.admin-command-page.jse-redesign-active button:hover,body.admin-command-page.jse-redesign-active .btn:hover,body.admin-command-page.jse-redesign-active .tb-btn:hover{transform:translateY(-1px)!important}
-body.admin-command-page.jse-redesign-active button.primary,body.admin-command-page.jse-redesign-active .btn.primary,body.admin-command-page.jse-redesign-active .btn.blue,body.admin-command-page.jse-redesign-active .tb-btn.dark{background:#1769aa!important;border-color:#1769aa!important;color:#fff!important}
-body.admin-command-page.jse-redesign-active button.danger,body.admin-command-page.jse-redesign-active .btn.danger{background:#fff2f1!important;border-color:#edc8c5!important;color:#a62d37!important}
-body.admin-command-page.jse-redesign-active table{width:100%!important;border-collapse:separate!important;border-spacing:0!important;font-size:13px!important}
-body.admin-command-page.jse-redesign-active thead th{position:sticky!important;top:0!important;background:#edf4f8!important;color:#476277!important;font-size:10px!important;font-weight:850!important;letter-spacing:.09em!important;text-transform:uppercase!important;padding:13px 14px!important;border-bottom:1px solid #d7e3eb!important;white-space:normal!important}
-body.admin-command-page.jse-redesign-active tbody td{padding:13px 14px!important;border-bottom:1px solid #e9eff3!important;color:#2b485e!important;vertical-align:middle!important}
-body.admin-command-page.jse-redesign-active tbody tr:hover td{background:#f6fafc!important}
-body.admin-command-page.jse-redesign-active .pill,body.admin-command-page.jse-redesign-active .badge{border-radius:999px!important;font-size:11px!important;font-weight:800!important;padding:5px 9px!important}
-body.admin-command-page.jse-redesign-active .muted,body.admin-command-page.jse-redesign-active .small{color:#71869a!important}
-body.admin-command-page.jse-redesign-active .jse-appearance-bar,body.admin-command-page.jse-redesign-active .cmd-panel,body.admin-command-page.jse-redesign-active .adv-card,body.admin-command-page.jse-redesign-active .card{scroll-margin-top:22px!important}
-body.admin-command-page.jse-redesign-active .jse-pricing-panel .card-h{background:#edf7f6!important;border-bottom-color:#d4e9e6!important}
-body.admin-command-page.jse-redesign-active .jse-pricing-sectionline{margin:20px 0 12px!important;padding-bottom:10px!important;border-bottom:1px solid #e0e9ef!important;color:#1b4e68!important;font-size:12px!important;font-weight:850!important;letter-spacing:.07em!important}
-body.admin-command-page.jse-redesign-active .moods{gap:9px!important}
-body.admin-command-page.jse-redesign-active .moods button{min-height:64px!important;padding:11px 9px!important;font-size:12px!important;border-radius:11px!important;background:#f8fbfd!important}
-body.admin-command-page.jse-redesign-active .moods button[aria-pressed=true]{background:#164e77!important;color:#fff!important;border-color:#164e77!important}
-body.admin-command-page.jse-redesign-active .danger{background:#fff7f6!important;border-color:#f0d1ce!important;border-radius:12px!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-page{min-width:0!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-heading{position:relative!important;display:grid!important;grid-template-columns:58px minmax(0,1fr) auto!important;align-items:center!important;gap:18px!important;margin:0 0 23px!important;padding:23px 25px!important;border:1px solid #d9e5ea!important;border-radius:13px!important;background:#fff!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-mark{display:grid!important;place-items:center!important;width:54px!important;height:54px!important;border-radius:11px!important;background:#e0f2ee!important;color:#147a76!important;font-size:25px!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-kicker{display:block!important;margin-bottom:5px!important;color:#14847e!important;font-size:9px!important;letter-spacing:.16em!important;font-weight:850!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-title{margin:0!important;color:#173c53!important;font-size:clamp(23px,2.1vw,31px)!important;line-height:1.15!important;letter-spacing:-.035em!important;font-weight:800!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-description{margin:7px 0 0!important;color:#667e8f!important;font-size:12px!important;line-height:1.6!important;max-width:800px!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-status{justify-self:end!important;align-self:start!important;padding:7px 10px!important;border-radius:5px!important;background:#f0f6f7!important;color:#557585!important;font-size:10px!important;font-weight:750!important;white-space:normal!important;text-align:right!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-grid{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:18px!important;align-items:start!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-grid>*{grid-column:span 6!important;min-width:0!important;margin:0!important}
+body.admin-command-page.jse-redesign-active #jseWorkspace-overview .jse-workspace-grid>#kpis,
+body.admin-command-page.jse-redesign-active #jseWorkspace-overview .jse-workspace-grid>#consistency,
+body.admin-command-page.jse-redesign-active #jseWorkspace-overview .jse-workspace-grid>.cmd-hero,
+body.admin-command-page.jse-redesign-active #jseWorkspace-overview .jse-workspace-grid>#cmdDashboard,
+body.admin-command-page.jse-redesign-active #jseWorkspace-events .jse-workspace-grid>#eventRegistryPanel,
+body.admin-command-page.jse-redesign-active #jseWorkspace-events .jse-workspace-grid>#eventControl,
+body.admin-command-page.jse-redesign-active #jseWorkspace-markets .jse-workspace-grid>#marketNewsSection,
+body.admin-command-page.jse-redesign-active #jseWorkspace-markets .jse-workspace-grid>#intelligence,
+body.admin-command-page.jse-redesign-active #jseWorkspace-analytics .jse-workspace-grid>#advancedAnalytics,
+body.admin-command-page.jse-redesign-active #jseWorkspace-pricing .jse-workspace-grid>#pricingMethodPanel,
+body.admin-command-page.jse-redesign-active #jseWorkspace-pricing .jse-workspace-grid>#pricingActivityPanel,
+body.admin-command-page.jse-redesign-active #jseWorkspace-participants .jse-workspace-grid>#teamManagement,
+body.admin-command-page.jse-redesign-active #jseWorkspace-participants .jse-workspace-grid>#rosterSection,
+body.admin-command-page.jse-redesign-active #jseWorkspace-ipo .jse-workspace-grid>#allotmentsSection,
+body.admin-command-page.jse-redesign-active #jseWorkspace-rules .jse-workspace-grid>#configPanel,
+body.admin-command-page.jse-redesign-active #jseWorkspace-governance .jse-workspace-grid>#journalSection,
+body.admin-command-page.jse-redesign-active #jseWorkspace-governance .jse-workspace-grid>#reportsPanel{grid-column:span 12!important}
+body.admin-command-page.jse-redesign-active .cmd-hero{grid-column:span 12!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:18px!important;align-items:center!important;padding:24px 26px!important;border:0!important;border-radius:12px!important;background:#173f56!important;color:#fff!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .cmd-hero h2,body.admin-command-page.jse-redesign-active .cmd-hero h1{font-size:27px!important;line-height:1.2!important;color:#fff!important;letter-spacing:-.03em!important}
+body.admin-command-page.jse-redesign-active .cmd-hero p{font-size:13px!important;line-height:1.65!important;color:#c6dce5!important}
+body.admin-command-page.jse-redesign-active #kpis{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:11px!important}
+body.admin-command-page.jse-redesign-active #kpis>*{min-width:0!important;border:1px solid #d8e4ea!important;border-radius:9px!important;background:#fff!important;padding:17px!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active #kpis .v,body.admin-command-page.jse-redesign-active .kpi .v{font-size:clamp(23px,2vw,31px)!important;line-height:1.1!important;color:#173f56!important;font-weight:800!important;letter-spacing:-.04em!important}
+body.admin-command-page.jse-redesign-active #kpis .l,body.admin-command-page.jse-redesign-active .kpi .l{font-size:9px!important;color:#6b8190!important;font-weight:850!important;letter-spacing:.1em!important}
+body.admin-command-page.jse-redesign-active .cmd-side-info.jse-overview-shortcuts{grid-column:span 12!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;border:1px solid #d8e4ea!important;border-radius:10px!important;overflow:hidden!important;background:#fff!important}
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts button{display:grid!important;grid-template-columns:34px minmax(0,1fr) 15px!important;align-items:center!important;gap:9px!important;text-align:left!important;padding:17px!important;min-height:78px!important;border:0!important;border-right:1px solid #e4edf1!important;border-bottom:1px solid #e4edf1!important;border-radius:0!important;background:#fff!important;color:#23465b!important}
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts button:hover{background:#f1f8f7!important;transform:none!important}
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts .quick-icon{display:grid!important;place-items:center!important;width:32px!important;height:32px!important;border-radius:8px!important;background:#e3f3f0!important;color:#147c77!important;font-size:17px!important}
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts b{display:block!important;font-size:12px!important;font-weight:800!important}
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts small{display:block!important;margin-top:4px!important;font-size:10px!important;color:#728795!important;line-height:1.4!important}
+body.admin-command-page.jse-redesign-active .cmd-panel,body.admin-command-page.jse-redesign-active .adv-card,body.admin-command-page.jse-redesign-active .card,body.admin-command-page.jse-redesign-active .jse-workspace-card{min-width:0!important;overflow:visible!important;border:1px solid #d7e3e9!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .cmd-panel-head,body.admin-command-page.jse-redesign-active .adv-card-head,body.admin-command-page.jse-redesign-active .card-h{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:13px!important;min-height:55px!important;padding:15px 19px!important;background:#f5f8fa!important;border-bottom:1px solid #e1e9ee!important;border-radius:9px 9px 0 0!important;color:#1b425a!important}
+body.admin-command-page.jse-redesign-active .cmd-panel-head h2,body.admin-command-page.jse-redesign-active .cmd-panel-head h3,body.admin-command-page.jse-redesign-active .adv-card-head h2,body.admin-command-page.jse-redesign-active .adv-card-head h3,body.admin-command-page.jse-redesign-active .card-h h2,body.admin-command-page.jse-redesign-active .card-h h3{margin:0!important;color:#1b425a!important;font-size:14px!important;line-height:1.4!important;font-weight:800!important}
+body.admin-command-page.jse-redesign-active .cmd-panel-body,body.admin-command-page.jse-redesign-active .adv-card-body,body.admin-command-page.jse-redesign-active .card-b{padding:20px!important;color:#2a485d!important;font-size:13px!important;line-height:1.65!important}
+body.admin-command-page.jse-redesign-active .cmd-panel p,body.admin-command-page.jse-redesign-active .adv-card p,body.admin-command-page.jse-redesign-active .card p{font-size:12px!important;line-height:1.65!important;color:#657c8b!important}
+body.admin-command-page.jse-redesign-active .form-grid,body.admin-command-page.jse-redesign-active .cfg-grid,body.admin-command-page.jse-redesign-active .evt-desk-grid,body.admin-command-page.jse-redesign-active .jse-pricing-command-grid,body.admin-command-page.jse-redesign-active .jse-pricing-model-grid,body.admin-command-page.jse-redesign-active .jse-pricing-advanced-grid{gap:15px!important}
+body.admin-command-page.jse-redesign-active label{font-size:11px!important;line-height:1.5!important;font-weight:800!important;color:#486477!important}
+body.admin-command-page.jse-redesign-active input:not([type=checkbox]):not([type=radio]):not([type=range]),body.admin-command-page.jse-redesign-active select,body.admin-command-page.jse-redesign-active textarea{width:100%;min-height:42px!important;padding:10px 12px!important;border:1px solid #c9d9e2!important;border-radius:7px!important;background:#fff!important;color:#193d53!important;font-family:inherit!important;font-size:13px!important;line-height:1.45!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active textarea{min-height:100px!important;resize:vertical!important}
+body.admin-command-page.jse-redesign-active input:focus,body.admin-command-page.jse-redesign-active select:focus,body.admin-command-page.jse-redesign-active textarea:focus{outline:3px solid #4eb6a52b!important;border-color:#258e83!important}
+body.admin-command-page.jse-redesign-active button,body.admin-command-page.jse-redesign-active .btn,body.admin-command-page.jse-redesign-active .tb-btn{min-height:36px!important;border-radius:7px!important;font-family:inherit!important;font-size:11px!important;font-weight:800!important;letter-spacing:0!important;text-transform:none!important;box-shadow:none!important;transition:background .15s,border-color .15s!important}
+body.admin-command-page.jse-redesign-active button:hover,body.admin-command-page.jse-redesign-active .btn:hover,body.admin-command-page.jse-redesign-active .tb-btn:hover{transform:none!important}
+body.admin-command-page.jse-redesign-active button.primary,body.admin-command-page.jse-redesign-active .btn.primary,body.admin-command-page.jse-redesign-active .btn.blue,body.admin-command-page.jse-redesign-active .tb-btn.dark{background:#176e83!important;border-color:#176e83!important;color:#fff!important}
+body.admin-command-page.jse-redesign-active button.danger,body.admin-command-page.jse-redesign-active .btn.danger{background:#fff4f2!important;border-color:#eac9c4!important;color:#a53139!important}
+body.admin-command-page.jse-redesign-active table{width:100%!important;border-collapse:separate!important;border-spacing:0!important;font-size:12px!important}
+body.admin-command-page.jse-redesign-active thead th{position:sticky!important;top:0!important;background:#edf3f6!important;color:#4a6576!important;font-size:9px!important;font-weight:850!important;letter-spacing:.1em!important;text-transform:uppercase!important;padding:12px!important;border-bottom:1px solid #d7e2e8!important}
+body.admin-command-page.jse-redesign-active tbody td{padding:12px!important;border-bottom:1px solid #e8eef2!important;color:#2b495e!important;vertical-align:middle!important}
+body.admin-command-page.jse-redesign-active tbody tr:hover td{background:#f4faf9!important}
+body.admin-command-page.jse-redesign-active .pill,body.admin-command-page.jse-redesign-active .badge{border-radius:5px!important;font-size:10px!important;font-weight:850!important;padding:5px 8px!important}
+body.admin-command-page.jse-redesign-active .muted,body.admin-command-page.jse-redesign-active .small{color:#718593!important}
+body.admin-command-page.jse-redesign-active .jse-appearance-bar{display:grid!important;grid-template-columns:minmax(200px,1.6fr) repeat(3,minmax(130px,1fr))!important;align-items:end!important;gap:13px!important;margin:0 0 22px!important;padding:15px 17px!important;border:1px solid #d8e4e9!important;border-radius:9px!important;background:#fff!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .jse-appearance-intro strong{font-size:12px!important;color:#1c455b!important}
+body.admin-command-page.jse-redesign-active .jse-appearance-intro small{font-size:10px!important;color:#728693!important;line-height:1.5!important}
+body.admin-command-page.jse-redesign-active .jse-appearance-bar label{display:grid!important;gap:6px!important;color:#60798a!important;font-size:10px!important;font-weight:800!important}
+body.admin-command-page.jse-redesign-active .jse-appearance-bar select{width:100%!important;min-height:38px!important;font-size:12px!important}
+body.admin-command-page.jse-redesign-active .jse-pricing-panel .card-h{background:#edf7f5!important;border-bottom-color:#d7e9e5!important}
+body.admin-command-page.jse-redesign-active .jse-pricing-sectionline{margin:19px 0 11px!important;padding-bottom:9px!important;border-bottom:1px solid #e0e9ed!important;color:#1b5265!important;font-size:11px!important;font-weight:850!important;letter-spacing:.08em!important}
+body.admin-command-page.jse-redesign-active .moods{gap:8px!important}
+body.admin-command-page.jse-redesign-active .moods button{min-height:60px!important;padding:10px 8px!important;font-size:11px!important;border-radius:7px!important;background:#f7fafb!important}
+body.admin-command-page.jse-redesign-active .moods button[aria-pressed=true]{background:#17516a!important;color:#fff!important;border-color:#17516a!important}
+body.admin-command-page.jse-redesign-active .danger{background:#fff7f5!important;border-color:#efd2cc!important;border-radius:8px!important}
 body.admin-command-page.jse-redesign-active .jse-admin-design-toggle:focus-visible,body.admin-command-page.jse-redesign-active button:focus-visible{outline:3px solid #56b8b02e!important;outline-offset:2px!important}
-@media(max-width:1200px){
- body.admin-command-page.jse-redesign-active #jseAdminSidebar{width:236px!important}
- body.admin-command-page.jse-redesign-active #main{margin-left:236px!important;padding-left:24px!important;padding-right:24px!important}
- body.admin-command-page.jse-redesign-active .hd{left:236px!important}
+@media(max-width:1300px){
+ body.admin-command-page.jse-redesign-active .jse-workspace-grid{gap:14px!important}
+ body.admin-command-page.jse-redesign-active #kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page.jse-redesign-active .jse-overview-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  body.admin-command-page.jse-redesign-active .jse-appearance-bar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 @media(max-width:980px){
- body.admin-command-page.jse-redesign-active #jseAdminSidebar{width:min(310px,88vw)!important}
- body.admin-command-page.jse-redesign-active #main{margin-left:0!important;padding:0 18px 36px!important}
+ body.admin-command-page.jse-redesign-active #jseAdminSidebar{width:min(300px,88vw)!important}
+ body.admin-command-page.jse-redesign-active #main{margin-left:0!important;padding:0 18px 38px!important}
  body.admin-command-page.jse-redesign-active .hd{left:0!important;padding-left:18px!important}
- body.admin-command-page.jse-redesign-active .page-head{min-height:unset!important;padding:25px 0 19px!important;flex-wrap:wrap!important}
- body.admin-command-page.jse-redesign-active .jse-page-title h1{font-size:30px!important}
- body.admin-command-page.jse-redesign-active .jse-appearance-bar{grid-template-columns:1fr 1fr!important}
+ body.admin-command-page.jse-redesign-active .page-head{min-height:unset!important;padding:23px 0 18px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-heading{grid-template-columns:46px minmax(0,1fr)!important;padding:18px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-mark{width:44px!important;height:44px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-status{grid-column:2!important;justify-self:start!important}
 }
-@media(max-width:620px){
+@media(max-width:650px){
  body.admin-command-page.jse-redesign-active #main{padding:0 12px 28px!important}
- body.admin-command-page.jse-redesign-active .jse-appearance-bar{grid-template-columns:1fr!important;padding:15px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-grid{grid-template-columns:minmax(0,1fr)!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-grid>*{grid-column:1!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-heading{grid-template-columns:1fr!important;gap:11px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-status{grid-column:1!important}
+ body.admin-command-page.jse-redesign-active .jse-appearance-bar{grid-template-columns:1fr!important;padding:13px!important}
  body.admin-command-page.jse-redesign-active .cmd-grid,body.admin-command-page.jse-redesign-active .adv-grid{grid-template-columns:minmax(0,1fr)!important}
- body.admin-command-page.jse-redesign-active .cmd-panel-body,body.admin-command-page.jse-redesign-active .adv-card-body,body.admin-command-page.jse-redesign-active .card-b{padding:15px!important}
- body.admin-command-page.jse-redesign-active .page-head{gap:12px!important}
+ body.admin-command-page.jse-redesign-active .jse-overview-shortcuts{grid-template-columns:1fr!important}
+ body.admin-command-page.jse-redesign-active .cmd-panel-body,body.admin-command-page.jse-redesign-active .adv-card-body,body.admin-command-page.jse-redesign-active .card-b{padding:14px!important}
  body.admin-command-page.jse-redesign-active .jse-page-title h1{font-size:27px!important}
- body.admin-command-page.jse-redesign-active #jseWorkspaceTabs{flex-wrap:nowrap!important;overflow-x:auto!important;padding-bottom:12px!important}
- body.admin-command-page.jse-redesign-active #jseWorkspaceTabs button{white-space:nowrap!important}
+ body.admin-command-page.jse-redesign-active #jseWorkspaceTabs button{padding:0 12px!important}
 }
