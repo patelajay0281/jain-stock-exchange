@@ -485,3 +485,20 @@ body.admin-command-page .jse-overview-shortcuts .quick-arrow{align-self:center!i
 @media(max-width:1280px){body.admin-command-page .jse-workspace-grid>#kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:980px){body.admin-command-page .jse-workspace-grid>#kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:680px){body.admin-command-page .jse-overview-shortcuts{grid-template-columns:minmax(0,1fr)!important}body.admin-command-page .jse-overview-shortcuts button{min-height:66px!important}}
+
+
+/* Pricing method selector — a single, clear choice control (no model-specific config panels). */
+.jse-pricing-panel .jse-pricing-control{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:18px}
+.jse-pricing-panel .jse-pricing-field{min-width:0}
+.jse-pricing-panel .jse-pricing-field>label{display:block;margin:0 0 8px;color:var(--muted,#617184);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.jse-pricing-panel #pricingMethodSelect{width:100%;min-height:48px;font-size:14px;font-weight:650}
+.jse-pricing-panel .jse-pricing-help{margin:8px 0 0;color:var(--muted,#617184);font-size:12px;line-height:1.55}
+.jse-pricing-panel #pricingMethodApply{min-height:48px;white-space:nowrap}
+.jse-pricing-current{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding:14px 16px;border:1px solid var(--line,#dce5ed);border-radius:12px;background:var(--soft,#f5f8fb)}
+.jse-pricing-current-label{color:var(--muted,#617184);font-size:10px;font-weight:850;letter-spacing:.12em}
+.jse-pricing-current strong{color:var(--ink,#15283d);font-size:14px}
+.jse-pricing-current>span:last-child{margin-left:auto;color:var(--muted,#617184);font-size:12px}
+.jse-pricing-result{min-height:16px;margin:10px 0 0}
+.jse-pricing-result.good{color:#14774b}
+.jse-pricing-result.error{color:#b42318}
+@media(max-width:720px){.jse-pricing-panel .jse-pricing-control{grid-template-columns:minmax(0,1fr)}.jse-pricing-panel #pricingMethodApply{width:100%}.jse-pricing-current>span:last-child{width:100%;margin-left:0}}
