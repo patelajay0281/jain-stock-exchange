@@ -345,7 +345,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 
 
 
-<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.20">
+<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.21">
 </head>
 <body class="admin-command-page">
 <aside id="jseAdminSidebar" aria-label="Event Admin primary navigation">
@@ -2631,6 +2631,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   tabs.id="jseWorkspaceTabs";tabs.setAttribute("aria-label","Admin workspaces");tabs.setAttribute("role","tablist");
   var host=document.createElement("div");host.id="jseWorkspaceHost";
   var pagesById={};
+  var workspaceIcons={overview:"⌂",events:"◫",markets:"↗",analytics:"⌁",participants:"♙",ipo:"◎",rules:"⚙",governance:"▤",pricing:"⌘"};
   pages.forEach(function(p){
     var b=document.createElement("button");
     b.type="button";b.className="jse-workspace-tab";b.setAttribute("role","tab");
@@ -2642,7 +2643,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     page.setAttribute("data-workspace-page",p.id);page.setAttribute("role","tabpanel");page.setAttribute("aria-label",p.title);
     if(p.id!=="overview")page.hidden=true;
     var h=document.createElement("div");h.className="jse-workspace-heading";
-    h.innerHTML='<div><span class="jse-workspace-kicker">'+p.tag+'</span><h2 class="jse-workspace-title">'+p.title+'</h2><p class="jse-workspace-description">'+p.description+'</p></div><span class="jse-workspace-status" data-workspace-status>Event workspace</span>';
+    h.innerHTML='<span class="jse-workspace-mark" aria-hidden="true">'+(workspaceIcons[p.id]||"◈")+'</span><div class="jse-workspace-heading-copy"><span class="jse-workspace-kicker">'+p.tag+'</span><h2 class="jse-workspace-title">'+p.title+'</h2><p class="jse-workspace-description">'+p.description+'</p></div><span class="jse-workspace-status" data-workspace-status>Event workspace</span>';
     var grid=document.createElement("div");grid.className="jse-workspace-grid";grid.setAttribute("data-workspace-grid",p.id);
     page.appendChild(h);page.appendChild(grid);host.appendChild(page);pagesById[p.id]={meta:p,page:page,grid:grid,tab:b};
   });
