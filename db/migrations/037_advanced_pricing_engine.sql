@@ -19,6 +19,28 @@ ALTER TABLE public.jse_events
       "hybrid_weights":{"NEWS_DRIVEN":40,"MOMENTUM":20,"MEAN_REVERSION":15,"SUPPLY_DEMAND":15,"SECTOR_INDEX":5,"VOLATILITY":5,"SCENARIO":0}
     }'::jsonb;
 
+-- Keep price-history source validation strict while permitting the new pricing engine's recorded sources.
+DO $price_history_sources$
+DECLARE
+  v_def text;
+BEGIN
+  SELECT pg_get_constraintdef(oid) INTO v_def
+  FROM pg_constraint
+  WHERE conrelid='public.price_history'::regclass AND conname='price_history_source_check';
+  IF v_def IS NULL OR position('AUTO_MOMENTUM' IN v_def)=0 OR position('ADMIN_MANUAL_PRICE' IN v_def)=0 THEN
+    ALTER TABLE public.price_history DROP CONSTRAINT IF EXISTS price_history_source_check;
+    ALTER TABLE public.price_history ADD CONSTRAINT price_history_source_check CHECK (
+      source = ANY (ARRAY[
+        'TRADE','MARKET_NEWS','RESET','UNDO','REDO','ADMIN','LISTING',
+        'ADMIN_MANUAL_PRICE','AUTO_MANUAL','AUTO_NEWS_DRIVEN','AUTO_MOMENTUM',
+        'AUTO_MEAN_REVERSION','AUTO_SUPPLY_DEMAND','AUTO_SECTOR_INDEX',
+        'AUTO_VOLATILITY','AUTO_HYBRID','AUTO_SCENARIO','AUTO_SECTOR_LINK'
+      ]::text[])
+    );
+  END IF;
+END
+$price_history_sources$;
+
 UPDATE public.jse_events
 SET pricing_config = '{
   "enabled_methods":{"MANUAL":true,"NEWS_DRIVEN":true,"MOMENTUM":true,"MEAN_REVERSION":true,"SUPPLY_DEMAND":true,"SECTOR_INDEX":true,"VOLATILITY":true,"HYBRID":true,"SCENARIO":true},
