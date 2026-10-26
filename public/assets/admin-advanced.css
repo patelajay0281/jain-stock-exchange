@@ -989,3 +989,7 @@ body.admin-command-page.jse-side-collapsed .jse-side-link{justify-content:center
  body.admin-command-page .jse-appearance-bar select{max-width:100%!important;width:100%!important}
  body.admin-command-page .conn{font-size:9px!important;padding:6px 8px!important}
 }
+
+/* Sidebar is the single source of workspace navigation; avoid duplicating it in a second tab bar. */
+body.admin-command-page #jseWorkspaceTabs{display:none!important}
+body.admin-command-page #jseWorkspaceHost{padding-top:2px!important}
