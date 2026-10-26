@@ -333,3 +333,20 @@ body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid .card,body.
  body.admin-command-page .cmd-orbit{display:none!important}
  body.admin-command-page .cmd-hero-footer{gap:6px 12px!important}
 }
+
+
+/* Workspace-wide elements that need a full row in the compact layout. */
+body.admin-command-page .jse-workspace-grid>.cmd-hero,
+body.admin-command-page .jse-workspace-grid>#cmdDashboard,
+body.admin-command-page .jse-workspace-grid>#kpis,
+body.admin-command-page .jse-workspace-grid>#consistency,
+body.admin-command-page .jse-workspace-grid>#advancedAnalytics,
+body.admin-command-page .jse-workspace-grid>#pricingMethodPanel,
+body.admin-command-page .jse-workspace-grid>#pricingActivityPanel{grid-column:1/-1!important}
+body.admin-command-page .jse-workspace-grid>#kpis.kpis{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;margin-bottom:0!important}
+body.admin-command-page .jse-workspace-grid>#kpis .kpi{min-width:0!important;padding:10px 11px!important;border-radius:10px!important;background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;box-shadow:none!important}
+body.admin-command-page .jse-workspace-grid>#kpis .kpi .k{font-size:8px!important;letter-spacing:.08em!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-workspace-grid>#kpis .kpi .v{font-size:17px!important;margin-top:6px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-workspace-grid>#kpis .kpi .s{font-size:8px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-workspace-grid .consistency{margin:0!important}
+@media(max-width:980px){body.admin-command-page .jse-workspace-grid>#kpis.kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
