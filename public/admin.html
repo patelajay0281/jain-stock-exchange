@@ -517,6 +517,36 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       </div>
     </section>
 
+        <section class="card jse-pricing-panel" id="pricingMethodPanel">
+      <div class="card-h bar"><h2>Pricing Method</h2><span class="meta">One selected method per event</span></div>
+      <div class="card-b">
+        <div class="jse-pricing-control">
+          <div class="jse-pricing-field">
+            <label for="pricingMethodSelect">Choose pricing method</label>
+            <select class="input admin-only" id="pricingMethodSelect">
+              <option value="MANUAL">Manual pricing — administrator sets the share price</option>
+              <option value="NEWS_DRIVEN">News-driven — news sentiment and severity</option>
+              <option value="MOMENTUM">Momentum — recent movements and trading activity</option>
+              <option value="MEAN_REVERSION">Mean reversion — moves towards a reference value</option>
+              <option value="SUPPLY_DEMAND">Supply and demand — buy/sell pressure and liquidity</option>
+              <option value="SECTOR_INDEX">Sector and index-linked — correlated sector/index movements</option>
+              <option value="VOLATILITY">Volatility-based — observed volatility and movement limits</option>
+              <option value="HYBRID">Hybrid — combine pricing approaches</option>
+              <option value="SCENARIO">Scenario-based — administrator-selected market regime or round</option>
+            </select>
+            <p class="jse-pricing-help">Select one method, then apply it. The choice is saved separately for each event; no additional parameter setup is required here.</p>
+          </div>
+          <button class="btn primary admin-only" id="pricingMethodApply" type="button">Apply selected method</button>
+        </div>
+        <div class="jse-pricing-current" aria-live="polite">
+          <span class="jse-pricing-current-label">SAVED SELECTION</span>
+          <strong id="pricingMethodActive">Loading selected method…</strong>
+          <span id="pricingMethodEvent">Checking active event</span>
+        </div>
+        <p class="small muted jse-pricing-result" id="pricingMethodResult" role="status">Reading the saved pricing-method selection.</p>
+      </div>
+    </section>
+
     <section class="card" id="marketNewsSection">
       <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · company news price band ±15% of base price</span></div>
       <div class="card-b">
@@ -2130,6 +2160,75 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 
 
 
+<script id="jse-pricing-method-control">
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var labels={
+    MANUAL:"Manual pricing",
+    NEWS_DRIVEN:"News-driven",
+    MOMENTUM:"Momentum",
+    MEAN_REVERSION:"Mean reversion",
+    SUPPLY_DEMAND:"Supply and demand",
+    SECTOR_INDEX:"Sector and index-linked",
+    VOLATILITY:"Volatility-based",
+    HYBRID:"Hybrid",
+    SCENARIO:"Scenario-based"
+  };
+  var select=$("pricingMethodSelect"),apply=$("pricingMethodApply"),active=$("pricingMethodActive"),
+      event=$("pricingMethodEvent"),result=$("pricingMethodResult");
+  if(!select||!apply||!active||!event||!result)return;
+  function announce(message,kind){
+    result.textContent=message;
+    result.className="small jse-pricing-result"+(kind?" "+kind:"");
+  }
+  async function load(){
+    try{
+      var r=await JSE.api.get("/api/pricing-method");
+      var method=labels[r.method]?r.method:"NEWS_DRIVEN";
+      select.value=method;
+      active.textContent=labels[method];
+      event.textContent=r.event_name?r.event_name+" · event-specific selection":"No active event";
+      apply.disabled=!r.event_id;
+      announce("Saved selection loaded from the active event.", "good");
+    }catch(e){
+      active.textContent="Could not load selection";
+      event.textContent="Pricing-method API unavailable";
+      apply.disabled=true;
+      announce("Could not load the saved selection: "+(e.message||"API error"),"error");
+    }
+  }
+  apply.addEventListener("click",async function(){
+    var method=select.value;
+    if(!labels[method])return;
+    var prior=apply.textContent;
+    apply.disabled=true;apply.textContent="Applying…";
+    try{
+      var password=await JSE.adminConfirm({
+        title:"Apply pricing method",
+        text:"Set "+labels[method]+" as the selected pricing method for the active event? This choice is saved for this event and is recorded in the audit log.",
+        confirmText:"Apply method"
+      });
+      if(!password){return;}
+      var r=await JSE.api.post("/api/pricing-method",{action:"SET",method:method,admin_password:password});
+      active.textContent=labels[r.method||method];
+      event.textContent=(r.event_name||"Active event")+" · event-specific selection";
+      announce(r.message||("Saved "+labels[method]+"."),"good");
+      JSE.toast(r.message||("Pricing method saved: "+labels[method]),"good",5000);
+    }catch(e){
+      announce("Pricing method was not changed: "+(e.message||"Request failed"),"error");
+      if(JSE.toast)JSE.toast("Pricing method was not changed: "+(e.message||"Request failed"),"bad",6500);
+      await load().catch(function(){});
+    }finally{
+      apply.disabled=false;apply.textContent=prior;
+    }
+  });
+  document.addEventListener("DOMContentLoaded",load);
+  if(document.readyState!=="loading")load();
+  window.addEventListener("hashchange",function(){load().catch(function(){});});
+})();
+</script>
+
 <script id="jse-admin-utility-tools">
 (function(){
   "use strict";
@@ -2212,7 +2311,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var targetWorkspace={
     cmdDashboard:"overview",
     eventRegistryPanel:"events",eventControl:"events",eventDeskControls:"events",
-    marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"markets",
+    pricingMethodPanel:"markets",marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"markets",
     teamManagement:"participants",bigBullBox:"participants",rosterSection:"participants",brokerManagement:"participants",
     allotmentsSection:"ipo",ipoRandomBox:"ipo",companyBaseImportBox:"ipo",ipoIssueSizeBox:"ipo",
     configPanel:"rules",accountsPanel:"rules",namesPanel:"rules",institutionalInventoryPanel:"rules",
