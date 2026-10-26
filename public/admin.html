@@ -401,6 +401,9 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     <label><span>Colour theme</span><select id="jseThemeSelect" class="input"><option value="ocean">Ocean teal</option><option value="royal">Royal blue</option><option value="mint">Fresh mint</option><option value="paper">Warm paper</option><option value="coral">Coral studio</option><option value="violet">Violet intelligence</option></select></label>
     <label><span>Layout density</span><select id="jseDensitySelect" class="input"><option value="comfortable">Comfortable</option><option value="compact">Compact</option><option value="spacious">Spacious</option></select></label>
     <label><span>Box style</span><select id="jseBoxStyleSelect" class="input"><option value="soft">Soft rounded</option><option value="elevated">Elevated cards</option><option value="sharp">Sharp edges</option><option value="flat">Flat / minimal</option></select></label>
+    <label class="jse-custom-color-control"><span>Custom accent</span><input id="jseAccentColor" type="color" value="#167f91" aria-label="Custom accent colour"></label>
+    <label class="jse-custom-color-control"><span>Panel surface</span><input id="jseSurfaceColor" type="color" value="#ffffff" aria-label="Panel surface colour"></label>
+    <button type="button" class="btn sm" id="jseAppearanceReset">Reset appearance</button>
   </section>
 
   <section class="cmd-hero" aria-label="Event control command centre">
@@ -2452,23 +2455,34 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   "use strict";
   var body=document.body;
   var theme=document.getElementById("jseThemeSelect"),density=document.getElementById("jseDensitySelect"),box=document.getElementById("jseBoxStyleSelect");
+  var accent=document.getElementById("jseAccentColor"),surface=document.getElementById("jseSurfaceColor"),reset=document.getElementById("jseAppearanceReset");
   if(!theme||!density||!box)return;
-  var defaults={theme:"ocean",density:"comfortable",box:"soft"};
+  var defaults={theme:"ocean",density:"comfortable",box:"soft",accent:"#167f91",surface:"#ffffff"};
   function read(key){try{return localStorage.getItem("jse-admin-"+key)||defaults[key];}catch(e){return defaults[key];}}
   function save(key,value){try{localStorage.setItem("jse-admin-"+key,value);}catch(e){}}
   function apply(key,value,select){
     var allowed=select?Array.prototype.map.call(select.options,function(o){return o.value;}):[];
-    if(allowed.indexOf(value)<0)value=defaults[key];
-    body.setAttribute("data-jse-"+(key==="box"?"box":key),value);
-    if(select)select.value=value;
+    if(select&&allowed.indexOf(value)<0)value=defaults[key];
+    if(key==="accent"||key==="surface"){
+      if(!/^#[0-9a-f]{6}$/i.test(value))value=defaults[key];
+      body.style.setProperty(key==="accent"?"--jse-user-accent":"--jse-user-surface",value);
+      if(select)select.value=value;
+    }else{
+      body.setAttribute("data-jse-"+(key==="box"?"box":key),value);
+      if(select)select.value=value;
+    }
     save(key,value);
   }
-  apply("theme",read("theme"),theme);
-  apply("density",read("density"),density);
-  apply("box",read("box"),box);
+  apply("theme",read("theme"),theme);apply("density",read("density"),density);apply("box",read("box"),box);
+  if(accent)apply("accent",read("accent"),accent);if(surface)apply("surface",read("surface"),surface);
   theme.addEventListener("change",function(){apply("theme",theme.value,theme);});
   density.addEventListener("change",function(){apply("density",density.value,density);});
   box.addEventListener("change",function(){apply("box",box.value,box);});
+  if(accent)accent.addEventListener("input",function(){apply("accent",accent.value,accent);});
+  if(surface)surface.addEventListener("input",function(){apply("surface",surface.value,surface);});
+  if(reset)reset.addEventListener("click",function(){
+    Object.keys(defaults).forEach(function(k){apply(k,defaults[k],({theme:theme,density:density,box:box,accent:accent,surface:surface})[k]);});
+  });
 })();
 </script>
 
