@@ -2548,12 +2548,13 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     {id:"participants",title:"Participants & broker desks",nav:"PARTICIPANTS",description:"Manage the team roster, broker assignments, special participant account and imports.",tag:"PEOPLE & OPERATIONS"},
     {id:"ipo",title:"IPO issuance & allotment",nav:"IPO DESK",description:"Manage applications, allotments, issue sizes, company price imports and share issuance.",tag:"ISSUANCE DESK"},
     {id:"rules",title:"Rules, accounts & access",nav:"RULES & ACCESS",description:"Configure event rules, access accounts, institution naming and inventory controls.",tag:"POLICY & ACCESS"},
-    {id:"governance",title:"Reconciliation & reporting",nav:"AUDIT & REPORTS",description:"Review the transaction journal, reconcile ledgers, and export the event archive and final results.",tag:"CONTROL & GOVERNANCE"}
+    {id:"governance",title:"Reconciliation & reporting",nav:"AUDIT & REPORTS",description:"Review the transaction journal, reconcile ledgers, and export the event archive and final results.",tag:"CONTROL & GOVERNANCE"},
+    {id:"pricing",title:"Pricing Control Studio",nav:"PRICING LAB",description:"Select, configure, test and activate the pricing model for this event.",tag:"QUANT CONTROL"}
   ];
   var targetWorkspace={
     cmdDashboard:"overview",
     eventRegistryPanel:"events",eventControl:"events",eventDeskControls:"events",
-    pricingMethodPanel:"markets",pricingActivityPanel:"markets",marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"markets",
+    pricingMethodPanel:"pricing",pricingActivityPanel:"pricing",marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"markets",
     teamManagement:"participants",bigBullBox:"participants",rosterSection:"participants",brokerManagement:"participants",
     allotmentsSection:"ipo",ipoRandomBox:"ipo",companyBaseImportBox:"ipo",ipoIssueSizeBox:"ipo",
     configPanel:"rules",accountsPanel:"rules",namesPanel:"rules",institutionalInventoryPanel:"rules",
@@ -2561,10 +2562,11 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   };
   var titleMap={
     overview:"Overview",events:"Events",markets:"Markets",participants:"Participants",
-    ipo:"IPO Desk",rules:"Rules & Access",governance:"Audit & Reports"
+    ipo:"IPO Desk",rules:"Rules & Access",governance:"Audit & Reports",pricing:"Pricing Control Studio"
   };
   var subtitleMap={
     overview:"A live command centre for the current event.",
+    pricing:"Choose the pricing behaviour for this event. Changes are saved through the protected pricing API.",
     events:"Event registry, safe lifecycle transitions and desk availability.",
     markets:"News impact, market indicators and historical analytics.",
     participants:"Team setup, broker distribution and participant administration.",
@@ -2603,6 +2605,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   move(hero,"overview");move(kpis,"overview");move(consistency,"overview");move(dashboard,"overview");
   move($("eventRegistryPanel"),"events");move($("eventControl"),"events");
   ["marketNewsSection","intelligence","advancedAnalytics"].forEach(function(id){move($(id),"markets");});
+  ["pricingMethodPanel","pricingActivityPanel"].forEach(function(id){move($(id),"pricing");});
   ["teamManagement","bigBullBox","rosterSection","brokerManagement"].forEach(function(id){move($(id),"participants");});
   ["allotmentsSection","ipoRandomBox","companyBaseImportBox","ipoIssueSizeBox"].forEach(function(id){move($(id),"ipo");});
   ["configPanel","accountsPanel","namesPanel","institutionalInventoryPanel"].forEach(function(id){move($(id),"rules");});
@@ -2613,6 +2616,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   quick.innerHTML=
     '<button type="button" data-workspace-go="events"><span class="quick-icon">↗</span><span><b>Event controls</b><small>Start, pause, close or switch event</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="markets"><span class="quick-icon">⌁</span><span><b>Market operations</b><small>Publish news and read market signals</small></span><span class="quick-arrow">→</span></button>'+
+    '<button type="button" data-workspace-go="pricing"><span class="quick-icon">↗</span><span><b>Pricing Control Studio</b><small>Select and activate your pricing model</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="participants"><span class="quick-icon">♧</span><span><b>Participants</b><small>Teams, brokers and roster imports</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="ipo"><span class="quick-icon">◎</span><span><b>IPO desk</b><small>Allotments and share issuance</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="rules"><span class="quick-icon">⚙</span><span><b>Rules & access</b><small>Configuration and accounts</small></span><span class="quick-arrow">→</span></button>'+
