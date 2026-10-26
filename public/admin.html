@@ -2123,7 +2123,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
     loadIpoAdmin().catch(function (e) { $("ipoToolResult").textContent = "IPO tools unavailable: " + e.message; });
     JSE.poll(loadIpoAdmin, 10000, { onError: function (e) { $("ipoToolResult").textContent = "IPO tools reconnecting: " + e.message; } });
-    if (location.hash === "#intelligence") setTimeout(function () { $("intelligence").scrollIntoView(); }, 400);
+    if (location.hash === "#intelligence") setTimeout(function () { if (window.jseAdminNavigateTo) window.jseAdminNavigateTo("intelligence", true); else $("intelligence").scrollIntoView(); }, 400);
   });
 })();
 </script>
@@ -2279,7 +2279,6 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var overviewGrid=pagesById.overview.grid;
   overviewGrid.appendChild(quick);
   // Place the quick-launch panel under the other overview modules; don't append a second nav wall.
-  host.appendChild(pagesById.overview.page);
   if(toolbar&&toolbar.parentNode)toolbar.insertAdjacentElement("afterend",tabs);
   if(tabs.parentNode)tabs.insertAdjacentElement("afterend",host);
   else main.appendChild(tabs),main.appendChild(host);
@@ -2396,6 +2395,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&isMobile())closeDrawer();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="b"&&!isMobile()){e.preventDefault();if(drawerDesk)drawerDesk.click();}});
   var initialTarget=location.hash?decodeURIComponent(location.hash.slice(1)):"";
   if(initialTarget&&$(initialTarget))setActive(targetWorkspace[initialTarget]||"overview",initialTarget,false);
+  else if(initialTarget.indexOf("jseWorkspace-")===0&&pagesById[initialTarget.slice("jseWorkspace-".length)])setActive(initialTarget.slice("jseWorkspace-".length),null,false);
   else setActive("overview",null,false);
 })();
 </script>
