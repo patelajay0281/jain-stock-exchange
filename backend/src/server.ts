@@ -466,6 +466,62 @@ post("/api/manual-price", async (ctx) => {
 });
 
 // Recent quote movements from the active event: automated models, Market News and manual overrides.
+get("/api/pricing-preview", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  const symbol = (q(ctx, "symbol") || "").trim().toUpperCase().slice(0, 24);
+  const side = (q(ctx, "side") || "BUY").toUpperCase();
+  const quantity = Number(q(ctx, "quantity") || 50);
+  const newsText = q(ctx, "news_pct");
+  const newsPct = newsText === "" ? 0 : Number(newsText);
+  if (!symbol) throw new ApiError(400, "SECURITY_REQUIRED", "Select a listed security.");
+  if (!["BUY", "SELL"].includes(side)) throw new ApiError(400, "INVALID_SIDE", "Choose Buy or Sell.");
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10000000) throw new ApiError(400, "INVALID_QUANTITY", "Preview quantity must be a positive whole number.");
+  if (!Number.isFinite(newsPct) || newsPct < -10 || newsPct > 10) throw new ApiError(400, "INVALID_NEWS_IMPACT", "Sample news impact must be between -10% and +10%.");
+  const sql = [
+    "WITH picked AS (SELECT s.id,s.symbol,s.name,s.price,coalesce(s.base_price,s.index_base_price,s.price)::numeric AS reference_price,",
+    "  cfg.price_tick,least(10,greatest(0.05,cfg.max_price_move_pct)) AS event_cap,",
+    "  e.event_name,e.pricing_method,e.pricing_enabled,e.pricing_config",
+    "  FROM securities s CROSS JOIN event_config cfg JOIN jse_events e ON e.is_active",
+    "  WHERE s.symbol=$1 AND s.active AND (s.kind='EQUITY' OR s.listed_at IS NOT NULL) LIMIT 1),",
+    "  signal AS (SELECT p.*,CASE WHEN p.pricing_enabled",
+    "     AND coalesce((p.pricing_config->'enabled_methods'->>p.pricing_method)::boolean,true)",
+    "     AND ((p.pricing_method IN ('MOMENTUM','MEAN_REVERSION','SUPPLY_DEMAND','SECTOR_INDEX','VOLATILITY','SCENARIO')",
+    "          AND coalesce((p.pricing_config->>'apply_on_trades')::boolean,true))",
+    "       OR (p.pricing_method IN ('NEWS_DRIVEN','HYBRID') AND $4::numeric<>0",
+    "          AND coalesce((p.pricing_config->>'apply_on_news')::boolean,true)))",
+    "       THEN public.jse__pricing_signal(p.id,$2,$3,$4::numeric) ELSE 0::numeric END AS proposed_pct",
+    "    FROM picked p),",
+    "  bounded AS (SELECT *,",
+    "    greatest(ceil(reference_price*(1-event_cap/100)/greatest(price_tick,0.01))*greatest(price_tick,0.01),",
+    "      least(floor(reference_price*(1+event_cap/100)/greatest(price_tick,0.01))*greatest(price_tick,0.01),",
+    "        public.jse_round_tick(price*(1+proposed_pct/100),greatest(price_tick,0.01)))) AS indicative_price",
+    "    FROM signal)",
+    "SELECT symbol,name,event_name,price AS current_price,reference_price,pricing_method,pricing_enabled,",
+    "  coalesce((pricing_config->'enabled_methods'->>pricing_method)::boolean,true) AS method_enabled,",
+    "  coalesce((pricing_config->>'apply_on_trades')::boolean,true) AS apply_on_trades,",
+    "  coalesce((pricing_config->>'apply_on_news')::boolean,true) AS apply_on_news,",
+    "  $2::text AS side,$3::integer AS quantity,$4::numeric AS sample_news_pct,",
+    "  proposed_pct AS proposed_move_pct,round(indicative_price,2) AS indicative_price,",
+    "  round((indicative_price-price)*100/nullif(price,0),2) AS actual_move_pct,event_cap",
+    "FROM bounded"
+  ].join(" ");
+  const out = await rawQuery(sql, [symbol, side, quantity, newsPct]);
+  if (!out.rows.length) throw new ApiError(404, "SECURITY_NOT_FOUND", "The selected security is not listed or is unavailable.");
+  const row = out.rows[0];
+  return json(ctx, {
+    success: true,
+    preview_only: true,
+    ...row,
+    note: row.pricing_method === "MANUAL"
+      ? "Manual pricing never changes quotes automatically; use the protected manual price control."
+      : row.pricing_method === "NEWS_DRIVEN" && newsPct === 0
+        ? "Enter a non-zero sample news impact to preview News-driven pricing."
+        : !row.pricing_enabled || !row.method_enabled
+          ? "The pricing engine or selected model is disabled, so no automatic move is previewed."
+          : "Indicative quote only. No price, trade, order or ledger was changed."
+  });
+});
+
 get("/api/pricing-activity", async (ctx) => {
   need(ctx, "ADMIN", "VIEWER");
   const requested = Number(q(ctx, "limit") || 25);
