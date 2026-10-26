@@ -276,3 +276,269 @@ body.admin-command-page :focus-visible{outline:3px solid #9bbaf1!important;outli
  body.admin-command-page .jse-pricing-sectionline{align-items:flex-start!important;gap:8px!important}
  body.admin-command-page .jse-pricing-number{align-items:flex-start!important}
 }
+
+
+/* ===== JSE EVENT ADMIN REDESIGN v2: compact layout + live palette tokens =====
+   Deliberately scoped to .admin-command-page. Appearance settings now drive the
+   same tokens used by the sidebar, workspaces, cards, tables, inputs and pricing studio. */
+body.admin-command-page{
+  --jse-ctl-page:var(--jse-theme-page,#f3f6fb);
+  --jse-ctl-surface:var(--jse-user-surface,var(--jse-theme-surface,#ffffff));
+  --jse-ctl-ink:var(--jse-theme-ink,#1a2c45);
+  --jse-ctl-muted:var(--jse-theme-muted,#65758d);
+  --jse-ctl-border:var(--jse-theme-border,#dce5ef);
+  --jse-ctl-accent:var(--jse-user-accent,var(--jse-theme-accent,#2b63dd));
+  --jse-ctl-soft:color-mix(in srgb,var(--jse-ctl-accent) 9%,var(--jse-ctl-surface));
+  --jse-ctl-header:color-mix(in srgb,var(--jse-ctl-accent) 4%,var(--jse-ctl-surface));
+  background:var(--jse-ctl-page)!important;
+  color:var(--jse-ctl-ink)!important;
+  font-size:13px!important;
+}
+body.admin-command-page[data-jse-theme="ocean"]{--jse-theme-page:#edf6f6;--jse-theme-surface:#ffffff;--jse-theme-ink:#173b46;--jse-theme-muted:#5b7781;--jse-theme-border:#cfe2e4;--jse-theme-accent:#087f8c}
+body.admin-command-page[data-jse-theme="royal"]{--jse-theme-page:#f0f4fb;--jse-theme-surface:#ffffff;--jse-theme-ink:#1b2d4d;--jse-theme-muted:#627491;--jse-theme-border:#d7e1f0;--jse-theme-accent:#315cc9}
+body.admin-command-page[data-jse-theme="mint"]{--jse-theme-page:#edf6f0;--jse-theme-surface:#fcfffd;--jse-theme-ink:#1a4030;--jse-theme-muted:#5e7b6b;--jse-theme-border:#d0e4d7;--jse-theme-accent:#21845e}
+body.admin-command-page[data-jse-theme="paper"]{--jse-theme-page:#f4efe5;--jse-theme-surface:#fffaf1;--jse-theme-ink:#40382d;--jse-theme-muted:#807361;--jse-theme-border:#e3d7c5;--jse-theme-accent:#9a6a36}
+body.admin-command-page[data-jse-theme="coral"]{--jse-theme-page:#fff1ed;--jse-theme-surface:#fffdfb;--jse-theme-ink:#57342f;--jse-theme-muted:#92716a;--jse-theme-border:#f0d9d2;--jse-theme-accent:#c85b49}
+body.admin-command-page[data-jse-theme="violet"]{--jse-theme-page:#f3f0fb;--jse-theme-surface:#fffefe;--jse-theme-ink:#352d53;--jse-theme-muted:#766d93;--jse-theme-border:#e0d9f0;--jse-theme-accent:#7153b8}
+
+/* Denser command shell */
+body.admin-command-page #jseAdminSidebar{width:224px!important;padding:14px 11px!important;background:var(--jse-ctl-surface)!important;border-right-color:var(--jse-ctl-border)!important;box-shadow:4px 0 18px rgba(24,43,71,.035)!important}
+body.admin-command-page #main{margin-left:224px!important;padding:18px clamp(13px,1.7vw,25px) 34px!important;max-width:none!important}
+body.admin-command-page .jse-brand-row{padding:2px 5px 13px!important}
+body.admin-command-page .jse-sidebar-event{margin:12px 2px 14px!important;padding:11px!important;background:var(--jse-ctl-soft)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-side-group-label{margin:13px 8px 5px!important}
+body.admin-command-page .jse-side-link{min-height:36px!important;padding:7px 9px!important;border-radius:9px!important}
+body.admin-command-page .jse-side-link.is-active{background:var(--jse-ctl-soft)!important;border-color:var(--jse-ctl-border)!important;color:var(--jse-ctl-accent)!important;box-shadow:inset 3px 0 var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-side-link.is-active .jse-side-icon{background:color-mix(in srgb,var(--jse-ctl-accent) 15%,var(--jse-ctl-surface))!important;color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-side-icon{background:var(--jse-ctl-header)!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-brand-copy strong,body.admin-command-page .jse-sidebar-event>strong{color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-brand-copy span,body.admin-command-page .jse-sidebar-event-top,body.admin-command-page .jse-sidebar-event>span,body.admin-command-page .jse-side-group-label,body.admin-command-page .jse-side-footer-copy{color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-brand-mark{background:var(--jse-ctl-accent)!important;color:#fff!important}
+body.admin-command-page .jse-sidebar-footer{border-top-color:var(--jse-ctl-border)!important;margin-top:14px!important;padding-top:10px!important}
+body.admin-command-page .jse-footer-signal{color:var(--jse-ctl-muted)!important}
+
+body.admin-command-page .page-head{padding:0 0 14px!important;margin:0 0 12px!important;gap:12px!important;border-bottom-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-page-title h1{font-size:25px!important;color:var(--jse-ctl-ink)!important;line-height:1.13!important}
+body.admin-command-page .jse-page-title>p{font-size:11px!important;max-width:680px!important;color:var(--jse-ctl-muted)!important;line-height:1.5!important;margin-top:5px!important}
+body.admin-command-page .jse-page-context{color:var(--jse-ctl-muted)!important;font-size:8px!important;margin-top:6px!important}
+body.admin-command-page .conn{background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;color:var(--jse-ctl-muted)!important}
+
+/* Appearance controls: compact, visible and connected to palette variables */
+body.admin-command-page .jse-appearance-bar{display:grid!important;grid-template-columns:minmax(190px,1.35fr) repeat(3,minmax(105px,.75fr)) minmax(72px,.38fr) minmax(72px,.38fr) auto!important;gap:8px!important;align-items:end!important;padding:10px 11px!important;margin:0 0 14px!important;border:1px solid var(--jse-ctl-border)!important;border-radius:12px!important;background:var(--jse-ctl-surface)!important;box-shadow:0 3px 10px rgba(30,48,76,.025)!important}
+body.admin-command-page .jse-appearance-intro{min-width:0!important;display:flex!important;gap:9px!important;align-items:center!important;flex:initial!important}
+body.admin-command-page .jse-appearance-symbol{display:grid!important;place-items:center!important;width:28px!important;height:28px!important;flex:0 0 28px!important;border-radius:8px!important;background:var(--jse-ctl-soft)!important;color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-appearance-intro strong{display:block!important;color:var(--jse-ctl-ink)!important;font-size:10px!important}
+body.admin-command-page .jse-appearance-intro small{display:block!important;color:var(--jse-ctl-muted)!important;font-size:9px!important;line-height:1.25!important;margin-top:2px!important}
+body.admin-command-page .jse-appearance-bar label{display:flex!important;min-width:0!important;flex-direction:column!important;gap:4px!important}
+body.admin-command-page .jse-appearance-bar label>span{font-size:8px!important;letter-spacing:.025em!important;color:var(--jse-ctl-muted)!important;font-weight:800!important}
+body.admin-command-page .jse-appearance-bar select{width:100%!important;max-width:none!important;min-width:0!important;height:32px!important;min-height:32px!important;padding:0 7px!important;border:1px solid var(--jse-ctl-border)!important;border-radius:7px!important;background:var(--jse-ctl-header)!important;color:var(--jse-ctl-ink)!important;font-size:9px!important}
+body.admin-command-page .jse-custom-color-control input{width:100%!important;height:32px!important;min-height:32px!important;padding:3px!important;border:1px solid var(--jse-ctl-border)!important;border-radius:7px!important;background:var(--jse-ctl-surface)!important;cursor:pointer!important}
+body.admin-command-page #jseAppearanceReset{min-height:32px!important;padding:0 9px!important;border:1px solid var(--jse-ctl-border)!important;border-radius:7px!important;background:var(--jse-ctl-surface)!important;color:var(--jse-ctl-muted)!important;font-size:9px!important;white-space:nowrap!important}
+body.admin-command-page #jseAppearanceReset:hover{border-color:var(--jse-ctl-accent)!important;color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-appearance-bar select:focus,body.admin-command-page .jse-custom-color-control input:focus-visible{outline:2px solid var(--jse-ctl-accent)!important;outline-offset:2px!important}
+
+/* Main canvas: less padding, useful 2-column grids, no full-width walls of cards */
+body.admin-command-page .jse-workspace-heading{padding:0 1px 11px!important;margin-bottom:12px!important;border-bottom-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-workspace-heading:after{background:var(--jse-ctl-accent)!important;height:2px!important;width:44px!important}
+body.admin-command-page .jse-workspace-kicker{color:var(--jse-ctl-accent)!important;font-size:8px!important}
+body.admin-command-page .jse-workspace-title{font-size:23px!important;color:var(--jse-ctl-ink)!important;line-height:1.15!important;margin-top:3px!important}
+body.admin-command-page .jse-workspace-description{font-size:11px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-workspace-status{background:var(--jse-ctl-header)!important;color:var(--jse-ctl-muted)!important;border-color:var(--jse-ctl-border)!important;font-size:9px!important}
+body.admin-command-page .jse-workspace-grid{grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:10px!important}
+body.admin-command-page .jse-workspace-grid>*{grid-column:span 6!important;min-width:0!important;margin:0!important}
+body.admin-command-page .jse-workspace-grid .card,body.admin-command-page .jse-workspace-grid .panel,body.admin-command-page .jse-workspace-grid .adv-card,body.admin-command-page .jse-workspace-grid .admin-card,body.admin-command-page .jse-workspace-grid .cmd-panel,body.admin-command-page .jse-workspace-grid .section-card,body.admin-command-page .jse-workspace-grid .kpi{background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;border-radius:var(--jse-radius,12px)!important;box-shadow:0 3px 12px rgba(29,48,77,.035)!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-workspace-grid .card-h{background:var(--jse-ctl-header)!important;border-bottom-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-workspace-grid .card-h h2,body.admin-command-page .jse-workspace-grid .card-h h3{color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-workspace-grid .card-b{padding:14px!important}
+body.admin-command-page .jse-workspace-grid .meta,body.admin-command-page .jse-workspace-grid .muted,body.admin-command-page .jse-workspace-grid .small.muted,body.admin-command-page .jse-workspace-grid label{color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-workspace-grid .input,body.admin-command-page .jse-workspace-grid input:not([type=checkbox]):not([type=radio]):not([type=color]),body.admin-command-page .jse-workspace-grid select,body.admin-command-page .jse-workspace-grid textarea{background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;color:var(--jse-ctl-ink)!important;border-radius:8px!important;min-height:33px!important}
+body.admin-command-page .jse-workspace-grid input[type=checkbox]{accent-color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-workspace-grid button.btn.primary,body.admin-command-page .jse-workspace-grid .btn.primary{background:var(--jse-ctl-accent)!important;border-color:var(--jse-ctl-accent)!important;color:#fff!important;box-shadow:0 3px 9px color-mix(in srgb,var(--jse-ctl-accent) 18%,transparent)!important}
+body.admin-command-page .jse-workspace-grid button.btn:not(.primary){background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-workspace-grid button.btn:hover{filter:brightness(.98)!important}
+
+/* Shared panels take the space they need; operational panels align in pairs */
+body.admin-command-page .jse-workspace-grid #cmdDashboard,
+body.admin-command-page .jse-workspace-grid .cmd-hero,
+body.admin-command-page .jse-workspace-grid #kpis,
+body.admin-command-page .jse-workspace-grid #consistency,
+body.admin-command-page .jse-workspace-grid #advancedAnalytics,
+body.admin-command-page .jse-workspace-grid #pricingMethodPanel,
+body.admin-command-page .jse-workspace-grid #pricingActivityPanel,
+body.admin-command-page .jse-workspace-grid #rosterSection,
+body.admin-command-page .jse-workspace-grid #institutionalInventoryPanel,
+body.admin-command-page .jse-workspace-grid #reportsPanel{grid-column:span 12!important}
+body.admin-command-page .jse-workspace-grid #eventRegistryPanel{grid-column:span 7!important}
+body.admin-command-page .jse-workspace-grid #eventControl{grid-column:span 5!important}
+body.admin-command-page .jse-workspace-grid #marketNewsSection{grid-column:span 7!important}
+body.admin-command-page .jse-workspace-grid #intelligence{grid-column:span 5!important}
+body.admin-command-page .jse-workspace-grid #teamManagement,body.admin-command-page .jse-workspace-grid #bigBullBox,body.admin-command-page .jse-workspace-grid #brokerManagement,body.admin-command-page .jse-workspace-grid #allotmentsSection,body.admin-command-page .jse-workspace-grid #ipoRandomBox,body.admin-command-page .jse-workspace-grid #companyBaseImportBox,body.admin-command-page .jse-workspace-grid #ipoIssueSizeBox,body.admin-command-page .jse-workspace-grid #configPanel,body.admin-command-page .jse-workspace-grid #accountsPanel,body.admin-command-page .jse-workspace-grid #namesPanel,body.admin-command-page .jse-workspace-grid #journalSection,body.admin-command-page .jse-workspace-grid #reconCard{grid-column:span 6!important}
+
+/* Compact hero and live panels */
+body.admin-command-page .cmd-hero{grid-template-columns:minmax(0,1fr) 138px!important;gap:16px!important;padding:18px 20px 0!important;margin:0!important;border:1px solid var(--jse-ctl-border)!important;border-radius:14px!important;background:linear-gradient(108deg,var(--jse-ctl-surface),color-mix(in srgb,var(--jse-ctl-accent) 7%,var(--jse-ctl-surface)))!important;box-shadow:0 5px 17px rgba(31,50,80,.045)!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-hero:after{opacity:.13!important;background-image:linear-gradient(color-mix(in srgb,var(--jse-ctl-accent) 11%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--jse-ctl-accent) 11%,transparent) 1px,transparent 1px)!important}
+body.admin-command-page .cmd-hero h2{font-size:clamp(26px,2.4vw,34px)!important;line-height:1.04!important;margin:10px 0 7px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-hero h2 em{color:var(--jse-ctl-accent)!important}
+body.admin-command-page .cmd-hero p{font-size:11px!important;color:var(--jse-ctl-muted)!important;line-height:1.5!important}
+body.admin-command-page .cmd-live-meta{margin:12px 0 14px!important;gap:8px 14px!important}
+body.admin-command-page .cmd-status-chip{padding:6px 9px!important;font-size:9px!important}
+body.admin-command-page .cmd-meta-item{font-size:8px!important}
+body.admin-command-page .cmd-meta-item b{font-size:11px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-hero-footer{margin:0 -20px!important;padding:9px 20px!important;background:color-mix(in srgb,var(--jse-ctl-page) 55%,var(--jse-ctl-surface))!important;border-top-color:var(--jse-ctl-border)!important}
+body.admin-command-page .cmd-hero-footer span{font-size:8px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .cmd-hero-footer b{font-size:9px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-orbit{width:124px!important;height:124px!important}
+body.admin-command-page .cmd-ring{border-color:color-mix(in srgb,var(--jse-ctl-accent) 40%,var(--jse-ctl-surface))!important}
+body.admin-command-page .cmd-core{width:75px!important;height:75px!important;background:var(--jse-ctl-soft)!important;border-color:var(--jse-ctl-border)!important;box-shadow:0 4px 18px color-mix(in srgb,var(--jse-ctl-accent) 10%,transparent)!important}
+body.admin-command-page .cmd-core span{font-size:17px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-core b{font-size:8px!important;color:var(--jse-ctl-accent)!important}
+body.admin-command-page .cmd-nav{gap:4px!important;padding:7px!important;margin-bottom:11px!important;background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;box-shadow:none!important}
+body.admin-command-page .cmd-nav button{padding:7px 9px!important;font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .cmd-nav button:hover{background:var(--jse-ctl-soft)!important;color:var(--jse-ctl-accent)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .cmd-nav .cmd-refresh{background:var(--jse-ctl-accent)!important;color:#fff!important}
+body.admin-command-page .cmd-panel{padding:13px!important;background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;border-radius:12px!important;box-shadow:0 3px 12px rgba(29,48,77,.035)!important}
+body.admin-command-page .cmd-panel-head{margin-bottom:10px!important}
+body.admin-command-page .cmd-panel-head h3{font-size:14px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-panel-head p{font-size:10px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .cmd-heading{margin:12px 1px 9px!important}
+body.admin-command-page .cmd-heading h2{font-size:20px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-stream{font-size:8px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .cmd-symbol{color:var(--jse-ctl-ink)!important}
+body.admin-command-page .cmd-track{background:color-mix(in srgb,var(--jse-ctl-border) 70%,var(--jse-ctl-surface))!important}
+body.admin-command-page .cmd-mover-row{padding:6px 0!important;border-bottom-color:var(--jse-ctl-border)!important}
+
+/* Pricing Studio: dense grid, editable controls inherit current theme */
+body.admin-command-page .jse-pricing-panel{border-radius:14px!important;border-color:var(--jse-ctl-border)!important;overflow:hidden!important}
+body.admin-command-page .jse-pricing-header{padding:16px 18px!important;background:var(--jse-ctl-header)!important;border-bottom-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-pricing-header h2{color:var(--jse-ctl-ink)!important;font-size:19px!important}
+body.admin-command-page .jse-pricing-subtitle{color:var(--jse-ctl-muted)!important;font-size:10px!important}
+body.admin-command-page .jse-pricing-state{background:color-mix(in srgb,#16a56b 9%,var(--jse-ctl-surface))!important}
+body.admin-command-page .jse-pricing-command-grid{grid-template-columns:minmax(0,1fr) minmax(210px,.8fr) auto!important;gap:9px!important;padding:0!important}
+body.admin-command-page .jse-engine-switch{min-height:53px!important;padding:9px 11px!important;background:var(--jse-ctl-header)!important;border-color:var(--jse-ctl-border)!important;border-radius:10px!important}
+body.admin-command-page .jse-engine-switch-copy strong{font-size:10px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-engine-switch-copy small{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-pricing-select-wrap label{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-pricing-select-wrap select{height:36px!important;min-height:36px!important;background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-pricing-save{min-height:36px!important;padding:0 12px!important;background:var(--jse-ctl-accent)!important;border-color:var(--jse-ctl-accent)!important;color:#fff!important}
+body.admin-command-page .jse-pricing-sectionline{margin:15px 0 9px!important;padding-top:11px!important;border-top-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-pricing-sectionline>div strong{font-size:11px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-pricing-sectionline>div span{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-pricing-model-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+body.admin-command-page .jse-pricing-model{min-height:66px!important;padding:9px 10px!important;border-radius:10px!important;background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-pricing-model.is-disabled{opacity:.55!important;background:var(--jse-ctl-header)!important}
+body.admin-command-page .jse-pricing-model:has(input:checked){background:var(--jse-ctl-soft)!important;border-color:color-mix(in srgb,var(--jse-ctl-accent) 55%,var(--jse-ctl-border))!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--jse-ctl-accent) 16%,transparent)!important}
+body.admin-command-page .jse-pricing-model .jse-model-icon{background:var(--jse-ctl-soft)!important;color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-model-copy strong{font-size:10px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-model-copy small{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-model-switch,body.admin-command-page .jse-engine-switch .jse-toggle-visual{background:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-pricing-model input:checked~.jse-model-switch{background:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-rule-switch,body.admin-command-page .jse-pricing-number{padding:10px!important;min-height:55px!important;border-radius:10px!important;background:var(--jse-ctl-header)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-rule-switch strong,body.admin-command-page .jse-pricing-number strong{font-size:10px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-rule-switch small,body.admin-command-page .jse-pricing-number small{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-pricing-advanced{margin-top:10px!important;border-radius:10px!important;border-color:var(--jse-ctl-border)!important;background:var(--jse-ctl-surface)!important}
+body.admin-command-page .jse-pricing-advanced summary{padding:10px 12px!important;background:var(--jse-ctl-header)!important}
+body.admin-command-page .jse-pricing-advanced summary strong{font-size:11px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-pricing-advanced summary small{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-pricing-advanced-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;padding:12px!important}
+body.admin-command-page .jse-pricing-advanced-grid label{font-size:10px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-pricing-advanced-grid label small{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-pricing-advanced-grid input,body.admin-command-page .jse-pricing-advanced-grid select{background:var(--jse-ctl-surface)!important;border-color:var(--jse-ctl-border)!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-hybrid-weight-wrap{background:var(--jse-ctl-header)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-hybrid-weight-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+body.admin-command-page .jse-hybrid-weight-grid input{min-height:30px!important}
+body.admin-command-page .jse-manual-price-editor{grid-template-columns:minmax(160px,.6fr) minmax(0,1.4fr)!important;margin-top:10px!important;padding:12px!important;background:var(--jse-ctl-header)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-manual-price-editor h3{font-size:13px!important;color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-manual-price-editor p{font-size:9px!important;color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-pricing-result{font-size:10px!important}
+body.admin-command-page .jse-pricing-activity-panel{border-color:var(--jse-ctl-border)!important;border-radius:12px!important}
+body.admin-command-page .jse-pricing-activity-panel .card-h{background:var(--jse-ctl-header)!important}
+
+/* Every table and data surface follows the active palette */
+body.admin-command-page .jse-workspace-grid .table-wrap{border-color:var(--jse-ctl-border)!important;border-radius:10px!important}
+body.admin-command-page .jse-workspace-grid table.t th{background:var(--jse-ctl-header)!important;color:var(--jse-ctl-muted)!important;border-bottom-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-workspace-grid table.t td{color:var(--jse-ctl-ink)!important;border-bottom-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-workspace-grid table.t tbody tr:hover td{background:var(--jse-ctl-soft)!important}
+body.admin-command-page .jse-workspace-grid .mi .box{background:var(--jse-ctl-header)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-workspace-grid .mi .box h4{color:var(--jse-ctl-muted)!important}
+body.admin-command-page .jse-workspace-grid .mi .box .v{color:var(--jse-ctl-ink)!important}
+body.admin-command-page .jse-workspace-grid .alert,body.admin-command-page .jse-workspace-grid .rules{border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-workspace-grid .tag,body.admin-command-page .jse-workspace-grid .pill{border-radius:7px!important}
+body.admin-command-page .jse-workspace-grid .section-eyebrow,body.admin-command-page .jse-workspace-grid .jse-section-eyebrow{color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-workspace-grid .jse-pricing-current,body.admin-command-page .jse-workspace-grid .jse-pricing-saved-banner{background:var(--jse-ctl-header)!important;border-color:var(--jse-ctl-border)!important}
+body.admin-command-page .jse-workspace-grid a{color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-workspace-grid :focus-visible{outline-color:var(--jse-ctl-accent)!important}
+body.admin-command-page .jse-workspace-grid .cmd-side-info{grid-column:span 6!important}
+
+/* Layout-density options truly change the spacing system */
+body.admin-command-page[data-jse-density="compact"] #main{padding-top:12px!important}
+body.admin-command-page[data-jse-density="compact"] .jse-appearance-bar{padding:7px 9px!important;gap:6px!important;margin-bottom:10px!important}
+body.admin-command-page[data-jse-density="compact"] .jse-workspace-grid{gap:7px!important}
+body.admin-command-page[data-jse-density="compact"] .jse-workspace-grid .card-b{padding:10px 12px!important}
+body.admin-command-page[data-jse-density="compact"] .jse-workspace-grid .card-h{padding:10px 13px!important}
+body.admin-command-page[data-jse-density="compact"] .jse-pricing-model{min-height:58px!important;padding:7px 9px!important}
+body.admin-command-page[data-jse-density="compact"] .jse-pricing-sectionline{margin:11px 0 7px!important;padding-top:8px!important}
+body.admin-command-page[data-jse-density="spacious"] #main{padding-top:25px!important}
+body.admin-command-page[data-jse-density="spacious"] .jse-workspace-grid{gap:15px!important}
+body.admin-command-page[data-jse-density="spacious"] .jse-workspace-grid .card-b{padding:20px!important}
+body.admin-command-page[data-jse-box="sharp"] .jse-workspace-grid .card,body.admin-command-page[data-jse-box="sharp"] .jse-workspace-grid .adv-card,body.admin-command-page[data-jse-box="sharp"] .jse-workspace-grid .cmd-panel,body.admin-command-page[data-jse-box="sharp"] .jse-pricing-model,body.admin-command-page[data-jse-box="sharp"] .jse-pricing-advanced,body.admin-command-page[data-jse-box="sharp"] .jse-appearance-bar{border-radius:4px!important}
+body.admin-command-page[data-jse-box="flat"] .jse-workspace-grid .card,body.admin-command-page[data-jse-box="flat"] .jse-workspace-grid .adv-card,body.admin-command-page[data-jse-box="flat"] .jse-workspace-grid .cmd-panel,body.admin-command-page[data-jse-box="flat"] .jse-pricing-model,body.admin-command-page[data-jse-box="flat"] .jse-appearance-bar{box-shadow:none!important}
+body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid .card,body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid .adv-card,body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid .cmd-panel{box-shadow:0 10px 25px rgba(21,44,77,.10)!important}
+
+@media(max-width:1400px){
+ body.admin-command-page .jse-appearance-bar{grid-template-columns:minmax(170px,1fr) repeat(3,minmax(88px,.75fr)) 64px 64px auto!important}
+ body.admin-command-page .jse-workspace-grid #eventRegistryPanel,body.admin-command-page .jse-workspace-grid #eventControl,
+ body.admin-command-page .jse-workspace-grid #marketNewsSection,body.admin-command-page .jse-workspace-grid #intelligence,
+ body.admin-command-page .jse-workspace-grid #teamManagement,body.admin-command-page .jse-workspace-grid #bigBullBox,
+ body.admin-command-page .jse-workspace-grid #brokerManagement,body.admin-command-page .jse-workspace-grid #allotmentsSection,
+ body.admin-command-page .jse-workspace-grid #ipoRandomBox,body.admin-command-page .jse-workspace-grid #companyBaseImportBox,
+ body.admin-command-page .jse-workspace-grid #ipoIssueSizeBox,body.admin-command-page .jse-workspace-grid #configPanel,
+ body.admin-command-page .jse-workspace-grid #accountsPanel,body.admin-command-page .jse-workspace-grid #namesPanel,
+ body.admin-command-page .jse-workspace-grid #journalSection,body.admin-command-page .jse-workspace-grid #reconCard{grid-column:span 6!important}
+}
+@media(max-width:1120px){
+ body.admin-command-page #jseAdminSidebar{width:210px!important}
+ body.admin-command-page #main{margin-left:210px!important}
+ body.admin-command-page .jse-appearance-bar{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body.admin-command-page .jse-appearance-intro{grid-column:span 3!important}
+ body.admin-command-page .jse-workspace-grid #eventRegistryPanel,body.admin-command-page .jse-workspace-grid #eventControl,
+ body.admin-command-page .jse-workspace-grid #marketNewsSection,body.admin-command-page .jse-workspace-grid #intelligence,
+ body.admin-command-page .jse-workspace-grid #teamManagement,body.admin-command-page .jse-workspace-grid #bigBullBox,
+ body.admin-command-page .jse-workspace-grid #brokerManagement,body.admin-command-page .jse-workspace-grid #allotmentsSection,
+ body.admin-command-page .jse-workspace-grid #ipoRandomBox,body.admin-command-page .jse-workspace-grid #companyBaseImportBox,
+ body.admin-command-page .jse-workspace-grid #ipoIssueSizeBox,body.admin-command-page .jse-workspace-grid #configPanel,
+ body.admin-command-page .jse-workspace-grid #accountsPanel,body.admin-command-page .jse-workspace-grid #namesPanel,
+ body.admin-command-page .jse-workspace-grid #journalSection,body.admin-command-page .jse-workspace-grid #reconCard{grid-column:span 12!important}
+ body.admin-command-page .jse-workspace-grid #cmdDashboard,body.admin-command-page .jse-workspace-grid #advancedAnalytics,
+ body.admin-command-page .jse-workspace-grid #pricingMethodPanel,body.admin-command-page .jse-workspace-grid #pricingActivityPanel{grid-column:span 12!important}
+ body.admin-command-page .jse-pricing-command-grid{grid-template-columns:1fr 1fr!important}
+ body.admin-command-page .jse-pricing-save{grid-column:1/-1!important}
+}
+@media(max-width:980px){
+ body.admin-command-page #jseAdminSidebar{width:278px!important;transform:translateX(-100%)!important;background:var(--jse-ctl-surface)!important}
+ body.admin-command-page.jse-side-open #jseAdminSidebar{transform:translateX(0)!important}
+ body.admin-command-page #main,body.admin-command-page.jse-side-collapsed #main{margin-left:0!important;padding:13px!important}
+ body.admin-command-page .jse-appearance-bar{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body.admin-command-page .jse-appearance-intro{grid-column:1/-1!important}
+ body.admin-command-page .jse-workspace-heading{align-items:flex-start!important;flex-direction:row!important}
+ body.admin-command-page .jse-workspace-grid>*{grid-column:span 12!important}
+ body.admin-command-page .jse-workspace-grid #cmdDashboard,body.admin-command-page .jse-workspace-grid #advancedAnalytics,
+ body.admin-command-page .jse-workspace-grid #pricingMethodPanel,body.admin-command-page .jse-workspace-grid #pricingActivityPanel{grid-column:span 12!important}
+ body.admin-command-page .jse-pricing-model-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page .jse-pricing-advanced-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page .cmd-hero{grid-template-columns:minmax(0,1fr) 105px!important}
+ body.admin-command-page .cmd-orbit{width:96px!important;height:96px!important}
+}
+@media(max-width:560px){
+ body.admin-command-page .jse-appearance-bar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page .jse-appearance-intro{grid-column:1/-1!important}
+ body.admin-command-page .jse-workspace-heading{flex-direction:column!important}
+ body.admin-command-page .jse-workspace-status{white-space:normal!important}
+ body.admin-command-page .jse-pricing-command-grid,body.admin-command-page .jse-pricing-advanced-grid{grid-template-columns:1fr!important}
+ body.admin-command-page .jse-pricing-model-grid{grid-template-columns:1fr!important}
+ body.admin-command-page .jse-hybrid-weight-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page .jse-manual-price-editor{grid-template-columns:1fr!important}
+ body.admin-command-page .cmd-hero{grid-template-columns:1fr!important}
+ body.admin-command-page .cmd-orbit{display:none!important}
+ body.admin-command-page .cmd-hero-footer{gap:6px 12px!important}
+ body.admin-command-page .page-head{align-items:flex-start!important}
+}
