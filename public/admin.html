@@ -401,7 +401,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   </section>
   <nav class="cmd-nav" id="cmdNav" aria-label="Command centre shortcuts">
     <span class="cmd-nav-label">Jump to</span>
-    <button type="button" data-scroll="eventControl">Event control</button><button type="button" data-scroll="marketNewsSection">Market news</button><button type="button" data-scroll="advancedAnalytics">Analytics</button><button type="button" data-scroll="teamManagement">Participants</button><button type="button" data-scroll="ipoRandomBox">IPO tools</button><button type="button" data-scroll="configPanel">Rules &amp; guardrails</button><button type="button" data-scroll="accountsPanel">Accounts</button><button type="button" data-scroll="reconCard">Reconciliation</button><button type="button" data-scroll="reportsPanel">Reports</button>
+    <button type="button" data-scroll="eventControl">Event control</button><button type="button" data-scroll="eventRegistryPanel">Event library</button><button type="button" data-scroll="marketNewsSection">Market news</button><button type="button" data-scroll="advancedAnalytics">Analytics</button><button type="button" data-scroll="teamManagement">Participants</button><button type="button" data-scroll="ipoRandomBox">IPO tools</button><button type="button" data-scroll="configPanel">Rules &amp; guardrails</button><button type="button" data-scroll="accountsPanel">Accounts</button><button type="button" data-scroll="reconCard">Reconciliation</button><button type="button" data-scroll="reportsPanel">Reports</button>
     <span class="cmd-nav-spacer"></span><label class="cmd-quick-jump" for="adminQuickFind"><span class="cmd-quick-label">Find section</span><input id="adminQuickFind" class="input" type="search" list="adminSectionSuggestions" placeholder="e.g. IPO, teams, loans…" autocomplete="off"><datalist id="adminSectionSuggestions"></datalist></label><button type="button" class="cmd-quick-go" id="adminJumpGo" title="Jump to the matching section">Jump ↗</button><button type="button" class="cmd-text-size" id="adminTextScale" aria-pressed="false" title="Switch to extra-large text">A+ Larger text</button><button type="button" class="cmd-top" id="adminBackTop" title="Return to top">↑ Top</button><button type="button" class="cmd-refresh" id="cmdRefresh">↻ Sync all</button><button type="button" class="cmd-recon" id="cmdRunRecon">Run checks ↗</button>
   </nav>
 
@@ -732,6 +732,8 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   legacyPanelObserver.observe(document.body, { childList: true, subtree: true });
 
   var S = { st: null, admin: false, mood: null, users: null, market: null, names: null, ipoAdmin: null, bigBull: null, brokerRoster: [], brokerRosterError: "", brokerRosterLoaded: false };
+  var eventRegistryState = null;
+  var eventGateState = null;
   var MOODS = [["VERY_SEVERE", "Very severe", "−10 to −7.5%", "neg"], ["SEVERE", "Severe", "−7.49 to −5%", "neg"], ["NEGATIVE", "Negative", "−4.99 to −1%", "neg"],
     ["NORMAL", "Normal", "±0.99%", ""], ["POSITIVE", "Positive", "+1 to +4.99%", "pos"], ["VERY_POSITIVE", "Very positive", "+5 to +7.49%", "pos"], ["SUPER_POSITIVE", "Super positive", "+7.5 to +10%", "pos"]];
   var SHEETS = [["winner", "Winner & Runner-Up"], ["assessment", "Assessment & Eligibility"], ["networth", "Net Worth & P/L"], ["teams", "Team Details (import template)"], ["participants", "Participant Details"],
@@ -1185,6 +1187,11 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     S.st = await JSE.api.get("/api/admin-state");
     if (!S.brokerRosterLoaded) await loadBrokerRoster();
     render();
+    // These are independent read models. A failure in either panel must not break the rest of Event Admin.
+    await Promise.all([
+      loadEventRegistry().catch(function (e) { var n=$("eventRegistryNotice"); if(n)n.textContent="Event registry unavailable: "+(e.message||"refresh failed"); }),
+      loadDeskControls().catch(function (e) { var n=$("deskGateSummary"); if(n)n.textContent="Desk status unavailable"; console.warn("JSE desk controls:",e); })
+    ]);
     $("conn").className = "conn"; $("connText").textContent = "Live · updated " + F.time(new Date());
   }
   async function loadTeamNames() {
@@ -1860,6 +1867,202 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       JSE.toast(r.credentials.length + " passwords issued and downloaded.", "good", 8000); loadUsers();
     } catch (e) { JSE.toast(e.message, "bad"); }
   };
+
+
+  // ---- multi-event registry: snapshots contain every event's data/config, not just its display name ----
+  function eventStatusLabel(value) { return String(value || "NOT_STARTED").replace(/_/g, " "); }
+  function eventStatusClass(e) {
+    if (e.archived) return "archived";
+    var s=String(e.status||"").toUpperCase();
+    if (s==="LIVE") return "live";
+    if (s==="SETTLEMENT_ONLY") return "paused";
+    if (s==="CLOSED" || s==="FINALIZED") return "closed";
+    return "ready";
+  }
+  function eventSelected() {
+    var sel=$("eventSelect");
+    if(!sel||!eventRegistryState)return null;
+    return (eventRegistryState.events||[]).find(function(e){return String(e.id)===String(sel.value);})||null;
+  }
+  function renderEventRegistry() {
+    var state=eventRegistryState;
+    if(!state)return;
+    var events=state.events||[], select=$("eventSelect"), active=events.find(function(e){return !!e.active;})||null;
+    if(!select)return;
+    var prior=select.value;
+    select.innerHTML=events.map(function(e){
+      var tag=e.active?"ACTIVE":e.archived?"ARCHIVED":eventStatusLabel(e.status);
+      return '<option value="'+esc(e.id)+'">'+esc(e.event_name)+' · '+esc(tag)+'</option>';
+    }).join("");
+    if(select.options.length){
+      var keep=events.some(function(e){return String(e.id)===String(prior);});
+      select.value=keep?String(prior):String(state.active_event_id||events[0].id);
+    }
+    var selected=eventSelected();
+    var metrics=(selected&&selected.summary)||{};
+    var status=(selected&&selected.status)||"NOT_STARTED";
+    var statusTxt=eventStatusLabel(status);
+    $("eventRegistryCount").textContent=events.filter(function(e){return !e.archived;}).length+" saved · "+events.filter(function(e){return e.archived;}).length+" archived";
+    $("eventRegistryActiveName").textContent=active?active.event_name:"No active event";
+    $("eventRegistryActiveStatus").textContent=active?eventStatusLabel(active.status)+" · Event ID "+active.id:"Registry requires setup";
+    $("activeEventTitle").textContent="JSE / "+(active?String(active.event_name).toUpperCase():"EVENT WORKSPACE");
+    var counts=[
+      ["Teams",metrics.teams],["Companies",Number(metrics.stocks||0)+Number(metrics.ipos||0)],
+      ["Orders",metrics.orders],["Settled",metrics.settled_orders],["Pending",metrics.pending_orders]
+    ].map(function(x){return '<span><b>'+esc(x[1]===undefined?"—":F.num(x[1]))+'</b> '+esc(x[0])+'</span>';}).join("");
+    $("eventSelectedDetails").innerHTML=selected
+      ? '<div class="evt-field-row"><strong>'+esc(selected.event_name)+'</strong><span class="evt-status '+eventStatusClass(selected)+'">'+esc(selected.archived?"ARCHIVED":statusTxt)+'</span></div>'+
+        '<div>'+esc(selected.description||"No event description saved.")+'</div>'+
+        '<div class="evt-event-meta" style="margin-top:7px">Created '+esc(selected.created_at?F.datetime(selected.created_at):"—")+' · Updated '+esc(selected.updated_at?F.datetime(selected.updated_at):"—")+'</div>'+
+        '<div class="evt-statline">'+counts+'</div>'
+      : "No saved events were returned.";
+    $("eventCards").innerHTML=events.length?events.map(function(e){
+      var m=e.summary||{}, cls=eventStatusClass(e);
+      var current=String(e.id)===String(select.value);
+      return '<button type="button" data-event-card="'+esc(e.id)+'" class="evt-event-card'+(e.active?" active":"")+(current?" selected":"")+'" aria-pressed="'+(current?"true":"false")+'">'+
+        '<div class="evt-event-card-top"><strong>'+esc(e.event_name)+'</strong><span class="evt-status '+cls+'">'+esc(e.active?"ACTIVE":e.archived?"ARCHIVED":eventStatusLabel(e.status))+'</span></div>'+
+        '<div class="evt-event-meta">'+F.num(m.teams||0)+' teams · '+F.num(m.orders||0)+' orders · '+F.num(m.settled_orders||0)+' settled</div></button>';
+    }).join(""):'<div class="evt-event-placeholder">No saved events. Create your first event workspace.</div>';
+    var runningCurrent=active&&["LIVE","SETTLEMENT_ONLY"].includes(String(active.status||"").toUpperCase());
+    $("eventSwitchBtn").disabled=!S.admin||!selected||selected.active||selected.archived||runningCurrent||["LIVE","SETTLEMENT_ONLY"].includes(String(status).toUpperCase());
+    $("eventCreateBtn").disabled=!S.admin||runningCurrent;
+    $("eventRenameBtn").disabled=!S.admin||!selected;
+    $("eventSaveBaselineBtn").disabled=!S.admin||!active||String(active.status).toUpperCase()!=="NOT_STARTED";
+    $("eventArchiveBtn").disabled=!S.admin||!selected||selected.active||selected.archived||["LIVE","SETTLEMENT_ONLY"].includes(String(status).toUpperCase());
+    $("eventRestoreArchiveBtn").disabled=!S.admin||!selected||!selected.archived;
+    if(active&&runningCurrent){
+      $("eventRegistryNotice").textContent="This event is "+eventStatusLabel(active.status)+". Close the event before switching or creating another; the operating desks can still be gated independently.";
+    } else {
+      $("eventRegistryNotice").textContent="Switching restores the selected event’s saved configuration, roster, company prices, IPO state, orders, trades, ledgers, news, and audit trail. The event reset baseline is stored separately.";
+    }
+  }
+  async function loadEventRegistry() {
+    eventRegistryState=await JSE.api.get("/api/events");
+    renderEventRegistry();
+    return eventRegistryState;
+  }
+  var DESK_GATES=[
+    {key:"order_intake_open",title:"New order intake",note:"Broker and institutional tickets; does not reject existing orders."},
+    {key:"pit_open",title:"Pit Manager",note:"Execute or reject orders at the Pit."},
+    {key:"exchange_open",title:"Exchange desk",note:"Approve or reject Exchange queue items."},
+    {key:"bank_open",title:"Bank desk",note:"Claim, settle, reject and decide loan requests."},
+    {key:"instructions_open",title:"Participant instructions",note:"Allow participants to submit trade instructions."},
+    {key:"market_news_open",title:"Market News",note:"Publish price-impact news and sentiment."}
+  ];
+  function renderDeskControls() {
+    if(!eventGateState)return;
+    var gates=eventGateState.gates||{}, opened=0;
+    $("deskGateGrid").innerHTML=DESK_GATES.map(function(g){
+      var on=!!gates[g.key];if(on)opened++;
+      return '<div class="evt-gate-card"><div class="evt-gate-main"><span class="evt-gate-dot '+(on?"open":"closed")+'"></span><div><strong class="evt-gate-label">'+esc(g.title)+'</strong><span class="evt-gate-note">'+esc(g.note)+'</span></div></div>'+
+        '<button type="button" class="btn '+(on?"evt-close-btn":"evt-open-btn")+'" data-gate="'+g.key+'" data-next="'+(!on)+'">'+(on?"Close":"Open")+'</button></div>';
+    }).join("");
+    $("deskGateSummary").textContent=opened+" / "+DESK_GATES.length+" open";
+    $("deskLockAll").disabled=!S.admin||opened===0;
+    $("deskOpenAll").disabled=!S.admin||opened===DESK_GATES.length;
+    $("deskGateGrid").querySelectorAll("[data-gate]").forEach(function(b){b.disabled=!S.admin;});
+  }
+  async function loadDeskControls() {
+    eventGateState=await JSE.api.get("/api/event-controls");
+    renderDeskControls();
+    return eventGateState;
+  }
+  async function refreshAfterEventChange() {
+    if(poller)poller.now();
+    await Promise.all([
+      load().catch(function(){}),loadNews().catch(function(){}),loadSecs().catch(function(){}),
+      loadTeamNames().catch(function(){}),loadBigBull().catch(function(){}),loadUsers().catch(function(){}),
+      loadIpoAdmin().catch(function(){}),loadAdvancedAnalytics().catch(function(){}),loadIntel().catch(function(){})
+    ]);
+    await loadEventRegistry().catch(function(){});
+    await loadDeskControls().catch(function(){});
+  }
+  async function runEventRegistryAction(opts, body, successMessage) {
+    try {
+      var r=await confirmed(opts,"/api/events",body);
+      if(!r)return null;
+      await refreshAfterEventChange();
+      JSE.toast(successMessage||r.message||"Event registry updated.","good",6500);
+      return r;
+    } catch(e) { JSE.toast(e.message||"Event operation failed.","bad",9000); return null; }
+  }
+  $("eventSelect").addEventListener("change",renderEventRegistry);
+  $("eventCards").addEventListener("click",function(ev){
+    var card=ev.target.closest?ev.target.closest("[data-event-card]"):null;
+    if(!card)return;
+    $("eventSelect").value=card.getAttribute("data-event-card");
+    renderEventRegistry();
+  });
+  $("eventCreateBtn").addEventListener("click",function(){
+    if($("eventCreateBtn").disabled)return;
+    editDialog("Create an independent event workspace",
+      '<p class="small muted">The current event is saved first. A new workspace is then prepared from its event-specific baseline, with clean order/trade/news activity. The prior event remains selectable in the Event Library.</p>'+
+      '<div class="field"><label for="evtNewName">New event name</label><input class="input" id="evtNewName" maxlength="120" required placeholder="e.g. Dalal Street 2027"></div>'+
+      '<div class="field" style="margin-top:12px"><label for="evtNewDescription">Description (optional)</label><textarea class="input" id="evtNewDescription" maxlength="500" rows="3" placeholder="Competition, class, date or round"></textarea></div>',
+      async function(back){
+        var name=back.querySelector("#evtNewName").value.trim();
+        var description=back.querySelector("#evtNewDescription").value.trim();
+        if(name.length<2){back.querySelector("#evtNewName").setCustomValidity("Enter a name with at least two characters.");back.querySelector("#evtNewName").reportValidity();return;}
+        back.querySelector("#evtNewName").setCustomValidity("");
+        var r=await runEventRegistryAction({title:"Create "+name+"?",text:"This saves the current event and resets the active workspace to a clean starting state. The operation is transactional; if any step fails, the current event remains intact.",confirmText:"Create event",typeWord:"CREATE"}, {action:"CREATE",event_name:name,description:description},"Created "+name+" and activated the new workspace.");
+        if(r)back.remove();
+      });
+  });
+  $("eventSwitchBtn").addEventListener("click",async function(){
+    var selected=eventSelected();if(!selected||$("eventSwitchBtn").disabled)return;
+    await runEventRegistryAction({title:"Switch to "+selected.event_name+"?",text:"The currently active event is saved, then the selected event’s complete saved data and settings become the active view across Event Admin, trading desks, accounts, orders, Market News and reports. Switching is blocked while either event is live.",confirmText:"Switch event",typeWord:"SWITCH"}, {action:"ACTIVATE",event_id:selected.id},"Switched active workspace to "+selected.event_name+".");
+  });
+  $("eventRenameBtn").addEventListener("click",function(){
+    var selected=eventSelected();if(!selected)return;
+    editDialog("Rename saved event",
+      '<div class="field"><label for="evtRenameName">Event name</label><input class="input" id="evtRenameName" maxlength="120" required value="'+esc(selected.event_name)+'"></div>'+
+      '<div class="field" style="margin-top:12px"><label for="evtRenameDescription">Description</label><textarea class="input" id="evtRenameDescription" maxlength="500" rows="3">'+esc(selected.description||"")+'</textarea></div>',
+      async function(back){
+        var name=back.querySelector("#evtRenameName").value.trim();
+        if(name.length<2){back.querySelector("#evtRenameName").setCustomValidity("Enter at least two characters.");back.querySelector("#evtRenameName").reportValidity();return;}
+        var r=await runEventRegistryAction({title:"Rename "+selected.event_name+"?",text:"The event identity in the library and its saved configuration will be updated. Trading data is not reset.",confirmText:"Rename event"}, {action:"RENAME",event_id:selected.id,event_name:name,description:back.querySelector("#evtRenameDescription").value.trim()},"Renamed event to "+name+".");
+        if(r)back.remove();
+      });
+  });
+  $("eventSaveBaselineBtn").addEventListener("click",async function(){
+    if($("eventSaveBaselineBtn").disabled)return;
+    await runEventRegistryAction({title:"Save this event’s starting baseline?",text:"Use this after setting the roster, broker assignments, securities/base prices, starting capital and IPO allotments. Future resets of this event will restore this saved baseline. Available only before the event starts.",confirmText:"Save baseline",typeWord:"SAVE"}, {action:"SAVE_BASELINE"},"Saved the current event-specific reset baseline.");
+  });
+  $("eventArchiveBtn").addEventListener("click",async function(){
+    var selected=eventSelected();if(!selected||$("eventArchiveBtn").disabled)return;
+    await runEventRegistryAction({title:"Archive "+selected.event_name+"?",text:"The event and its saved snapshot are retained, but it is hidden from normal event switching until restored. The active event cannot be archived.",confirmText:"Archive event",typeWord:"ARCHIVE"}, {action:"ARCHIVE",event_id:selected.id},"Archived "+selected.event_name+".");
+  });
+  $("eventRestoreArchiveBtn").addEventListener("click",async function(){
+    var selected=eventSelected();if(!selected||!selected.archived)return;
+    await runEventRegistryAction({title:"Restore "+selected.event_name+" to the event library?",text:"This removes the archived marker. Its saved snapshot remains unchanged until you switch to it.",confirmText:"Restore event"}, {action:"RESTORE_ARCHIVED",event_id:selected.id},"Restored "+selected.event_name+" to the library.");
+  });
+
+  // ---- independent operating gates ----
+  $("deskGateGrid").addEventListener("click",async function(ev){
+    var b=ev.target.closest?ev.target.closest("[data-gate]"):null;
+    if(!b||!S.admin)return;
+    var key=b.getAttribute("data-gate"),next=b.getAttribute("data-next")==="true";
+    var spec=DESK_GATES.find(function(x){return x.key===key;});
+    try{
+      var r=await confirmed({title:(next?"Open ":"Close ")+(spec?spec.title:key)+"?",text:next
+        ?"This enables this desk only. The overall event lifecycle must also permit the operation."
+        :"This disables this desk at the database level. Existing orders remain in place; close order intake separately if you only want to stop new orders.",confirmText:next?"Open desk":"Close desk",danger:!next},
+        "/api/event-controls",{action:"SET",[key]:next});
+      if(r){await loadDeskControls();JSE.toast((spec?spec.title:key)+(next?" opened.":" closed."),next?"good":"warn");}
+    }catch(e){JSE.toast(e.message||"Desk control update failed.","bad",8000);}
+  });
+  $("deskLockAll").addEventListener("click",async function(){
+    try{
+      var r=await confirmed({title:"Lock all operating desks?",text:"Closes new order intake, Pit Manager, Exchange, Bank, participant instructions and Market News. It does not reject or delete any existing order.",confirmText:"Lock all desks",danger:true,typeWord:"LOCK"},"/api/event-controls",{action:"LOCK_ALL"});
+      if(r){await loadDeskControls();JSE.toast("All desk gates are closed. Event data remains intact.","warn");}
+    }catch(e){JSE.toast(e.message||"Unable to lock all desks.","bad");}
+  });
+  $("deskOpenAll").addEventListener("click",async function(){
+    try{
+      var r=await confirmed({title:"Open all operating desks?",text:"Enables order intake, Pit, Exchange, Bank, participant instructions and Market News. The event still needs to be LIVE or in settlement-only mode for the corresponding actions to run.",confirmText:"Open all desks",typeWord:"OPEN"},"/api/event-controls",{action:"OPEN_ALL"});
+      if(r){await loadDeskControls();JSE.toast("All desk gates are open. Event lifecycle restrictions still apply.","good");}
+    }catch(e){JSE.toast(e.message||"Unable to open all desks.","bad");}
+  });
 
   var poller;
   JSE.page({ id: "admin" }).then(function (user) {
