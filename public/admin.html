@@ -6,7 +6,7 @@
 <title>Event Admin · JAIN STOCK EXCHANGE</title>
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/jse.css?v=325">
-<link rel="stylesheet" href="/assets/admin-advanced.css?v=20261026.9">
+<link rel="stylesheet" href="/assets/admin-advanced.css?v=20261026.10">
 <style>
   .controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .controls .btn { padding: 13px 10px; font-size: 12px; letter-spacing: .08em; font-weight: 800; text-transform: uppercase; }
@@ -2545,7 +2545,8 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var pages=[
     {id:"overview",title:"Live overview",nav:"OVERVIEW",description:"One screen for market health, event signals, key metrics and the next action.",tag:"LIVE MONITOR"},
     {id:"events",title:"Event lifecycle & control",nav:"EVENTS",description:"Create and switch event workspaces, manage the event lifecycle, and independently open or close the Pit, Exchange, Bank and order intake.",tag:"CONTROL ROOM"},
-    {id:"markets",title:"Market operations",nav:"MARKETS",description:"Publish Market News, inspect live market intelligence and review recorded market movement.",tag:"MARKET DESK"},
+    {id:"markets",title:"Market operations",nav:"MARKETS",description:"Publish Market News and control the market news workflow.",tag:"MARKET DESK"},
+    {id:"analytics",title:"Market intelligence",nav:"INTELLIGENCE",description:"Explore recorded price history, market breadth, order flow, participant performance, risk and settlement analytics.",tag:"LIVE QUANT DESK"},
     {id:"participants",title:"Participants & broker desks",nav:"PARTICIPANTS",description:"Manage the team roster, broker assignments, special participant account and imports.",tag:"PEOPLE & OPERATIONS"},
     {id:"ipo",title:"IPO issuance & allotment",nav:"IPO DESK",description:"Manage applications, allotments, issue sizes, company price imports and share issuance.",tag:"ISSUANCE DESK"},
     {id:"rules",title:"Rules, accounts & access",nav:"RULES & ACCESS",description:"Configure event rules, access accounts, institution naming and inventory controls.",tag:"POLICY & ACCESS"},
@@ -2555,14 +2556,14 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var targetWorkspace={
     cmdDashboard:"overview",
     eventRegistryPanel:"events",eventControl:"events",eventDeskControls:"events",
-    pricingMethodPanel:"pricing",pricingActivityPanel:"pricing",marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"markets",
+    pricingMethodPanel:"pricing",pricingActivityPanel:"pricing",marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"analytics",
     teamManagement:"participants",bigBullBox:"participants",rosterSection:"participants",brokerManagement:"participants",
     allotmentsSection:"ipo",ipoRandomBox:"ipo",companyBaseImportBox:"ipo",ipoIssueSizeBox:"ipo",
     configPanel:"rules",accountsPanel:"rules",namesPanel:"rules",institutionalInventoryPanel:"rules",
     journalSection:"governance",reconCard:"governance",reportsPanel:"governance"
   };
   var titleMap={
-    overview:"Overview",events:"Events",markets:"Markets",participants:"Participants",
+    overview:"Overview",events:"Events",markets:"Markets",analytics:"Intelligence",pricing:"Pricing Lab",participants:"Participants",
     ipo:"IPO Desk",rules:"Rules & Access",governance:"Audit & Reports",pricing:"Pricing Control Studio"
   };
   var subtitleMap={
@@ -2605,7 +2606,8 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   // Keep existing feature elements/IDs; only their presentation containers change.
   move(hero,"overview");move(kpis,"overview");move(consistency,"overview");move(dashboard,"overview");
   move($("eventRegistryPanel"),"events");move($("eventControl"),"events");
-  ["marketNewsSection","intelligence","advancedAnalytics"].forEach(function(id){move($(id),"markets");});
+  ["marketNewsSection","intelligence"].forEach(function(id){move($(id),"markets");});
+  move($("advancedAnalytics"),"analytics");
   ["pricingMethodPanel","pricingActivityPanel"].forEach(function(id){move($(id),"pricing");});
   ["teamManagement","bigBullBox","rosterSection","brokerManagement"].forEach(function(id){move($(id),"participants");});
   ["allotmentsSection","ipoRandomBox","companyBaseImportBox","ipoIssueSizeBox"].forEach(function(id){move($(id),"ipo");});
@@ -2616,7 +2618,8 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var quick=document.createElement("div");quick.className="cmd-side-info jse-overview-shortcuts";
   quick.innerHTML=
     '<button type="button" data-workspace-go="events"><span class="quick-icon">↗</span><span><b>Event controls</b><small>Start, pause, close or switch event</small></span><span class="quick-arrow">→</span></button>'+
-    '<button type="button" data-workspace-go="markets"><span class="quick-icon">⌁</span><span><b>Market operations</b><small>Publish news and read market signals</small></span><span class="quick-arrow">→</span></button>'+
+    '<button type="button" data-workspace-go="markets"><span class="quick-icon">⌁</span><span><b>Market operations</b><small>Publish news and review impact</small></span><span class="quick-arrow">→</span></button>'+
+    '<button type="button" data-workspace-go="analytics"><span class="quick-icon">⌁</span><span><b>Market intelligence</b><small>Charts, breadth, risk and settlements</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="pricing"><span class="quick-icon">↗</span><span><b>Pricing Control Studio</b><small>Select and activate your pricing model</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="participants"><span class="quick-icon">♧</span><span><b>Participants</b><small>Teams, brokers and roster imports</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="ipo"><span class="quick-icon">◎</span><span><b>IPO desk</b><small>Allotments and share issuance</small></span><span class="quick-arrow">→</span></button>'+
