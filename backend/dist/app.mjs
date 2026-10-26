@@ -9954,6 +9954,7 @@ DECLARE
   v_weights jsonb;
   v_ref numeric;
   v_move_cap numeric := 3;
+  v_event_cap numeric := 10;
   v_lookback integer;
   v_momentum numeric := 0;
   v_reversion numeric := 0;
@@ -9982,7 +9983,10 @@ BEGIN
   SELECT * INTO s FROM public.securities WHERE id=p_security;
   IF NOT FOUND OR s.price IS NULL OR s.price<=0 THEN RETURN 0; END IF;
   v_ref := greatest(0.01,coalesce(s.base_price,s.index_base_price,s.price));
-  v_move_cap := least(10,greatest(0.05,coalesce(nullif(v_cfg->>'max_move_per_trade_pct','')::numeric,0.75)));
+  SELECT coalesce(max_price_move_pct,10) INTO v_event_cap FROM public.event_config WHERE id=1;
+  v_move_cap := CASE WHEN p_news_pct IS NOT NULL
+    THEN least(10,greatest(0.05,coalesce(v_event_cap,10)))
+    ELSE least(10,greatest(0.05,coalesce(nullif(v_cfg->>'max_move_per_trade_pct','')::numeric,0.75))) END;
   v_lookback := least(20,greatest(2,coalesce(nullif(v_cfg->>'momentum_lookback','')::integer,5)));
   v_sign := CASE upper(coalesce(p_side,'')) WHEN 'BUY' THEN 1 WHEN 'SELL' THEN -1 ELSE sign(coalesce(p_news_pct,0)) END;
 
