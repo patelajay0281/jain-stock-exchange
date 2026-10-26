@@ -63,6 +63,52 @@ BEGIN
 END
 $function$;
 
+CREATE OR REPLACE FUNCTION public.jse__apply_news_price(
+  a jsonb,s public.securities,p_mood text,p_req numeric,p_new numeric,p_headline text
+) RETURNS jsonb LANGUAGE plpgsql AS $function$
+DECLARE
+  v_news bigint;
+  v_applied numeric;
+  v_headline text:=coalesce(p_headline,initcap(replace(p_mood,'_',' '))||' news on '||s.name);
+BEGIN
+  IF p_new IS NULL OR p_new<=0 THEN RAISE EXCEPTION 'Invalid news-driven price for %',s.symbol; END IF;
+  v_applied:=public.jse_pct(p_new,s.price);
+  INSERT INTO public.market_news(
+    security_id,mood,headline,requested_pct,applied_pct,previous_price,new_price,prior_previous,created_by,created_by_name
+  ) VALUES (
+    s.id,p_mood,v_headline,p_req,v_applied,s.price,p_new,s.previous_price,
+    nullif(a->>'id','')::integer,public.jse_actor_name(a)
+  ) RETURNING id INTO v_news;
+
+  UPDATE public.securities
+    SET previous_price=s.price,price=p_new,updated_at=now(),
+        last_price_change_at=CASE WHEN p_new<>s.price THEN clock_timestamp() ELSE last_price_change_at END
+    WHERE id=s.id;
+  IF p_new<>s.price THEN
+    INSERT INTO public.price_history(security_id,previous_price,new_price,change_pct,source,news_id)
+      VALUES(s.id,s.price,p_new,v_applied,'MARKET_NEWS',v_news);
+  END IF;
+  UPDATE public.event_control SET market_updated_at=now() WHERE id=1;
+  PERFORM public.jse_audit(
+    a,'MARKET_NEWS_PRICE_MOVE','security',s.symbol,NULL,NULL,
+    jsonb_build_object('price',s.price,'previous_price',s.previous_price),
+    jsonb_build_object('price',p_new,'previous_price',s.price),
+    jsonb_build_object('company',s.name,'symbol',s.symbol,'headline',v_headline,'severity',p_mood,
+      'requested_pct',p_req,'applied_pct',v_applied,'previous_price',s.price,'new_price',p_new,
+      'news_id',v_news,'stale_orders_rejected',0,'source','MARKET_NEWS')
+  );
+  PERFORM public.jse_journal(
+    'MARKET_NEWS',v_news,
+    s.symbol||' '||replace(p_mood,'_',' ')||' '||CASE WHEN v_applied>0 THEN '+' ELSE '' END||
+      to_char(v_applied,'FM990.00')||'% ('||public.jse_inr(s.price)||' → '||public.jse_inr(p_new)||')',
+    jsonb_build_object('news_id',v_news,'security_id',s.id,'stale_orders_rejected',0),a
+  );
+  RETURN jsonb_build_object('success',true,'news_id',v_news,'symbol',s.symbol,'name',s.name,'mood',p_mood,
+    'headline',v_headline,'requested_pct',p_req,'applied_pct',v_applied,'previous_price',s.price,
+    'new_price',p_new,'stale_orders',0,'price_changed',(p_new<>s.price),'source','MARKET_NEWS');
+END
+$function$;
+
 CREATE OR REPLACE FUNCTION public.jse__pricing_signal(
   p_security integer,
   p_side text DEFAULT NULL,
@@ -465,6 +511,31 @@ $function$;
 
 -- Integrate automatic repricing into completed trades. Price discovery changes the next quote only;
 -- the settled transaction keeps its original entered execution price and no open orders are rejected.
+-- Remove the stale-quote rejection branch: an order settles at its accepted entered price.
+-- Price discovery always changes the next quote, never re-prices or rejects existing orders.
+DO $patch_entered_price$
+DECLARE
+  v_fn text;
+  v_start integer;
+  v_end integer;
+  v_marker text := '  IF jse_price_out_of_band(o.price, s.price) AND p_source = ''BANK'' THEN';
+  v_end_marker text := '  IF NOT t.active THEN';
+BEGIN
+  v_fn:=pg_get_functiondef('public.jse__settle(jsonb,bigint,text)'::regprocedure);
+  v_start:=position(v_marker IN v_fn);
+  v_end:=position(v_end_marker IN v_fn);
+  IF v_start=0 AND position('PRICE_STALE' IN v_fn)=0 THEN RETURN; END IF;
+  IF v_start=0 OR v_end<=v_start THEN
+    IF position('PRICE_STALE' IN v_fn)=0 THEN RETURN; END IF;
+    RAISE EXCEPTION '037: unable to safely locate the settlement stale-price rejection block';
+  END IF;
+  v_fn:=substr(v_fn,1,v_start-1)||
+    '  -- Accepted order price is authoritative; a later quote change does not reject this trade.'||chr(10)||'  '||
+    substr(v_fn,v_end);
+  EXECUTE v_fn;
+END
+$patch_entered_price$;
+
 DO $patch_settlement$
 DECLARE
   v_fn text;
