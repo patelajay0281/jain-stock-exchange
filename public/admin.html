@@ -358,31 +358,20 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     <span id="jseSidebarEventStatus">Checking event state</span>
     <a href="#eventRegistryPanel" data-scroll="eventRegistryPanel">Manage events <span>↗</span></a>
   </div>
-  <nav class="jse-side-nav" aria-label="Admin sections">
-    <div class="jse-side-group-label">CONTROL ROOM</div>
-    <a class="jse-side-link is-active" href="#cmdDashboard" data-scroll="cmdDashboard" data-section-nav="cmdDashboard"><span class="jse-side-icon">◈</span><span class="jse-side-label">Live overview</span><span class="jse-side-number">01</span></a>
-    <a class="jse-side-link" href="#eventRegistryPanel" data-scroll="eventRegistryPanel" data-section-nav="eventRegistryPanel"><span class="jse-side-icon">▤</span><span class="jse-side-label">Event library</span><span class="jse-side-number">02</span></a>
-    <a class="jse-side-link" href="#eventControl" data-scroll="eventControl" data-section-nav="eventControl"><span class="jse-side-icon">⏵</span><span class="jse-side-label">Lifecycle & desks</span><span class="jse-side-number">03</span></a>
-    <div class="jse-side-group-label">MARKET OPERATIONS</div>
-    <a class="jse-side-link" href="#marketNewsSection" data-scroll="marketNewsSection" data-section-nav="marketNewsSection"><span class="jse-side-icon">↗</span><span class="jse-side-label">Market News</span></a>
-    <a class="jse-side-link" href="#advancedAnalytics" data-scroll="advancedAnalytics" data-section-nav="advancedAnalytics"><span class="jse-side-icon">⌁</span><span class="jse-side-label">Market intelligence</span></a>
-    <a class="jse-side-link" href="#pricingMethodPanel" data-scroll="pricingMethodPanel" data-section-nav="pricingMethodPanel"><span class="jse-side-icon">⧉</span><span class="jse-side-label">Pricing Control Studio</span><span class="jse-side-number">QUANT</span></a>
-    <a class="jse-side-link" href="#allotmentsSection" data-scroll="allotmentsSection" data-section-nav="allotmentsSection"><span class="jse-side-icon">◎</span><span class="jse-side-label">IPO allotments</span></a>
-    <a class="jse-side-link" href="#ipoRandomBox" data-scroll="ipoRandomBox" data-section-nav="ipoRandomBox"><span class="jse-side-icon">✳</span><span class="jse-side-label">IPO desk & draw</span></a>
-    <a class="jse-side-link" href="#companyBaseImportBox" data-scroll="companyBaseImportBox" data-section-nav="companyBaseImportBox"><span class="jse-side-icon">▦</span><span class="jse-side-label">Companies & prices</span></a>
-    <div class="jse-side-group-label">PEOPLE & ACCESS</div>
-    <a class="jse-side-link" href="#teamManagement" data-scroll="teamManagement" data-section-nav="teamManagement"><span class="jse-side-icon">♧</span><span class="jse-side-label">Teams</span></a>
-    <a class="jse-side-link" href="#rosterSection" data-scroll="rosterSection" data-section-nav="rosterSection"><span class="jse-side-icon">⇧</span><span class="jse-side-label">Roster & imports</span></a>
-    <a class="jse-side-link" href="#brokerManagement" data-scroll="brokerManagement" data-section-nav="brokerManagement"><span class="jse-side-icon">⌘</span><span class="jse-side-label">Broker desks</span></a>
-    <a class="jse-side-link" href="#accountsPanel" data-scroll="accountsPanel" data-section-nav="accountsPanel"><span class="jse-side-icon">♙</span><span class="jse-side-label">Accounts & access</span></a>
-    <a class="jse-side-link" href="#namesPanel" data-scroll="namesPanel" data-section-nav="namesPanel"><span class="jse-side-icon">✦</span><span class="jse-side-label">Team names</span></a>
-    <div class="jse-side-group-label">RULES & GOVERNANCE</div>
-    <a class="jse-side-link" href="#configPanel" data-scroll="configPanel" data-section-nav="configPanel"><span class="jse-side-icon">⚙</span><span class="jse-side-label">Rules & configuration</span></a>
-    <a class="jse-side-link" href="#reconCard" data-scroll="reconCard" data-section-nav="reconCard"><span class="jse-side-icon">✓</span><span class="jse-side-label">Reconciliation</span></a>
-    <a class="jse-side-link" href="#journalSection" data-scroll="journalSection" data-section-nav="journalSection"><span class="jse-side-icon">≋</span><span class="jse-side-label">Action journal</span></a>
-    <a class="jse-side-link" href="#reportsPanel" data-scroll="reportsPanel" data-section-nav="reportsPanel"><span class="jse-side-icon">⇩</span><span class="jse-side-label">Reports & exports</span></a>
-  </nav>
-  <div class="jse-sidebar-footer">
+  <nav class="jse-side-nav" aria-label="Admin workspaces">
+    <div class="jse-side-group-label">WORKSPACES</div>
+    <a class="jse-side-link is-active" href="#jseWorkspace-overview" data-workspace-go="overview" data-section-nav="cmdDashboard"><span class="jse-side-icon">⌂</span><span class="jse-side-label">Command centre</span></a>
+    <a class="jse-side-link" href="#jseWorkspace-events" data-workspace-go="events" data-section-nav="eventRegistryPanel"><span class="jse-side-icon">▦</span><span class="jse-side-label">Event controls</span></a>
+    <div class="jse-side-group-label">MARKET & STRATEGY</div>
+    <a class="jse-side-link" href="#jseWorkspace-markets" data-workspace-go="markets" data-section-nav="marketNewsSection"><span class="jse-side-icon">↗</span><span class="jse-side-label">Market operations</span></a>
+    <a class="jse-side-link" href="#jseWorkspace-analytics" data-workspace-go="analytics" data-section-nav="advancedAnalytics"><span class="jse-side-icon">⌁</span><span class="jse-side-label">Market intelligence</span></a>
+    <a class="jse-side-link" href="#jseWorkspace-pricing" data-workspace-go="pricing" data-section-nav="pricingMethodPanel"><span class="jse-side-icon">⧉</span><span class="jse-side-label">Pricing control studio</span></a>
+    <a class="jse-side-link" href="#jseWorkspace-ipo" data-workspace-go="ipo" data-section-nav="allotmentsSection"><span class="jse-side-icon">◎</span><span class="jse-side-label">IPO desk</span></a>
+    <div class="jse-side-group-label">PEOPLE & GOVERNANCE</div>
+    <a class="jse-side-link" href="#jseWorkspace-participants" data-workspace-go="participants" data-section-nav="teamManagement"><span class="jse-side-icon">♧</span><span class="jse-side-label">Participants & brokers</span></a>
+    <a class="jse-side-link" href="#jseWorkspace-rules" data-workspace-go="rules" data-section-nav="configPanel"><span class="jse-side-icon">⚙</span><span class="jse-side-label">Rules & access</span></a>
+    <a class="jse-side-link" href="#jseWorkspace-governance" data-workspace-go="governance" data-section-nav="journalSection"><span class="jse-side-icon">✓</span><span class="jse-side-label">Audit & reports</span></a>
+  </nav> <div class="jse-sidebar-footer">
     <div class="jse-footer-signal"><i></i><span class="jse-side-label">Trading engine ready</span></div>
     <div class="jse-side-footer-copy">JSE EVENT CONTROL <b>v4.0</b></div>
   </div>
