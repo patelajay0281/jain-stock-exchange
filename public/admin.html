@@ -345,7 +345,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 
 
 
-<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.14">
+<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.15">
 </head>
 <body class="admin-command-page">
 <aside id="jseAdminSidebar" aria-label="Event Admin primary navigation">
@@ -2445,34 +2445,75 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 (function(){
   "use strict";
   var body=document.body;
-  var theme=document.getElementById("jseThemeSelect"),density=document.getElementById("jseDensitySelect"),box=document.getElementById("jseBoxStyleSelect");
-  var accent=document.getElementById("jseAccentColor"),surface=document.getElementById("jseSurfaceColor"),reset=document.getElementById("jseAppearanceReset");
+  var theme=document.getElementById("jseThemeSelect");
+  var density=document.getElementById("jseDensitySelect");
+  var box=document.getElementById("jseBoxStyleSelect");
+  var accent=document.getElementById("jseAccentColor");
+  var surface=document.getElementById("jseSurfaceColor");
+  var reset=document.getElementById("jseAppearanceReset");
   if(!theme||!density||!box)return;
-  var defaults={theme:"ocean",density:"comfortable",box:"soft",accent:"#167f91",surface:"#ffffff"};
-  function read(key){try{return localStorage.getItem("jse-admin-"+key)||defaults[key];}catch(e){return defaults[key];}}
-  function save(key,value){try{localStorage.setItem("jse-admin-"+key,value);}catch(e){}}
+
+  /* v2 deliberately clears the previous broken fixed-colour overrides. */
+  var prefix="jse-admin-v2-";
+  var defaults={theme:"royal",density:"compact",box:"soft",accent:"",surface:""};
+  var controls={theme:theme,density:density,box:box,accent:accent,surface:surface};
+  function read(key){
+    try{var value=localStorage.getItem(prefix+key);return value===null?defaults[key]:value;}
+    catch(e){return defaults[key];}
+  }
+  function save(key,value){try{localStorage.setItem(prefix+key,value==null?"":value);}catch(e){}}
+  function colourValue(key){
+    var token=key==="accent"?"--jse-ctl-accent":"--jse-ctl-surface";
+    var value=window.getComputedStyle(body).getPropertyValue(token).trim();
+    if(/^#[0-9a-f]{6}$/i.test(value))return value;
+    var fallback=key==="accent"?"#315cc9":"#ffffff";
+    var probe=document.createElement("span");
+    probe.style.color=value||fallback;probe.style.display="none";
+    body.appendChild(probe);
+    var computed=window.getComputedStyle(probe).color;
+    probe.remove();
+    var m=computed.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if(m)return "#"+[m[1],m[2],m[3]].map(function(n){return Number(n).toString(16).padStart(2,"0");}).join("");
+    return fallback;
+  }
+  function syncPicker(key,select){
+    if(select)select.value=colourValue(key);
+  }
   function apply(key,value,select){
-    var allowed=select?Array.prototype.map.call(select.options,function(o){return o.value;}):[];
-    if(select&&allowed.indexOf(value)<0)value=defaults[key];
     if(key==="accent"||key==="surface"){
-      if(!/^#[0-9a-f]{6}$/i.test(value))value=defaults[key];
-      body.style.setProperty(key==="accent"?"--jse-user-accent":"--jse-user-surface",value);
-      if(select)select.value=value;
+      value=String(value||"").trim();
+      if(value&&!/^#[0-9a-f]{6}$/i.test(value))value="";
+      var prop=key==="accent"?"--jse-user-accent":"--jse-user-surface";
+      if(value)body.style.setProperty(prop,value);
+      else body.style.removeProperty(prop);
+      if(select)select.value=colourValue(key);
     }else{
-      body.setAttribute("data-jse-"+(key==="box"?"box":key),value);
+      var values=select?Array.prototype.map.call(select.options,function(o){return o.value;}):[];
+      if(select&&values.indexOf(value)<0)value=defaults[key];
+      body.setAttribute("data-jse-"+key,value);
       if(select)select.value=value;
     }
     save(key,value);
   }
-  apply("theme",read("theme"),theme);apply("density",read("density"),density);apply("box",read("box"),box);
-  if(accent)apply("accent",read("accent"),accent);if(surface)apply("surface",read("surface"),surface);
-  theme.addEventListener("change",function(){apply("theme",theme.value,theme);});
+
+  apply("theme",read("theme"),theme);
+  apply("density",read("density"),density);
+  apply("box",read("box"),box);
+  apply("accent",read("accent"),accent);
+  apply("surface",read("surface"),surface);
+
+  theme.addEventListener("change",function(){
+    apply("theme",theme.value,theme);
+    /* A named theme resets custom overrides; a custom colour can then be picked again. */
+    apply("accent","",accent);apply("surface","",surface);
+  });
   density.addEventListener("change",function(){apply("density",density.value,density);});
   box.addEventListener("change",function(){apply("box",box.value,box);});
   if(accent)accent.addEventListener("input",function(){apply("accent",accent.value,accent);});
   if(surface)surface.addEventListener("input",function(){apply("surface",surface.value,surface);});
   if(reset)reset.addEventListener("click",function(){
-    Object.keys(defaults).forEach(function(k){apply(k,defaults[k],({theme:theme,density:density,box:box,accent:accent,surface:surface})[k]);});
+    Object.keys(defaults).forEach(function(key){apply(key,defaults[key],controls[key]);});
+    apply("accent","",accent);apply("surface","",surface);
   });
 })();
 </script>
