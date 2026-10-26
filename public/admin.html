@@ -2675,7 +2675,45 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     '<button type="button" data-workspace-go="rules"><span class="quick-icon">⚙</span><span><b>Rules & access</b><small>Configuration and accounts</small></span><span class="quick-arrow">→</span></button>'+
     '<button type="button" data-workspace-go="governance"><span class="quick-icon">✓</span><span><b>Audit & reports</b><small>Reconciliation and final exports</small></span><span class="quick-arrow">→</span></button>';
   var overviewGrid=pagesById.overview.grid;
-  overviewGrid.appendChild(quick);
+  /* Structural overview: a primary live-operations column and a dedicated action rail.
+     Existing feature nodes and IDs are moved, not cloned, so their event handlers remain attached. */
+  var overviewLayout=document.createElement("div");
+  overviewLayout.className="jse-overview-layout";
+  overviewLayout.setAttribute("data-admin-layout","overview-split");
+  var overviewMain=document.createElement("div");
+  overviewMain.className="jse-overview-main";
+  var overviewRail=document.createElement("aside");
+  overviewRail.className="jse-overview-rail";
+  overviewRail.setAttribute("aria-label","Event status and quick actions");
+  var railHeading=document.createElement("div");
+  railHeading.className="jse-rail-heading";
+  railHeading.innerHTML='<span>CONTROL SHORTCUTS</span><h3>Move the event forward</h3><p>Jump directly to the workspace you need.</p>';
+  var healthHeading=document.createElement("div");
+  healthHeading.className="jse-rail-heading jse-health-heading";
+  healthHeading.innerHTML='<span>LIVE CHECKS</span><h3>Event health</h3><p>Current system and market consistency signals.</p>';
+  overviewGrid.appendChild(overviewLayout);
+  overviewLayout.appendChild(overviewMain);
+  overviewLayout.appendChild(overviewRail);
+  if(hero)overviewMain.appendChild(hero);
+  if(kpis)overviewMain.appendChild(kpis);
+  if(dashboard)overviewMain.appendChild(dashboard);
+  if(consistency){
+    var healthCard=document.createElement("section");
+    healthCard.className="jse-health-card";
+    healthCard.appendChild(healthHeading);
+    healthCard.appendChild(consistency);
+    overviewRail.appendChild(healthCard);
+  }
+  var shortcutCard=document.createElement("section");
+  shortcutCard.className="jse-shortcut-card";
+  shortcutCard.appendChild(railHeading);
+  shortcutCard.appendChild(quick);
+  overviewRail.appendChild(shortcutCard);
+  /* A compact live context strip is separate from the functional controls. */
+  var contextStrip=document.createElement("div");
+  contextStrip.className="jse-workspace-context-strip";
+  contextStrip.innerHTML='<span class="jse-context-mark"></span><div><b>EVENT OPERATIONS</b><small>One control surface · nine dedicated workspaces</small></div><span class="jse-context-separator"></span><span class="jse-context-tag">PROTECTED ADMIN ACTIONS</span>';
+  if(head&&head.parentNode)head.insertAdjacentElement("afterend",contextStrip);
   // Place the quick-launch panel under the other overview modules; don't append a second nav wall.
   if(toolbar&&toolbar.parentNode)toolbar.insertAdjacentElement("afterend",tabs);
   if(tabs.parentNode)tabs.insertAdjacentElement("afterend",host);
@@ -2799,7 +2837,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var initialTarget=location.hash?decodeURIComponent(location.hash.slice(1)):"";
   if(initialTarget&&$(initialTarget))setActive(targetWorkspace[initialTarget]||"overview",initialTarget,false);
   else if(initialTarget.indexOf("jseWorkspace-")===0&&pagesById[initialTarget.slice("jseWorkspace-".length)])setActive(initialTarget.slice("jseWorkspace-".length),null,false);
-  else setActive("pricing",null,false);
+  else setActive("overview",null,false);
 })();
 </script>
 
