@@ -2236,6 +2236,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 (function(){
   "use strict";
   var $=function(id){return document.getElementById(id);};
+  var F=JSE.fmt,esc=JSE.esc;
   var models=[
     {id:"MANUAL",name:"Manual",desc:"Administrator-set quotes"},
     {id:"NEWS_DRIVEN",name:"News-driven",desc:"Sentiment and severity"},
