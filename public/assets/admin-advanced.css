@@ -919,7 +919,7 @@ body.admin-command-page .jse-appearance-bar label>span{font-size:9px!important;l
 body.admin-command-page .jse-appearance-bar select{min-height:34px!important;max-width:145px!important;border:1px solid #dfe6f0!important;border-radius:8px!important;background:#fbfcfe!important;color:#344760!important;font-size:10px!important}
 body.admin-command-page .jse-custom-color-control input{width:36px!important;height:34px!important;padding:3px!important;border:1px solid #dfe6f0!important;border-radius:8px!important;background:#fff!important}
 body.admin-command-page #jseAppearanceReset{min-height:34px!important;border-radius:8px!important;border:1px solid #dfe6f0!important;background:#fff!important;color:#53647d!important;font-size:10px!important;white-space:nowrap!important}
-body.admin-command-page #cmdNav{display:none!important}
+body.admin-command-page #cmdNav{display:flex!important}
 body.admin-command-page #jseWorkspaceTabs{display:grid!important;grid-template-columns:repeat(9,minmax(0,1fr))!important;gap:6px!important;margin:0 0 24px!important;padding:6px!important;border:1px solid #e1e8f1!important;border-radius:14px!important;background:#eaf0f7!important;position:sticky!important;top:8px!important;z-index:30!important;box-shadow:0 5px 16px rgba(24,46,78,.05)!important}
 body.admin-command-page .jse-workspace-tab{display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-width:0!important;min-height:40px!important;padding:8px 9px!important;border:1px solid transparent!important;border-radius:9px!important;background:transparent!important;color:#6a7a91!important;font-size:10px!important;font-weight:800!important;letter-spacing:.025em!important;white-space:normal!important;line-height:1.25!important;box-shadow:none!important}
 body.admin-command-page .jse-workspace-tab:hover{background:rgba(255,255,255,.7)!important;color:#28456f!important}
@@ -993,3 +993,10 @@ body.admin-command-page.jse-side-collapsed .jse-side-link{justify-content:center
 /* Sidebar is the single source of workspace navigation; avoid duplicating it in a second tab bar. */
 body.admin-command-page #jseWorkspaceTabs{display:none!important}
 body.admin-command-page #jseWorkspaceHost{padding-top:2px!important}
+
+/* FINAL CASCADE: this file is loaded after the legacy inline theme blocks. */
+body.admin-command-page #cmdNav{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important}
+body.admin-command-page #cmdNav button[data-scroll],body.admin-command-page #cmdNav .cmd-nav-label{display:none!important}
+body.admin-command-page #cmdNav .cmd-quick-jump{display:flex!important;flex:1 1 240px!important;min-width:220px!important}
+body.admin-command-page #cmdNav #adminQuickFind{width:min(360px,100%)!important;max-width:none!important}
+body.admin-command-page #cmdNav #cmdRefresh{margin-left:auto!important}
