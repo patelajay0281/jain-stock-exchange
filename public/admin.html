@@ -575,6 +575,21 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
           <label class="jse-pricing-number" for="pricingMaxMove"><span><strong>Maximum move per trade</strong><small>Hard-capped by the event’s existing price-band rule.</small></span><span class="jse-number-unit"><input class="input admin-only" id="pricingMaxMove" type="number" min="0.05" max="10" step="0.05" value="0.75"><b>%</b></span></label>
         </div>
 
+        <div class="jse-pricing-sectionline"><div><strong>Price-impact simulator</strong><span>Test the saved active model against a sample security and trade without changing the live market.</span></div><span class="jse-count-chip">Preview only</span></div>
+        <div class="jse-pricing-preview">
+          <div class="jse-preview-inputs">
+            <label for="pricingPreviewSymbol">Listed security<select class="input admin-only" id="pricingPreviewSymbol"><option value="">Loading listed securities…</option></select></label>
+            <label for="pricingPreviewSide">Sample trade side<select class="input" id="pricingPreviewSide"><option value="BUY">Buy pressure</option><option value="SELL">Sell pressure</option></select></label>
+            <label for="pricingPreviewQuantity">Sample quantity<input class="input" id="pricingPreviewQuantity" type="number" min="1" max="10000000" step="50" value="50"></label>
+            <label for="pricingPreviewNewsPct">Sample news impact %<input class="input" id="pricingPreviewNewsPct" type="number" min="-10" max="10" step="0.25" value="2"></label>
+            <button class="btn primary" id="pricingPreviewRun" type="button">Preview price impact ↗</button>
+          </div>
+          <div class="jse-preview-result" id="pricingPreviewOutput" aria-live="polite">
+            <div class="jse-preview-result-mark">↗</div><div class="jse-preview-result-copy"><strong id="pricingPreviewHeadline">Ready to simulate</strong><small id="pricingPreviewDetail">Choose a listed stock and preview the active model. No trade or price will be changed.</small></div>
+          </div>
+          <p class="jse-preview-disclaimer">Uses the currently saved active method and saved model settings. Save &amp; activate first to test unsaved changes. The preview never writes prices, orders, holdings or ledgers.</p>
+        </div>
+
         <details class="jse-pricing-advanced">
           <summary><span><strong>Advanced model tuning</strong><small>Trend window, reversion strength, sector correlation, volatility multiplier and hybrid weights.</small></span><span class="jse-details-chevron">＋</span></summary>
           <div class="jse-pricing-advanced-grid">
@@ -2344,16 +2359,43 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     }
   }
   async function refreshManualSecurities(){
-    var source=$("nSec"),target=$("manualPriceSymbol");
-    if(!source||!target||!source.options.length)return;
-    var previous=target.value;
-    target.innerHTML="";
-    Array.prototype.forEach.call(source.options,function(o,i){
-      if(i===0||!o.value)return;
-      target.add(new Option(o.text,o.value));
+    var source=$("nSec"),targets=[$("manualPriceSymbol"),$("pricingPreviewSymbol")].filter(Boolean);
+    if(!source||!source.options.length)return;
+    targets.forEach(function(target){
+      var previous=target.value;
+      target.innerHTML="";
+      Array.prototype.forEach.call(source.options,function(o,i){
+        if(i===0||!o.value)return;
+        target.add(new Option(o.text,o.value));
+      });
+      if(!target.options.length)target.add(new Option("No listed securities",""));
+      if(previous)target.value=previous;
     });
-    if(!target.options.length)target.add(new Option("No listed securities",""));
-    if(previous)target.value=previous;
+  }
+  function previewMessage(headline,detail,kind){
+    $("pricingPreviewHeadline").textContent=headline;
+    $("pricingPreviewDetail").textContent=detail;
+    var out=$("pricingPreviewOutput");if(out)out.setAttribute("data-state",kind||"neutral");
+  }
+  async function runPricingPreview(){
+    var symbolEl=$("pricingPreviewSymbol"),symbol=symbolEl&&symbolEl.options[symbolEl.selectedIndex]&&symbolEl.options[symbolEl.selectedIndex].text||"";
+    var symbol=symbol.split(" — ")[0].trim().split(" · ")[0].trim();
+    var side=$("pricingPreviewSide").value,quantity=Number($("pricingPreviewQuantity").value),newsPct=Number($("pricingPreviewNewsPct").value||0);
+    if(!symbol){previewMessage("Select a listed security","The market security list has not loaded yet.","error");return;}
+    if(!Number.isInteger(quantity)||quantity<1||quantity>10000000){previewMessage("Invalid sample quantity","Enter a positive whole-number quantity.","error");return;}
+    if(!Number.isFinite(newsPct)||newsPct< -10||newsPct>10){previewMessage("Invalid sample news impact","Use a value between −10% and +10%.","error");return;}
+    var btn=$("pricingPreviewRun"),prior=btn.textContent;btn.disabled=true;btn.textContent="Calculating…";
+    try{
+      var r=await JSE.api.get("/api/pricing-preview",{symbol:symbol,side:side,quantity:quantity,news_pct:newsPct});
+      var fmt= function(v){return F.money(Number(v)||0);};
+      var move=Number(r.actual_move_pct)||0;
+      var sign=move>0?"+":"";
+      var headline=(r.symbol||symbol)+" · "+fmt(r.current_price)+" → "+fmt(r.indicative_price);
+      var detail=(r.pricing_method||"Active model").replace(/_/g," ")+" · proposed "+sign+(Number(r.proposed_move_pct)||0).toFixed(2)+"% signal · quote band ±"+Number(r.event_cap||0).toFixed(2)+"%";
+      if(r.note)detail+=" · "+r.note;
+      previewMessage(headline,detail,!r.pricing_enabled||!r.method_enabled?"warning":move<0?"negative":move>0?"positive":"neutral");
+    }catch(e){previewMessage("Preview unavailable",e.message||"Could not calculate a price preview.","error");}
+    finally{btn.disabled=false;btn.textContent=prior;}
   }
   async function load(){
     try{
@@ -2418,6 +2460,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       JSE.toast("Pricing setup was not saved: "+(e.message||"Request failed"),"bad",6500);
     }finally{apply.disabled=false;apply.textContent=prior;}
   });
+  var previewButton=$("pricingPreviewRun");if(previewButton)previewButton.addEventListener("click",runPricingPreview);
   $("manualPriceApply").addEventListener("click",async function(){
     var symbol=$("manualPriceSymbol").value,price=number("manualPriceValue",0);
     if(!symbol||!Number.isInteger(price)||price<=0){show("Choose a listed security and enter a positive whole-number price.","error");return;}
