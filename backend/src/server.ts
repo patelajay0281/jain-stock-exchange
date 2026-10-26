@@ -452,6 +452,14 @@ post("/api/event-controls", async (ctx) => {
   need(ctx, "ADMIN");
   return mutate(ctx, "jse_event_controls", ctx.body || {});
 });
+get("/api/pricing-method", async (ctx) => {
+  need(ctx, "ADMIN", "VIEWER");
+  return json(ctx, await call("jse_pricing_method", actor(ctx), { action: "STATE" }));
+});
+post("/api/pricing-method", async (ctx) => {
+  need(ctx, "ADMIN");
+  return mutate(ctx, "jse_pricing_method", ctx.body || {});
+});
 
 get("/api/admin-state", async (ctx) => {
   const u = need(ctx, "ADMIN", "VIEWER");
