@@ -846,3 +846,38 @@ body.admin-command-page[data-jse-box="elevated"] .jse-workspace-grid>.jse-price-
  body.admin-command-page .jse-side-link.is-active:after{display:none!important}
 }
 @media(prefers-reduced-motion:reduce){body.admin-command-page #jseAdminSidebar *,body.admin-command-page .jse-workspace-page *{transition:none!important;animation:none!important}}
+
+
+/* Final readability pass: compact means less padding, never tiny labels. */
+body.admin-command-page .jse-side-link{font-size:10px!important;min-height:36px!important}
+body.admin-command-page .jse-side-group-label{font-size:8px!important}
+body.admin-command-page .jse-brand-copy strong{font-size:9.5px!important}
+body.admin-command-page .jse-workspace-heading .jse-workspace-title{font-size:25px!important}
+body.admin-command-page .jse-workspace-heading .jse-workspace-description{font-size:11px!important}
+body.admin-command-page .jse-workspace-heading .jse-workspace-status{font-size:9px!important}
+body.admin-command-page .jse-workspace-grid>.card>.card-h h2,
+body.admin-command-page .jse-workspace-grid>.card>.card-h h3,
+body.admin-command-page .jse-workspace-grid .adv-head h2,
+body.admin-command-page .jse-workspace-grid .adv-card-head h3,
+body.admin-command-page .jse-workspace-grid .jse-price-activity-head h2{font-size:13px!important}
+body.admin-command-page .jse-workspace-grid .field label,
+body.admin-command-page .jse-workspace-grid .label{font-size:9px!important}
+body.admin-command-page .jse-workspace-grid table.t th{font-size:8px!important;padding:9px 10px!important}
+body.admin-command-page .jse-workspace-grid table.t td{font-size:10px!important;padding:9px 10px!important}
+body.admin-command-page .jse-workspace-grid .btn{font-size:9px!important}
+body.admin-command-page .jse-workspace-grid .jse-pricing-header h2{font-size:19px!important}
+body.admin-command-page #jseWorkspace-pricing #pricingMethodPanel .jse-model-copy strong{font-size:10px!important}
+body.admin-command-page #jseWorkspace-pricing #pricingMethodPanel .jse-model-copy small{font-size:9px!important}
+body.admin-command-page #jseWorkspace-analytics #advancedAnalytics .adv-card-head h3{font-size:12px!important}
+body.admin-command-page #jseWorkspace-analytics #advancedAnalytics .adv-head p{font-size:10px!important}
+body.admin-command-page .hd-right .tb-btn,body.admin-command-page .hd-in .tb-btn{font-size:9px!important}
+body.admin-command-page .nav-in a{font-size:9px!important}
+body.admin-command-page #cmdNav #adminQuickFind{font-size:10px!important}
+@media(max-width:1120px){
+ body.admin-command-page .jse-workspace-heading .jse-workspace-title{font-size:22px!important}
+ body.admin-command-page .nav-in a{font-size:8px!important}
+}
+@media(max-width:620px){
+ body.admin-command-page .jse-side-link{font-size:10px!important}
+ body.admin-command-page .jse-workspace-heading .jse-workspace-title{font-size:20px!important}
+}
