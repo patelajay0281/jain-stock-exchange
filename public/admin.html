@@ -2664,6 +2664,45 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   ["journalSection","reconCard","reportsPanel"].forEach(function(id){move($(id),"governance");});
   if(oldGrid&&oldGrid.parentNode)oldGrid.remove();
 
+  /* Second-pass structural composition: every operational workspace gets a deliberate
+     primary/secondary information hierarchy instead of a long stack of full-width cards. */
+  var workspaceComposition={
+    events:{primary:["eventRegistryPanel","eventControl"],secondary:[]},
+    markets:{primary:["marketNewsSection"],secondary:["intelligence"]},
+    analytics:{primary:["advancedAnalytics"],secondary:[]},
+    pricing:{primary:["pricingMethodPanel"],secondary:["pricingActivityPanel"]},
+    participants:{primary:["teamManagement","rosterSection"],secondary:["bigBullBox","brokerManagement"]},
+    ipo:{primary:["allotmentsSection","ipoRandomBox"],secondary:["companyBaseImportBox","ipoIssueSizeBox"]},
+    rules:{primary:["configPanel","namesPanel"],secondary:["accountsPanel","institutionalInventoryPanel"]},
+    governance:{primary:["journalSection","reconCard"],secondary:["reportsPanel"]}
+  };
+  Object.keys(workspaceComposition).forEach(function(workspaceId){
+    var record=pagesById[workspaceId],spec=workspaceComposition[workspaceId];
+    if(!record)return;
+    var original=record.grid;
+    var layout=document.createElement("div");layout.className="jse-operations-layout jse-layout-"+workspaceId;
+    var primary=document.createElement("div");primary.className="jse-operations-primary";
+    var secondary=document.createElement("aside");secondary.className="jse-operations-secondary";
+    secondary.setAttribute("aria-label",record.meta.title+" secondary controls");
+    var primaryLabel=document.createElement("div");primaryLabel.className="jse-column-label";
+    primaryLabel.innerHTML='<span>01</span><b>MAIN WORKFLOW</b>';
+    var secondaryLabel=document.createElement("div");secondaryLabel.className="jse-column-label";
+    secondaryLabel.innerHTML='<span>02</span><b>SUPPORTING CONTROLS</b>';
+    primary.appendChild(primaryLabel);secondary.appendChild(secondaryLabel);
+    var assigned={};
+    spec.primary.concat(spec.secondary).forEach(function(id){assigned[id]=true;});
+    Array.prototype.slice.call(original.children).forEach(function(node){
+      if(node.matches&&node.matches("[data-admin-layout]"))return;
+      if(node.id&&assigned[node.id])return;
+      primary.appendChild(node);
+    });
+    spec.primary.forEach(function(id){var node=$(id);if(node)primary.appendChild(node);});
+    spec.secondary.forEach(function(id){var node=$(id);if(node)secondary.appendChild(node);});
+    if(!spec.secondary.length){secondary.hidden=true;layout.classList.add("is-single-column");}
+    layout.appendChild(primary);layout.appendChild(secondary);
+    original.appendChild(layout);
+  });
+
   var quick=document.createElement("div");quick.className="cmd-side-info jse-overview-shortcuts";
   quick.innerHTML=
     '<button type="button" data-workspace-go="events"><span class="quick-icon">↗</span><span><b>Event controls</b><small>Start, pause, close or switch event</small></span><span class="quick-arrow">→</span></button>'+
