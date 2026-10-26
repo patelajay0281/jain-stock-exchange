@@ -610,6 +610,14 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       </div>
     </section>
 
+    <section class="card jse-price-activity" id="pricingActivityPanel">
+      <div class="card-h bar jse-price-activity-head"><div><span class="jse-section-eyebrow">JSE / LIVE TAPE</span><h2>Price movement activity</h2><p>Recent quotes changed by the active model, Market News or an administrator override.</p></div><div class="jse-price-activity-actions"><span id="pricingActivityMeta">Loading price history…</span><button class="btn sm" id="pricingActivityRefresh" type="button">↻ Refresh</button></div></div>
+      <div class="card-b">
+        <div class="table-wrap jse-price-activity-table"><table class="t"><thead><tr><th>Time</th><th>Security</th><th>Source / model</th><th class="num">Before</th><th class="num">After</th><th class="num">Move</th><th>Trade reference</th></tr></thead><tbody id="pricingActivityRows"><tr><td colspan="7" class="empty">Loading recorded price movements…</td></tr></tbody></table></div>
+        <p class="jse-activity-footnote">Automatic pricing updates the next quote only. Existing orders keep their entered price and are not rejected solely because the quote changed.</p>
+      </div>
+    </section>
+
     <section class="card" id="marketNewsSection">
       <div class="card-h bar"><h2>Market News</h2><span class="meta">Admin only · company news price band ±15% of base price</span></div>
       <div class="card-b">
@@ -2307,6 +2315,32 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
     $("weightVolatility").value=c.hybrid_weights.VOLATILITY;
     $("weightScenario").value=c.hybrid_weights.SCENARIO;
   }
+  async function loadPricingActivity(){
+    var tbody=$("pricingActivityRows"),meta=$("pricingActivityMeta");
+    if(!tbody)return;
+    try{
+      var r=await JSE.api.get("/api/pricing-activity",{limit:30});
+      var rows=r.rows||[];
+      if(meta)meta.textContent=rows.length+" recent movements";
+      if(!rows.length){tbody.innerHTML='<tr><td colspan="7" class="empty">No price movements recorded for this event yet.</td></tr>';return;}
+      tbody.innerHTML=rows.map(function(x){
+        var source=String(x.source||"").replace(/^AUTO_/,"AUTO · ").replace(/_/g," ");
+        var isAuto=String(x.source||"").indexOf("AUTO_")===0;
+        var type=isAuto?"auto":x.source==="MARKET_NEWS"?"news":"manual";
+        var ref=x.order_id?"Order #"+x.order_id:(x.settlement_id?"Settlement #"+x.settlement_id:"—");
+        return '<tr><td class="nowrap">'+F.time(x.created_at)+'</td>'+
+          '<td><b>'+esc(x.symbol||"—")+'</b><span class="sub">'+esc(x.name||"")+'</span></td>'+
+          '<td><span class="jse-source-chip '+type+'">'+esc(source||"PRICE MOVE")+'</span></td>'+
+          '<td class="num">'+F.price(x.previous_price)+'</td>'+
+          '<td class="num"><b>'+F.price(x.new_price)+'</b></td>'+
+          '<td class="num '+F.dir(x.change_pct)+'"><b>'+F.pct(x.change_pct)+'</b></td>'+
+          '<td class="small">'+esc(ref)+'</td></tr>';
+      }).join("");
+    }catch(e){
+      if(meta)meta.textContent="Price activity unavailable";
+      tbody.innerHTML='<tr><td colspan="7" class="empty">Cannot load price activity: '+esc(e.message||"API error")+'</td></tr>';
+    }
+  }
   async function refreshManualSecurities(){
     var source=$("nSec"),target=$("manualPriceSymbol");
     if(!source||!target||!source.options.length)return;
@@ -2333,6 +2367,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       apply.disabled=!r.event_id;
       renderOptions();
       refreshManualSecurities();
+      loadPricingActivity();
       show("Loaded saved pricing setup for "+(r.event_name||"the active event")+".","good");
     }catch(e){
       $("pricingEngineStatus").classList.add("is-paused");
@@ -2375,6 +2410,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       renderOptions();
       show(r.message||"Pricing configuration saved.","good");
       JSE.toast(r.message||"Pricing configuration saved.","good",5000);
+      loadPricingActivity();
     }catch(e){
       show("Pricing setup was not saved: "+(e.message||"Request failed"),"error");
       JSE.toast("Pricing setup was not saved: "+(e.message||"Request failed"),"bad",6500);
@@ -2393,6 +2429,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
       show(r.message||"Manual price updated.","good");
       if(JSE.toast)JSE.toast(r.message||"Manual price updated.","good",5000);
       document.dispatchEvent(new CustomEvent("jse:pricing-price-updated",{detail:r}));
+      await loadPricingActivity();
     }catch(e){
       show("Manual price was not changed: "+(e.message||"Request failed"),"error");
     }finally{this.disabled=false;this.textContent=prior;}
@@ -2401,7 +2438,9 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   if(nSec&&window.MutationObserver)new MutationObserver(refreshManualSecurities).observe(nSec,{childList:true,subtree:true});
   document.addEventListener("DOMContentLoaded",load);
   if(document.readyState!=="loading")load();
-  window.addEventListener("jse:event-activated",function(){load().catch(function(){});});
+  var activityRefresh=$("pricingActivityRefresh");if(activityRefresh)activityRefresh.addEventListener("click",loadPricingActivity);
+  if(JSE.poll)JSE.poll(loadPricingActivity,15000,{onError:function(){var meta=$("pricingActivityMeta");if(meta)meta.textContent="Reconnecting…";}});
+  window.addEventListener("jse:event-activated",function(){load().catch(function(){});loadPricingActivity().catch(function(){});});
   window.addEventListener("focus",function(){if(currentEvent)refreshManualSecurities();});
 })();
 </script>
@@ -2513,7 +2552,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   var targetWorkspace={
     cmdDashboard:"overview",
     eventRegistryPanel:"events",eventControl:"events",eventDeskControls:"events",
-    pricingMethodPanel:"markets",marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"markets",
+    pricingMethodPanel:"markets",pricingActivityPanel:"markets",marketNewsSection:"markets",intelligence:"markets",advancedAnalytics:"markets",
     teamManagement:"participants",bigBullBox:"participants",rosterSection:"participants",brokerManagement:"participants",
     allotmentsSection:"ipo",ipoRandomBox:"ipo",companyBaseImportBox:"ipo",ipoIssueSizeBox:"ipo",
     configPanel:"rules",accountsPanel:"rules",namesPanel:"rules",institutionalInventoryPanel:"rules",
