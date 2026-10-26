@@ -562,3 +562,36 @@ body.admin-command-page{
  body.admin-command-page .jse-custom-color-control{width:54px!important}
  body.admin-command-page .jse-custom-color-control input{width:54px!important}
 }
+
+
+/* Ensure non-.card workspace sections also react to the live panel-surface picker. */
+body.admin-command-page .jse-workspace-grid>#eventRegistryPanel,
+body.admin-command-page .jse-workspace-grid>#eventControl,
+body.admin-command-page .jse-workspace-grid>#marketNewsSection,
+body.admin-command-page .jse-workspace-grid>#intelligence,
+body.admin-command-page .jse-workspace-grid>#teamManagement,
+body.admin-command-page .jse-workspace-grid>#bigBullBox,
+body.admin-command-page .jse-workspace-grid>#rosterSection,
+body.admin-command-page .jse-workspace-grid>#brokerManagement,
+body.admin-command-page .jse-workspace-grid>#allotmentsSection,
+body.admin-command-page .jse-workspace-grid>#ipoRandomBox,
+body.admin-command-page .jse-workspace-grid>#companyBaseImportBox,
+body.admin-command-page .jse-workspace-grid>#ipoIssueSizeBox,
+body.admin-command-page .jse-workspace-grid>#configPanel,
+body.admin-command-page .jse-workspace-grid>#accountsPanel,
+body.admin-command-page .jse-workspace-grid>#namesPanel,
+body.admin-command-page .jse-workspace-grid>#institutionalInventoryPanel,
+body.admin-command-page .jse-workspace-grid>#journalSection,
+body.admin-command-page .jse-workspace-grid>#reconCard,
+body.admin-command-page .jse-workspace-grid>#reportsPanel{
+  background:var(--jse-ctl-surface)!important;
+  border-color:var(--jse-ctl-border)!important;
+  border-radius:var(--jse-radius,12px)!important;
+}
+body.admin-command-page #main h1,
+body.admin-command-page #main h2,
+body.admin-command-page #main h3,
+body.admin-command-page #main h4{color:var(--jse-ctl-ink)!important}
+body.admin-command-page #main .jse-pricing-header .jse-pricing-state,
+body.admin-command-page #main .pill.live,
+body.admin-command-page #main .jse-status-chip.live{color:#17764d!important}
