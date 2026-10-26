@@ -10381,13 +10381,15 @@ DECLARE
   v_end_marker text := '  IF NOT t.active THEN';
 BEGIN
   v_fn:=pg_get_functiondef('public.jse__settle(jsonb,bigint,text)'::regprocedure);
+  -- Migration 034 already disabled this branch on some environments; keep that safe no-op.
+  IF position('/* PRICE_STALE_DISABLED */ false THEN' IN v_fn)>0 THEN RETURN; END IF;
   v_start:=position(v_marker IN v_fn);
   v_end:=position(v_end_marker IN v_fn);
-  IF v_start=0 AND position('PRICE_STALE' IN v_fn)=0 THEN RETURN; END IF;
-  IF v_start=0 OR v_end<=v_start THEN
-    IF position('PRICE_STALE' IN v_fn)=0 THEN RETURN; END IF;
-    RAISE EXCEPTION '037: unable to safely locate the settlement stale-price rejection block';
+  IF v_start=0 THEN
+    IF position('jse_price_out_of_band(o.price, s.price)' IN v_fn)=0 THEN RETURN; END IF;
+    RAISE EXCEPTION '037: unable to safely locate the active settlement stale-price block';
   END IF;
+  IF v_end<=v_start THEN RAISE EXCEPTION '037: unable to locate the end of the settlement stale-price block'; END IF;
   v_fn:=substr(v_fn,1,v_start-1)||
     '  -- Accepted order price is authoritative; a later quote change does not reject this trade.'||chr(10)||'  '||
     substr(v_fn,v_end);
