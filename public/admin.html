@@ -34,6 +34,66 @@
   .consistency { margin-bottom: 14px; }
   textarea.pv { min-height: 70px; font-family: var(--font); font-size: 13px; }
 </style>
+
+<style>
+/* Layout-only refinement: preserve the existing JSE palette, typography and component colours. */
+main.wrap.wide { width:min(1500px, calc(100% - 36px)); margin:0 auto; }
+.page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:18px; }
+.page-head > div { min-width:260px; flex:1 1 540px; }
+.page-head h1 { margin:0 0 7px; line-height:1.15; }
+.page-head p { max-width:850px; margin:0; line-height:1.55; }
+#kpis.kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; align-items:stretch; margin:16px 0; }
+#kpis .kpi { min-width:0; height:100%; box-sizing:border-box; }
+#consistency { margin:12px 0 18px; }
+.grid.cols-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.grid.cols-2 > * { min-width:0; }
+.card { min-width:0; height:100%; box-sizing:border-box; overflow:hidden; }
+.card-h { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 14px; padding:14px 16px; }
+.card-h > * { min-width:0; }
+.card-b { padding:16px; min-width:0; }
+.card-b.flush { padding:0; }
+.card-b .table-wrap { max-width:100%; overflow-x:auto; }
+.card-b table { width:100%; }
+.form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 14px; align-items:start; }
+.form-grid > *, .cfg-grid > *, .mi > * { min-width:0; }
+.field { min-width:0; }
+.field.span-2 { grid-column:span 2; }
+.input, input, select, textarea { max-width:100%; box-sizing:border-box; }
+.controls { align-items:stretch; }
+.controls .btn { min-height:42px; height:100%; white-space:normal; }
+.moods { align-items:stretch; }
+.moods button { min-height:56px; }
+.cfg-grid { align-items:stretch; }
+.cfg-grid .field { min-width:0; }
+.mi { align-items:stretch; }
+.mi .box { height:100%; box-sizing:border-box; }
+.row { flex-wrap:wrap; gap:10px 14px; }
+.row > * { min-width:0; }
+.row.between { align-items:center; }
+.table-wrap { max-width:100%; overflow-x:auto; }
+table.t { min-width:640px; }
+.modal { max-width:min(760px, calc(100vw - 28px)); box-sizing:border-box; }
+@media (max-width:1100px) {
+  #kpis.kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .mi { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:760px) {
+  main.wrap.wide { width:calc(100% - 24px); }
+  .grid.cols-2 { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .form-grid { grid-template-columns:minmax(0,1fr); }
+  .field.span-2 { grid-column:auto; }
+  .card-h { padding:12px 13px; }
+  .card-b { padding:13px; }
+  .card-b.flush { padding:0; }
+  .controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .moods { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:420px) {
+  #kpis.kpis { grid-template-columns:minmax(0,1fr); }
+  .mi, .cfg-grid, .controls, .moods { grid-template-columns:minmax(0,1fr); }
+}
+</style>
+
 </head>
 <body>
 <main id="main" class="wrap wide">
