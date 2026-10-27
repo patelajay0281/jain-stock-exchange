@@ -345,9 +345,7 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
 
 
 
-<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.25">
-<link id="jse-admin-redesign-css" rel="stylesheet" href="/assets/admin-redesign.css?v=20261027.4">
-</head>
+<link rel="stylesheet" href="/assets/admin-orbit.css?v=20261026.25">\n</head>
 <body class="admin-command-page">
 <aside id="jseAdminSidebar" aria-label="Event Admin primary navigation">
   <div class="jse-brand-row">
@@ -2879,41 +2877,5 @@ body.admin-command-page .cmd-nav{position:sticky;top:6px;z-index:50}
   else setActive("overview",null,false);
 })();
 </script>
-
-<script id="jse-admin-design-switch">
-(function(){
-  "use strict";
-  var link=document.getElementById("jse-admin-redesign-css");
-  var head=document.querySelector("#main .page-head");
-  if(!link||!head||document.getElementById("jseAdminDesignToggle"))return;
-  var key="jse-event-admin-visual-mode-v4";
-  var mode="new";
-  try{mode=localStorage.getItem(key)||"new";}catch(e){}
-  function apply(){
-    var isNew=mode!=="classic";
-    link.disabled=!isNew;
-    document.body.classList.toggle("jse-redesign-active",isNew);
-    button.textContent=isNew?"Use previous design":"Try new design";
-    button.setAttribute("aria-pressed",isNew?"true":"false");
-    button.title=isNew?"Switch back to the previous Event Admin appearance":"Enable the new Event Admin appearance";
-  }
-  var button=document.createElement("button");
-  button.type="button";
-  button.id="jseAdminDesignToggle";
-  button.className="jse-admin-design-toggle";
-  button.textContent="Use previous design";
-  button.setAttribute("aria-label","Switch between the new and previous Event Admin designs");
-  button.addEventListener("click",function(){
-    mode=mode==="classic"?"new":"classic";
-    try{localStorage.setItem(key,mode);}catch(e){}
-    apply();
-  });
-  var existing=head.querySelector(".conn");
-  if(existing)existing.insertAdjacentElement("beforebegin",button);
-  else head.appendChild(button);
-  apply();
-})();
-</script>
-
-</body>
+\n</body>
 </html>
