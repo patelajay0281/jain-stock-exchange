@@ -108,6 +108,12 @@ main{min-width:0}.topbar{height:66px;display:flex;align-items:center;justify-con
    <article class="workspace-card"><div class="panel-head"><h3>Configuration & reports</h3></div><div class="panel-body"><p>Open existing system configuration and report tools.</p><div class="actions"><a class="btn primary" href="#live-controls" data-legacy-target="/admin-legacy.html#configPanel">Configuration</a><a class="btn" href="#live-controls" data-legacy-target="/admin-legacy.html#reportsPanel">Reports</a></div></div></article>
    <article class="workspace-card"><div class="panel-head"><h3>Integration checkpoints</h3></div><div class="panel-body"><p>Known entry points for pricing, news, IPO and audit operations. Each opens the established admin interface.</p><div class="actions"><a class="btn" href="#live-controls" data-legacy-target="/admin-legacy.html#pricingMethodPanel">Pricing engine</a><a class="btn" href="#live-controls" data-legacy-target="/admin-legacy.html#marketNewsSection">News workflow</a><a class="btn" href="#live-controls" data-legacy-target="/admin-legacy.html#allotmentsSection">IPO workflow</a></div></div></article>
   </div></section>
+
+  <section class="section" id="view-live-controls">
+   <div class="workspace-head"><div><div class="page-index">CONNECTED WORKSPACE</div><h2 id="liveControlTitle">Live event controls</h2><p>Existing JSE forms and handlers are available here inside the new Admin Studio.</p></div><button class="btn" id="backToStudio">← Back to Studio</button></div>
+   <div class="notice"><strong>Connected controls:</strong> Actions run through the original admin code and APIs. This preserves existing business logic while Admin Studio becomes the primary admin page.</div>
+   <div class="panel" style="overflow:hidden"><iframe id="liveAdminFrame" title="JSE live administration controls" src="/admin-legacy.html" style="display:block;width:100%;height:calc(100vh - 245px);min-height:680px;border:0;background:#fff"></iframe></div>
+  </section>
  </div>
 </main>
 </div>
