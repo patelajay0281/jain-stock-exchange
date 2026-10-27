@@ -240,3 +240,166 @@ body.admin-command-page.jse-redesign-active .jse-layout-governance .jse-operatio
  body.admin-command-page.jse-redesign-active .jse-workspace-title{font-size:23px}
  body.admin-command-page.jse-redesign-active #jseWorkspaceTabs .jse-workspace-tab{padding:9px 10px;font-size:10px}
 }
+
+
+/* JSE ADMIN — NEW VISUAL SYSTEM v5: editorial market operations, light-only */
+body.admin-command-page.jse-redesign-active{
+  --rd-canvas:#f4f6f8;--rd-surface:#ffffff;--rd-ink:#152d42;--rd-muted:#65788a;--rd-line:#dce4eb;
+  --rd-blue:#2255d6;--rd-teal:#087f78;--rd-coral:#df684f;--rd-soft:#eaf0ff;
+  background:#f4f6f8!important;color:#152d42!important;font-family:Inter,"Segoe UI",Arial,sans-serif!important;
+}
+body.admin-command-page.jse-redesign-active::before{display:none!important}
+body.admin-command-page.jse-redesign-active #jseAdminSidebar{
+  background:#fff!important;color:#173248!important;border-right:1px solid #dce4eb!important;
+  box-shadow:8px 0 30px rgba(24,52,76,.035)!important;width:244px!important;
+}
+body.admin-command-page.jse-redesign-active .jse-brand-row{padding:22px 17px 20px!important;border-bottom:1px solid #e5ebf0!important}
+body.admin-command-page.jse-redesign-active .jse-brand-mark{border-radius:8px!important;background:#2255d6!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .jse-brand-copy strong{color:#173248!important;letter-spacing:-.04em!important}
+body.admin-command-page.jse-redesign-active .jse-brand-copy span{color:#75889a!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event{margin:15px 12px!important;padding:15px!important;border:1px solid #dce6ed!important;border-radius:12px!important;background:#f6f9fc!important;box-shadow:none!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event strong{color:#173248!important}
+body.admin-command-page.jse-redesign-active .jse-sidebar-event-top{color:#718498!important}
+body.admin-command-page.jse-redesign-active .jse-side-nav{padding:7px 10px 18px!important}
+body.admin-command-page.jse-redesign-active .jse-side-nav button,
+body.admin-command-page.jse-redesign-active .jse-side-nav a{border-radius:8px!important;color:#617588!important;margin:3px 0!important;min-height:39px!important}
+body.admin-command-page.jse-redesign-active .jse-side-nav button[aria-current="page"],
+body.admin-command-page.jse-redesign-active .jse-side-nav button.active,
+body.admin-command-page.jse-redesign-active .jse-side-nav a.active{background:#eaf0ff!important;color:#2255d6!important;font-weight:800!important}
+body.admin-command-page.jse-redesign-active #main{margin-left:244px!important;padding:24px clamp(18px,2.5vw,42px) 60px!important;max-width:none!important}
+body.admin-command-page.jse-redesign-active .page-head{
+  display:flex!important;align-items:center!important;gap:16px!important;min-height:58px!important;
+  padding:0 0 19px!important;margin:0 0 18px!important;border-bottom:1px solid #dce4eb!important;
+}
+body.admin-command-page.jse-redesign-active .page-head h1{color:#152d42!important;font-size:25px!important;letter-spacing:-.055em!important}
+body.admin-command-page.jse-redesign-active .page-head .conn{color:#718498!important}
+body.admin-command-page.jse-redesign-active .jse-admin-design-toggle{
+  border:1px solid #cdd9e5!important;border-radius:7px!important;background:#fff!important;color:#2255d6!important;
+  font-weight:750!important;padding:8px 11px!important;box-shadow:none!important;
+}
+body.admin-command-page.jse-redesign-active .jse-workspace-context-strip{
+  background:#eaf0ff!important;border:1px solid #d6e1ff!important;border-radius:10px!important;
+  padding:10px 14px!important;color:#35517b!important;margin:0 0 18px!important;
+}
+body.admin-command-page.jse-redesign-active #jseWorkspaceTabs{
+  position:static!important;display:flex!important;gap:5px!important;overflow-x:auto!important;
+  padding:0 0 13px!important;margin:0 0 22px!important;background:transparent!important;
+  border-bottom:1px solid #dce4eb!important;
+}
+body.admin-command-page.jse-redesign-active #jseWorkspaceTabs .jse-workspace-tab{
+  background:transparent!important;color:#6c7f91!important;border:1px solid transparent!important;
+  border-radius:7px 7px 0 0!important;padding:11px 14px!important;font-size:11px!important;
+  font-weight:850!important;letter-spacing:.045em!important;white-space:nowrap!important;
+}
+body.admin-command-page.jse-redesign-active #jseWorkspaceTabs .jse-workspace-tab[aria-selected=true]{
+  background:#fff!important;color:#2255d6!important;border-color:#dce4eb!important;
+  border-bottom-color:#fff!important;box-shadow:inset 0 3px #2255d6!important;
+}
+body.admin-command-page.jse-redesign-active .jse-workspace-heading{
+  display:grid!important;grid-template-columns:48px minmax(0,1fr) auto!important;align-items:center!important;
+  gap:14px!important;padding:0 0 18px!important;margin:0 0 20px!important;border-bottom:1px solid #dce4eb!important;
+}
+body.admin-command-page.jse-redesign-active .jse-workspace-mark{
+  width:46px!important;height:46px!important;flex:auto!important;border-radius:11px!important;
+  background:#152d42!important;color:#fff!important;font-size:20px!important;
+}
+body.admin-command-page.jse-redesign-active .jse-workspace-title{font-size:clamp(25px,2.6vw,36px)!important;letter-spacing:-.065em!important;color:#152d42!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-description{font-size:12px!important;max-width:740px!important;color:#65788a!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-status{
+  display:inline-flex!important;align-self:center!important;max-width:none!important;text-align:right!important;
+  padding:7px 10px!important;border:1px solid #d7e4e7!important;border-radius:7px!important;background:#f2faf8!important;color:#087f78!important;
+}
+body.admin-command-page.jse-redesign-active .jse-operations-layout{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(270px,320px)!important;
+  gap:18px!important;align-items:start!important;
+}
+body.admin-command-page.jse-redesign-active .jse-operations-primary,
+body.admin-command-page.jse-redesign-active .jse-operations-secondary{display:grid!important;gap:14px!important;min-width:0!important}
+body.admin-command-page.jse-redesign-active .jse-operations-secondary{
+  position:static!important;padding:0 0 0 16px!important;border-left:1px solid #dce4eb!important;
+}
+body.admin-command-page.jse-redesign-active .jse-column-label{
+  border:0!important;margin:0!important;padding:2px 0 7px!important;color:#8091a1!important;
+  font-size:9px!important;letter-spacing:.14em!important;
+}
+body.admin-command-page.jse-redesign-active .jse-column-label span{
+  width:22px!important;height:22px!important;border-radius:6px!important;background:#152d42!important;color:#fff!important;
+}
+body.admin-command-page.jse-redesign-active .card,
+body.admin-command-page.jse-redesign-active .evt-registry,
+body.admin-command-page.jse-redesign-active .adv-analytics,
+body.admin-command-page.jse-redesign-active .jse-health-card,
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts{
+  background:#fff!important;border:1px solid #dce4eb!important;border-radius:11px!important;
+  box-shadow:0 3px 12px rgba(26,51,75,.035)!important;color:#152d42!important;
+}
+body.admin-command-page.jse-redesign-active .card-h{
+  padding:14px 16px!important;border-bottom:1px solid #edf1f4!important;background:#fff!important;
+}
+body.admin-command-page.jse-redesign-active .card-h h2,
+body.admin-command-page.jse-redesign-active .card-h h3,
+body.admin-command-page.jse-redesign-active .card-title{color:#19364d!important}
+body.admin-command-page.jse-redesign-active .card-b{padding:16px!important}
+body.admin-command-page.jse-redesign-active .kpi{
+  background:#fff!important;border:1px solid #dce4eb!important;border-radius:10px!important;
+  box-shadow:none!important;color:#152d42!important;position:relative!important;overflow:hidden!important;
+}
+body.admin-command-page.jse-redesign-active .kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#2255d6!important}
+body.admin-command-page.jse-redesign-active .kpi:nth-child(3n+2):before{background:#087f78!important}
+body.admin-command-page.jse-redesign-active .kpi:nth-child(3n):before{background:#df684f!important}
+body.admin-command-page.jse-redesign-active .kpi *{color:inherit}
+body.admin-command-page.jse-redesign-active input,
+body.admin-command-page.jse-redesign-active select,
+body.admin-command-page.jse-redesign-active textarea{
+  background:#fff!important;color:#18364c!important;border:1px solid #cfdbe5!important;border-radius:7px!important;
+  box-shadow:none!important;min-height:35px;
+}
+body.admin-command-page.jse-redesign-active input:focus,
+body.admin-command-page.jse-redesign-active select:focus,
+body.admin-command-page.jse-redesign-active textarea:focus{
+  outline:3px solid #dce6ff!important;border-color:#5d80e8!important;
+}
+body.admin-command-page.jse-redesign-active button:not(.jse-workspace-tab):not(.jse-side-collapse):not(.jse-admin-design-toggle){
+  border-radius:7px!important;box-shadow:none!important;
+}
+body.admin-command-page.jse-redesign-active .btn-primary,
+body.admin-command-page.jse-redesign-active button.primary{
+  background:#2255d6!important;border-color:#2255d6!important;color:#fff!important;
+}
+body.admin-command-page.jse-redesign-active table{border-collapse:separate!important;border-spacing:0!important}
+body.admin-command-page.jse-redesign-active th{
+  background:#f4f7fa!important;color:#64798b!important;text-transform:uppercase!important;
+  letter-spacing:.07em!important;font-size:10px!important;
+}
+body.admin-command-page.jse-redesign-active td,
+body.admin-command-page.jse-redesign-active th{border-bottom:1px solid #e7edf2!important}
+body.admin-command-page.jse-redesign-active .jse-overview-layout{grid-template-columns:minmax(0,1fr) minmax(275px,320px)!important;gap:18px!important}
+body.admin-command-page.jse-redesign-active .jse-overview-rail{gap:13px!important}
+body.admin-command-page.jse-redesign-active .jse-overview-main>.kpis{gap:10px!important}
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts>button{border-radius:8px!important;background:#f9fbfd!important;border-color:#e1e9ef!important}
+body.admin-command-page.jse-redesign-active .jse-overview-shortcuts .quick-icon{background:#eaf0ff!important;color:#2255d6!important;border-radius:7px!important}
+body.admin-command-page.jse-redesign-active .jse-health-card .card-h{background:#fff!important}
+body.admin-command-page.jse-redesign-active .jse-workspace-page[hidden]{display:none!important}
+body.admin-command-page.jse-redesign-active .jse-operations-layout.is-single-column{grid-template-columns:minmax(0,1fr)!important}
+body.admin-command-page.jse-redesign-active .jse-operations-layout.is-single-column .jse-operations-secondary{display:none!important}
+@media(max-width:1180px){
+ body.admin-command-page.jse-redesign-active #jseAdminSidebar{width:218px!important}
+ body.admin-command-page.jse-redesign-active #main{margin-left:218px!important}
+ body.admin-command-page.jse-redesign-active .jse-operations-layout,
+ body.admin-command-page.jse-redesign-active .jse-overview-layout{grid-template-columns:minmax(0,1fr)!important}
+ body.admin-command-page.jse-redesign-active .jse-operations-secondary{border-left:0!important;border-top:1px solid #dce4eb!important;padding:15px 0 0!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-heading{grid-template-columns:44px minmax(0,1fr)!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-status{display:none!important}
+}
+@media(max-width:760px){
+ body.admin-command-page.jse-redesign-active #jseAdminSidebar{position:relative!important;width:100%!important;height:auto!important;max-height:none!important}
+ body.admin-command-page.jse-redesign-active #main{margin-left:0!important;padding:16px 12px 36px!important}
+ body.admin-command-page.jse-redesign-active .jse-brand-row{padding:12px!important}
+ body.admin-command-page.jse-redesign-active .jse-sidebar-event{display:none!important}
+ body.admin-command-page.jse-redesign-active .jse-side-nav{display:flex!important;overflow-x:auto!important;gap:5px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-heading{grid-template-columns:38px minmax(0,1fr)!important;gap:10px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-mark{width:38px!important;height:38px!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-title{font-size:23px!important}
+ body.admin-command-page.jse-redesign-active .jse-overview-main>.kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.admin-command-page.jse-redesign-active .jse-workspace-context-strip{font-size:11px!important}
+}
