@@ -457,7 +457,9 @@
     var cfg = PAGES.filter(function (p) { return p.id === o.id; })[0] || { roles: "*" };
     var roles = o.roles || cfg.access || cfg.roles;
     var user = session.user;
-    if (user) { var fresh = await session.refresh(); user = fresh; }
+    // The public market wall does not need an auth round-trip before showing live prices.
+    // Keep role-protected desks on the existing fresh-session check.
+    if (user && !o.statusFromPage) { var fresh = await session.refresh(); user = fresh; }
     renderShell({ page: o.id });
     document.addEventListener("jse:signedout", function () { if (roles !== "*") location.href = "/login.html?expired=1&next=" + encodeURIComponent(location.pathname + location.search); });
     startStatusTicker(o.statusFromPage);
