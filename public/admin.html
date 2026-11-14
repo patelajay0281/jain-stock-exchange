@@ -21,6 +21,13 @@
   @media (max-width: 900px) { .moods { grid-template-columns: repeat(4, minmax(0, 1fr)); } .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .j-undone td { color: var(--muted); text-decoration: line-through; }
   .cfg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 14px; }
+  .cfg-switch { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid var(--line-3); border-radius:10px; background:var(--soft); }
+  .cfg-switch input { appearance:none; width:48px; height:26px; border-radius:20px; background:#9aa3af; position:relative; cursor:pointer; flex:0 0 auto; transition:background .15s; }
+  .cfg-switch input:before { content:""; position:absolute; width:20px; height:20px; left:3px; top:3px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 3px #0003; }
+  .cfg-switch input:checked { background:#16834b; }
+  .cfg-switch input:checked:before { transform:translateX(22px); }
+  .cfg-switch .switch-state { font-size:11px; font-weight:800; letter-spacing:.06em; color:var(--muted); }
+  .cfg-switch input:checked + .switch-state { color:#16834b; }
   @media (max-width: 900px) { .cfg-grid { grid-template-columns: 1fr 1fr; } }
   .mi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .mi .box { border: 1px solid var(--line-3); border-radius: 10px; padding: 12px 14px; background: var(--soft); min-width: 0; }
@@ -507,6 +514,7 @@
     $("cfg").innerHTML = CFG.map(function (f) {
       var k = f[0], v = cfg[k];
       if (f[2] === "fixed") return '<div class="field"><span class="small" style="padding:10px 0;display:block"><b>' + esc(f[1].split(":")[0]) + "</b>:" + esc(f[1].split(":").slice(1).join(":")) + "</span></div>";
+      if (k === "allow_short_selling") return '<label class="cfg-switch field"><span><b>' + esc(f[1]) + '</b><span class="small muted" style="display:block;margin-top:3px">Short-selling policy control</span></span><span style="display:flex;align-items:center;gap:8px"><input type="checkbox" data-cfg="' + k + '"' + (v ? " checked" : "") + ' aria-label="Short Selling ON or OFF"><span class="switch-state">' + (v ? "ON" : "OFF") + '</span></span></label>';
       if (f[2] === "bool") return '<label class="check field"><span><input type="checkbox" data-cfg="' + k + '"' + (v ? " checked" : "") + "> " + esc(f[1]) + "</span></label>";
       if (f[2] === "datetime") return '<div class="field"><label>' + esc(f[1]) + '</label><input class="input" data-cfg="' + k + '" type="datetime-local" value="' + esc(istLocal(v)) + '"></div>';
       var shown = f[2] === "pct" ? +(N(v) * 100).toFixed(4) : v;
