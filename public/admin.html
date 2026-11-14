@@ -325,7 +325,7 @@
     ["cash_rule_limit", "Closing cash limit (₹) — closing criterion", "number"], ["initial_capital", "Starting capital per team (₹)", "number"], ["loan_max_principal", "Maximum loan principal (₹)", "number"],
     ["loan_interest_rate", "Loan interest %", "pct"], ["min_buy_trades", "Minimum settled BUY trades", "int"], ["min_sell_trades", "Minimum settled SELL trades", "int"],
     ["min_order_value", "Minimum order value (₹) — no minimum", "number"], ["event_name", "Event name", "text"],
-    ["loans_enabled", "Borrowing", "bool"], ["auto_loan_on_settlement", "Auto Bank Loan", "bool"], ["_self_entry", "Participant Self Entry: disabled (orders are created by brokers)", "fixed"], ["_inst_restr", "Institutional Restrictions: none", "fixed"], ["loan_repayment_required", "Full loan repayment required for eligibility", "bool"],
+    ["allow_short_selling", "Short Selling (ON / OFF)", "bool"], ["loans_enabled", "Borrowing", "bool"], ["auto_loan_on_settlement", "Auto Bank Loan", "bool"], ["_self_entry", "Participant Self Entry: disabled (orders are created by brokers)", "fixed"], ["_inst_restr", "Institutional Restrictions: none", "fixed"], ["loan_repayment_required", "Full loan repayment required for eligibility", "bool"],
     ["auto_list_ipos", "IPOs list at START EVENT (IPO reveal)", "bool"]];
 
   function kpi(k, v, s, cls) { return '<div class="kpi ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + (s || "&nbsp;") + "</div></div>"; }
