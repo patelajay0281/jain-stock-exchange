@@ -108,11 +108,12 @@
       <div class="card-b">
         <p class="small muted" style="margin-top:0">Priority participant is Team 1. Account changes require the Event Admin password and are written to the audit log. The ₹1 crore cash ceiling is enforced by the database.</p>
         <div id="bbSummary" class="alert info">Loading BIG BULL account…</div>
+        <div class="row" style="margin-top:10px"><button class="btn primary" type="button" id="bbToggleActive" disabled>Loading account status…</button><span class="small muted">Activating or closing the account requires an admin password and an audit reason.</span></div>
         <div class="form-grid" style="margin-top:12px">
           <div class="field"><label for="bbDisplayName">Account display name</label><input class="input" id="bbDisplayName" maxlength="120" value="BIG BULL"></div>
           <div class="field"><label for="bbBroker">Broker assignment</label><select class="input" id="bbBroker"></select></div>
           <div class="field"><label for="bbSection">Section</label><input class="input" id="bbSection" maxlength="120"></div>
-          <div class="field"><label for="bbActive">Account status</label><select class="input" id="bbActive"><option value="true">Active</option><option value="false">Inactive</option></select></div>
+          
           <div class="field span-2"><label for="bbMembers">Participant details / members</label><textarea class="input" id="bbMembers" maxlength="1000" rows="2"></textarea></div>
           <div class="field span-2"><label for="bbDetailsReason">Reason for account changes</label><input class="input" id="bbDetailsReason" maxlength="300" placeholder="Required for audit trail"></div>
         </div>
@@ -355,7 +356,10 @@
     if (document.activeElement !== $("bbDisplayName")) $("bbDisplayName").value = a.display_name || "BIG BULL";
     if (document.activeElement !== $("bbSection")) $("bbSection").value = a.section || "";
     if (document.activeElement !== $("bbMembers")) $("bbMembers").value = a.members || "";
-    if (document.activeElement !== $("bbActive")) $("bbActive").value = String(!!a.active);
+    var toggle = $("bbToggleActive");
+    toggle.disabled = false;
+    toggle.textContent = a.active ? "Close BIG BULL account" : "Activate BIG BULL account";
+    toggle.className = a.active ? "btn danger" : "btn primary";
     var brokers = (S.st && S.st.brokers) || [];
     var current = $("bbBroker").value || a.broker_code || "";
     $("bbBroker").innerHTML = brokers.map(function (b) {
@@ -366,11 +370,42 @@
   async function saveBigBullDetails() {
     var body = { action: "UPDATE_ACCOUNT", display_name: $("bbDisplayName").value.trim(),
       broker_code: $("bbBroker").value, section: $("bbSection").value.trim(), members: $("bbMembers").value.trim(),
-      active: $("bbActive").value === "true", reason: $("bbDetailsReason").value.trim() };
+      active: !!(S.bigBull && S.bigBull.active), reason: $("bbDetailsReason").value.trim() };
     if (!body.display_name || !body.reason) return JSE.toast("Enter the display name and reason.", "warn");
     try {
       var r = await confirmed({ title: "Update BIG BULL account?", text: "This updates the special account details and is recorded in the audit log.", confirmText: "Save account" }, "/api/big-bull", body);
       if (r) { $("bbDetailsReason").value = ""; JSE.toast("BIG BULL account details saved.", "good"); await loadBigBull(); if (poller) poller.now(); }
+    } catch (e) { JSE.toast(e.message, "bad", 9000); }
+  }
+  async function toggleBigBullActive() {
+    var a = S.bigBull;
+    if (!a) return JSE.toast("BIG BULL account details are not loaded yet.", "warn");
+    var next = !a.active;
+    var reason = $("bbDetailsReason").value.trim();
+    if (!reason) return JSE.toast("Enter a reason for activating or closing the BIG BULL account.", "warn");
+    try {
+      var r = await confirmed({
+        title: next ? "Activate BIG BULL account?" : "Close BIG BULL account?",
+        text: next
+          ? "This will activate the BIG BULL special participant account. Existing cash and trading history will be preserved."
+          : "This will deactivate the BIG BULL special participant account and prevent further account activity. Existing cash, holdings and trading history will be preserved.",
+        confirmText: next ? "Activate account" : "Close account",
+        danger: !next
+      }, "/api/big-bull", {
+        action: "UPDATE_ACCOUNT",
+        display_name: a.display_name || "BIG BULL",
+        broker_code: a.broker_code || "",
+        section: a.section || "",
+        members: a.members || "",
+        active: next,
+        reason: reason
+      });
+      if (r) {
+        $("bbDetailsReason").value = "";
+        JSE.toast(next ? "BIG BULL account activated." : "BIG BULL account closed.", "good");
+        await loadBigBull();
+        if (poller) poller.now();
+      }
     } catch (e) { JSE.toast(e.message, "bad", 9000); }
   }
   async function setBigBullBalance() {
@@ -392,6 +427,7 @@
     } catch (e) { JSE.toast(e.message, "bad", 9000); }
   }
   $("bbSaveDetails").addEventListener("click", saveBigBullDetails);
+  $("bbToggleActive").addEventListener("click", toggleBigBullActive);
   $("bbSetCash").addEventListener("click", setBigBullBalance);
   $("bbAdjustCash").addEventListener("click", adjustBigBullCash);
   $("bbRefresh").addEventListener("click", function () { loadBigBull().catch(function (e) { JSE.toast(e.message, "bad"); }); });
