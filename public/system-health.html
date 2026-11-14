@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Health · JAIN STOCK EXCHANGE</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/jse.css?v=318">
+<style>
+.health-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}
+.health-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.health-card h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.health-value{font-size:24px;font-weight:850;color:var(--ink);overflow-wrap:anywhere}
+.health-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.health-status{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:5px 9px;background:var(--soft);font-size:11px;font-weight:800}
+.health-status:before{content:"";width:7px;height:7px;border-radius:50%;background:#98a2b3}
+.health-status.ok{color:#067647;background:#ecfdf3}.health-status.ok:before{background:#12b76a}
+.health-status.bad{color:#b42318;background:#fef3f2}.health-status.bad:before{background:#f04438}
+.health-status.warn{color:#92400e;background:#fffaeb}.health-status.warn:before{background:#f79009}
+.health-table{width:100%;border-collapse:collapse;font-size:13px}
+.health-table th,.health-table td{padding:10px 8px;border-bottom:1px solid var(--line-3);text-align:left}
+.health-table th{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.health-note{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--soft);font-size:12px;color:var(--muted);line-height:1.6}
+.health-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media(max-width:900px){.health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.health-grid{grid-template-columns:1fr 1fr}.health-value{font-size:20px}}
+</style>
+</head>
+<body>
+<main id="main" class="wrap wide">
+ <div class="page-head">
+  <div><h1>System Health</h1><p>Read-only operational checks for the JSE event platform. No trading data or configuration is changed.</p></div>
+  <span class="conn" id="conn"><span class="dot"></span><span id="connText">Checking…</span></span>
+ </div>
+ <div class="health-actions"><button class="btn primary" id="refresh" type="button">Refresh checks</button><span class="small muted" id="updated">Waiting for first check…</span></div>
+ <section class="health-grid" aria-live="polite">
+  <div class="health-card"><h3>Application API</h3><div class="health-value" id="apiState">—</div><div class="health-sub" id="apiSub">Checking authenticated endpoints</div></div>
+  <div class="health-card"><h3>Database access</h3><div class="health-value" id="dbState">—</div><div class="health-sub" id="dbSub">Inferred from read-only data APIs</div></div>
+  <div class="health-card"><h3>Event state</h3><div class="health-value" id="eventState">—</div><div class="health-sub" id="eventSub">Current event control status</div></div>
+  <div class="health-card"><h3>Market securities</h3><div class="health-value" id="securityCount">—</div><div class="health-sub" id="securitySub">Stocks and IPOs returned by market API</div></div>
+ </section>
+ <section class="card">
+  <div class="card-h bar navy"><h2>Order pipeline</h2><span class="meta" id="orderMeta">Based on live insights response</span></div>
+  <div class="card-b"><div class="health-grid" style="margin:0">
+   <div class="health-card"><h3>Settled</h3><div class="health-value" id="settled">—</div></div>
+   <div class="health-card"><h3>Open / pending</h3><div class="health-value" id="pending">—</div></div>
+   <div class="health-card"><h3>At pit</h3><div class="health-value" id="pitPending">—</div></div>
+   <div class="health-card"><h3>Rejected / stale</h3><div class="health-value" id="rejected">—</div></div>
+  </div><div id="pipelineNote" class="health-note" style="margin-top:12px">Pending counts are aggregate application metrics. Individual order ageing and EXCHANGE_PENDING / BANK_PENDING state breakdowns are not exposed by the current read-only API.</div></div>
+ </section>
+ <section class="card" style="margin-top:14px">
+  <div class="card-h bar"><h2>Endpoint checks</h2><span class="meta">Read-only · refreshed every 30 seconds</span></div>
+  <div class="card-b flush"><div class="table-wrap"><table class="health-table"><thead><tr><th>Endpoint</th><th>Status</th><th>Response</th><th>What it checks</th></tr></thead><tbody id="endpointRows"><tr><td colspan="4" class="muted">Waiting for checks…</td></tr></tbody></table></div></div>
+ </section>
+ <section class="card" style="margin-top:14px">
+  <div class="card-h bar"><h2>Capacity & observability</h2><span class="meta">No synthetic trading or load test is run</span></div>
+  <div class="card-b">
+   <div class="health-grid" style="margin:0 0 12px">
+    <div class="health-card"><h3>Target DB operations</h3><div class="health-value">1,000 / 10s</div><div class="health-sub">Target only · not measured here</div></div>
+    <div class="health-card"><h3>Transaction target</h3><div class="health-value">7,000+</div><div class="health-sub">Target only · not load tested</div></div>
+    <div class="health-card"><h3>Cloudflare 1101 / 1102 / 5xx</h3><div class="health-value" id="cfState">Not connected</div><div class="health-sub">Requires server-side Cloudflare Observability access</div></div>
+    <div class="health-card"><h3>Latency / error history</h3><div class="health-value" id="historyState">Not available</div><div class="health-sub">This page measures current API probes only</div></div>
+   </div>
+   <div class="health-note">This dashboard can verify that the application’s authenticated read APIs respond and can show the live order-pipeline aggregates returned by the Insights API. It cannot read Cloudflare request logs, historical 1101/1102 exceptions, D1/Neon query contention, exact queue age, or account quota from the browser. Those require a protected server-side telemetry integration. Capacity targets above are not presented as achieved performance.</div>
+  </div>
+ </section>
+</main>
+<script src="/assets/config.js?v=325"></script>
+<script src="/assets/jse.js?v=328"></script>
+<script>
+(function(){
+ "use strict";
+ var $=function(id){return document.getElementById(id)};
+ var nf=new Intl.NumberFormat("en-IN");
+ var checks=[
+  {path:"/api/admin-state",label:"Admin state",purpose:"Event configuration and admin data"},
+  {path:"/api/market",label:"Market feed",purpose:"Stocks, IPOs and current prices"},
+  {path:"/api/insights",label:"Insights",purpose:"Order pipeline and operational aggregates"}
+ ];
+ function setStatus(id,text,kind){var e=$(id);e.textContent=text;e.className="health-status "+(kind||"");}
+ async function probe(item){
+  var start=performance.now();
+  try{
+   var data=await JSE.api.get(item.path,null,{timeout:12000,retries:0});
+   return {item:item,ok:true,ms:Math.round(performance.now()-start),data:data};
+  }catch(e){return {item:item,ok:false,ms:Math.round(performance.now()-start),error:e.message||"Request failed",status:e.status||e.statusCode||null};}
+ }
+ function renderRows(results){
+  $("endpointRows").innerHTML=results.map(function(r){
+   var state=r.ok?"OK":"FAILED";
+   var detail=r.ok?(r.ms+" ms"):(r.status?"HTTP "+r.status:"Unavailable");
+   return "<tr><td><b>"+JSE.esc(r.item.label)+"</b><div class='small muted'>"+JSE.esc(r.item.path)+"</div></td><td><span class='health-status "+(r.ok?"ok":"bad")+"'>"+state+"</span></td><td>"+JSE.esc(detail)+"</td><td>"+JSE.esc(r.item.purpose)+"</td></tr>";
+  }).join("");
+ }
+ async function refresh(){
+  $("refresh").disabled=true;$("connText").textContent="Checking…";
+  var results=await Promise.all(checks.map(probe));
+  renderRows(results);
+  var good=results.filter(function(x){return x.ok}).length;
+  $("apiState").textContent=good+"/"+results.length;
+  $("apiSub").textContent=good===results.length?"All monitored read APIs responded":"One or more monitored APIs failed";
+  $("apiState").style.color=good===results.length?"#067647":"#b42318";
+  var dbOk=results.some(function(x){return x.ok&&x.item.path!=="/api/market"});
+  $("dbState").textContent=dbOk?"Reachable*":"Unverified";
+  $("dbSub").textContent="*Inferred from successful database-backed API responses";
+  $("dbState").style.color=dbOk?"#067647":"#b54708";
+  var admin=results.filter(function(x){return x.item.path==="/api/admin-state"&&x.ok})[0];
+  var market=results.filter(function(x){return x.item.path==="/api/market"&&x.ok})[0];
+  var insights=results.filter(function(x){return x.item.path==="/api/insights"&&x.ok})[0];
+  if(admin){
+   var status=admin.data.event&&admin.data.event.status||"Unknown";
+   $("eventState").textContent=status.replaceAll("_"," ");
+   $("eventSub").textContent="Read from event control";
+  }else{$("eventState").textContent="Unavailable";$("eventSub").textContent="Admin state check failed"}
+  if(market){
+   var count=(market.data.stocks||[]).length+(market.data.ipos||[]).length;
+   $("securityCount").textContent=nf.format(count);
+   $("securitySub").textContent=(market.data.stocks||[]).length+" stocks · "+(market.data.ipos||[]).length+" IPOs";
+  }else{$("securityCount").textContent="—";$("securitySub").textContent="Market API unavailable"}
+  if(insights){
+   var o=insights.data.orders||{};
+   $("settled").textContent=nf.format(Number(o.settled||0));
+   $("pending").textContent=nf.format(Number(o.pending||0));
+   $("pitPending").textContent=nf.format(Number(o.pit_pending||0));
+   $("rejected").textContent=nf.format(Number(o.rejected||0))+" / "+nf.format(Number(o.stale||0));
+   $("orderMeta").textContent="Live Insights snapshot · "+new Date().toLocaleTimeString("en-IN",{timeZone:"Asia/Kolkata",hour12:false})+" IST";
+   var open=Number(o.pending||0)+Number(o.pit_pending||0);
+   $("pipelineNote").textContent=open?"There are "+nf.format(open)+" orders reported as open or at pit. This aggregate does not identify the precise workflow stage or age of each order.":"No open or pit-pending orders are reported by Insights at this check.";
+  }else{
+   ["settled","pending","pitPending","rejected"].forEach(function(id){$(id).textContent="—"});
+   $("orderMeta").textContent="Insights API unavailable";
+   $("pipelineNote").textContent="Order pipeline aggregates could not be retrieved.";
+  }
+  setStatus("conn",good===results.length?"All probes responding":good+" of "+results.length+" probes responding",good===results.length?"ok":"bad");
+  $("updated").textContent="Last checked "+new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})+" IST · probe P95 "+nf.format(results.map(function(x){return x.ms}).sort(function(a,b){return a-b})[Math.floor((results.length-1)*.95)]||0)+" ms";
+  $("refresh").disabled=false;
+ }
+ $("refresh").addEventListener("click",refresh);
+ JSE.page({id:"system-health",roles:["ADMIN"]}).then(function(user){if(!user)return;refresh();JSE.poll(refresh,30000,{onError:function(){setStatus("conn","Refresh failed","bad");$("refresh").disabled=false;}});});
+})();
+</script>
+</body>
+</html>
