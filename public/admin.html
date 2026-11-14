@@ -359,7 +359,7 @@
     var toggle = $("bbToggleActive");
     toggle.disabled = false;
     toggle.textContent = a.active ? "Close BIG BULL account" : "Activate BIG BULL account";
-    toggle.className = a.active ? "btn danger" : "btn primary";
+    toggle.className = a.active ? "btn bad" : "btn primary";
     var brokers = (S.st && S.st.brokers) || [];
     var current = $("bbBroker").value || a.broker_code || "";
     $("bbBroker").innerHTML = brokers.map(function (b) {
