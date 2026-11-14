@@ -156,6 +156,7 @@
     { id: "institutional", href: "/institutional.html", label: "Institutional Investors", roles: ["ADMIN", "INSTITUTIONAL", "VIEWER"] },
     { id: "portfolios", href: "/portfolios.html", label: "Participant Portfolios", roles: ALL },
     { id: "admin", href: "/admin.html", label: "Event Admin", roles: ["ADMIN", "VIEWER"] },
+    { id: "system-health", href: "/system-health.html", label: "System Health", roles: ["ADMIN"] },
     { id: "audit", href: "/audit.html", label: "Audit Log", roles: ALL },
     { id: "cash", href: "/cash.html", label: "Cash Ledger", roles: ["ADMIN", "BANK", "VIEWER", "PARTICIPANT"] },
   ];
