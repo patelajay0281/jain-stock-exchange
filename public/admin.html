@@ -1211,14 +1211,18 @@
     S.admin = user.role === "ADMIN";
     if (!S.admin) document.querySelectorAll(".admin-only").forEach(function (x) { x.classList.add("hidden"); });
     poller = JSE.poll(load, 10000, { onError: function (e) { $("conn").className = "conn down"; $("connText").textContent = "Reconnecting… " + e.message; } });
-    JSE.poll(loadIntel, 10000, { onError: function () {} });
-    JSE.poll(loadNews, 20000);
-    JSE.poll(loadSecs, 30000);
-    loadTeamNames().catch(function (e) { JSE.toast(e.message, "bad"); });
-    loadBigBull().catch(function (e) { $("bbSummary").className = "alert bad"; $("bbSummary").textContent = "BIG BULL account could not load: " + e.message; });
-    loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); });
-    loadIpoAdmin().catch(function (e) { $("ipoToolResult").textContent = "IPO tools unavailable: " + e.message; });
-    JSE.poll(loadIpoAdmin, 10000, { onError: function (e) { $("ipoToolResult").textContent = "IPO tools reconnecting: " + e.message; } });
+    // Prioritise the first admin dashboard paint; load secondary panels in staggered background requests.
+    JSE.poll(loadIntel, 15000, { immediate: false, onError: function () {} });
+    JSE.poll(loadNews, 30000, { immediate: false });
+    JSE.poll(loadSecs, 60000, { immediate: false });
+    JSE.poll(loadIpoAdmin, 30000, { immediate: false, onError: function (e) { $("ipoToolResult").textContent = "IPO tools reconnecting: " + e.message; } });
+    window.setTimeout(function () { loadIntel().catch(function () {}); }, 900);
+    window.setTimeout(function () { loadNews().catch(function () {}); }, 1500);
+    window.setTimeout(function () { loadSecs().catch(function () {}); }, 2100);
+    window.setTimeout(function () { loadTeamNames().catch(function (e) { JSE.toast(e.message, "bad"); }); }, 2700);
+    window.setTimeout(function () { loadBigBull().catch(function (e) { $("bbSummary").className = "alert bad"; $("bbSummary").textContent = "BIG BULL account could not load: " + e.message; }); }, 3300);
+    window.setTimeout(function () { loadUsers().catch(function (e) { JSE.toast(e.message, "bad"); }); }, 3900);
+    window.setTimeout(function () { loadIpoAdmin().catch(function (e) { $("ipoToolResult").textContent = "IPO tools unavailable: " + e.message; }); }, 4500);
     if (location.hash === "#intelligence") setTimeout(function () { $("intelligence").scrollIntoView(); }, 400);
   });
 })();
