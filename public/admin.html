@@ -29,14 +29,27 @@
   .cfg-switch .switch-state { font-size:11px; font-weight:800; letter-spacing:.06em; color:var(--muted); }
   .cfg-switch input:checked + .switch-state { color:#16834b; }
   @media (max-width: 900px) { .cfg-grid { grid-template-columns: 1fr 1fr; } }
-  .mi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-  .mi .box { border: 1px solid var(--line-3); border-radius: 10px; padding: 12px 14px; background: var(--soft); min-width: 0; }
-  .mi .box h4 { margin: 0 0 8px; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
-  .mi .box .v { font-size: 19px; font-weight: 800; color: var(--ink); }
-  .mi ul { margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
-  .mi li { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
-  .mi .wide2 { grid-column: span 2; }
-  @media (max-width: 1100px) { .mi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .mi-shell { display:grid; gap:16px; }
+  .mi-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .mi-kpi { border:1px solid var(--line-3); border-radius:11px; padding:13px 15px; background:var(--soft); min-width:0; }
+  .mi-kpi .eyebrow,.mi-panel h3 { margin:0 0 7px; font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); font-weight:800; }
+  .mi-kpi .value { font-size:21px; line-height:1.2; font-weight:850; color:var(--ink); overflow-wrap:anywhere; }
+  .mi-kpi .hint { margin-top:5px; color:var(--muted); font-size:11px; }
+  .mi-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .mi-panel { border:1px solid var(--line-3); border-radius:11px; padding:14px; min-width:0; background:var(--card); }
+  .mi-panel.wide { grid-column:1/-1; }
+  .mi-panel ul { list-style:none; margin:0; padding:0; }
+  .mi-panel li { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:7px 0; border-bottom:1px solid var(--line-3); font-size:12px; }
+  .mi-panel li:last-child { border-bottom:0; }
+  .mi-panel .mi-sub { color:var(--muted); font-size:10.5px; }
+  .mi-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .mi-table th,.mi-table td { padding:8px 7px; border-bottom:1px solid var(--line-3); text-align:left; }
+  .mi-table th { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+  .mi-table td.num,.mi-table th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .mi-empty { color:var(--muted); font-size:12px; padding:10px 0; }
+  .mi-head-actions { display:flex; align-items:center; gap:8px; }
+  @media (max-width:900px) { .mi-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:650px) { .mi-grid { grid-template-columns:1fr; } .mi-panel.wide { grid-column:auto; } }
   .alerts li { padding: 4px 0; }
   .consistency { margin-bottom: 14px; }
   textarea.pv { min-height: 70px; font-family: var(--font); font-size: 13px; }
@@ -90,8 +103,8 @@
   </div>
 
   <section class="card" style="margin-top:14px" id="intelligence">
-    <div class="card-h bar"><h2>Market Intelligence</h2><span class="meta" id="miMeta">Live · same data as portfolios and order tracking</span></div>
-    <div class="card-b"><div class="mi" id="mi"><div class="muted">Loading…</div></div></div>
+    <div class="card-h bar navy"><h2>Market Intelligence</h2><div class="mi-head-actions"><span class="meta" id="miMeta">Live · refreshing every 10 seconds</span><button class="btn sm" type="button" id="miRefresh">Refresh</button></div></div>
+    <div class="card-b"><div class="mi-shell" id="mi"><div class="mi-empty">Loading market intelligence…</div></div></div>
   </section>
 
   <div class="grid cols-2" style="margin-top:14px">
@@ -526,30 +539,74 @@
   }
 
   // ---- Market Intelligence (embedded; admin and faculty only) ----
-  function secList(list, key) {
-    return list && list.length ? "<ul>" + list.map(function (s) { return "<li><span><b>" + esc(s.symbol) + "</b></span><span class=\"" + F.dir(s[key || "day_change_pct"]) + '">' + F.pct(s[key || "day_change_pct"]) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">None yet</div>';
+  function miList(items, renderRow, empty) {
+    return Array.isArray(items) && items.length ? "<ul>" + items.map(renderRow).join("") + "</ul>" : '<div class="mi-empty">' + esc(empty || "No data available.") + "</div>";
+  }
+  function miMetric(label, value, hint, cls) {
+    return '<div class="mi-kpi"><div class="eyebrow">' + label + '</div><div class="value ' + (cls || "") + '">' + value + '</div><div class="hint">' + hint + '</div></div>';
   }
   async function loadIntel() {
     var r = await JSE.api.get("/api/insights");
     var sent = r.sentiment || {}, fl = r.flow || {}, ins = r.institutional_signal || {}, nw = r.net_worth || {}, ord = r.orders || {};
-    var award = function (t, label) { return t ? "<li><span>" + label + " · <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span></span><span>" + F.short(t.net_worth) + "</span></li>" : "<li><span>" + label + '</span><span class="muted">no eligible team yet</span></li>'; };
+    var breadth = r.breadth || {}, index = r.index || {}, recent = sent.recent_news || {};
+    var winner = r.winner, runner = r.runner_up;
+    var award = function (t, label) {
+      return t ? '<li><span><b>' + esc(label) + ' · ' + esc(t.name) + '</b> <span class="mi-sub mono">' + esc(t.team) + '</span></span><b>' + F.short(t.net_worth) + '</b></li>' :
+        '<li><span>' + esc(label) + '</span><span class="mi-sub">Not available yet</span></li>';
+    };
+    var pressure = function (items, buy) {
+      return miList(items, function (p) {
+        var primary = buy ? p.buy_value : p.sell_value, secondary = buy ? p.sell_value : p.buy_value;
+        return '<li><span><b>' + esc(p.symbol) + '</b><div class="mi-sub">' + (buy ? "Buy" : "Sell") + ' pressure</div></span><span class="' + (buy ? "up" : "down") + '">' + F.short(primary) + ' <span class="mi-sub">vs ' + F.short(secondary) + '</span></span></li>';
+      }, buy ? "No buy-heavy securities in this window." : "No sell-heavy securities in this window.");
+    };
+    var sectors = miList(r.sectors, function (x) {
+      return '<li><span><b>' + esc(x.sector) + '</b><div class="mi-sub">' + F.num(x.securities) + ' securities · ' + F.num(x.advances) + ' up / ' + F.num(x.declines) + ' down</div></span><span class="' + F.dir(x.avg_change_pct) + '">' + F.pct(x.avg_change_pct) + '<div class="mi-sub">' + F.short(x.traded_value) + ' traded</div></span></li>';
+    }, "Sector data will appear when securities are mapped to sectors.");
+    var leaderboard = Array.isArray(r.leaderboard) ? r.leaderboard : [];
+    var alerts = Array.isArray(r.alerts) ? r.alerts : [];
+    var gainers = Array.isArray(r.top_gainers) ? r.top_gainers : [];
+    var losers = Array.isArray(r.top_losers) ? r.top_losers : [];
+    var stockRows = function (items) {
+      return miList(items, function (x) {
+        return '<li><span><b>' + esc(x.symbol) + '</b></span><b class="' + F.dir(x.day_change_pct) + '">' + F.pct(x.day_change_pct) + '</b></li>';
+      }, "No securities in this list yet.");
+    };
+    var alertRows = miList(alerts, function (a) {
+      return '<li><span class="badge ' + (a.level === "bad" ? "no" : a.level === "warn" ? "warn" : "prov") + '">' + esc(a.level || "info") + '</span><span style="flex:1">' + esc(a.text) + '</span></li>';
+    }, "No active market or operational alerts.");
+    var teamRows = miList(leaderboard, function (t) {
+      return '<li><span><b>#' + F.num(t.rank) + ' ' + esc(t.name) + '</b> <span class="mi-sub mono">' + esc(t.team) + '</span><div class="mi-sub">Buys ' + F.num(t.buys) + ' · Sells ' + F.num(t.sells) + (t.eligible ? ' · Assessment met' : ' · Assessment pending') + '</div></span><span style="text-align:right"><b>' + F.short(t.net_worth) + '</b><div class="mi-sub">' + esc(t.award || "") + '</div></span></li>';
+    }, "Participant rankings will appear after trading activity.");
     $("mi").innerHTML =
-      '<div class="box"><h4>Market sentiment</h4><div class="v ' + (sent.label === "BULLISH" ? "up" : sent.label === "BEARISH" ? "down" : "") + '">' + esc(sent.label || "—") + '</div><div class="small muted">CMS 50 ' + F.pct(sent.index_change_pct) + " · recent news " + (sent.recent_news ? sent.recent_news.positive + "+ / " + sent.recent_news.negative + "−" : "—") + "</div></div>" +
-      '<div class="box"><h4>Market breadth</h4><div class="v"><span class="up">▲ ' + r.breadth.advances + '</span> <span class="down">▼ ' + r.breadth.declines + '</span> <span class="flat">■ ' + r.breadth.unchanged + '</span></div><div class="small muted">' + (r.index.components || 0) + " CMS 50 components</div></div>" +
-      '<div class="box"><h4>Net buying / selling flow</h4><div class="v ' + F.dir(fl.net_team_flow) + '">' + F.signedMoney(fl.net_team_flow) + '</div><div class="small muted">teams bought ' + F.short(fl.team_buy_value) + " · sold " + F.short(fl.team_sell_value) + "</div></div>" +
-      '<div class="box"><h4>Institutional signal</h4><div class="v">' + esc(ins.label || "—") + '</div><div class="small muted">net ' + F.signedMoney(ins.net) + "</div></div>" +
-      '<div class="box"><h4>Settled orders</h4><div class="v">' + F.num(ord.settled) + '</div><div class="small muted">' + F.num(ord.pit_pending) + " at Pit · " + F.num(ord.pending) + " open · " + F.num(ord.rejected) + " rejected (" + F.num(ord.stale) + " stale)</div></div>" +
-      '<div class="box"><h4>Top gainers</h4>' + secList(r.top_gainers) + "</div>" +
-      '<div class="box"><h4>Top losers</h4>' + secList(r.top_losers) + "</div>" +
-      '<div class="box"><h4>Winner · Runner-Up' + (r.final ? "" : " (provisional)") + "</h4><ul>" + award(r.winner, "Winner") + award(r.runner_up, "Runner-Up") + "</ul></div>" +
-      '<div class="box"><h4>Buy pressure (30 min)</h4>' + (r.buy_pressure.length ? "<ul>" + r.buy_pressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="up">' + F.short(p.buy_value) + " vs " + F.short(p.sell_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No buy-heavy securities</div>') + "</div>" +
-      '<div class="box"><h4>Sell pressure (30 min)</h4>' + (r.sell_pressure.length ? "<ul>" + r.sell_pressure.map(function (p) { return "<li><span><b>" + esc(p.symbol) + '</b></span><span class="down">' + F.short(p.sell_value) + " vs " + F.short(p.buy_value) + "</span></li>"; }).join("") + "</ul>" : '<div class="small muted">No sell-heavy securities</div>') + "</div>" +
-      '<div class="box wide2"><h4>Sector analysis</h4><ul>' + (r.sectors || []).map(function (s) { return "<li><span>" + esc(s.sector) + ' <span class="tiny muted">' + s.securities + " · ▲" + s.advances + " ▼" + s.declines + '</span></span><span class="' + F.dir(s.avg_change_pct) + '">' + F.pct(s.avg_change_pct) + " · " + F.short(s.traded_value) + "</span></li>"; }).join("") + "</ul></div>" +
-      '<div class="box wide2"><h4>Participant performance</h4><div class="small muted" style="margin-bottom:4px">' + F.num(nw.eligible) + " eligible · " + F.num(nw.assessment_met) + " met assessment · highest " + F.short(nw.highest) + " · average " + F.short(nw.average) + "</div><ul>" +
-        (r.leaderboard || []).map(function (t) { return "<li><span>#" + t.rank + " <b>" + esc(t.name) + '</b> <span class="mono tiny">' + esc(t.team) + "</span> " + JSE.badge.award(t.award) + '</span><span>' + F.short(t.net_worth) + ' <span class="tiny muted">B' + t.buys + " S" + t.sells + (t.eligible ? " ✓" : "") + "</span></span></li>"; }).join("") + "</ul></div>" +
-      '<div class="box wide2"><h4>Alerts</h4>' + (r.alerts.length ? '<ul class="alerts">' + r.alerts.map(function (a) { return '<li><span class="badge ' + (a.level === "bad" ? "no" : a.level === "warn" ? "warn" : "prov") + '">' + esc(a.level) + "</span> " + esc(a.text) + "</li>"; }).join("") + "</ul>" : '<div class="small muted">No alerts.</div>') + "</div>";
-    $("miMeta").textContent = "Live · " + F.time(new Date()) + " IST · same data as portfolios and order tracking";
+      '<div class="mi-kpis">' +
+        miMetric("CMS 50 sentiment", esc(sent.label || "—"), 'Index change ' + F.pct(sent.index_change_pct) + ' · News ' + F.num(recent.positive) + ' positive / ' + F.num(recent.negative) + ' negative', sent.label === "BULLISH" ? "up" : sent.label === "BEARISH" ? "down" : "") +
+        miMetric("Market breadth", '<span class="up">▲ ' + F.num(breadth.advances) + '</span> <span class="down">▼ ' + F.num(breadth.declines) + '</span>', F.num(breadth.unchanged) + ' unchanged · ' + F.num(index.components) + ' index components') +
+        miMetric("Net team flow", F.signedMoney(fl.net_team_flow), 'Bought ' + F.short(fl.team_buy_value) + ' · Sold ' + F.short(fl.team_sell_value), F.dir(fl.net_team_flow)) +
+        miMetric("Institutional signal", esc(ins.label || "—"), 'Net institutional flow ' + F.signedMoney(ins.net), F.dir(ins.net)) +
+      '</div>' +
+      '<div class="mi-grid">' +
+        '<div class="mi-panel"><h3>Top gainers</h3>' + stockRows(gainers) + '</div>' +
+        '<div class="mi-panel"><h3>Top losers</h3>' + stockRows(losers) + '</div>' +
+        '<div class="mi-panel"><h3>Buy pressure · last 30 minutes</h3>' + pressure(r.buy_pressure, true) + '</div>' +
+        '<div class="mi-panel"><h3>Sell pressure · last 30 minutes</h3>' + pressure(r.sell_pressure, false) + '</div>' +
+        '<div class="mi-panel"><h3>Order pipeline</h3><div class="mi-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))">' +
+          miMetric("Settled", F.num(ord.settled), "Completed orders") + miMetric("At pit", F.num(ord.pit_pending), "Awaiting pit action") +
+          miMetric("Open", F.num(ord.pending), "Awaiting next stage") + miMetric("Rejected / stale", F.num(ord.rejected), F.num(ord.stale) + " stale") +
+        '</div></div>' +
+        '<div class="mi-panel"><h3>Sector performance</h3>' + sectors + '</div>' +
+        '<div class="mi-panel"><h3>Winner watch' + (r.final ? "" : ' <span class="mi-sub">(provisional)</span>') + '</h3>' + miList([winner, runner].filter(Boolean), function (t, i) { return award(t, i === 0 ? "Leader" : "Runner-up"); }, "No eligible team ranking yet.") +
+          '<div class="mi-sub" style="margin-top:8px">' + F.num(nw.eligible) + ' eligible · ' + F.num(nw.assessment_met) + ' met assessment · Highest ' + F.short(nw.highest) + ' · Average ' + F.short(nw.average) + '</div></div>' +
+        '<div class="mi-panel wide"><h3>Participant leaderboard</h3>' + teamRows + '</div>' +
+        '<div class="mi-panel wide"><h3>Market &amp; operations alerts</h3>' + alertRows + '</div>' +
+      '</div>';
+    $("miMeta").textContent = "Live · " + F.time(new Date()) + " IST · auto-refresh 10s";
   }
+  $("miRefresh").onclick = function () {
+    $("miRefresh").disabled = true; $("miRefresh").textContent = "Refreshing…";
+    loadIntel().catch(function (e) { $("mi").innerHTML = '<div class="alert bad">Market Intelligence could not refresh: ' + esc(e.message) + '</div>'; })
+      .finally(function () { $("miRefresh").disabled = false; $("miRefresh").textContent = "Refresh"; });
+  };
 
   async function loadBrokerRoster() {
     try {
